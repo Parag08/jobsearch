@@ -41,7 +41,7 @@ describe("generateBrief", () => {
     await insertContact(db, "u1", contact);
     await insertContact(db, "u1", { ...contact, name: "Later", nextFollowup: "2026-09-15" });
     await insertApplication(db, "u1", baseApp);
-    await insertApplication(db, "u1", { ...baseApp, company: "Fresh", updatedAt: "2026-08-28T00:00:00Z" });
+    await insertApplication(db, "u1", { ...baseApp, company: "Fresh", appliedAt: "2026-08-28", updatedAt: "2026-08-28T00:00:00Z" });
     await upsertSourcedJobs(db, "u1", [
       { source: "adzuna", externalId: "1", title: "PM", company: "Sea", location: null, url: "https://j.test/1", postedAt: null, score: 92, status: "new" },
       { source: "adzuna", externalId: "2", title: "APM", company: "Shopee", location: null, url: null, postedAt: null, score: 40, status: "dismissed" },
