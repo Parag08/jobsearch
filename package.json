@@ -9,7 +9,8 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:apply": "node scripts/db-apply.mjs"
   },
   "dependencies": {
     "next": "15.5.2",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/node": "22.15.0",
     "@types/react": "19.1.9",
+    "pg": "^8.23.0",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
   }
