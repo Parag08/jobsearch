@@ -23,11 +23,11 @@ Keep this file updated at the end of every working session: what was done, decis
 - listContacts returns contacts without interaction logs; getContact composes them (newest first) for buildMessageContext.
 - No @supabase/supabase-js dependency yet - added only when Wani connects Supabase; then a thin `createDb()` that returns the real client typed as DbClient.
 
-**Blocked / for Wani**
-- `git push origin main` fails: no git credentials available on this machine (no gh CLI, no keychain entry for github.com - "could not read Username"). All work is committed locally (7 commits). Log in (e.g. `gh auth login` or a credential-helper PAT) and push; collaborator access on Parag08/jobsearch may also still be needed.
+**Push: resolved**
+- This machine now authenticates to GitHub over SSH as Parag08 (ed25519 key at ~/.ssh/id_ed25519, added to the Parag08 account; origin switched to git@github.com:Parag08/jobsearch.git). main is pushed and tracking origin/main.
 
 **Next (in order)**
-1. Wani: push to GitHub (see above), connect Supabase (run schema.sql, confirm clean) and Vercel.
+1. Wani: connect Supabase (run schema.sql, confirm clean) and Vercel.
 2. Wire the API routes: add @supabase/supabase-js, a `createDb()` returning the client as DbClient, auth'd user_id from the Supabase session; replace the 503 shells with calls into lib/services/*.
 3. Real LlmProvider impls: Gemini free tier first, Groq fallback, behind routeModel; wire token_ledger via logTokens (needs API keys).
 4. UI: pipeline board, contacts, projects (port the Cowork dashboard artifact's layout).
