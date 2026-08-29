@@ -11,6 +11,11 @@ Keep this file updated at the end of every working session: what was done, decis
   - `lib/repos/rows.ts`: row types mirroring supabase/schema.sql + all snake<->camel mappers in one place; zod-parse on every read.
   - `lib/repos/fake-db.ts`: in-memory `FakeDb` test double (the FakeLlm pattern for the DB) - upsert onConflict with SQL null-distinct semantics, single/maybeSingle, generated ids, detached result copies. Tested in its own right (fake-db.test.ts).
   - Per-table repos: sectors, applications, projects+bullets, cvs (master + application), contacts+interactions, sourced-jobs, briefs, token-ledger, profiles. Every query filters by user_id explicitly (defense in depth on top of RLS).
+- Service layer, red->green: **83 tests, 22 files, all passing; tsc clean.**
+  - `lib/services/process-jd.ts`: extract once -> merge sector -> open 'saved' application (raw JD = DB-only audit copy).
+  - `lib/services/tailor-cv.ts`: score bank vs stored extract -> buildDiff/applyDiff (honesty rule enforced by buildDiff) -> persist application_cv -> link cv_id. No LLM in this path.
+  - `lib/services/daily-brief.ts`: due follow-ups + stale applications (staleness measured from appliedAt, per pipeline) + top-3 new sourced jobs; upserts one brief per (user, date).
+- API route shells: app/api/{jd,cv-diff,brief}/route.ts return 503 with a pointer to the tested service each will call once Supabase is connected.
 
 **Decisions**
 - Inserts omit domain ids: slugs from findOrCreateNode and adapter-synthesized sourced-job ids are provisional; the DB uuid comes back on the returned object and is the identity from then on.
@@ -23,8 +28,8 @@ Keep this file updated at the end of every working session: what was done, decis
 
 **Next (in order)**
 1. Wani: push to GitHub (see above), connect Supabase (run schema.sql, confirm clean) and Vercel.
-2. API routes: POST /api/jd (extract via LlmProvider -> merge sector -> create application), POST /api/cv-diff, GET /api/brief - wire repos + domain, auth'd user_id from Supabase session.
-3. Real LlmProvider impls: Gemini free tier first, Groq fallback, behind routeModel; wire token_ledger via logTokens.
+2. Wire the API routes: add @supabase/supabase-js, a `createDb()` returning the client as DbClient, auth'd user_id from the Supabase session; replace the 503 shells with calls into lib/services/*.
+3. Real LlmProvider impls: Gemini free tier first, Groq fallback, behind routeModel; wire token_ledger via logTokens (needs API keys).
 4. UI: pipeline board, contacts, projects (port the Cowork dashboard artifact's layout).
 5. Sourcing cron (Vercel cron or Supabase edge function) with Adzuna/Jooble adapters -> upsertSourcedJobs.
 
