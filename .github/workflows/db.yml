@@ -1,0 +1,31 @@
+# Schema deploys through git, matching the drop-and-recreate policy:
+# any push to main that touches supabase/schema.sql re-applies the whole file.
+#
+# !! This DROPS AND RECREATES every table. The moment live data exists,
+# !! delete this workflow (and scripts/db-apply.mjs) and switch to numbered
+# !! migrations - see the data-model policy in CLAUDE.md.
+#
+# Needs one repo secret: SUPABASE_DB_URL (Settings -> Secrets and variables
+# -> Actions) - the session-pooler connection string from the Supabase
+# dashboard, with the database password filled in.
+name: db
+
+on:
+  push:
+    branches: [main]
+    paths: [supabase/schema.sql]
+  workflow_dispatch: # manual re-run button in the Actions tab
+
+jobs:
+  apply-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:apply
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
