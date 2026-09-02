@@ -1,0 +1,97 @@
+{
+  "id": "archetype-project-management",
+  "company": "",
+  "role": "Project / Programme Management — base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-08-29T05:53:21.925Z",
+  "updatedAt": "2026-08-29T05:58:32.549Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "project-management",
+    "at": "2026-08-29T05:58:32.549Z",
+    "evidence": [
+      {
+        "id": "seed-project-management",
+        "kind": "seed",
+        "weight": 1
+      }
+    ],
+    "fingerprint": "855ef7e5"
+  },
+  "notes": "GENERATED from archetype \"project-management\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 seed(s) only; 100% of it is still Claude's prior rather than a real posting. \nThe $500K budget / 11+ engineers bullet is the spine here. Everything else is evidence of driving something across teams to completion. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": "ops-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": "people-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": "zero-to-one",
+        "overrideText": null
+      },
+      {
+        "pointId": "amantya-ios-retail",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "ops-forward",
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Project Management | Budget and Resource Management | Stakeholder Management | Cross-Functional Delivery | People Management | Process Improvement",
+      "add-tech": "JIRA and Agile Tooling | AI | Automation and Scripting | Kubernetes | Containerisation | MCP"
+    }
+  }
+}

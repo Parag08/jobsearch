@@ -1,0 +1,207 @@
+{
+  "_readme": [
+    "Role-family archetypes. One entry per kind of job Parag applies for.",
+    "",
+    "An archetype is NOT a CV. It is a growing corpus of evidence about what a",
+    "family of roles asks for. lib/archetype.js runs the same offline scorer over",
+    "every piece of evidence, aggregates the results, and only then builds a base",
+    "CV at applications/archetype-<id>.json.",
+    "",
+    "  evidence[]  every JD found for this family, plus notes from conversations.",
+    "              kind: jd | note | seed. Append, never replace - the whole point",
+    "              is that a tag demanded by 6 of 7 JDs outranks one that spiked in",
+    "              a single weird posting.",
+    "              fromApplication pulls the JD out of applications/<id>.json so a",
+    "              real application feeds the archetype without duplicating text.",
+    "  weight      how much this evidence counts. A JD from the exact target",
+    "              company deserves 2; a vague careers-page blurb deserves 0.5.",
+    "  kind:seed   Claude's prior about the family, written in JD language so it",
+    "              scores like one. It exists so the archetype is useful on day 1.",
+    "              DROP THE WEIGHT AS REAL JDS ARRIVE - that is the refinement.",
+    "",
+    "  pin/exclude/variants   editorial overrides applied after the ranking, for",
+    "              the judgement the literal scorer cannot do.",
+    "",
+    "Rebuild after any edit:  npm run archetype -- build <id>"
+  ],
+  "archetypes": [
+    {
+      "id": "consulting",
+      "label": "Management Consulting",
+      "targetRoles": "Consultant / Associate (post-MBA) at a strategy firm - MBB, Tier-2, Big-4 strategy, or an in-house strategy team.",
+      "budget": 15,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "nutanix-sales-acv",
+        "nutanix-ai-workflow",
+        "everhaus-operating-model"
+      ],
+      "exclude": [
+        "amantya-ios-retail"
+      ],
+      "variants": {
+        "nutanix-sales-acv": "customer-forward",
+        "everhaus-operating-model": "short",
+        "valeo-route-app": "ai-forward",
+        "cognizant-deploy-automation": "ops-forward",
+        "valeo-cost-diagnosis": "cursor-forward",
+        "valeo-cost-strategy": "cursor-forward"
+      },
+      "additionalOverrides": {
+        "add-skills": "Structured Problem Solving | Financial and Data Analysis | AI-Assisted Delivery | Executive Stakeholder Management | Project Management | Leadership",
+        "add-tech": "AI | Cursor | MCP | Automation and Scripting | Hybrid Multi-Cloud | Blockchain | Kubernetes"
+      },
+      "notes": "The differentiator is Valeo: a diagnosis then a sized recommendation, which is the consulting arc in two bullets. Engineering depth is the second story, not the first. Pinned nutanix-sales-acv against the ranking: the corpus scores it 32 because BCG boilerplate never says \"revenue\", but $40-50M ACV is the biggest number he has and commercial impact is what a consulting reader is scanning for. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. 2026-09-02, AI fluency: the page had no AI in any bullet - the scorer trimmed nutanix-ai-workflow (fit 25) and everhaus-roadmap (fit 33) for space, and no consulting JD in the corpus says \"AI\", so the ranking will never surface it on its own. Pinned nutanix-ai-workflow and everhaus-operating-model [short] against the ranking, and forced valeo-route-app to ai-forward, which is the only bullet stating he built something end-to-end with AI. Paid for the three added lines by forcing cognizant-deploy-automation to ops-forward and excluding amantya-ios-retail - s3, 2018, and the weakest bullet on the page for a consulting reader (note this drops the Amantya org entirely, leaving 2018 uncovered between Cognizant and Eleven01). Cursor added to add-tech on Parag's word in conversation - it is not in points.json and no bullet claims it. Forced both Valeo cost bullets to cursor-forward once Parag confirmed the financial analysis and the per-strategy saving were both worked out in Cursor - this is what backs Cursor in add-tech, which until then rested on nothing on the page. Costs no lines: diagnosis was already shortened to 1 line and cursor-forward is 1 line, strategy was 2 lines and cursor-forward is the same text plus the sizing clause.",
+      "evidence": [
+        {
+          "id": "seed-consulting",
+          "kind": "seed",
+          "label": "Composite post-MBA consulting role",
+          "weight": 1,
+          "addedAt": "2026-08-29",
+          "text": "As a Consultant you will work in small teams to solve the most important strategic problems facing our clients' senior leadership. You will structure ambiguous problems into a hypothesis-driven workplan, own discrete analytical modules end-to-end, and build the business case behind each recommendation. Typical work includes market research and competitive analysis, benchmarking, commercial and operational due diligence, cost management and unit economics, growth strategy and market entry. You will be expected to conduct quantitative data analysis in Excel and to translate that analysis into a clear, structured recommendation for a C-level audience. Strong communication and the ability to influence senior stakeholders without authority are essential. You will work directly with client teams day-to-day, managing expectations and building buy-in for change, and you will be responsible for the timelines, deliverables and milestones of your own workstream. We look for candidates who are comfortable with ambiguity and a fast-paced environment, who show ownership and a bias for action, and who can quickly develop expertise in an unfamiliar industry. An MBA and prior experience leading teams or projects to completion is expected."
+        },
+        {
+          "id": "bcg-consultant-singapore",
+          "kind": "jd",
+          "label": "BCG - Consultant, Singapore (Post-MBA)",
+          "weight": 1,
+          "addedAt": "2026-08-27",
+          "fromApplication": "bcg-consultant-singapore",
+          "notes": "Mostly firm boilerplate - thin on competencies. Low signal, kept for completeness."
+        }
+      ]
+    },
+    {
+      "id": "project-management",
+      "label": "Project / Programme Management",
+      "targetRoles": "Project Manager, Programme Manager, Delivery Lead, TPM, PMO - someone accountable for scope, schedule, budget and stakeholders.",
+      "budget": 15,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [],
+      "exclude": [],
+      "variants": {},
+      "additionalOverrides": {
+        "add-skills": "Project Management | Budget and Resource Management | Stakeholder Management | Cross-Functional Delivery | People Management | Process Improvement",
+        "add-tech": "JIRA and Agile Tooling | AI | Automation and Scripting | Kubernetes | Containerisation | MCP"
+      },
+      "notes": "The $500K budget / 11+ engineers bullet is the spine here. Everything else is evidence of driving something across teams to completion.",
+      "evidence": [
+        {
+          "id": "seed-project-management",
+          "kind": "seed",
+          "label": "Composite project / programme management role",
+          "weight": 1,
+          "addedAt": "2026-08-29",
+          "text": "You will own the end-to-end delivery of complex cross-functional programmes, from planning through to completion. Responsibilities include building and maintaining the project plan, defining deliverables and milestones, tracking timelines and dependencies, managing risk and escalation, and driving the programme to completion across engineering, product and operations teams. You will manage the budget and resource allocation for your programme, forecast spend and headcount, and report status to senior stakeholders and the steering committee. Day-to-day you will run agile ceremonies - sprint planning, stand-ups and retrospectives - in JIRA or Linear, remove blockers for the team, and manage expectations across a matrixed organisation. We expect strong stakeholder management and communication skills, the ability to align teams and influence without authority, and a track record of process improvement: streamlining ways of working, reducing cycle time and eliminating waste. Experience managing vendors or third parties, and a technical background sufficient to hold a credible conversation with engineers about architecture and trade-offs, are strongly preferred. PMP, Scrum or equivalent certification is a plus."
+        }
+      ]
+    },
+    {
+      "id": "product-management",
+      "label": "Product Management",
+      "targetRoles": "Product Manager / Senior PM - owning a product area, a roadmap, and the metrics it moves.",
+      "budget": 15,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "eleven01-mvp"
+      ],
+      "exclude": [],
+      "variants": {},
+      "additionalOverrides": {
+        "add-skills": "Product Management | Roadmapping and Prioritisation | Customer Discovery | Cross-Functional Leadership | Data-Driven Decision Making | Project Management",
+        "add-tech": "AI | JIRA and Linear | Kubernetes | Containerisation | Automation and Scripting | MCP"
+      },
+      "notes": "Needs the full arc: discovery, roadmap, launch, and a number that moved. Valeo route app and Touchnote checkout carry the funnel/adoption end of it. Pinned eleven01-mvp against the ranking: the scorer prefers eleven01-ico on lexical echo (\"launch\", \"features\"), but the 0-to-1 roadmap story is the PM signal and the ICO is a delivery story.",
+      "evidence": [
+        {
+          "id": "seed-product-management",
+          "kind": "seed",
+          "label": "Composite product manager role",
+          "weight": 1,
+          "addedAt": "2026-08-29",
+          "text": "As a Product Manager you will own the product lifecycle for your area end-to-end: discovery, definition, delivery and iteration. You will run customer discovery - user research, customer interviews, and voice of customer work - to identify real user needs and pain points, then turn them into a prioritised roadmap and a well-groomed backlog. You will make ruthless prioritisation calls and explain the trade-offs to your stakeholders. You will write clear requirements and work with engineering and design daily through agile sprints in JIRA to ship, running beta programmes and owning the rollout and go-to-market of each launch with marketing and sales. You will define the metrics and KPIs that measure success, instrument them, and use data-driven insights and A/B testing to decide what to build next. We are looking for someone who is comfortable with ambiguity, has strong communication and cross-functional collaboration skills, can influence without authority, and has a technical background strong enough to earn the trust of the engineering team. Experience owning a product from 0 to 1 and evidence of moving a conversion, retention or revenue metric are highly valued."
+        },
+        {
+          "id": "tiktok-live-governance",
+          "kind": "jd",
+          "label": "TikTok - PM Project Intern, LIVE Ecosystem Governance",
+          "weight": 0.75,
+          "addedAt": "2026-08-27",
+          "fromApplication": "tiktok-product-manager-project-intern-tiktok-live-ecosystem-governance",
+          "notes": "Internship and heavily governance-flavoured, so weighted below a full PM JD."
+        }
+      ]
+    },
+    {
+      "id": "product-strategy",
+      "label": "Product Strategy",
+      "targetRoles": "Product Strategy Manager, Head of Product Strategy, Strategy & Ops in a product org, Chief-of-Staff to a CPO.",
+      "budget": 15,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "nutanix-team-budget"
+      ],
+      "exclude": [],
+      "variants": {
+        "nutanix-sales-acv": "customer-forward"
+      },
+      "additionalOverrides": {
+        "add-skills": "Product Strategy | Market and Competitive Analysis | Business Case and Unit Economics | Executive Stakeholder Management | Roadmapping and Prioritisation | Leadership",
+        "add-tech": "AI | Blockchain | Hybrid Multi-Cloud | Automation and Scripting | MCP | Quantum Computing"
+      },
+      "notes": "Closest to his actual EverHaus title. The pitch is: he sets direction and can also build the thing - rare, and worth leading with. Pinned nutanix-team-budget against the ranking: a strategy role at manager level still gets read for whether he has run people and money, and it is the only bullet proving either. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page.",
+      "evidence": [
+        {
+          "id": "seed-product-strategy",
+          "kind": "seed",
+          "label": "Composite product strategy role",
+          "weight": 1,
+          "addedAt": "2026-08-29",
+          "text": "You will define the product vision and long-term strategy for the portfolio and translate it into a strategic direction the product teams can execute against. The work is a mix of outside-in and inside-out: market research, competitive analysis, sizing and market entry assessments, monetisation, pricing and packaging work, and unit economics - combined with a clear north star and the prioritisation framework that decides where we invest. You will build the business case for new bets, run build-versus-buy and partnership evaluations, and support new venture and 0 to 1 incubation. You will present recommendations to the executive team and the board, and you are expected to build buy-in with senior stakeholders and C-level leadership across product, engineering, finance and commercial teams. Strong structured problem solving, hypothesis-driven analysis and quantitative modelling are essential, as is the ability to define the metrics and OKRs that tell us whether the strategy is working. We look for someone comfortable with ambiguity who can operate with a lean team, and who has enough technical depth to reason about platform trade-offs. Consulting or strategy background plus hands-on product experience is ideal."
+        },
+        {
+          "id": "note-everhaus-title",
+          "kind": "note",
+          "label": "Own experience - EverHaus Product Strategy Manager",
+          "weight": 0.5,
+          "addedAt": "2026-08-29",
+          "text": "Held the Product Strategy Manager title at EverHaus: owned the roadmap for a bootstrapped renovation-investment platform, owned regulatory and compliance research, and defined the AI-first operating model the founding team ran on. Strategy work there meant deciding what to build with no playbook and no analyst support, then standing it up.",
+          "notes": "Placeholder note so the seed is not the only voice. REPLACE with real JDs and with what people actually tell Parag these roles want."
+        }
+      ]
+    },
+    {
+      "id": "engineering-manager",
+      "label": "Engineering Management",
+      "targetRoles": "Engineering Manager, Senior EM, Head of Engineering - owning a team, its delivery, and its people.",
+      "budget": 15,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "nutanix-ai-workflow"
+      ],
+      "exclude": [],
+      "variants": {},
+      "additionalOverrides": {
+        "add-skills": "People Management | Team Leadership | Engineering Delivery | Budget and Resource Management | Mentorship and Coaching | Cross-Functional Leadership",
+        "add-tech": "Kubernetes | Containerisation | Hybrid Multi-Cloud | AI and Agentic Tooling | Automation and Scripting | Blockchain | MCP"
+      },
+      "notes": "The only archetype where the engineering bullets lead. Nutanix team+budget, files migration, code standards and the Cognizant automation are the core four. Pinned nutanix-ai-workflow against the ranking: the EM corpus explicitly asks for process improvement that raised the team throughput, and this is the only bullet that measures one (50% fewer meetings, 20% faster cycles).",
+      "evidence": [
+        {
+          "id": "seed-engineering-manager",
+          "kind": "seed",
+          "label": "Composite engineering manager role",
+          "weight": 1,
+          "addedAt": "2026-08-29",
+          "text": "You will manage a team of software engineers, owning both their delivery and their growth. Responsibilities include line management of direct reports, performance management, career development, coaching the team and mentorship of junior engineers, plus hiring: running the interview loop, recruiting for your team and shaping its culture and values. On delivery you own the roadmap for your area alongside your product partner, run agile sprints, and are accountable for shipping to timelines and milestones with predictable throughput. You will be responsible for the technical health of the platform - architecture and system design reviews, code quality standards, testing and reliability, on-call, and paying down technical debt - while retaining enough technical depth to review a design and unblock the team. You will manage headcount and budget for the team, forecast resourcing, and work cross-functionally with product, design and other engineering groups. We expect strong communication with senior stakeholders, evidence of process improvement that raised the team's throughput or quality, and experience scaling a team or an engineering organisation. Background in distributed systems, cloud infrastructure, Kubernetes or large-scale data platforms is a plus."
+        }
+      ]
+    }
+  ]
+}

@@ -17,7 +17,8 @@ JobPilot: a personal job-search operating system, built first for Parag (target:
 - **The canonical data model is `supabase/schema.sql`** - one file, edited in place.
 - **Policy until live data exists:** full drop-and-recreate, no incremental migrations. Re-run the whole file after each change.
 - **When live data arrives:** freeze schema.sql, switch to numbered files in supabase/migrations/. (Flip this section when that happens.)
-- Not yet executed against a real Supabase project - validate on first run (Wani connects Supabase + Vercel).
+- **`supabase/seed.sql` is GENERATED** from `data/cvbuilder/` - never hand-edit it. Change the data, run `npm run seed:build`, commit both. (A test fails if they drift.) Apply with `npm run db:seed` after `npm run db:apply`; it upserts, so re-running is safe.
+- Live project (2026-09-02): tables exist and are empty, but they predate the columns added with the CVbuilder import - schema.sql must be re-applied before seeding. Needs `SUPABASE_DB_URL` (only the API keys are in `.env` so far); see docs/MEMORY.md.
 
 ## Architecture
 - Next.js 15 App Router + TypeScript strict + Vitest + zod. Deploy target: Vercel. DB: Supabase (Postgres + auth + RLS).
@@ -25,6 +26,8 @@ JobPilot: a personal job-search operating system, built first for Parag (target:
   - types.ts (zod schemas, STAGES, norm()) | sector-graph.ts (M1) | bullet-matcher.ts + cv-diff.ts (M3)
   - pipeline.ts (M5) | outreach.ts (M4) | scoring.ts (M7) | token-meter.ts
   - adapters/: llm.ts (LlmProvider interface + FakeLlm + routeModel), adzuna.ts (feed mapper)
+  - import/: cvbuilder.ts (data/cvbuilder -> workspace) + seed-sql.ts (workspace -> supabase/seed.sql)
+- `data/cvbuilder/` is the CV corpus itself - the hand-refined source of truth for profile, points (bullets + variants), taxonomy, archetypes and past applications. Edit it there, then `npm run seed:build`. It is DATA: no code may hardcode anything in it (rule 4).
 - `app/` is the Next.js shell - currently a placeholder page; UI comes after Supabase wiring.
 - Data flow contract: JD raw text -> LlmProvider.extractJd -> JdExtract (stored) -> everything downstream reads the extract only.
 

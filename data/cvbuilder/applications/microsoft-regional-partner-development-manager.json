@@ -1,0 +1,87 @@
+{
+  "id": "microsoft-regional-partner-development-manager",
+  "company": "Microsoft",
+  "role": "Regional Partner Development Manager, Singapore",
+  "reference": "200044526",
+  "jd": "Regional Partner Development Manager, Microsoft, Singapore. Job 200044526. Individual-contributor Sales role. 50-75% travel.\nThe Partner Development Manager (PDM) owns a portfolio of strategic partners and distributors in a region and is responsible for growing Microsoft's cloud business through them - driving cloud revenue, consumption, customer adds, and renewals across Solution Areas (AI, Security, Modern Work, Azure, Business Applications, Digital and App Innovation).\nCore pillars:\n1. Partner business leadership - executive relationships, partner business plans, business reviews.\n2. Partner transformation - moving partners to cloud, AI and managed services and recurring revenue models, driving Microsoft designations and specializations and marketplace motions.\n3. AI and Copilot growth - accelerating AI adoption, partner readiness, and packaged offerings.\n4. Ecosystem orchestration - aligning PDMs, Partner Technology Strategists, Customer Success Unit, and Solution Area teams.\n5. Performance management - pipeline management, forecasting, data-driven insights, corrective action planning, KPI performance management.\n6. Strategic initiatives - regional programs and fiscal year planning.\nRequired: Bachelor's degree in Marketing, Business Operations, Computer Science or related field, plus 10 years of experience in partner management, sales, business development, or channel development in the technology industry, or equivalent.\nPreferred: track record of growing business through ecosystem partners; executive influence and executive stakeholder management; cloud and enterprise technology depth; cross-functional leadership; cloud, AI, security and digital transformation experience; multi-country regional portfolio management; deep Microsoft partner ecosystem knowledge; MBA.\nSkills: Account Management, Customer Success, Business Development, Change Management, Business, Management, go-to-market, GTM, managed services, recurring revenue, business transformation, capability development, market analysis, customer acquisition, renewals, consumption growth.\n",
+  "pageSize": "original",
+  "scale": 1,
+  "selection": {
+    "points": [
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": "people-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": "revenue-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-ico",
+        "variant": "grammar-fixed",
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": "commercial-forward",
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Business Development | Executive Stakeholder Management | Change Management | Cross-Functional Leadership | Pipeline and Performance Management | Budget and Resource Management",
+      "add-tech": "AI and Agentic Tooling | Hybrid Multi-Cloud | Kubernetes and Containerisation | Automation and Scripting | MCP | Blockchain"
+    }
+  }
+}

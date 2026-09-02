@@ -1,0 +1,97 @@
+{
+  "id": "master",
+  "company": "",
+  "role": "Master CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-08-07T00:00:00.000Z",
+  "updatedAt": "2026-08-07T00:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "notes": "Mirrors originals/Parag Rahangdale 2026.pdf in layout and content. Spelling/grammar corrections (Institute, Bangalore, Management, led, an, IoT) were applied deliberately on 2026-08-26, so it is no longer byte-for-byte identical.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-mentoring",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-code-standards",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-ico",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "amantya-ios-retail",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {}
+  }
+}

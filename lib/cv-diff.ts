@@ -10,6 +10,10 @@ export interface CvDiff {
   removeBulletIds: string[];
   keywordsToMirror: string[];
   summaryLine: string;
+  /** bulletId -> variant label, when a bullet is re-angled for this application. */
+  variants?: Record<string, string>;
+  /** bulletId -> one-off wording used for this application only. */
+  overrides?: Record<string, string>;
 }
 
 export interface ApplicationCv {

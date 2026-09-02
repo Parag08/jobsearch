@@ -18,6 +18,8 @@ describe("profiles repo", () => {
       networks: [{ name: "INSEAD" }],
       visaContext: "EP sponsorship needed",
       premiumLlmBudgetUsdMonth: 5,
+      contactLines: ["parag@example.com"],
+      cvExtras: [{ id: "add-lang", label: "Languages", text: "English" }],
     };
     await saveProfile(db, profile);
     await saveProfile(db, { ...profile, displayName: "Parag S." });

@@ -9,6 +9,7 @@ import {
   TokenLedgerEntrySchema,
   type Application,
   type Bullet,
+  type BulletVariant,
   type ClosedReason,
   type Contact,
   type Interaction,
@@ -38,6 +39,8 @@ export interface ProfileRow {
   networks: unknown[];
   visa_context: string | null;
   premium_llm_budget_usd_month: number;
+  contact_lines: string[];
+  cv_extras: unknown[];
   created_at?: string;
 }
 
@@ -75,6 +78,8 @@ export interface BulletRow {
   role_family: string;
   text: string;
   skills: string[];
+  variants: BulletVariant[];
+  strength: number;
 }
 
 export interface MasterCvRow {
@@ -207,6 +212,10 @@ export interface Profile {
   networks: unknown[];
   visaContext: string | null;
   premiumLlmBudgetUsdMonth: number;
+  /** CV header lines (LinkedIn, emails, phones) - rendered, never matched on. */
+  contactLines: string[];
+  /** The CV's closing blocks: languages, skills, technologies, interests. */
+  cvExtras: unknown[];
 }
 
 export interface Brief {
@@ -263,6 +272,8 @@ export function toBullet(r: BulletRow): Bullet {
     roleFamily: r.role_family,
     text: r.text,
     skills: r.skills,
+    variants: r.variants,
+    strength: r.strength,
   });
 }
 
@@ -360,6 +371,8 @@ export function toProfile(r: ProfileRow): Profile {
     networks: r.networks,
     visaContext: r.visa_context,
     premiumLlmBudgetUsdMonth: r.premium_llm_budget_usd_month,
+    contactLines: r.contact_lines,
+    cvExtras: r.cv_extras,
   };
 }
 
@@ -432,6 +445,8 @@ export function bulletRow(
     role_family: b.roleFamily,
     text: b.text,
     skills: b.skills,
+    variants: b.variants ?? [],
+    strength: b.strength ?? 3,
   };
 }
 
@@ -537,5 +552,7 @@ export function profileRow(p: Profile): ProfileRow {
     networks: p.networks,
     visa_context: p.visaContext,
     premium_llm_budget_usd_month: p.premiumLlmBudgetUsdMonth,
+    contact_lines: p.contactLines,
+    cv_extras: p.cvExtras,
   };
 }

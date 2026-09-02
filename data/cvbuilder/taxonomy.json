@@ -1,0 +1,85 @@
+{
+  "_readme": [
+    "Controlled vocabulary for tagging points. Each tag lists the phrases a job",
+    "description is likely to use for that competency. The scorer looks for those",
+    "phrases in the JD; every hit credits the tag, and every point carrying the tag",
+    "gains score. This is how 'stakeholder alignment' in a JD matches a point you",
+    "tagged 'cross-functional'.",
+    "",
+    "Add tags freely. Keep keywords lowercase. Multi-word phrases are matched as",
+    "substrings; single words are matched on word boundaries."
+  ],
+
+  "families": {
+    "Product": ["product-management", "product-strategy", "roadmap", "discovery", "prioritization", "product-ops", "launch"],
+    "Commercial": ["revenue", "sales-partnership", "pricing", "growth", "gtm", "customer-facing", "conversion"],
+    "Operations": ["process-improvement", "ops-execution", "automation", "vendor-management", "scaling-ops", "compliance"],
+    "Leadership": ["people-management", "team-leadership", "mentorship", "hiring-culture", "cross-functional", "influence"],
+    "Analytics": ["data-analysis", "metrics-kpi", "experimentation", "research"],
+    "Delivery": ["project-management", "budget-management", "agile-jira", "stakeholder-management"],
+    "Technical": ["engineering", "backend", "cloud-infra", "blockchain", "ai-ml", "mobile", "data-migration", "quality"],
+    "Entrepreneurial": ["founding", "zero-to-one", "ambiguity", "strategy-consulting"]
+  },
+
+  "tags": {
+    "product-management": ["product manager", "product management", "product owner", "own the product", "product lifecycle", "pm "],
+    "product-strategy": ["product strategy", "strategic direction", "product vision", "long-term strategy", "strategic thinking", "north star"],
+    "roadmap": ["roadmap", "roadmapping", "planning cycle", "quarterly planning", "feature planning", "backlog"],
+    "discovery": ["customer discovery", "user research", "voice of customer", "customer interviews", "user needs", "pain points", "requirements gathering"],
+    "prioritization": ["prioritize", "prioritization", "trade-off", "tradeoffs", "ruthless prioritization", "scope"],
+    "product-ops": ["product operations", "product ops", "operational excellence", "tooling", "internal tools", "playbook", "documentation", "workflow"],
+    "launch": ["launch", "go-to-market", "rollout", "ship", "release", "beta"],
+
+    "revenue": ["revenue", "arr", "acv", "p&l", "profitability", "monetization", "top line", "bookings", "quota"],
+    "sales-partnership": ["sales", "partner with sales", "commercial teams", "account", "business development", "partnerships", "channel"],
+    "pricing": ["pricing", "packaging", "discount", "margin", "unit economics"],
+    "growth": ["growth", "scale the business", "user acquisition", "retention", "expansion", "funnel"],
+    "gtm": ["go-to-market", "gtm", "market entry", "positioning", "competitive analysis", "market research"],
+    "customer-facing": ["customer facing", "client facing", "customer success", "customer support", "merchant", "seller", "buyer", "user operations", "escalation", "onboarding"],
+    "conversion": ["conversion", "conversion rate", "checkout", "cart abandonment", "average order value", "aov", "cro", "activation"],
+
+    "process-improvement": ["process improvement", "streamline", "efficiency", "reduce cycle time", "eliminate waste", "continuous improvement", "optimize process", "standardize", "lean"],
+    "ops-execution": ["operations", "operational", "execution", "day-to-day", "run the business", "sop", "throughput", "sla"],
+    "automation": ["automation", "automate", "scripting", "tooling", "reduce manual", "manual work", "rpa", "workflow automation"],
+    "vendor-management": ["vendor", "third party", "outsourcing", "supplier", "procurement", "bpo"],
+    "scaling-ops": ["scale operations", "scaling", "high growth", "hypergrowth", "build from scratch", "operational scale", "capacity"],
+    "compliance": ["compliance", "regulatory", "regulation", "risk", "audit", "governance", "policy", "legal", "kyc", "aml"],
+
+    "people-management": ["people management", "manage a team", "direct reports", "performance management", "line manager", "coach the team", "team of"],
+    "team-leadership": ["lead a team", "team lead", "leadership", "lead engineers", "technical lead", "squad", "pod"],
+    "mentorship": ["mentor", "mentorship", "coaching", "develop talent", "training", "onboarding new", "upskill"],
+    "hiring-culture": ["hiring", "recruit", "culture", "values", "team building", "interview"],
+    "cross-functional": ["cross-functional", "cross functional", "cross-organizational", "collaborate", "collaboration", "work with engineering", "matrixed", "partner with", "stakeholder alignment", "influence without authority", "xfn"],
+    "influence": ["influence", "persuade", "buy-in", "executive", "leadership team", "c-level", "senior stakeholders", "communicate"],
+
+    "data-analysis": ["data analysis", "analytical", "analytics", "sql", "excel", "dashboards", "insights", "data-driven", "data driven", "quantitative", "reporting", "tableau", "looker"],
+    "metrics-kpi": ["kpi", "metrics", "okr", "measure success", "define metrics", "track performance", "instrumentation", "goals"],
+    "experimentation": ["experiment", "a/b test", "ab testing", "hypothesis", "test and learn", "iterate", "pilot"],
+    "research": ["research", "investigate", "deep dive", "benchmark", "landscape", "diligence", "due diligence"],
+
+    "project-management": ["project management", "program management", "manage projects", "timelines", "deliverables", "milestones", "end-to-end", "drive to completion", "pmo"],
+    "budget-management": ["budget", "cost management", "resource allocation", "headcount", "forecast", "spend", "capex", "opex"],
+    "agile-jira": ["agile", "scrum", "sprint", "jira", "kanban", "asana", "linear", "confluence", "ceremonies"],
+    "stakeholder-management": ["stakeholder", "stakeholder management", "manage expectations", "align teams", "communication with", "reporting to", "steering"],
+
+    "engineering": ["engineering", "software development", "technical background", "sdlc", "code", "developer", "architecture", "system design", "technical depth"],
+    "backend": ["backend", "back-end", "api", "microservices", "server-side", "database", "distributed systems", "python", "java", "node"],
+    "cloud-infra": ["cloud", "aws", "azure", "gcp", "kubernetes", "docker", "container", "devops", "ci/cd", "infrastructure", "sre", "deployment", "hybrid cloud", "multi-cloud"],
+    "blockchain": ["blockchain", "web3", "crypto", "distributed ledger", "smart contract", "defi", "token", "digital asset", "fintech"],
+    "ai-ml": ["ai", "artificial intelligence", "machine learning", "ml", "llm", "genai", "generative ai", "gpt", "copilot", "automation with ai", "prompt", "mcp", "agent"],
+    "mobile": ["mobile", "ios", "android", "app development", "swift", "kotlin", "react native"],
+    "data-migration": ["migration", "data migration", "petabyte", "storage", "file system", "etl", "replatform", "legacy"],
+    "quality": ["quality", "code quality", "testing", "qa", "reliability", "defects", "bugs", "standards", "best practices", "technical debt"],
+
+    "founding": ["founding", "founder", "founding member", "early employee", "first hire", "startup", "seed stage", "co-founder"],
+    "zero-to-one": ["0 to 1", "zero to one", "from scratch", "greenfield", "mvp", "new product", "build new", "new venture", "incubate"],
+    "ambiguity": ["ambiguity", "ambiguous", "undefined", "fast-paced", "wear many hats", "scrappy", "self-starter", "autonomous", "bias for action", "ownership", "lean team", "resourceful"],
+    "strategy-consulting": ["strategy", "consulting", "advisory", "business case", "framework", "structured problem solving", "hypothesis-driven", "recommendations", "mba"]
+  },
+
+  "seniorityHints": {
+    "intern": ["intern", "internship", "summer associate", "mba intern", "student"],
+    "ic": ["individual contributor", "associate", "analyst", "specialist"],
+    "manager": ["manager", "lead", "senior manager", "head of", "director", "principal"]
+  }
+}
