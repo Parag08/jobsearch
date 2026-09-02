@@ -1,9 +1,14 @@
 # Schema deploys through git, matching the drop-and-recreate policy:
-# any push to main that touches supabase/schema.sql re-applies the whole file.
+# any push to main that touches supabase/schema.sql re-applies the whole file
+# and then RELOADS supabase/seed.sql, because the drop wipes the imported
+# workspace (profile, projects, bullets, master CVs, applications).
 #
-# !! This DROPS AND RECREATES every table. The moment live data exists,
-# !! delete this workflow (and scripts/db-apply.mjs) and switch to numbered
-# !! migrations - see the data-model policy in CLAUDE.md.
+# !! This DROPS AND RECREATES every table. Everything seed.sql carries is
+# !! regenerable from data/cvbuilder/, so nothing is lost - but anything
+# !! entered through the app (advanced stages, contacts, interactions) IS.
+# !! The moment such data exists, delete this workflow (and
+# !! scripts/db-apply.mjs) and switch to numbered migrations - see the
+# !! data-model policy in CLAUDE.md.
 #
 # Needs one repo secret: SUPABASE_DB_URL (Settings -> Secrets and variables
 # -> Actions) - the session-pooler connection string from the Supabase
@@ -27,5 +32,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:apply
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Restore the imported workspace the drop just removed. Upserts, so it is
+      # safe whether or not the schema actually changed.
+      - run: npm run db:seed
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
