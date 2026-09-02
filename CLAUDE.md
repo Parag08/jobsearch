@@ -18,7 +18,8 @@ JobPilot: a personal job-search operating system, built first for Parag (target:
 - **Policy until live data exists:** full drop-and-recreate, no incremental migrations. Re-run the whole file after each change.
 - **When live data arrives:** freeze schema.sql, switch to numbered files in supabase/migrations/. (Flip this section when that happens.)
 - **`supabase/seed.sql` is GENERATED** from `data/cvbuilder/` - never hand-edit it. Change the data, run `npm run seed:build`, commit both. (A test fails if they drift.) Apply with `npm run db:seed` after `npm run db:apply`; it upserts, so re-running is safe.
-- Live project (2026-09-02): tables exist and are empty, but they predate the columns added with the CVbuilder import - schema.sql must be re-applied before seeding. Needs `SUPABASE_DB_URL` (only the API keys are in `.env` so far); see docs/MEMORY.md.
+- **Live as of 2026-09-02**: schema.sql applied clean to project `nntoalvvozwrlcilbnop` (Singapore) and seed.sql loaded - the DB now holds real data (1 profile, 10 projects, 20 bullets, 7 master CVs, 2 sectors, 3 applications + CVs). Connect over the **session pooler** (`aws-0-ap-southeast-1.pooler.supabase.com:5432`, user `postgres.<ref>`); the direct `db.<ref>.supabase.co` host is IPv6-only and does not resolve.
+- Live data now exists, but it is all regenerable from `data/cvbuilder/` - so drop-and-recreate stays valid for now. Freeze schema.sql and switch to migrations as soon as anything is entered through the app (applications advanced, contacts, interactions).
 
 ## Architecture
 - Next.js 15 App Router + TypeScript strict + Vitest + zod. Deploy target: Vercel. DB: Supabase (Postgres + auth + RLS).

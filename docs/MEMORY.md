@@ -20,15 +20,16 @@ Keep this file updated at the end of every working session: what was done, decis
 - Imported applications land in `saved`, never `applied`: CVbuilder never recorded whether they were submitted, and the import will not invent it. Each carries a next_action saying so.
 - A posting no archetype claims gets its family guessed from taxonomy overlap AND a warning (currently: the Microsoft PDM role).
 
-**Supabase status**
-- Project `nntoalvvozwrlcilbnop` is reachable with the keys now in `.env`; tables exist and are empty, but they predate this session's four new columns.
-- Blocked on `SUPABASE_DB_URL` (session-pooler URI, Settings -> Database -> Connection string): without it `npm run db:apply` / `db:seed` cannot run DDL. Alternative: paste `supabase/schema.sql` then `supabase/seed.sql` into the SQL editor.
-- The seed needs an `auth.users` row for parag.m.rahangdale@gmail.com (sign in once first). Regenerate for a different owner with `SEED_EMAIL=... npm run seed:build`.
+**Supabase: LIVE**
+- Project `nntoalvvozwrlcilbnop` (ap-southeast-1). `npm run db:apply` then `npm run db:seed` both ran clean - schema.sql's first real execution, and the DB now holds the imported workspace. Verified: 1 profile, 2 sectors, 10 projects, 20 bullets, 7 master CVs, 3 applications + 3 application CVs, no dangling bullet references. Seeding twice leaves the counts unchanged (the upserts are genuinely idempotent).
+- **Connect over the session pooler**: `postgres.<ref>@aws-0-ap-southeast-1.pooler.supabase.com:5432`. The direct `db.<ref>.supabase.co` host is IPv6-only and fails with ENOTFOUND here. Port 6543 (transaction mode) cannot run DDL - use 5432.
+- `.env` (gitignored) holds SUPABASE_URL / PUBLISHABLE_KEY / SECRET_KEY / JWKS_URL / DB_URL. Note the app-facing names lack the `NEXT_PUBLIC_` prefix that .env.example specifies - reconcile when the Supabase client is wired.
+- The owner auth.users row (parag.m.rahangdale@gmail.com) was created by hand in the dashboard. Seeding a different owner: `SEED_EMAIL=... npm run seed:build`.
 
 **Next**
-1. Apply schema.sql (re-run: it drops and recreates, nothing to lose - tables are empty) then seed.sql; confirm row counts.
-2. Wire the API routes to a real Supabase client (still the biggest gap).
-3. Feed the Microsoft JD into archetypes.json as evidence so its role family stops being a guess.
+1. Wire the API routes to a real Supabase client (now the biggest gap): add @supabase/supabase-js, `createDb()` returning it as DbClient, user_id from the session, replace the 503 shells.
+2. Feed the Microsoft JD into archetypes.json as evidence so its role family stops being a guess.
+3. UI: pipeline board over the 3 live applications, then the bullet bank.
 
 ## 2026-08-29 - Session 2: repository layer (TDD)
 
