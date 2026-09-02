@@ -1,0 +1,99 @@
+{
+  "id": "generic",
+  "company": "",
+  "role": "Generic CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-09-02T00:00:00.000Z",
+  "updatedAt": "2026-09-02T00:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "notes": "The hand-to-anyone CV: for people who are not hiring now but might be later. Product / product-strategy lean with engineering depth kept underneath as the credibility floor. Derived from master.json on 2026-09-02 but deliberately NOT a copy - master stays frozen as the fidelity reference against originals/Parag Rahangdale 2026.pdf. Differences from master: adds all three Valeo points (master predates the internship and is the main reason it reads as stale); cuts iitj-mentoring and nutanix-code-standards (both s3, weakest in their roles); drops amantya-ios-retail, which removes the Amantya org entirely - keeping it needs ~5 lines for org row, blurb and role row, and the page overflows even after cutting three stronger bullets to pay for it. nutanix-sales-acv uses customer-forward so 'product strategy' does not repeat against everhaus-compliance. valeo-route-app carries an overrideText: the base bullet is 2 lines and uses an em dash, so it is reworded to one line without the dash - same facts (specified, prototyped, 100% adoption in one week), the discovery clause dropped for space.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": null,
+        "overrideText": "Specified and prototyped the route-optimisation app the operations team needed, reaching 100% adoption in one week"
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-ico",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "ops-forward",
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Product Strategy | Prioritisation | Cross-functional Leadership | People and Budget Management"
+    }
+  }
+}

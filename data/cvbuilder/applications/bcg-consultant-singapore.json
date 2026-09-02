@@ -1,0 +1,93 @@
+{
+  "id": "bcg-consultant-singapore",
+  "company": "BCG (Boston Consulting Group)",
+  "role": "Consultant, Singapore (Post-MBA)",
+  "reference": "",
+  "jd": "Eligibility: This role is open to INSEAD 26D students, IE MBAs graduating between Dec 2026 - Mar 2027, and second year MBA students from ESADE, IESE, HEC, and LBS, who are seeking full-time roles.\n\nBoston Consulting Group partners with leaders in business and society to tackle their most important challenges and capture their greatest opportunities. BCG was the pioneer in business strategy when it was founded in 1963. Today, we help clients with total transformation-inspiring complex change, enabling organizations to grow, building competitive advantage, and driving bottom-line impact.\n\nTo succeed, organizations must blend digital and human capabilities. Our diverse, global teams bring deep industry and functional expertise and a range of perspectives to spark change. BCG delivers solutions through leading-edge management consulting along with technology and design, corporate and digital ventures-and business purpose. We work in a uniquely collaborative model across the firm and throughout all levels of the client organization, generating results that allow our clients to thrive.",
+  "pageSize": "original",
+  "scale": 1,
+  "selection": {
+    "points": [
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "investor-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "xfn-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": "people-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Leadership | Project Management | Budget and Resource Management | People Management | Product Management",
+      "add-tech": "AI | Automation and Scripting | MCP | Blockchain | Kubernetes | Containerisation | Quantum Computing"
+    }
+  },
+  "updatedAt": "2026-08-26T15:20:53.315Z"
+}

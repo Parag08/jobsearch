@@ -1,0 +1,102 @@
+{
+  "id": "archetype-product-management",
+  "company": "",
+  "role": "Product Management — base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-08-29T05:53:21.959Z",
+  "updatedAt": "2026-08-29T05:58:32.588Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-management",
+    "at": "2026-08-29T05:58:32.588Z",
+    "evidence": [
+      {
+        "id": "seed-product-management",
+        "kind": "seed",
+        "weight": 1
+      },
+      {
+        "id": "tiktok-live-governance",
+        "kind": "jd",
+        "weight": 0.75
+      }
+    ],
+    "fingerprint": "b84110ad"
+  },
+  "notes": "GENERATED from archetype \"product-management\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 57% of it is still Claude's prior rather than a real posting. \nNeeds the full arc: discovery, roadmap, launch, and a number that moved. Valeo route app and Touchnote checkout carry the funnel/adoption end of it. Pinned eleven01-mvp against the ranking: the scorer prefers eleven01-ico on lexical echo (\"launch\", \"features\"), but the 0-to-1 roadmap story is the PM signal and the ICO is a delivery story. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": "zero-to-one",
+        "overrideText": null
+      },
+      {
+        "pointId": "amantya-ios-retail",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Roadmapping and Prioritisation | Customer Discovery | Cross-Functional Leadership | Data-Driven Decision Making | Project Management",
+      "add-tech": "AI | JIRA and Linear | Kubernetes | Containerisation | Automation and Scripting | MCP"
+    }
+  }
+}

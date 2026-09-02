@@ -50,6 +50,8 @@ create table profiles (
   networks jsonb not null default '[]',              -- [{name:"INSEAD", fields:[...]}]
   visa_context text,                                 -- e.g. EP/COMPASS note
   premium_llm_budget_usd_month numeric not null default 0,
+  contact_lines text[] not null default '{}',        -- CV header: linkedin, emails, phones
+  cv_extras jsonb not null default '[]',             -- CV closing blocks: [{id,label,text,locked,tailorable}]
   created_at timestamptz not null default now()
 );
 
@@ -89,7 +91,9 @@ create table bullets (
   project_id uuid not null references projects (id) on delete cascade,
   role_family text not null,
   text text not null,
-  skills text[] not null default '{}'
+  skills text[] not null default '{}',
+  variants jsonb not null default '[]',              -- [{label,text}] re-angled wordings of the SAME fact
+  strength int not null default 3 check (strength between 1 and 5)
 );
 
 -- ---- M3 CV builder --------------------------------------------------------------

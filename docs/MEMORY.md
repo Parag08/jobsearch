@@ -2,6 +2,34 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state.
 
+## 2026-09-02 - Session 3: CVbuilder data import
+
+**Done**
+- Brought the real CV corpus into the repo: `data/cvbuilder/` (profile, points, taxonomy, archetypes + 10 application files), copied from the CVbuilder project. `data/settings.local.json` was deliberately NOT copied - it holds a live Google API key, and this repo is public on GitHub.
+- Import layer, red->green: **112 tests, 25 files, all passing; tsc clean.**
+  - `lib/import/cvbuilder.ts` - pure transform, zod-validated. CV role -> project; point -> bullet (variants + strength carried); archetype -> master CV per role family from its base-CV selection; master.json/generic.json -> the "general" family (v1/v2); real applications -> application + application_cv (the CV actually sent, as a diff from its master); JDs -> sector nodes per (role family, geography).
+  - JD extracts are built lexically from `taxonomy.json` (the user's own vocabulary), no LLM - process-jd overwrites them when a real extractor runs.
+  - `lib/import/seed-sql.ts` - renders the workspace as one transactional DO block that resolves the owner from auth.users by email and upserts every row.
+  - `lib/import/real-data.test.ts` - integrity checks against the actual data, plus a guard that fails if `data/cvbuilder/` changed without rebuilding `supabase/seed.sql`.
+- `scripts/import-cvbuilder.ts` (`npm run seed:build`, via vite-node) and `npm run db:seed`; `scripts/db-apply.mjs` now takes a file argument and also reads `.env`.
+
+**Decisions**
+- Ids are deterministic hashes of CVbuilder slugs (`stableId`), so re-importing updates rows instead of duplicating them, and master CVs can reference bullets before either exists in the DB.
+- Schema additions (drop-and-recreate policy still in force): `profiles.contact_lines`, `profiles.cv_extras`, `bullets.variants`, `bullets.strength`. `CvDiff` gained optional `variants`/`overrides` so a per-application re-angling survives the round trip. `Bullet.variants/strength` are optional in the domain type - app-built bullets carry neither and the DB columns default.
+- A bullet's `role_family` comes only from explicit editorial signal (an archetype that pins it, re-angles it, or is the sole base CV carrying it); everything else is "general". Role family is only a scoring boost, so neutral bullets are still matched everywhere.
+- Imported applications land in `saved`, never `applied`: CVbuilder never recorded whether they were submitted, and the import will not invent it. Each carries a next_action saying so.
+- A posting no archetype claims gets its family guessed from taxonomy overlap AND a warning (currently: the Microsoft PDM role).
+
+**Supabase status**
+- Project `nntoalvvozwrlcilbnop` is reachable with the keys now in `.env`; tables exist and are empty, but they predate this session's four new columns.
+- Blocked on `SUPABASE_DB_URL` (session-pooler URI, Settings -> Database -> Connection string): without it `npm run db:apply` / `db:seed` cannot run DDL. Alternative: paste `supabase/schema.sql` then `supabase/seed.sql` into the SQL editor.
+- The seed needs an `auth.users` row for parag.m.rahangdale@gmail.com (sign in once first). Regenerate for a different owner with `SEED_EMAIL=... npm run seed:build`.
+
+**Next**
+1. Apply schema.sql (re-run: it drops and recreates, nothing to lose - tables are empty) then seed.sql; confirm row counts.
+2. Wire the API routes to a real Supabase client (still the biggest gap).
+3. Feed the Microsoft JD into archetypes.json as evidence so its role family stops being a guess.
+
 ## 2026-08-29 - Session 2: repository layer (TDD)
 
 **Done**

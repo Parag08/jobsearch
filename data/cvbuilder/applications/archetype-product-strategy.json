@@ -1,0 +1,102 @@
+{
+  "id": "archetype-product-strategy",
+  "company": "",
+  "role": "Product Strategy — base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-08-29T05:53:22.003Z",
+  "updatedAt": "2026-08-29T05:58:32.642Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-strategy",
+    "at": "2026-08-29T05:58:32.642Z",
+    "evidence": [
+      {
+        "id": "seed-product-strategy",
+        "kind": "seed",
+        "weight": 1
+      },
+      {
+        "id": "note-everhaus-title",
+        "kind": "note",
+        "weight": 0.5
+      }
+    ],
+    "fingerprint": "29b64903"
+  },
+  "notes": "GENERATED from archetype \"product-strategy\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 67% of it is still Claude's prior rather than a real posting. \nClosest to his actual EverHaus title. The pitch is: he sets direction and can also build the thing - rare, and worth leading with. Pinned nutanix-team-budget against the ranking: a strategy role at manager level still gets read for whether he has run people and money, and it is the only bullet proving either. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-mentoring",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "amantya-ios-retail",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Strategy | Market and Competitive Analysis | Business Case and Unit Economics | Executive Stakeholder Management | Roadmapping and Prioritisation | Leadership",
+      "add-tech": "AI | Blockchain | Hybrid Multi-Cloud | Automation and Scripting | MCP | Quantum Computing"
+    }
+  }
+}

@@ -45,12 +45,21 @@ export const SectorNodeSchema = z.object({
 });
 export type SectorNode = z.infer<typeof SectorNodeSchema>;
 
+/** A re-angled wording of the SAME fact - never a new claim (CVbuilder's rule, kept here). */
+export const BulletVariantSchema = z.object({ label: z.string(), text: z.string() });
+export type BulletVariant = z.infer<typeof BulletVariantSchema>;
+
 export const BulletSchema = z.object({
   id: z.string(),
   projectId: z.string(),
   roleFamily: RoleFamilySchema,
   text: z.string(),
   skills: z.array(z.string()).default([]),
+  // Optional CV-authoring metadata: bullets built by the app carry neither, and
+  // the DB columns default to '[]' / 3 (supabase/schema.sql).
+  variants: z.array(BulletVariantSchema).optional(),
+  /** 1-5, the owner's own view of how impressive it is. Ties break on this. */
+  strength: z.number().int().min(1).max(5).optional(),
 });
 export type Bullet = z.infer<typeof BulletSchema>;
 

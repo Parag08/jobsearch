@@ -1,0 +1,173 @@
+{
+  "name": {
+    "first": "Parag",
+    "last": "RAHANGDALE"
+  },
+  "photo": "assets/photo.png",
+  "contactLines": [
+    "https://www.linkedin.com/in/paragr",
+    "parag.rahangdale@insead.edu / parag.m.rahangdale@gmail.com",
+    "+65 89869790 / +91 8197475525"
+  ],
+  "education": [
+    {
+      "id": "insead",
+      "org": "INSEAD",
+      "location": "Singapore/France",
+      "blurb": "",
+      "roles": [
+        {
+          "id": "insead-mba",
+          "title": "MBA Class of December 2026",
+          "dates": "2026"
+        }
+      ]
+    },
+    {
+      "id": "iitj",
+      "org": "Indian Institute of Technology, Jodhpur (IIT)",
+      "location": "Jodhpur, India",
+      "blurb": "",
+      "roles": [
+        {
+          "id": "iitj-btech",
+          "title": "Bachelor of Technology in System Science",
+          "dates": "2012 - 2016"
+        }
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "id": "valeo",
+      "org": "Valeo Health",
+      "location": "UAE",
+      "blurb": "Major home healthtech provider in the UAE, bringing medical services to patients at home",
+      "roles": [
+        {
+          "id": "valeo-intern",
+          "title": "Management Intern",
+          "dates": "Jul - Aug 2026"
+        }
+      ]
+    },
+    {
+      "id": "everhaus",
+      "org": "EverHaus Group",
+      "location": "Singapore",
+      "blurb": "Singapore-based proptech investment platform democratising access to high-yield real estate renovation projects",
+      "roles": [
+        {
+          "id": "everhaus-psm",
+          "title": "Product Strategy Manager",
+          "dates": "Jan - May 2026"
+        }
+      ]
+    },
+    {
+      "id": "nutanix",
+      "org": "Nutanix",
+      "location": "Bangalore, India",
+      "blurb": "Nutanix simplifies IT with a hybrid multi-cloud platform for managing storage, computing and networking",
+      "roles": [
+        {
+          "id": "nutanix-tl",
+          "title": "Team Lead, Engineering",
+          "dates": "2024 - 2026"
+        },
+        {
+          "id": "nutanix-mts",
+          "title": "Member of Technical Staff",
+          "dates": "2022 - 2024"
+        }
+      ]
+    },
+    {
+      "id": "touchnote",
+      "org": "Touchnote",
+      "location": "Hyderabad, India",
+      "blurb": "United Kingdom-based platform to send personalised postcards/greeting cards/canvases and gifts",
+      "roles": [
+        {
+          "id": "touchnote-be",
+          "title": "Backend Developer",
+          "dates": "2020 - 2022"
+        }
+      ]
+    },
+    {
+      "id": "eleven01",
+      "org": "Eleven01",
+      "location": "Hyderabad, India",
+      "blurb": "Blockchain startup that provides scalable and secure decentralised solutions for businesses across various industries",
+      "roles": [
+        {
+          "id": "eleven01-dev",
+          "title": "Blockchain Developer and Founding Member",
+          "dates": "2019 - 2020"
+        }
+      ]
+    },
+    {
+      "id": "amantya",
+      "org": "Amantya Technologies",
+      "location": "Gurugram, India",
+      "blurb": "A service company in the telecom space, specialising in 5G and IoT solutions to drive innovation and enhance connectivity.",
+      "roles": [
+        {
+          "id": "amantya-swe",
+          "title": "Software Engineer",
+          "dates": "2018"
+        }
+      ]
+    },
+    {
+      "id": "cognizant",
+      "org": "Cognizant",
+      "location": "Bangalore, India",
+      "blurb": "Cognizant is a global technology services company specialising in IT consulting, digital transformation and business process outsourcing",
+      "roles": [
+        {
+          "id": "cognizant-assoc",
+          "title": "Associate",
+          "dates": "2016 - 2018"
+        }
+      ]
+    }
+  ],
+  "additional": [
+    {
+      "id": "add-auth",
+      "label": "Nationality/Authorisation",
+      "text": "Indian; currently holding a Singapore Student Visa (valid until Jan 2027)",
+      "locked": true
+    },
+    {
+      "id": "add-lang",
+      "label": "Languages",
+      "text": "English (Native), Hindi (Native), Spanish (Beginner)",
+      "locked": true
+    },
+    {
+      "id": "add-skills",
+      "label": "Skills",
+      "text": "Leadership | People Management | Project Management | Budget and Resource Management | Product Management",
+      "locked": false,
+      "tailorable": true
+    },
+    {
+      "id": "add-tech",
+      "label": "Technologies",
+      "text": "AI | Blockchain | Kubernetes | Containerisation | Quantum Computing | Automation and Scripting | MCP",
+      "locked": false,
+      "tailorable": true
+    },
+    {
+      "id": "add-interests",
+      "label": "Interests",
+      "text": "Mentorship/Coaching | Exploring Emerging Tech | High-Altitude Trekking | Strategic Gaming | Japanese Media & Art",
+      "locked": false,
+      "tailorable": true
+    }
+  ]
+}

@@ -1,0 +1,597 @@
+{
+  "_readme": [
+    "The points pool. Every bullet you could ever put on a CV lives here exactly once.",
+    "",
+    "  id          stable slug, never reuse",
+    "  roleId      which role in profile.json this bullet sits under",
+    "  text        the default wording",
+    "  variants    same underlying fact, re-angled for a different audience.",
+    "              NEVER put a new claim in a variant - only a rewording.",
+    "  tags        from data/taxonomy.json - this drives JD matching",
+    "  strength    1-5, your own view of how impressive it is. Ties break on this.",
+    "  status      active | draft | retired",
+    "  inMaster    true if it appears on the 2026 master CV",
+    "",
+    "Keep every number here defensible in an interview."
+  ],
+  "points": [
+    {
+      "id": "insead-honors",
+      "roleId": "insead-mba",
+      "text": "President, Fintech & Blockchain Club | GMAT Focus: 695",
+      "variants": [
+        {
+          "label": "leadership-forward",
+          "text": "President, Fintech & Blockchain Club (largest student club by membership) | GMAT Focus: 695"
+        },
+        {
+          "label": "academics-forward",
+          "text": "GMAT Focus: 695 | President, Fintech & Blockchain Club"
+        }
+      ],
+      "tags": [
+        "team-leadership",
+        "blockchain",
+        "influence"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true,
+      "pinned": true,
+      "notes": "Effectively always included - it is the only INSEAD bullet."
+    },
+    {
+      "id": "iitj-mentoring",
+      "roleId": "iitj-btech",
+      "text": "Mentored junior students, directly achieving a 10% rise in average GPA through individualised academic support and mentorship",
+      "variants": [
+        {
+          "label": "people-forward",
+          "text": "Coached junior students one-to-one, lifting their average GPA 10% through individualised academic support"
+        },
+        {
+          "label": "short",
+          "text": "Raised mentees' average GPA 10% through one-to-one academic coaching of junior students"
+        }
+      ],
+      "tags": [
+        "mentorship",
+        "people-management",
+        "influence"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": true,
+      "notes": ""
+    },
+    {
+      "id": "iitj-ignus",
+      "roleId": "iitj-btech",
+      "text": "Served as Workshop Head for the annual college festival Ignus, generating $10K in revenue through strategic partnerships and sales",
+      "variants": [
+        {
+          "label": "commercial-forward",
+          "text": "Generated $10K in revenue as Workshop Head of the annual college festival Ignus by securing corporate partnerships and driving delegate sales"
+        },
+        {
+          "label": "ops-forward",
+          "text": "As Workshop Head for the annual college festival Ignus, delivered $10K in revenue by securing partnerships and driving sales"
+        }
+      ],
+      "tags": [
+        "revenue",
+        "sales-partnership",
+        "project-management",
+        "team-leadership"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": true,
+      "notes": ""
+    },
+    {
+      "id": "everhaus-roadmap",
+      "roleId": "everhaus-psm",
+      "text": "Developed the product roadmap for a bootstrapped renovation-investment platform, defining 20+ core features using AI-driven research",
+      "variants": [
+        {
+          "label": "ai-forward",
+          "text": "Used AI-driven research to define 20+ core features and build the product roadmap for a bootstrapped renovation-investment platform"
+        },
+        {
+          "label": "zero-to-one",
+          "text": "Built the product roadmap for a bootstrapped renovation-investment platform from a blank page, defining 20+ core features through AI-driven market and user research"
+        }
+      ],
+      "tags": [
+        "product-management",
+        "product-strategy",
+        "roadmap",
+        "ai-ml",
+        "research",
+        "zero-to-one",
+        "discovery"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Strongest 'I do product' signal on the CV. Lead with it for PM roles."
+    },
+    {
+      "id": "everhaus-compliance",
+      "roleId": "everhaus-psm",
+      "text": "Owned compliance research and product strategy for a lean founding team, shaping a platform targeting up to 16% annual returns",
+      "variants": [
+        {
+          "label": "ops-forward",
+          "text": "Owned regulatory and compliance research end-to-end for a lean founding team, translating findings into product requirements for a platform targeting up to 16% annual returns"
+        },
+        {
+          "label": "ambiguity-forward",
+          "text": "Operated with no playbook on a lean founding team, owning compliance research and product strategy for a platform targeting up to 16% annual returns"
+        }
+      ],
+      "tags": [
+        "compliance",
+        "product-strategy",
+        "research",
+        "ambiguity",
+        "founding",
+        "strategy-consulting"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Best bullet for regulated industries - fintech, banking, insurance, marketplaces."
+    },
+    {
+      "id": "nutanix-ai-workflow",
+      "roleId": "nutanix-tl",
+      "text": "Optimised development workflow with AI tooling and JIRA, delivering 50% fewer meetings and 20% faster product cycles",
+      "variants": [
+        {
+          "label": "product-ops",
+          "text": "Redesigned the team's development workflow around AI tooling and JIRA, cutting meetings 50% and shortening product cycles 20%"
+        },
+        {
+          "label": "process-forward",
+          "text": "Eliminated 50% of recurring meetings and shortened product cycles 20% by rebuilding the development workflow with AI tooling and JIRA"
+        }
+      ],
+      "tags": [
+        "product-ops",
+        "process-improvement",
+        "automation",
+        "ai-ml",
+        "agile-jira",
+        "ops-execution"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "The single best bullet for any Operations or Product Ops role."
+    },
+    {
+      "id": "nutanix-sales-acv",
+      "roleId": "nutanix-tl",
+      "text": "Drove product strategy with Sales to prioritise customer-driven features, enabling $40–50M in Annual Contract Value",
+      "variants": [
+        {
+          "label": "customer-forward",
+          "text": "Partnered with Sales to translate customer needs into a prioritised feature set, enabling $40–50M in Annual Contract Value"
+        },
+        {
+          "label": "xfn-forward",
+          "text": "Aligned Sales, Product and Engineering on a single prioritised roadmap driven by customer input, enabling $40–50M in Annual Contract Value"
+        }
+      ],
+      "tags": [
+        "product-strategy",
+        "prioritization",
+        "sales-partnership",
+        "revenue",
+        "cross-functional",
+        "customer-facing",
+        "stakeholder-management",
+        "discovery"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Biggest number on the CV. Almost always include."
+    },
+    {
+      "id": "nutanix-team-budget",
+      "roleId": "nutanix-tl",
+      "text": "Managed a team of 11+ developers and a $500K budget to deliver best-in-class migration software recognised by Gartner",
+      "variants": [
+        {
+          "label": "people-forward",
+          "text": "Led and developed a team of 11+ engineers against a $500K budget, shipping migration software recognised by Gartner as best-in-class"
+        },
+        {
+          "label": "delivery-forward",
+          "text": "Delivered Gartner-recognised migration software on a $500K budget with a team of 11+ developers"
+        },
+        {
+          "label": "budget-forward",
+          "text": "Ran a $500K budget and an 11+ person team to deliver migration software Gartner rated best-in-class"
+        }
+      ],
+      "tags": [
+        "people-management",
+        "team-leadership",
+        "budget-management",
+        "project-management",
+        "data-migration",
+        "engineering"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true,
+      "notes": "The people-management proof point. Include for anything with reports or budget."
+    },
+    {
+      "id": "nutanix-files-migration",
+      "roleId": "nutanix-mts",
+      "text": "Spearheaded the creation of a files migration feature, led cross-organisational collaboration to onboard customers with 10+ petabytes of data, resulting in $1M+ in recurring revenue",
+      "variants": [
+        {
+          "label": "grammar-fixed",
+          "text": "Spearheaded a new files migration capability and led cross-organisational collaboration to onboard customers with 10+ petabytes of data, generating $1M+ in recurring revenue"
+        },
+        {
+          "label": "customer-forward",
+          "text": "Onboarded enterprise customers holding 10+ petabytes of data onto a new files migration capability, unlocking $1M+ in recurring revenue"
+        }
+      ],
+      "tags": [
+        "zero-to-one",
+        "cross-functional",
+        "customer-facing",
+        "revenue",
+        "data-migration",
+        "engineering",
+        "launch"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Corrected in place (was 'lead'/'resulting $1M+'). The 'grammar-fixed' variant is retained as an alias."
+    },
+    {
+      "id": "nutanix-code-standards",
+      "roleId": "nutanix-mts",
+      "text": "Introduced initiatives to establish coding standards, resulting in a 30% improvement in code quality and fewer customer defects",
+      "variants": [
+        {
+          "label": "process-forward",
+          "text": "Established team-wide coding standards and review practices, improving code quality 30% and reducing customer-reported defects"
+        },
+        {
+          "label": "quality-forward",
+          "text": "Drove a 30% improvement in code quality and a drop in customer-reported defects by introducing team-wide coding standards"
+        }
+      ],
+      "tags": [
+        "quality",
+        "process-improvement",
+        "engineering",
+        "team-leadership"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Weakest Nutanix bullet - first to cut when space is tight."
+    },
+    {
+      "id": "touchnote-checkout",
+      "roleId": "touchnote-be",
+      "text": "Revamped the checkout process, saving customers 30 seconds per checkout; optimisation led to an improved Customer Conversion Rate, reduced Cart Abandonment, and increased Average Order Value for a global customer base",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Revamped the checkout flow to save 30 seconds per purchase, lifting Conversion Rate and Average Order Value while reducing Cart Abandonment across a global customer base"
+        },
+        {
+          "label": "metrics-forward",
+          "text": "Improved Conversion Rate and Average Order Value and cut Cart Abandonment for a global customer base by rebuilding checkout to save 30 seconds per purchase"
+        },
+        {
+          "label": "ops-forward",
+          "text": "Removed 30 seconds of friction per checkout by rebuilding the flow, improving Conversion Rate and Average Order Value and cutting Cart Abandonment for a global customer base"
+        }
+      ],
+      "tags": [
+        "conversion",
+        "growth",
+        "metrics-kpi",
+        "customer-facing",
+        "backend",
+        "engineering",
+        "experimentation"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "The e-commerce / consumer-funnel bullet. Essential for marketplace, payments, retail, growth roles. Long - use 'short' variant when space is tight."
+    },
+    {
+      "id": "touchnote-new-revenue",
+      "roleId": "touchnote-be",
+      "text": "Drove business expansion by collaborating with the Product team to identify and launch a new e-commerce platform feature, establishing a new revenue stream of $25K+/month, rolled out across United Kingdom",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Identified and launched a new e-commerce feature with the Product team, opening a $25K+/month revenue stream across the United Kingdom"
+        },
+        {
+          "label": "revenue-forward",
+          "text": "Opened a $25K+/month revenue stream by identifying and launching a new e-commerce platform feature with the Product team, rolled out across the United Kingdom"
+        }
+      ],
+      "tags": [
+        "growth",
+        "revenue",
+        "launch",
+        "cross-functional",
+        "gtm",
+        "product-management"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": ""
+    },
+    {
+      "id": "eleven01-mvp",
+      "roleId": "eleven01-dev",
+      "text": "Architected the foundational blockchain MVP and strategic product roadmap as a founding member, while establishing the core cultural values and operational standards required to scale the technical organisation",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Architected the foundational blockchain MVP and product roadmap as a founding member, setting the cultural values and operational standards used to scale the technical organisation"
+        },
+        {
+          "label": "zero-to-one",
+          "text": "Took a blockchain platform from zero to MVP as a founding member, owning the technical architecture, product roadmap, and the operating standards the organisation scaled on"
+        }
+      ],
+      "tags": [
+        "founding",
+        "zero-to-one",
+        "blockchain",
+        "product-strategy",
+        "roadmap",
+        "hiring-culture",
+        "scaling-ops",
+        "engineering",
+        "ambiguity"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true,
+      "notes": "The startup / 0-to-1 credibility bullet. Lead with it for early-stage companies."
+    },
+    {
+      "id": "eleven01-ico",
+      "roleId": "eleven01-dev",
+      "text": "Led a 10+ member team to develop multiple differentiating features for the Eleven01 blockchain, culminating in an Initial Coin Offering",
+      "variants": [
+        {
+          "label": "grammar-fixed",
+          "text": "Led a 10+ member team to build the differentiating features of the Eleven01 blockchain, culminating in an Initial Coin Offering"
+        },
+        {
+          "label": "people-forward",
+          "text": "Led a 10+ member team through the build of the Eleven01 blockchain's differentiating features, culminating in an Initial Coin Offering"
+        },
+        {
+          "label": "launch-forward",
+          "text": "Shipped the differentiating features of the Eleven01 blockchain with a 10+ member team, culminating in an Initial Coin Offering"
+        }
+      ],
+      "tags": [
+        "team-leadership",
+        "people-management",
+        "blockchain",
+        "launch",
+        "engineering"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Corrected in place (was 'a Initial'). The 'grammar-fixed' variant is retained as an alias."
+    },
+    {
+      "id": "amantya-ios-retail",
+      "roleId": "amantya-swe",
+      "text": "Boosted footfall and sales for brick-and-mortar retailers by 10% by developing an iOS app; sending hyper-local and personalised offers to users within a shopping mall",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Lifted footfall and sales 10% for brick-and-mortar retailers by building an iOS app that pushed hyper-local, personalised offers to shoppers inside a mall"
+        },
+        {
+          "label": "growth-forward",
+          "text": "Drove a 10% lift in footfall and sales for brick-and-mortar retailers with an iOS app delivering hyper-local, personalised offers to shoppers in-mall"
+        }
+      ],
+      "tags": [
+        "mobile",
+        "growth",
+        "customer-facing",
+        "engineering",
+        "conversion"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Note: this bullet sits under Amantya (a 5G/IoT telecom firm) while the IoT-deployment bullet sits under Cognizant. Worth double-checking they are not swapped."
+    },
+    {
+      "id": "cognizant-deploy-automation",
+      "roleId": "cognizant-assoc",
+      "text": "Built automation to bring down platform deployment time of complex IoT solution from 5–6 days to 1 hour by leading a cross-team initiative to build a deployment platform",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Cut deployment time for a complex IoT solution from 5–6 days to 1 hour by leading a cross-team initiative to build a deployment automation platform"
+        },
+        {
+          "label": "ops-forward",
+          "text": "Led a cross-team initiative that automated platform deployment for a complex IoT solution, collapsing a 5-6 day manual process into 1 hour"
+        }
+      ],
+      "tags": [
+        "automation",
+        "process-improvement",
+        "cloud-infra",
+        "cross-functional",
+        "engineering",
+        "ops-execution"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true,
+      "notes": "Strong efficiency/automation number. Great for ops roles. 'IOT' corrected to 'IoT'."
+    },
+    {
+      "id": "everhaus-operating-model",
+      "roleId": "everhaus-psm",
+      "text": "Defined the AI-first operating model for a founding team, up and running in 2 months instead of 6 and reaching a demo product and investor conversations far sooner",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Stood up an AI-first operating model in 2 months instead of 6, reaching a demo product and investor conversations far sooner"
+        },
+        {
+          "label": "ops-forward",
+          "text": "Built the operating model that lets non-technical founders run engineering — progress tracked in Notion, requests raised in Linear, delivery by AI coding agents — cutting setup from 6 months to 2"
+        },
+        {
+          "label": "investor-forward",
+          "text": "Cut the team's path to a demo product and investor conversations from 6 months to 2 by designing an AI-first operating model around Notion, Linear and AI coding agents"
+        }
+      ],
+      "tags": [
+        "product-ops",
+        "scaling-ops",
+        "process-improvement",
+        "zero-to-one",
+        "founding",
+        "cross-functional",
+        "ai-ml"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Default is 2 lines by choice - the fuller \"Defined... for a founding team\" opening is preferred over the terser one-liner. Use the \"short\" variant (1 line) when the page is tight. COLLIDES with nutanix-ai-workflow (AI tooling -> faster delivery): \"operating model / founding team / investors\" vs Nutanix \"optimized an existing workflow, 50%/20%\" is what keeps them distinct. Avoid \"operational standards\" here - that belongs to eleven01-mvp.",
+      "createdAt": "2026-08-07T09:32:01.004Z",
+      "updatedAt": "2026-08-07T09:46:10.624Z"
+    },
+    {
+      "id": "valeo-cost-diagnosis",
+      "roleId": "valeo-intern",
+      "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers, building the financial analysis that framed the cost problem",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers"
+        },
+        {
+          "label": "analysis-forward",
+          "text": "Ran the financial analysis isolating why fleet operating cost rose 18% while revenue stayed flat, naming each underlying driver"
+        },
+        {
+          "label": "cursor-forward",
+          "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers, building the financial analysis in Cursor"
+        }
+      ],
+      "tags": [
+        "data-analysis",
+        "metrics-kpi",
+        "research",
+        "strategy-consulting",
+        "ops-execution",
+        "pricing"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "The only point covering data-analysis and pricing — both were zero-coverage gaps, and data-analysis was the top ask in the Product Ops JD. Almost always include. 'cursor-forward' names the tool: Parag confirmed on 2026-09-02 that the financial analysis was run in Cursor. Same finding as the base text, one line, no new number - use it where AI fluency is being signalled, the same way valeo-route-app uses 'ai-forward'.",
+      "createdAt": "2026-08-07T13:32:38.503Z"
+    },
+    {
+      "id": "valeo-cost-strategy",
+      "roleId": "valeo-intern",
+      "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Developed two strategies to cut fleet cost by up to 30%, including a three-hub network that shortens distance driven per order"
+        },
+        {
+          "label": "consulting-forward",
+          "text": "Sized two levers to cut fleet cost by up to 30% — merging the two verticals and moving to a three-hub network — against the measured cost drivers"
+        },
+        {
+          "label": "cursor-forward",
+          "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order, sizing the saving from each in Cursor"
+        }
+      ],
+      "tags": [
+        "strategy-consulting",
+        "process-improvement",
+        "scaling-ops",
+        "ops-execution",
+        "prioritization",
+        "influence"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Pairs naturally with valeo-cost-diagnosis (diagnosis then recommendation). Phrased as proposed, not delivered - keep it that way unless the saving has actually landed. 'cursor-forward' is the base text verbatim plus the sizing method: Parag confirmed on 2026-09-02 that the saving from each strategy was sized in Cursor. Still 2 lines, still phrased as proposed rather than delivered.",
+      "createdAt": "2026-08-07T13:32:38.522Z"
+    },
+    {
+      "id": "valeo-route-app",
+      "roleId": "valeo-intern",
+      "text": "Learned how the operation ran from the people running it, then specified and prototyped the route-optimisation app they needed — 100% adoption in one week",
+      "variants": [
+        {
+          "label": "ai-forward",
+          "text": "Specified and prototyped the route-optimisation app the operations team needed, building it end-to-end with AI, reaching 100% adoption in one week"
+        },
+        {
+          "label": "short",
+          "text": "Prototyped a route-optimisation app with the operations team and drove it to 100% adoption in one week"
+        },
+        {
+          "label": "adoption-forward",
+          "text": "Drove a route-optimisation app to 100% adoption by the operations team within one week of putting the prototype in their hands"
+        },
+        {
+          "label": "digitisation-forward",
+          "text": "Digitised fleet operations with a route-optimisation app specified alongside the operations team, reaching 100% adoption within one week"
+        }
+      ],
+      "tags": [
+        "product-management",
+        "discovery",
+        "cross-functional",
+        "launch",
+        "zero-to-one",
+        "influence",
+        "automation",
+        "ops-execution"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "The discovery -> spec -> prototype -> adoption story, and the only point proving a tool actually landed with users. Overlaps everhaus-roadmap and touchnote-new-revenue on product tags but shares no wording with either - different stories, safe to run together. Naming the ops team size (\"all N dispatchers\") would make the 100% land harder. 'ai-forward' names the AI build method — use where AI fluency is being signalled.",
+      "createdAt": "2026-08-07T13:32:38.531Z",
+      "updatedAt": "2026-08-07T13:55:37.741Z"
+    }
+  ]
+}

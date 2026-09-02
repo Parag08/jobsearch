@@ -1,0 +1,112 @@
+{
+  "id": "archetype-consulting",
+  "company": "",
+  "role": "Management Consulting — base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-08-29T05:54:59.052Z",
+  "updatedAt": "2026-09-02T07:07:49.709Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "consulting",
+    "at": "2026-09-02T07:07:49.709Z",
+    "evidence": [
+      {
+        "id": "seed-consulting",
+        "kind": "seed",
+        "weight": 1
+      },
+      {
+        "id": "bcg-consultant-singapore",
+        "kind": "jd",
+        "weight": 1
+      }
+    ],
+    "fingerprint": "51b0a64d"
+  },
+  "notes": "GENERATED from archetype \"consulting\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 50% of it is still Claude's prior rather than a real posting. \nThe differentiator is Valeo: a diagnosis then a sized recommendation, which is the consulting arc in two bullets. Engineering depth is the second story, not the first. Pinned nutanix-sales-acv against the ranking: the corpus scores it 32 because BCG boilerplate never says \"revenue\", but $40-50M ACV is the biggest number he has and commercial impact is what a consulting reader is scanning for. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. 2026-09-02, AI fluency: the page had no AI in any bullet - the scorer trimmed nutanix-ai-workflow (fit 25) and everhaus-roadmap (fit 33) for space, and no consulting JD in the corpus says \"AI\", so the ranking will never surface it on its own. Pinned nutanix-ai-workflow and everhaus-operating-model [short] against the ranking, and forced valeo-route-app to ai-forward, which is the only bullet stating he built something end-to-end with AI. Paid for the three added lines by forcing cognizant-deploy-automation to ops-forward and excluding amantya-ios-retail - s3, 2018, and the weakest bullet on the page for a consulting reader (note this drops the Amantya org entirely, leaving 2018 uncovered between Cognizant and Eleven01). Cursor added to add-tech on Parag's word in conversation - it is not in points.json and no bullet claims it. Forced both Valeo cost bullets to cursor-forward once Parag confirmed the financial analysis and the per-strategy saving were both worked out in Cursor - this is what backs Cursor in add-tech, which until then rested on nothing on the page. Costs no lines: diagnosis was already shortened to 1 line and cursor-forward is 1 line, strategy was 2 lines and cursor-forward is the same text plus the sizing clause. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": "ops-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "cursor-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-strategy",
+        "variant": "cursor-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-route-app",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-roadmap",
+        "variant": "ai-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "grammar-fixed",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-new-revenue",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "ops-forward",
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Structured Problem Solving | Financial and Data Analysis | AI-Assisted Delivery | Executive Stakeholder Management | Project Management | Leadership",
+      "add-tech": "AI | Cursor | MCP | Automation and Scripting | Hybrid Multi-Cloud | Blockchain | Kubernetes"
+    }
+  }
+}

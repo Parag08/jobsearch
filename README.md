@@ -26,8 +26,19 @@ Copy `.env.example` to `.env.local` and fill in keys (Supabase, LLM providers, j
 ## Database
 The canonical data model is **`supabase/schema.sql`** - a single drop-and-recreate file while the project has no live data. Run it in the Supabase SQL editor to (re)build the schema. See CLAUDE.md for the migration policy.
 
+## CV data
+`data/cvbuilder/` holds the CV corpus - profile, the bullet pool with its re-angled variants, the tagging taxonomy, the role-family archetypes and every application built from them. It is the source of truth; edit it there and rebuild:
+
+```bash
+npm run seed:build   # data/cvbuilder -> supabase/seed.sql (upserts, safe to re-run)
+npm run db:apply     # schema.sql
+npm run db:seed      # seed.sql   (the owner must have signed in once)
+```
+Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=you@example.com npm run seed:build` seeds a different owner.
+
 ## Repo guide
 - `lib/` - pure, fully-tested domain layer (start here)
+- `lib/import/` - CVbuilder -> JobPilot transform and the seed-SQL generator
 - `lib/adapters/` - provider boundaries: LLM routing (small vs premium tier), job-feed mappers
 - `app/` - Next.js shell (UI lands after Supabase wiring)
 - `docs/SPEC.md` - full product spec · `docs/MEMORY.md` - work log · `CLAUDE.md` - project memory & rules
