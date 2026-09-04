@@ -2,6 +2,32 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state.
 
+## 2026-09-04 - Session 5: re-sync after the Bain applications
+
+**Done**
+- Re-synced `data/cvbuilder/` from the CVbuilder project (Parag worked in it 09-03/09-04), rebuilt `supabase/seed.sql`, applied it. Live DB now: **23 bullets, 5 applications, 5 application CVs, 3 sectors** (was 20/3/3/2). 112 tests green, tsc clean.
+- What actually changed in the corpus: **3 new points** (`nutanix-move-diligence` s5 - the Move technical due diligence, 400+ critical security risks to 20 and 500+ licence risks to zero; `valeo-cost-buyin` s4 - CEO/ops-leadership approval; `nutanix-vp-roadmap` s4 - the six-month roadmap presented with the VP), **2 new applications** (Bain TIG + Bain general consulting), a reordered Eleven01 title, and a rewritten consulting-archetype note. Everything else was line-ending noise.
+
+**The editorial learnings the CV work produced** (they live in CVbuilder's `notes` fields, not in its CLAUDE.md, which has not changed since 08-29):
+- **Standing instruction: Valeo and EverHaus are capped at two points each** - an internship and a part-time role must not outweigh the full-time ones. This forced `valeo-cost-buyin` to carry an `overrideText` merging the 30% recommendation with the CEO approval on both Bain CVs.
+- **Naming a tool is a factual claim.** add-tech now leads with "Claude" (not generic "AI") because Cursor was confirmed to be running Claude on the Valeo work - deliberately aimed at McKinsey, which deploys Claude. The Nutanix/EverHaus AI bullets were left alone: not confirmed as Claude, so naming it there would be invention.
+- **ATS pass-through:** "Generative AI Tools (Claude, Cursor)" was added to the Skills line as well as Technologies, so a keyword scan of Skills alone still hits.
+- **A gap closed:** the Skills line can now honestly claim Technology Due Diligence - before `nutanix-move-diligence` it could not, and deliberately did not.
+- **Open gap:** no French, so Bain **Montreal** may be a hard filter. Worth checking before applying there.
+- `nutanix-vp-roadmap` is in the pool but deliberately off both Bain pages (collides with `nutanix-sales-acv`).
+
+**Two import bugs this surfaced, both fixed**
+- `savedAt` fell back to the wall clock for applications CVbuilder never re-saved (only microsoft-*.json today), so `seed.sql` differed on every rebuild and the committed-seed guard failed a day later. Now falls back to `UNDATED_FALLBACK_DATE`; `ImportOptions.today` is optional and the script no longer passes the clock.
+- `seed:build` re-derived the workspace owner from `profile.json`, which lists the INSEAD address first - but the auth.users row is the gmail one. A plain rebuild silently retargeted the seed at a non-existent account (it aborted cleanly). The existing seed's owner now outranks the profile.
+
+**Known-wrong, left as data**
+- `bain-tig-consultant` imports as role family **product-strategy**; it is a consulting role. The importer only trusts a family when an archetype claims the posting as evidence, and no archetype does - so it guessed and warned. Fix at source: add both Bain JDs (and BCG/Microsoft) as `fromApplication` evidence in CVbuilder's `data/archetypes.json`, rebuild the base CV, re-sync. That also lets the consulting archetype learn from two real MBB JDs instead of leaning on its seed.
+
+**Next**
+1. Wire the API routes to a real Supabase client (unchanged, still the biggest gap).
+2. Bain evidence fix above (asked Parag; not done unilaterally - it regenerates a curated base CV).
+3. When CV tailoring gets built here, `selectBullets` needs the per-org cap the CVbuilder work relies on; it currently has no notion of one.
+
 ## 2026-09-02 - Session 3: CVbuilder data import
 
 **Done**

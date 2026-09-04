@@ -1,0 +1,99 @@
+{
+  "id": "bain-consultant-general",
+  "company": "Bain & Company",
+  "role": "Consultant (General Consulting)",
+  "reference": "",
+  "jd": "Consultant, Bain & Company (General Consulting)\n\nWHO YOU'LL WORK WITH:\n\nImagine a role that builds on your academic and personal capabilities, providing the most interesting business challenges and the opportunity to tackle them with the brightest and most supportive peer group. A role where you'll make an impact from day one and be set on a global career path that will maximize your future career potential.\n\nWe have a long tradition of solving the most challenging problems with notable industry leaders and our consultants are the linchpins of this success. If you're an ambitious individual who enjoys working with the brightest, most curious minds then we'd love you to join our team.\n\nWHAT YOU'LL DO:\n\nAs a Bain consultant, your analytical, interpersonal, creative thinking, business management and leadership skills will be called upon from day one. You will be in the thick of the action as you work side-by-side with some of the best in the business. And you will help create change.\n\nEvery day is different but a sample of the things you can expect to accomplish include:\n\nResearch the client organization and industry; interview, conduct focus groups and facilitate workshops with client employees, management teams and other stakeholders\nIdentify issues, create hypotheses and execute analysis; translate data into meaningful insights; present recommendations to key decision makers\nMove the client to action; develop a plan to implement the strategic recommendations; manage the execution\nBe a mentor to junior team members\n\nThe learning curve is steep and the rewards - global travel, influential connections, world-class global training, personal satisfaction, unparalleled career-development, and, yes, financial - are second to none.\n\nGiven the workload and performance expectations of this position, consultants are regularly required to work more than 50 hours/week to perform essential duties of the job.\n\nABOUT YOU:\n\nMBA from a top business school; MDs, JDs, PhDs and experienced professionals are also encouraged to apply\nExperience in consulting, a start-up or other business environment beneficial, but not required\nA solid team player who's also an independent thinker\nA robust analytical skillset, endless curiosity and a penchant to think the impossible\nMust be deadline driven, organized and able to multi-task\nStrong verbal, written and presentation skills are important\nFluency in English\nAny additional language and visa requirements for the office you wish to join\n\nWHAT MAKES US A GREAT PLACE TO WORK\n\nWe are proud to be consistently recognized as one of the world's best places to work. We are currently the top-ranked consulting firm on Glassdoor's Best Places to Work list and have earned the #1 overall spot a record seven times. Extraordinary teams are at the heart of our business strategy, but these don't happen by chance. They require intentional focus on bringing together a broad set of backgrounds, cultures, experiences, perspectives, and skills in a supportive and inclusive work environment. We hire people with exceptional talent and create an environment in which every individual can thrive professionally and personally.",
+  "pageSize": "original",
+  "scale": 1,
+  "selection": {
+    "points": [
+      {
+        "pointId": "insead-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-mentoring",
+        "variant": "people-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "iitj-ignus",
+        "variant": "ops-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "cursor-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-buyin",
+        "variant": null,
+        "overrideText": "Won CEO and operations-leadership approval for two strategies to cut fleet cost by up to 30%, making the case on the KPIs they move today and the returns that compound with scale"
+      },
+      {
+        "pointId": "everhaus-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "everhaus-operating-model",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-move-diligence",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-sales-acv",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-team-budget",
+        "variant": "people-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-files-migration",
+        "variant": "customer-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-mvp",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-ico",
+        "variant": "launch-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "cognizant-deploy-automation",
+        "variant": "short",
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Hypothesis-Led Problem Solving | Quantitative & Qualitative Analysis | Executive Stakeholder Management | Team Leadership & Mentoring | Project Management | Generative AI Tools (Claude, Cursor)",
+      "add-tech": "Claude | Cursor | MCP | Enterprise, Infrastructure & Cloud Software | Kubernetes | Blockchain | Automation"
+    }
+  },
+  "updatedAt": "2026-09-04T07:45:00.282Z",
+  "notes": "Tailored for the Bain general Consultant role (post-MBA, generalist strategy). Sister application to bain-tig-consultant.json - same firm, different practice, deliberately different argument.\n\nThe scorer is close to useless on this JD: it is short on concrete vocabulary, so everything below the Valeo/EverHaus block clusters at 2-3 and the ranking carries almost no information. Built on judgement and stated here so it can be argued with.\n\nThe spine is the Valeo consulting arc, because this JD describes it almost line by line: \"identify issues, create hypotheses and execute analysis\" is valeo-cost-diagnosis, \"present recommendations to key decision makers\" and \"move the client to action\" is valeo-cost-buyin. Valeo is capped at two points per Parag standing instruction that internship and part-time roles must not outweigh the full-time ones, so valeo-cost-buyin carries the overrideText merging the 30% recommendation with the CEO approval - same merge as the TIG CV, same reasoning.\n\nDifferences from the TIG CV, all deliberate: nutanix-move-diligence is on the default (2-line) wording rather than leading the page, since generalist consulting reads it as structured investigation rather than as the core service; nutanix-ai-workflow is IN (process improvement and execution, which this JD asks for and the TIG JD did not); everhaus-operating-model replaces everhaus-roadmap, because \"develop a plan to implement the strategic recommendations; manage the execution\" is an operating-model story rather than a product-roadmap one; touchnote-checkout stays for the KPI vocabulary. iitj-mentoring is pinned against its low score because \"Be a mentor to junior team members\" is a stated responsibility, and nutanix-team-budget is on people-forward (\"Led and developed\") for the same reason.\n\nSkills leads with hypothesis-led problem solving rather than technology due diligence - the TIG framing would misfire here. Technologies is unchanged and kept short; it is differentiation on a generalist CV, not the argument.\n\nNo em-dashes render on this page (checked): Parag does not want them. The en-dash in Cognizant’s \"5-6 days\" is a numeric range, which is correct typography and not the same character.\n\nGAP for the Montreal office specifically: no French. Languages are English, Hindi and Spanish (beginner). The JD asks for \"any additional language requirements for the office you wish to join\", so Montreal may be a hard filter - worth checking before applying there rather than to an English-language office."
+}

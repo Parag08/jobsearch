@@ -9,7 +9,8 @@ JobPilot: a personal job-search operating system, built first for Parag (target:
 ## Non-negotiable design rules
 1. **TDD.** Red -> green -> refactor. No domain code without a failing test first. Tests live next to code: `lib/**/*.test.ts`, run with `npm test`.
 2. **Token economy** (spec section 6). Parse once and store structured JSON; rules/lexical matching before LLM calls; prompts carry IDs + compact summaries, never documents; CV tailoring emits a diff from the master, not a regenerated CV; model routing via `lib/adapters/llm.ts` (small tier for extraction, premium only for polish/outreach); every LLM call logged to token_ledger.
-3. **Honesty rule.** A CV never mirrors a JD keyword unless it is evidenced in the bullet bank (`buildDiff` enforces this - keep it that way).
+3. **Honesty rule.** A CV never mirrors a JD keyword unless it is evidenced in the bullet bank (`buildDiff` enforces this - keep it that way). Naming a specific tool, firm or method is itself a claim: it needs a bullet behind it, not a plausible inference (the CVbuilder notes in `data/cvbuilder/` are full of worked examples).
+   Two selection rules the CV work relies on that this codebase does NOT yet implement - honour them when tailoring lands: **cap points per org** (Parag's standing instruction: Valeo and EverHaus get at most two each, so an internship and a part-time role never outweigh the full-time ones), and **prefer a short variant over cutting a bullet** when a page runs long.
 4. **Generic multi-user.** Personal facts (INSEAD, Singapore) are DATA, never schema or code constants. Every table has user_id + RLS.
 5. **Free-first.** $0 defaults (Gemini/Groq free tiers, Supabase free, Adzuna/Jooble free feeds); paid components opt-in and swappable behind adapters.
 
