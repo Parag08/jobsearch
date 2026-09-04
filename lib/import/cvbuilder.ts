@@ -160,9 +160,21 @@ export interface ImportedWorkspace {
 export interface ImportOptions {
   /** auth.users id this workspace belongs to. */
   userId: string;
-  /** ISO date used wherever CVbuilder has no timestamp of its own. */
-  today: string;
+  /**
+   * ISO date used wherever CVbuilder has no timestamp of its own. Defaults to
+   * UNDATED_FALLBACK_DATE deliberately: feeding the clock in here makes
+   * seed.sql differ on every rebuild, which broke the committed-seed guard in
+   * real-data.test.ts two days after the first import.
+   */
+  today?: string;
 }
+
+/**
+ * Stand-in date for CVbuilder files that never recorded one - an application
+ * saved once and never re-saved (microsoft-*.json is the only one today).
+ * The day this workspace was first imported.
+ */
+export const UNDATED_FALLBACK_DATE = "2026-09-02";
 
 /** Role family for bullets and CVs no archetype claims. */
 const GENERAL = "general";
@@ -434,7 +446,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
       location,
     };
 
-    const savedAt = (file.updatedAt ?? opts.today).slice(0, 10);
+    const savedAt = (file.updatedAt ?? opts.today ?? UNDATED_FALLBACK_DATE).slice(0, 10);
     const master = masterByFamily.get(roleFamily) ?? generalMaster ?? null;
     const selection = resolveSelection(file.id);
     let cv: StoredApplicationCv | null = null;
@@ -466,7 +478,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
         nextAction: "Imported from CVbuilder - confirm whether this was submitted, then advance the stage",
         savedAt,
         appliedAt: null,
-        updatedAt: file.updatedAt ?? `${opts.today}T00:00:00.000Z`,
+        updatedAt: file.updatedAt ?? `${opts.today ?? UNDATED_FALLBACK_DATE}T00:00:00.000Z`,
       }),
       jdRaw: file.jd,
       cv,

@@ -26,10 +26,9 @@ const source = {
   applications: applicationFiles.map((f) => readJson("applications", f)),
 };
 
-const ws = importCvbuilder(source, {
-  userId: "00000000-0000-0000-0000-000000000000",
-  today: "2026-09-02",
-});
+// No `today`: the import must be reproducible, or the committed-seed guard
+// below would fail on any day other than the one seed.sql was built on.
+const ws = importCvbuilder(source, { userId: "00000000-0000-0000-0000-000000000000" });
 const bullets: Bullet[] = ws.projects.flatMap((p) => p.bullets);
 
 describe("the real CVbuilder workspace", () => {
@@ -67,10 +66,15 @@ describe("the real CVbuilder workspace", () => {
   });
 
   it("imports the real applications with an extract and the CV that was built", () => {
-    expect(ws.applications.map((a) => a.application.company).sort()).toEqual([
-      "BCG (Boston Consulting Group)",
-      "Microsoft",
-      "Tiktok",
+    // Two Bain roles at the same firm, deliberately different CVs (TIG vs general).
+    expect(
+      ws.applications.map((a) => `${a.application.company} - ${a.application.role}`).sort(),
+    ).toEqual([
+      "BCG (Boston Consulting Group) - Consultant, Singapore (Post-MBA)",
+      "Bain & Company - Consultant (General Consulting)",
+      "Bain & Company - Consultant, Technology Insights Group (TIG)",
+      "Microsoft - Regional Partner Development Manager, Singapore",
+      "Tiktok - Product Manager Project Intern (TikTok Live-Ecosystem Governance)",
     ]);
     for (const { application, jdRaw, cv } of ws.applications) {
       expect(jdRaw.length).toBeGreaterThan(0);
@@ -85,8 +89,19 @@ describe("the real CVbuilder workspace", () => {
   });
 
   it("flags the postings no archetype claims instead of silently guessing", () => {
-    // Microsoft is the one JD not wired into archetypes.json as evidence.
-    expect(ws.warnings.join("\n")).toMatch(/microsoft.*role family guessed/i);
+    // A posting only gets its role family from the corpus once it is evidence in
+    // archetypes.json. These three are not, so the family is a taxonomy guess -
+    // and the Bain TIG guess is demonstrably wrong (product-strategy, for a
+    // consulting role). Warned rather than silently trusted; see docs/MEMORY.md.
+    const unclaimed = ws.warnings
+      .filter((w) => /role family guessed/.test(w))
+      .map((w) => w.match(/"([^"]+)"/)?.[1])
+      .sort();
+    expect(unclaimed).toEqual([
+      "bain-consultant-general",
+      "bain-tig-consultant",
+      "microsoft-regional-partner-development-manager",
+    ]);
     expect(ws.warnings.filter((w) => !/role family guessed/.test(w))).toEqual([]);
   });
 

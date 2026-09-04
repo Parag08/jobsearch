@@ -5,12 +5,12 @@
   "reference": "",
   "jd": "",
   "createdAt": "2026-08-29T05:54:59.052Z",
-  "updatedAt": "2026-09-02T07:07:49.709Z",
+  "updatedAt": "2026-09-03T09:39:31.159Z",
   "pageSize": "original",
   "scale": 1,
   "generatedFrom": {
     "archetype": "consulting",
-    "at": "2026-09-02T07:07:49.709Z",
+    "at": "2026-09-03T09:39:31.159Z",
     "evidence": [
       {
         "id": "seed-consulting",
@@ -25,7 +25,7 @@
     ],
     "fingerprint": "51b0a64d"
   },
-  "notes": "GENERATED from archetype \"consulting\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 50% of it is still Claude's prior rather than a real posting. \nThe differentiator is Valeo: a diagnosis then a sized recommendation, which is the consulting arc in two bullets. Engineering depth is the second story, not the first. Pinned nutanix-sales-acv against the ranking: the corpus scores it 32 because BCG boilerplate never says \"revenue\", but $40-50M ACV is the biggest number he has and commercial impact is what a consulting reader is scanning for. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. 2026-09-02, AI fluency: the page had no AI in any bullet - the scorer trimmed nutanix-ai-workflow (fit 25) and everhaus-roadmap (fit 33) for space, and no consulting JD in the corpus says \"AI\", so the ranking will never surface it on its own. Pinned nutanix-ai-workflow and everhaus-operating-model [short] against the ranking, and forced valeo-route-app to ai-forward, which is the only bullet stating he built something end-to-end with AI. Paid for the three added lines by forcing cognizant-deploy-automation to ops-forward and excluding amantya-ios-retail - s3, 2018, and the weakest bullet on the page for a consulting reader (note this drops the Amantya org entirely, leaving 2018 uncovered between Cognizant and Eleven01). Cursor added to add-tech on Parag's word in conversation - it is not in points.json and no bullet claims it. Forced both Valeo cost bullets to cursor-forward once Parag confirmed the financial analysis and the per-strategy saving were both worked out in Cursor - this is what backs Cursor in add-tech, which until then rested on nothing on the page. Costs no lines: diagnosis was already shortened to 1 line and cursor-forward is 1 line, strategy was 2 lines and cursor-forward is the same text plus the sizing clause. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "notes": "GENERATED from archetype \"consulting\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 50% of it is still Claude's prior rather than a real posting. \nThe differentiator is Valeo: a diagnosis then a sized recommendation, which is the consulting arc in two bullets. Engineering depth is the second story, not the first. Pinned nutanix-sales-acv against the ranking: the corpus scores it 32 because BCG boilerplate never says \"revenue\", but $40-50M ACV is the biggest number he has and commercial impact is what a consulting reader is scanning for. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. 2026-09-02, AI fluency: the page had no AI in any bullet - the scorer trimmed nutanix-ai-workflow (fit 25) and everhaus-roadmap (fit 33) for space, and no consulting JD in the corpus says \"AI\", so the ranking will never surface it on its own. Pinned nutanix-ai-workflow and everhaus-operating-model [short] against the ranking, and forced valeo-route-app to ai-forward, which is the only bullet stating he built something end-to-end with AI. Paid for the three added lines by forcing cognizant-deploy-automation to ops-forward and excluding amantya-ios-retail - s3, 2018, and the weakest bullet on the page for a consulting reader (note this drops the Amantya org entirely, leaving 2018 uncovered between Cognizant and Eleven01). Cursor added to add-tech on Parag's word in conversation - it is not in points.json and no bullet claims it. Forced both Valeo cost bullets to cursor-forward once Parag confirmed the financial analysis and the per-strategy saving were both worked out in Cursor - this is what backs Cursor in add-tech, which until then rested on nothing on the page. Costs no lines: diagnosis was already shortened to 1 line and cursor-forward is 1 line, strategy was 2 lines and cursor-forward is the same text plus the sizing clause. 2026-09-03, naming Claude for MBB: Parag confirmed Cursor was specifically running Claude for the Valeo cost work, so add-tech now leads with \"Claude\" instead of the generic \"AI\" - a real, checkable fact rather than a buzzword, and a deliberate signal for McKinsey given its own Claude deployment. The two cursor-forward bullet texts (in points.json) now say \"with Claude\" for the same reason. Left the Nutanix/EverHaus AI bullets (nutanix-ai-workflow, everhaus-roadmap, everhaus-operating-model) unchanged - those don't name a tool and weren't confirmed as Claude specifically, so naming it there would be exactly the kind of invented claim this file exists to prevent. Reverted 'with Claude' on valeo-cost-diagnosis (in points.json) after Parag flagged it pushed the bullet to a wasteful two-word second line - the strategy bullet right after it already runs two lines and absorbs 'with Claude' for free, so Claude is still on the page twice (that bullet + add-tech) without the wrapping cost. 2026-09-03, ATS pass-through: added 'Generative AI Tools (Claude, Cursor)' to add-skills alongside 'AI-Assisted Delivery' so an ATS keyword scan on the Skills field itself catches Generative AI / Claude / Cursor, not just the Technologies field. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
   "selection": {
     "points": [
       {
@@ -105,8 +105,8 @@
       }
     ],
     "additionalOverrides": {
-      "add-skills": "Structured Problem Solving | Financial and Data Analysis | AI-Assisted Delivery | Executive Stakeholder Management | Project Management | Leadership",
-      "add-tech": "AI | Cursor | MCP | Automation and Scripting | Hybrid Multi-Cloud | Blockchain | Kubernetes"
+      "add-skills": "Structured Problem Solving | Financial and Data Analysis | AI-Assisted Delivery | Generative AI Tools (Claude, Cursor) | Executive Stakeholder Management | Project Management | Leadership",
+      "add-tech": "Claude | Cursor | MCP | Automation and Scripting | Hybrid Multi-Cloud | Blockchain | Kubernetes"
     }
   }
 }

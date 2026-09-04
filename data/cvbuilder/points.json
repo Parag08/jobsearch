@@ -519,7 +519,7 @@
       "strength": 5,
       "status": "active",
       "inMaster": false,
-      "notes": "The only point covering data-analysis and pricing — both were zero-coverage gaps, and data-analysis was the top ask in the Product Ops JD. Almost always include. 'cursor-forward' names the tool: Parag confirmed on 2026-09-02 that the financial analysis was run in Cursor. Same finding as the base text, one line, no new number - use it where AI fluency is being signalled, the same way valeo-route-app uses 'ai-forward'.",
+      "notes": "The only point covering data-analysis and pricing — both were zero-coverage gaps, and data-analysis was the top ask in the Product Ops JD. Almost always include. 'cursor-forward' names the tool: Parag confirmed on 2026-09-02 that the financial analysis was run in Cursor. Same finding as the base text, one line, no new number - use it where AI fluency is being signalled, the same way valeo-route-app uses 'ai-forward'. 2026-09-03: Parag confirmed Cursor was running Claude specifically for this work. Tried adding \"with Claude\" to this variant, but it pushed the bullet to a wasteful two-word second line, so reverted to plain 'in Cursor' - the strategy bullet below carries the Claude mention instead, since it's already two lines and absorbs the extra words for free.",
       "createdAt": "2026-08-07T13:32:38.503Z"
     },
     {
@@ -537,7 +537,7 @@
         },
         {
           "label": "cursor-forward",
-          "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order, sizing the saving from each in Cursor"
+          "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order, sizing the saving from each in Cursor with Claude"
         }
       ],
       "tags": [
@@ -551,7 +551,7 @@
       "strength": 5,
       "status": "active",
       "inMaster": false,
-      "notes": "Pairs naturally with valeo-cost-diagnosis (diagnosis then recommendation). Phrased as proposed, not delivered - keep it that way unless the saving has actually landed. 'cursor-forward' is the base text verbatim plus the sizing method: Parag confirmed on 2026-09-02 that the saving from each strategy was sized in Cursor. Still 2 lines, still phrased as proposed rather than delivered.",
+      "notes": "Pairs naturally with valeo-cost-diagnosis (diagnosis then recommendation). Phrased as proposed, not delivered - keep it that way unless the saving has actually landed. 'cursor-forward' is the base text verbatim plus the sizing method: Parag confirmed on 2026-09-02 that the saving from each strategy was sized in Cursor. Still 2 lines, still phrased as proposed rather than delivered. 2026-09-03: Parag confirmed Cursor was running Claude specifically for this work, so 'cursor-forward' now names Claude too, same reasoning as valeo-cost-diagnosis.",
       "createdAt": "2026-08-07T13:32:38.522Z"
     },
     {
@@ -592,6 +592,89 @@
       "notes": "The discovery -> spec -> prototype -> adoption story, and the only point proving a tool actually landed with users. Overlaps everhaus-roadmap and touchnote-new-revenue on product tags but shares no wording with either - different stories, safe to run together. Naming the ops team size (\"all N dispatchers\") would make the 100% land harder. 'ai-forward' names the AI build method — use where AI fluency is being signalled.",
       "createdAt": "2026-08-07T13:32:38.531Z",
       "updatedAt": "2026-08-07T13:55:37.741Z"
+    },
+    {
+      "id": "valeo-cost-buyin",
+      "roleId": "valeo-intern",
+      "text": "Won CEO and operations-leadership approval for the strategies by showing the KPIs they move today and the returns that compound with scale",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Won CEO approval for the cost strategies by showing the KPIs they move today and the returns that compound with scale"
+        },
+        {
+          "label": "exec-forward",
+          "text": "Made the case to the CEO and operations leadership and secured approval, framing the strategies on the KPIs they move today and the returns that compound with scale"
+        }
+      ],
+      "tags": [
+        "influence",
+        "stakeholder-management",
+        "strategy-consulting",
+        "metrics-kpi",
+        "ops-execution"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Added 2026-09-04 from Parag: he presented the fleet-cost strategies to Valeo’s CEO and operations leadership and got them approved, arguing near-term KPI movement plus improving returns at scale. This is the third beat of the consulting arc — valeo-cost-diagnosis (diagnose) → valeo-cost-strategy (recommend) → this (sell it) — and the only point on the CV proving he has presented a recommendation at C-level. Deliberately says APPROVAL, not delivery: valeo-cost-strategy is still phrased as proposed, and the 30% saving has not been confirmed as landed. Do not merge into valeo-cost-strategy as a variant — the audience and the approval are new claims, not a re-angling.",
+      "createdAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-move-diligence",
+      "roleId": "nutanix-tl",
+      "text": "Owned the technical due diligence on Nutanix Move and worked with Legal and Compliance to take 400+ critical security risks down to 20 and 500+ licensing risks to zero",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Owned the technical due diligence on Nutanix Move, cutting 400+ security and 500+ licensing risks to 20 and zero"
+        },
+        {
+          "label": "risk-forward",
+          "text": "Took 400+ critical security risks to 20 and 500+ licensing risks to zero on Nutanix Move, owning the technical due diligence and the remediation with Legal and Compliance"
+        }
+      ],
+      "tags": [
+        "research",
+        "compliance",
+        "quality",
+        "engineering",
+        "cross-functional",
+        "data-migration"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Added 2026-09-04 from Parag. The single most valuable point in the pool for technology-diligence roles — it is a real technical due diligence with quantified findings and a remediation outcome, carrying the “research” tag whose taxonomy keywords include “due diligence”. Supersedes nutanix-code-standards on the engineering-quality axis; do not run both unless the page is roomy. ROLE UNCONFIRMED: filed under nutanix-tl because a security and licence review run with Legal and Compliance reads as lead-level, and nutanix-team-budget (also TL) already owns the Move/migration product — ask Parag to confirm it was not the MTS period. Numbers are his: 400+ critical security risks and 500+ licence risks, reduced to 20 and 0 respectively. 2026-09-04, wording chosen by Parag: default is now the \"Owned ... worked with Legal and Compliance\" phrasing, which pairs each risk count with its own outcome (400+ -> 20, 500+ -> 0) instead of collapsing them into \"20 and zero\". Names the product as Nutanix Move rather than \"the Move migration product\". The short variant is the 1-line fallback and knowingly drops the word \"critical\" and the Legal/Compliance partnership - use it only when the page is genuinely tight, because 400 CRITICAL findings is a materially stronger claim than 400 findings. Deliberately no percentage framing: 95%/100% would be derived from figures that are themselves approximate (400+, 500+).",
+      "createdAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-vp-roadmap",
+      "roleId": "nutanix-tl",
+      "text": "Built and presented the six-month roadmap alongside the VP, making the case for the customer growth and Annual Contract Value it would unlock",
+      "variants": [
+        {
+          "label": "exec-forward",
+          "text": "Presented the six-month roadmap with the VP, making the case for the customer growth and Annual Contract Value it would unlock"
+        },
+        {
+          "label": "growth-forward",
+          "text": "Made the growth case for the six-month roadmap alongside the VP, framing it on the customers it would win and the Annual Contract Value it would unlock"
+        }
+      ],
+      "tags": [
+        "influence",
+        "stakeholder-management",
+        "roadmap",
+        "product-strategy",
+        "growth",
+        "revenue"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Added 2026-09-04 from Parag: worked with a Nutanix VP to present the six-month roadmap and the growth/ACV case behind it. COLLIDES with nutanix-sales-acv — both are roadmap-to-ACV stories, so running them together repeats the argument; nutanix-sales-acv carries the $40–50M figure and this one deliberately does not, to avoid double-counting the same ACV. Prefer this one where executive communication is the ask and nutanix-sales-acv where the number is. Avoid the phrase “product roadmap” here — everhaus-roadmap owns it.",
+      "createdAt": "2026-09-04T00:00:00.000Z"
     }
   ]
 }
