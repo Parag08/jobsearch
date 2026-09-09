@@ -13,6 +13,14 @@ Keep this file updated at the end of every working session: what was done, decis
 - **`docs/DESIGN.md`** - one design doc for all four features (feature index, then a deep section
   each): onboarding (pointer to its own doc), JD -> cover letter + resume, STAR interview prep,
   company-targeted sourcing. Records seven decisions taken and eleven still open.
+- **Design system, chosen and written into `DESIGN.md` §5.** Palette **Heather** (muted periwinkle
+  `#6F6A96` on `#FBFAFC`), logo **Stages** (four rising dots = the pipeline, in `currentColor`),
+  Newsreader + IBM Plex Sans + IBM Plex Mono, no shadows, 3px radius. Governing principle: **rejection
+  is not a user error, so it is never red** - `lost`/`withdrawn`/`ghosted` are the ordinary arithmetic
+  of applying, and colouring them red makes the most common outcome the loudest thing on screen.
+  Closed is neutral taupe whatever the reason; the accent deepens with pipeline progress; only stale
+  (`#B5904F`, past 14 days) and follow-up-due earn colour. Three palettes and three marks were
+  proposed visually at `https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`.
 - **Renamed the product JobPilot -> JobSearch** (Parag's call: one name across repo, package and
   deploy). 24 occurrences, 12 files. Three deliberately NOT renamed - see below. seed.sql regenerated
   (`npm run seed:build`): only the two header comments and the raise-exception string moved, no data
