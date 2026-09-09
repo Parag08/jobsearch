@@ -1,0 +1,86 @@
+/* JobSearch design system - see docs/DESIGN.md section 5.
+   Palette: Heather. No shadows anywhere; 1px hairlines only.
+   Red is reserved for destructive confirmations and appears nowhere in this file. */
+
+:root {
+  --ground: #fbfafc;
+  --surface: #ffffff;
+  --ink: #2c2a33;
+  --ink-soft: #726f7c;
+  --ink-faint: #98959e;
+  --line: #e7e5ec;
+  --line-soft: #efeef3;
+  --accent: #6f6a96;
+  --accent-soft: #e3e0ec;
+  --stale: #b5904f;
+
+  --radius: 3px;
+  --measure: 34rem;
+  --motion: 120ms ease-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #17161b;
+    --surface: #1e1d24;
+    --ink: #e9e7ee;
+    --ink-soft: #aba8b5;
+    --ink-faint: #7e7b88;
+    --line: #2e2c36;
+    --line-soft: #24232b;
+    --accent: #a49ec6;
+    --accent-soft: #2c2938;
+    --stale: #c9a464;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

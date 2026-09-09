@@ -1,15 +1,33 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import "./globals.css";
+
+// docs/DESIGN.md section 5: a serif for words, a sans for work, a mono for data.
+const serif = Newsreader({ subsets: ["latin"], display: "swap", variable: "--font-serif" });
+const sans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-sans",
+});
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "JobSearch",
-  description: "A personal job-search operating system. Seven modules, one brain.",
+  description:
+    "Write your experience down once. JobSearch tailors a CV and cover letter to each job from what you have actually done.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>{children}</body>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
