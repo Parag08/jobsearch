@@ -1,8 +1,8 @@
 {
-  "name": "jobpilot",
+  "name": "jobsearch",
   "version": "0.1.0",
   "private": true,
-  "description": "JobPilot - a personal job-search operating system. Seven modules, one brain.",
+  "description": "JobSearch - a personal job-search operating system. Seven modules, one brain.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

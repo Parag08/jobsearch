@@ -1,10 +1,10 @@
-# JobPilot - Claude project memory
+# JobSearch - Claude project memory
 
 Read this first in every session. Update it whenever a decision or convention changes.
 The running work log (what happened when, what's next) is docs/MEMORY.md - update it at the end of every working session.
 
 ## What this is
-JobPilot: a personal job-search operating system, built first for Parag (target: AI/PM roles in **Singapore**), designed generic so peers can use it. Seven modules around one shared brain. Full product spec: docs/SPEC.md.
+JobSearch: a personal job-search operating system, built first for Parag (target: AI/PM roles in **Singapore**), designed generic so peers can use it. Seven modules around one shared brain. Full product spec: docs/SPEC.md.
 
 ## Non-negotiable design rules
 1. **TDD.** Red -> green -> refactor. No domain code without a failing test first. Tests live next to code: `lib/**/*.test.ts`, run with `npm test`.
@@ -43,4 +43,4 @@ JobPilot: a personal job-search operating system, built first for Parag (target:
 See docs/MEMORY.md (keep it current - that file is the handoff).
 
 ## Related, outside this repo
-- The Cowork pilot (folder-based JobPilot the user runs in chat) lives in the user's parag/jobpilot folder with a dashboard artifact; this repo is its productization. Keep concepts aligned (same stage names, same JdExtract fields) so pilot data can migrate.
+- The Cowork pilot (folder-based JobSearch the user runs in chat) lives in the user's parag/jobpilot folder with a dashboard artifact; this repo is its productization. Keep concepts aligned (same stage names, same JdExtract fields) so pilot data can migrate.

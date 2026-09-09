@@ -21,7 +21,7 @@ export function toSeedSql(ws: ImportedWorkspace, opts: SeedOptions): string {
   const tag = delimiterFor(body);
   const header = [
     "-- ============================================================================",
-    "-- JobPilot seed data - GENERATED, do not edit by hand.",
+    "-- JobSearch seed data - GENERATED, do not edit by hand.",
     "--   source: data/cvbuilder/  |  generator: scripts/import-cvbuilder.ts",
     `--   regenerate: npm run seed:build      generated: ${opts.generatedAt}`,
     "--",
@@ -43,7 +43,7 @@ function buildBody(ws: ImportedWorkspace, opts: SeedOptions): string {
   out.push(`  select id into uid from auth.users where lower(email) = lower(${lit(opts.email)}) limit 1;`);
   out.push("  if uid is null then");
   out.push(
-    `    raise exception 'JobPilot seed: no auth.users row for %. Sign in to the app once, then re-run.', ${lit(opts.email)};`,
+    `    raise exception 'JobSearch seed: no auth.users row for %. Sign in to the app once, then re-run.', ${lit(opts.email)};`,
   );
   out.push("  end if;");
   out.push("");

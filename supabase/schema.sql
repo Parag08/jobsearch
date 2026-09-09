@@ -1,5 +1,5 @@
 -- ============================================================================
--- JobPilot database data model - THE canonical schema file.
+-- JobSearch database data model - THE canonical schema file.
 --
 -- Policy (agreed 2026-08-29): until there is live data, we do NOT keep
 -- incremental migrations. Edit this file in place and re-run it wholesale -
