@@ -2,6 +2,60 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state.
 
+## 2026-09-09 - Session 6: onboarding design, rename to JobSearch, Vercel duplicate
+
+**Done**
+- **`docs/ONBOARDING.md`** - the first-run flow, design only, no implementation. Eight screens; two
+  distinct questionnaires (a 60s structured *target* one up front, an adaptive *gap interview* in the
+  middle); two synchronous doors (upload CV / LinkedIn profile PDF / screenshots, or talk it through)
+  with a stated merge rule; three honesty guards at intake; a deferred-work nudge queue; four open
+  decisions at the end.
+- **`docs/DESIGN.md`** - one design doc for all four features (feature index, then a deep section
+  each): onboarding (pointer to its own doc), JD -> cover letter + resume, STAR interview prep,
+  company-targeted sourcing. Records seven decisions taken and eleven still open.
+- **Renamed the product JobPilot -> JobSearch** (Parag's call: one name across repo, package and
+  deploy). 24 occurrences, 12 files. Three deliberately NOT renamed - see below. seed.sql regenerated
+  (`npm run seed:build`): only the two header comments and the raise-exception string moved, no data
+  rows, so ids are unchanged and `db:seed` still upserts. 112 tests green, tsc clean.
+
+**Decisions**
+- **`stableId`'s `jobpilot:` prefix is frozen** (`lib/import/cvbuilder.ts`). Every id in the live DB
+  hashes from that string; renaming it regenerates all of them and the next seed would insert
+  duplicates instead of upserting. Comment added at the call site so it does not read as a stale
+  rename and get "fixed".
+- `CLAUDE.md`'s `parag/jobpilot` path stays - it is the external Cowork folder, not this product.
+- `lib/repos/projects.test.ts` keeps "JobPilot" as fixture data (an arbitrary project name in a test).
+
+**Vercel: two projects, diagnosed**
+- `parag08's projects` (Hobby) holds **two** projects, `jobsearch` and `jobpilot`, both Git-connected
+  to `Parag08/jobsearch` on `main`. Every push builds twice.
+- **When and how:** GitHub's deployment records show zero Vercel deployments for the four pushes on
+  Aug 29 and Sep 2, then two deployments 34s apart on the first push after - Sep 4 10:45 UTC. So
+  Vercel was connected on Sep 4 and *both* projects were created in that one sitting; neither has a
+  deployment the other lacks. Most likely cause: the GitHub import defaults the project name to the
+  repo name (`jobsearch`), and the import was re-run to get the product name instead of renaming in
+  Settings. Connecting Vercel was never logged here, which is why it went unnoticed for five days.
+- **Resolved:** Parag deleted the `jobpilot` project; the stale `Production - jobpilot` GitHub
+  environment was deleted over the API too (deleting a Vercel project leaves GitHub's environment and
+  deployment history behind - it is bookkeeping, not evidence the project survived). Only
+  `Production - jobsearch` remains. Confirm on the next push that exactly one deployment fires.
+- **The Vercel MCP connector cannot see these projects.** `list_teams` returns the right account, but
+  `list_projects` returns `[]` for it under both team id and slug, and `get_project` 404s on a project
+  visible in the browser. Hobby projects live in the personal scope, which the Vercel API lists only
+  when no team is given - and the tool requires `teamId`. Tool limitation, nothing wrong with the
+  Vercel setup. A real `prj_` id may still work with `get_project` / `list_deployments`.
+
+**Next**
+1. Delete the `jobpilot` Vercel project, then set env vars on `jobsearch` using the **`.env.example`**
+   names (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` all envs;
+   `SUPABASE_SECRET_KEY` Production+Preview, never `NEXT_PUBLIC_`). Keep `SUPABASE_DB_URL` off Vercel
+   - it is a GitHub Actions secret; nothing in the app needs DDL. Note `.env` still uses the
+   un-prefixed names (flagged in session 3) - reconcile when the Supabase client is wired.
+2. Wire the API routes to a real Supabase client (unchanged, still the biggest gap).
+3. Bain evidence fix (unchanged, asked Parag; regenerates a curated base CV).
+4. When CV tailoring gets built, `selectBullets` needs the per-org cap; ONBOARDING.md screen 3 surfaces
+   the same rule as a user choice ("full story / one-liner / omit" per role).
+
 ## 2026-09-04 - Session 5: re-sync after the Bain applications
 
 **Done**
