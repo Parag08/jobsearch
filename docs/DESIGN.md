@@ -258,7 +258,120 @@ contacts.
 
 ---
 
-## 5 · How they connect
+## 5 · Design system
+
+Visual proposal with all three palette options:
+`https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`
+
+### The governing principle
+
+Most product palettes reserve red for errors — something went wrong, the user should fix it.
+JobSearch inverts that. Its most frequent negative states are `lost`, `withdrawn` and `ghosted`, and
+**none of them is a user error**. They are the ordinary arithmetic of applying: most applications end
+this way, for reasons outside the applicant's control. Colouring them red turns a dashboard into an
+accusation and makes the most common outcome the loudest thing on screen.
+
+> **Closed states get the quietest colour in the system, not the loudest. Progress gets the accent.
+> Nothing shouts.**
+
+Everything below serves that: low chroma throughout, one accent hue, a near-white ground rather than
+pure `#FFFFFF`, and semantic colour spent only where a decision actually depends on it.
+
+### Palette — Heather (chosen)
+
+Muted periwinkle on a faintly cool white. Calm without reading as either "finance blue" or "wellness
+green". Neutrals are biased toward the accent hue rather than pure grey, so they read as chosen.
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| `--ground` | `#FBFAFC` | `#17161B` |
+| `--surface` | `#FFFFFF` | `#1E1D24` |
+| `--ink` | `#2C2A33` | `#E9E7EE` |
+| `--ink-soft` | `#726F7C` | `#ABA8B5` |
+| `--ink-faint` | `#98959E` | `#7E7B88` |
+| `--line` | `#E7E5EC` | `#2E2C36` |
+| `--line-soft` | `#EFEEF3` | `#24232B` |
+| `--accent` | `#6F6A96` | `#A49EC6` |
+| `--accent-soft` | `#E3E0EC` | `#2C2938` |
+
+The dark accent is lightened rather than inverted, so it holds contrast on the dark ground without
+turning into a different colour.
+
+### Stage scale
+
+The accent deepens as an application advances, so progress is legible without reading a word.
+Terminal states step **sideways into neutral**, never down into red.
+
+| Stage | Colour | Why |
+| --- | --- | --- |
+| `saved` | `#EEEDF1` | Barely marked — an intention, not a commitment |
+| `applied` | `#E3E0EC` | The accent enters, at its lightest |
+| `screening` | `#D5D1E3` | Someone read it |
+| `interview` | `#B3ADCB` | Deepening |
+| `case` | `#8F89B0` | Deepening |
+| `offer` | `#6F6A96` | Full accent — the only place the palette reaches full strength |
+| `negotiation` | `#595478` | Deepest |
+| `closed` | `#98959E` | Neutral taupe **whatever the reason** — won, lost, withdrawn or ghosted. The reason is a word, not a colour |
+
+### Semantic colour
+
+Only two states earn colour outside the scale, because a decision depends on each:
+
+| Meaning | Colour | Trigger |
+| --- | --- | --- |
+| Stale | `#B5904F` | Past `STALE_AFTER_DAYS = 14` with no response |
+| Due today | `--accent` at full | A follow-up is due (`nextFollowup`) |
+
+Nothing else in the interface is allowed to be urgent. **Red is reserved for genuinely destructive
+confirmations only** — deleting a project, deleting an account — and appears nowhere else.
+
+### Typography
+
+| Role | Face | Weights | Used for |
+| --- | --- | --- | --- |
+| Display | **Newsreader** | 400 | Headings, CV preview, empty states |
+| Body | **IBM Plex Sans** | 400 / 500 / 600 | Body copy, UI, forms |
+| Data | **IBM Plex Mono** | 400 / 500 | Scores, dates, ids, anything aligning in a column |
+
+Newsreader carries warmth without nostalgia and keeps the interface from reading as a CRM. Plex Sans
+is humanist enough to sit beside it and neutral enough to disappear in a form. Plex Mono is a true
+sibling of the body face, so data never looks pasted in from another system. Use
+`font-variant-numeric: tabular-nums` wherever digits stack.
+
+### Layout tokens
+
+| Token | Value |
+| --- | --- |
+| Radius | 3px cards · 999px chips |
+| Elevation | none — 1px borders only |
+| Spacing | 4 · 8 · 12 · 16 · 24 · 40 · 64 |
+| Measure | 34rem (~65ch) |
+| Motion | 120ms ease-out, opacity + 2px translate only |
+| Borders | 1px, never 2 |
+
+**No shadows anywhere.** A shadow implies something floating above something else, which implies
+urgency; a 1px hairline separates just as clearly and stays silent. Radius stays small — heavily
+rounded cards read as playful, and this product asks the user to concentrate.
+
+### Logo — Stages (chosen)
+
+Four dots rising left to right, each more solid than the last. The mark **encodes the product's
+actual spine** — the pipeline from `saved` to `offer` — rather than decorating it, and the growing
+weight reads as progress without needing an arrow. It is also the only one of the three proposals
+that stays legible at 16px, because it has no enclosed counters to fill in.
+
+- Monochrome, drawn in `currentColor`, so it inherits `--accent` or `--ink` from context.
+- Opacity ramp `0.28 / 0.5 / 0.75 / 1.0`, mirroring the stage scale above — the mark and the pipeline
+  use the same visual logic, so the logo teaches the interface.
+- The final dot is larger (`r 4.4` against `r 3.2`), giving the sequence a destination.
+- Lockup: mark at cap height, wordmark in Newsreader 400, gap equal to one dot diameter.
+
+Rejected: **Doorway** (an open arch — ages well but risks reading generic) and **Match** (two
+overlapping pages — closest to what the product literally does, but busiest at favicon size).
+
+---
+
+## 6 · How they connect
 
 ```
 Watchlist + feeds  ->  scored shortlist  ->  saved application
@@ -286,7 +399,7 @@ Two load-bearing joints:
 
 ---
 
-## 6 · Open decisions
+## 7 · Open decisions
 
 **Blocking**
 
@@ -318,7 +431,7 @@ Two load-bearing joints:
 
 ---
 
-## 7 · Decisions taken
+## 8 · Decisions taken
 
 - **Output is a cover letter and a resume** — two documents per application.
 - **Exports live in a Supabase storage bucket**, per-user policies, free tier.
@@ -328,3 +441,7 @@ Two load-bearing joints:
 - **STAR stories are captured, never generated.**
 - **Watchlist companies are sourced from their own ATS boards**, aggregators handle broad discovery.
 - **No scraping** — pasted or screenshotted input wherever a site has no API.
+- **Palette: Heather** — muted periwinkle `#6F6A96` on `#FBFAFC`, light and dark tokens in §5.
+- **Logo: Stages** — four rising dots encoding the pipeline, in `currentColor`.
+- **Red is reserved for destructive confirmations only.** Rejection states are never red; closed is
+  neutral taupe whatever the reason.
