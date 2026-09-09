@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "JobPilot",
+  title: "JobSearch",
   description: "A personal job-search operating system. Seven modules, one brain.",
 };
 

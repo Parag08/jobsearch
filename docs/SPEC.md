@@ -1,4 +1,4 @@
-# JobPilot — Feature Map & Planning Doc
+# JobSearch — Feature Map & Planning Doc
 ### A composite job-search platform for Parag
 *Planning document · v0.2 · August 2026 · Target geography: Singapore*
 
@@ -6,7 +6,7 @@
 
 ## 1. The idea in one paragraph
 
-JobPilot is a personal job-search operating system built around one central intelligence: a living profile of **who Parag is** (projects, skills, sector expertise) and **what he's targeting** (sectors, roles, geographies — starting with **Singapore**). Every artifact he feeds it — a pasted JD, a LinkedIn profile screenshot, a coffee-chat note — makes the system smarter. Every output it produces — a tailored CV, an outreach message, a daily industry brief — draws on that shared knowledge. Seven modules, one brain — and a **token-economy layer** so each operating cycle costs as few LLM tokens as possible (see §6).
+JobSearch is a personal job-search operating system built around one central intelligence: a living profile of **who Parag is** (projects, skills, sector expertise) and **what he's targeting** (sectors, roles, geographies — starting with **Singapore**). Every artifact he feeds it — a pasted JD, a LinkedIn profile screenshot, a coffee-chat note — makes the system smarter. Every output it produces — a tailored CV, an outreach message, a daily industry brief — draws on that shared knowledge. Seven modules, one brain — and a **token-economy layer** so each operating cycle costs as few LLM tokens as possible (see §6).
 
 ---
 

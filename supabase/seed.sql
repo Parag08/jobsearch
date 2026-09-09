@@ -1,7 +1,7 @@
 -- ============================================================================
--- JobPilot seed data - GENERATED, do not edit by hand.
+-- JobSearch seed data - GENERATED, do not edit by hand.
 --   source: data/cvbuilder/  |  generator: scripts/import-cvbuilder.ts
---   regenerate: npm run seed:build      generated: 2026-09-04
+--   regenerate: npm run seed:build      generated: 2026-09-09
 --
 -- Run supabase/schema.sql first, then this file (npm run db:seed, or paste it
 -- into the Supabase SQL editor). It upserts, so it is safe to re-run.
@@ -14,7 +14,7 @@ declare
 begin
   select id into uid from auth.users where lower(email) = lower('parag.m.rahangdale@gmail.com') limit 1;
   if uid is null then
-    raise exception 'JobPilot seed: no auth.users row for %. Sign in to the app once, then re-run.', 'parag.m.rahangdale@gmail.com';
+    raise exception 'JobSearch seed: no auth.users row for %. Sign in to the app once, then re-run.', 'parag.m.rahangdale@gmail.com';
   end if;
 
   insert into profiles (user_id, display_name, target_geos, role_families, networks, visa_context, premium_llm_budget_usd_month, contact_lines, cv_extras)

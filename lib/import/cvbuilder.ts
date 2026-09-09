@@ -17,7 +17,7 @@ import {
 } from "../types";
 
 /**
- * Import of the CVbuilder workspace (data/cvbuilder/) into JobPilot's data model.
+ * Import of the CVbuilder workspace (data/cvbuilder/) into JobSearch's data model.
  *
  * CVbuilder is the hand-refined source of truth for Parag's CV content: a pool of
  * points (bullets with re-angled variants), the roles they sit under, role-family
@@ -204,6 +204,9 @@ const SENIORITIES = [
  * nibble is 8 ("custom", RFC 9562) because this is a hash, not a random uuid.
  */
 export function stableId(kind: string, slug: string): string {
+  // The "jobpilot:" prefix is frozen, not a stale product name: every id in the
+  // live DB hashes from it. Renaming it regenerates every id, so the next seed
+  // inserts duplicates instead of upserting.
   const key = `jobpilot:${kind}:${slug}`;
   const bases = [0x811c9dc5, 0x01000193, 0x9e3779b9, 0x85ebca6b];
   const hex = bases
@@ -567,7 +570,7 @@ function inferRoleFamily(
 }
 
 /**
- * The CV CVbuilder actually produced, expressed the way JobPilot stores one: a
+ * The CV CVbuilder actually produced, expressed the way JobSearch stores one: a
  * diff from the family master. Keywords still obey the honesty rule - a JD phrase
  * is mirrored only where the bullet bank can back it.
  */

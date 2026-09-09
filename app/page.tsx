@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 1.5rem" }}>
-      <h1>JobPilot</h1>
+      <h1>JobSearch</h1>
       <p>
         A personal job-search operating system: sector intelligence, project repository, CV builder,
         outreach CRM, application tracker, daily brief, and sourcing engine - around one shared brain.

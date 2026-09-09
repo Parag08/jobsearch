@@ -1,4 +1,4 @@
-# JobPilot
+# JobSearch
 
 A personal job-search operating system - seven modules around one shared brain:
 
@@ -38,7 +38,7 @@ Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=y
 
 ## Repo guide
 - `lib/` - pure, fully-tested domain layer (start here)
-- `lib/import/` - CVbuilder -> JobPilot transform and the seed-SQL generator
+- `lib/import/` - CVbuilder -> JobSearch transform and the seed-SQL generator
 - `lib/adapters/` - provider boundaries: LLM routing (small vs premium tier), job-feed mappers
 - `app/` - Next.js shell (UI lands after Supabase wiring)
 - `docs/SPEC.md` - full product spec · `docs/MEMORY.md` - work log · `CLAUDE.md` - project memory & rules
