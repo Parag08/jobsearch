@@ -13,6 +13,13 @@ Keep this file updated at the end of every working session: what was done, decis
 - **`docs/DESIGN.md`** - one design doc for all four features (feature index, then a deep section
   each): onboarding (pointer to its own doc), JD -> cover letter + resume, STAR interview prep,
   company-targeted sourcing. Records seven decisions taken and eleven still open.
+- **Landing page built** - the first real UI. `app/globals.css` (Heather tokens, light + dark),
+  `app/layout.tsx` (Newsreader / IBM Plex Sans / IBM Plex Mono via `next/font`, self-hosted),
+  `app/_components/logo.tsx` (Stages mark in `currentColor`), `app/page.tsx` (header, thesis, four
+  numbered steps, honesty section), and `app/signin/page.tsx` so the CTA is not a 404 - onboarding
+  screen 0 with both providers **disabled**, not silently inert, until Supabase auth lands. Steps are
+  numbered because they are a real sequence, and are hairline rows rather than cards. Build and tsc
+  clean; both pages prerender static at under 400 B of route JS.
 - **Design system, chosen and written into `DESIGN.md` §5.** Palette **Heather** (muted periwinkle
   `#6F6A96` on `#FBFAFC`), logo **Stages** (four rising dots = the pipeline, in `currentColor`),
   Newsreader + IBM Plex Sans + IBM Plex Mono, no shadows, 3px radius. Governing principle: **rejection
