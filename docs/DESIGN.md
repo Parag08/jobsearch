@@ -260,127 +260,229 @@ contacts.
 
 ## 5 · Design system
 
-Visual proposal with all three palette options:
-`https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`
+Reference studied: the Mintlify system (`styles.refero.design/style/80d7ef36-…`).
+Original palette proposal: `https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`
 
-### The governing principle
+### The conflict, and how it resolves
 
-Most product palettes reserve red for errors — something went wrong, the user should fix it.
-JobSearch inverts that. Its most frequent negative states are `lost`, `withdrawn` and `ghosted`, and
-**none of them is a user error**. They are the ordinary arithmetic of applying: most applications end
-this way, for reasons outside the applicant's control. Colouring them red turns a dashboard into an
-accusation and makes the most common outcome the loudest thing on screen.
+The reference and the brief pull in opposite directions, and pretending otherwise would produce
+mush. Stated plainly:
+
+| | The reference (Mintlify) | Our brief |
+| --- | --- | --- |
+| Depth | flat and forensic — **no glassmorphism, no gradients** | keep Apple liquid glass |
+| Radius | 4 / 16 / 24px, **no pill buttons** | glass wants capsules |
+| Accent | one chromatic spark, never on large surfaces | Heather is the identity |
+| Canvas | pure white, **no off-white backgrounds** | lighter, yes |
+
+**The resolution: radius and material encode elevation.** Everything that sits *in* the page is flat
+and follows the reference — white surface, 1px hairline, committed small radius, no shadow.
+Everything that *floats above* the page is glass and capsule-shaped. That is also how Apple actually
+uses the material: glass is for controls hovering over content, never for the content itself.
+
+So the pill is not decoration — it is the signal that a thing floats. And glass is not a skin over
+the whole UI — it is a material with a strict habitat. Both references stay intact because they
+govern different layers.
+
+### Light only
+
+**The system commits to light.** No automatic `prefers-color-scheme` inversion.
+
+This is a real change: today `app/globals.css` flips to a dark palette whenever the viewer's OS is
+dark, which is why the live site renders dark on Parag's machine. One canvas is easier to design
+against, matches the reference, and matches the stated preference. Dark can return later as an
+**explicit toggle** — a deliberate choice by the user, not an OS default we inherit.
+
+### The governing principle (unchanged)
+
+Most palettes reserve red for errors. JobSearch inverts that: its most frequent negative states are
+`lost`, `withdrawn` and `ghosted`, and **none is a user error**. Colouring them red turns a dashboard
+into an accusation and makes the most common outcome the loudest thing on screen.
 
 > **Closed states get the quietest colour in the system, not the loudest. Progress gets the accent.
 > Nothing shouts.**
 
-Everything below serves that: low chroma throughout, one accent hue, a near-white ground rather than
-pure `#FFFFFF`, and semantic colour spent only where a decision actually depends on it.
+### Colour
 
-### Palette — Heather (chosen)
+Canvas is pure white; separation comes from **hairlines, not fills** (the reference's strongest
+lesson). Neutrals carry a slight violet cast so they read as chosen rather than inherited — that
+remains our departure from the reference's pure greys.
 
-Muted periwinkle on a faintly cool white. Calm without reading as either "finance blue" or "wellness
-green". Neutrals are biased toward the accent hue rather than pure grey, so they read as chosen.
-
-| Token | Light | Dark |
+| Token | Value | Use |
 | --- | --- | --- |
-| `--ground` | `#FBFAFC` | `#17161B` |
-| `--surface` | `#FFFFFF` | `#1E1D24` |
-| `--ink` | `#2C2A33` | `#E9E7EE` |
-| `--ink-soft` | `#726F7C` | `#ABA8B5` |
-| `--ink-faint` | `#98959E` | `#7E7B88` |
-| `--line` | `#E7E5EC` | `#2E2C36` |
-| `--line-soft` | `#EFEEF3` | `#24232B` |
-| `--accent` | `#6F6A96` | `#A49EC6` |
-| `--accent-soft` | `#E3E0EC` | `#2C2938` |
+| `--paper` | `#FFFFFF` | canvas and card surfaces — the same white, separated by border |
+| `--wash` | `#F5F4F8` | hover washes, recessed rows, subtle fills |
+| `--line` | `#E4E2EA` | hairlines, input borders — the default separator |
+| `--line-strong` | `#CFCBD9` | dividers that must carry weight |
+| `--ink` | `#17161C` | body text, icon strokes |
+| `--ink-soft` | `#5A5766` | supporting text |
+| `--ink-faint` | `#8B8797` | captions, meta, timestamps |
+| `--accent` | `#6F6A96` | Heather — fills, marks, indicators |
+| `--accent-text` | `#55507A` | accent-coloured **text and links** |
+| `--accent-wash` | `#EFEDF5` | accent tint fills |
 
-The dark accent is lightened rather than inverted, so it holds contrast on the dark ground without
-turning into a different colour.
+Two accent tokens exist for one reason: `#6F6A96` on white lands near the 4.5:1 AA floor for body
+text. Fills and marks use it; anything set as small text uses `--accent-text`. *(Verify both with a
+contrast checker before shipping.)*
+
+**Never** introduce a second chromatic accent. The reference's discipline is the point.
 
 ### Stage scale
 
-The accent deepens as an application advances, so progress is legible without reading a word.
-Terminal states step **sideways into neutral**, never down into red.
+The accent deepens as an application advances; terminal states step **sideways into neutral**.
 
-| Stage | Colour | Why |
-| --- | --- | --- |
-| `saved` | `#EEEDF1` | Barely marked — an intention, not a commitment |
-| `applied` | `#E3E0EC` | The accent enters, at its lightest |
-| `screening` | `#D5D1E3` | Someone read it |
-| `interview` | `#B3ADCB` | Deepening |
-| `case` | `#8F89B0` | Deepening |
-| `offer` | `#6F6A96` | Full accent — the only place the palette reaches full strength |
-| `negotiation` | `#595478` | Deepest |
-| `closed` | `#98959E` | Neutral taupe **whatever the reason** — won, lost, withdrawn or ghosted. The reason is a word, not a colour |
+| Stage | Colour |
+| --- | --- |
+| `saved` | `#F0EFF4` |
+| `applied` | `#E3E0EC` |
+| `screening` | `#D5D1E3` |
+| `interview` | `#B3ADCB` |
+| `case` | `#8F89B0` |
+| `offer` | `#6F6A96` |
+| `negotiation` | `#595478` |
+| `closed` | `#96939F` — neutral **whatever the reason**; the reason is a word, not a colour |
 
 ### Semantic colour
 
-Only two states earn colour outside the scale, because a decision depends on each:
+Two states earn colour outside the scale, because a decision depends on each:
 
-| Meaning | Colour | Trigger |
-| --- | --- | --- |
-| Stale | `#B5904F` | Past `STALE_AFTER_DAYS = 14` with no response |
-| Due today | `--accent` at full | A follow-up is due (`nextFollowup`) |
+| Meaning | Fill | Text | Trigger |
+| --- | --- | --- | --- |
+| Stale | `#B5904F` | `#8A6B2E` | past `STALE_AFTER_DAYS = 14`, no response |
+| Due today | `--accent` | `--accent-text` | a follow-up is due |
 
-Nothing else in the interface is allowed to be urgent. **Red is reserved for genuinely destructive
-confirmations only** — deleting a project, deleting an account — and appears nowhere else.
+**Red exists but is fenced**: `#A8342E` on `#F7EAE9`, for genuinely destructive confirmations only —
+deleting a project, deleting an account. It appears nowhere else in the product.
 
 ### Typography
 
-| Role | Face | Weights | Used for |
-| --- | --- | --- | --- |
-| Display | **Newsreader** | 400 | Headings, CV preview, empty states |
-| Body | **IBM Plex Sans** | 400 / 500 / 600 | Body copy, UI, forms |
-| Data | **IBM Plex Mono** | 400 / 500 | Scores, dates, ids, anything aligning in a column |
+Three families, one role each. The reference uses a single neutral face; we keep the serif because it
+is what stops a job tracker reading as a CRM. What we take from the reference is its **type
+discipline**: a real modular scale, negative tracking at display sizes, and a 16px body floor.
 
-Newsreader carries warmth without nostalgia and keeps the interface from reading as a CRM. Plex Sans
-is humanist enough to sit beside it and neutral enough to disappear in a form. Plex Mono is a true
-sibling of the body face, so data never looks pasted in from another system. Use
-`font-variant-numeric: tabular-nums` wherever digits stack.
+| Role | Face | Weights |
+| --- | --- | --- |
+| Display | **Newsreader** | 400 |
+| Body / UI | **IBM Plex Sans** | 400 / 500 / 600 |
+| Data | **IBM Plex Mono** | 400 / 500 |
 
-### Layout tokens
+Scale (1.2 ratio from a 16px base):
+
+| Step | Size | Line height | Tracking | Use |
+| --- | --- | --- | --- | --- |
+| Display | 57px | 1.06 | −0.02em | landing hero only |
+| H1 | 40px | 1.12 | −0.015em | page titles |
+| H2 | 28px | 1.2 | −0.01em | section heads |
+| H3 | 20px | 1.3 | −0.005em | card and row titles |
+| Body | **16px** | 1.55 | −0.005em | everything read in prose |
+| Small | 14px | 1.5 | 0 | dense UI, secondary |
+| Caption | 13px | 1.5 | +0.08em | uppercase eyebrows, Plex Mono |
+
+Rules taken wholesale from the reference: **never set body below 14px**, never a line-height looser
+than 1.5, tighten tracking as size grows and loosen it only on uppercase labels. Digits that stack in
+a column always take `font-variant-numeric: tabular-nums`.
+
+### Radius encodes elevation
+
+The single most load-bearing rule in this system.
+
+| Radius | Applies to | Why |
+| --- | --- | --- |
+| `4px` | inputs, tags, small buttons | the reference's square commitment |
+| `12px` | cards, panels | in-page content |
+| `20px` | large containers, sheets | in-page, but structural |
+| `999px` | **floating glass only** — sticky nav, popovers, toasts, floating actions | a capsule means "this hovers" |
+
+A pill on a static in-page element is a bug, not a style choice.
+
+### Elevation
+
+**In-page surfaces have no shadow.** Separation is a 1px `--line` border — straight from the
+reference, and it was already our rule.
+
+Only glass casts anything, because a floating thing must read as floating:
+
+```
+--shadow-glass: 0 1px 2px rgba(23, 22, 28, 0.04),
+                0 8px 24px rgba(23, 22, 28, 0.06);
+```
+
+No other shadow token exists. No coloured shadows, no gradients on content surfaces.
+
+### Liquid glass — the material
+
+**Habitat, strictly.** Glass is permitted on: the sticky nav, modals and sheets, popovers and menus,
+toasts, and the landing hero card. It is forbidden on: content cards, table rows, form fields, the
+page background, and anything inside `/app`'s working surfaces.
+
+```
+background: color-mix(in srgb, var(--paper) 72%, transparent);
+backdrop-filter: blur(20px) saturate(180%);
+border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+border-radius: 999px;   /* or 20px for sheets */
+```
+
+The `inset` highlight is what makes it read as a lens edge rather than a translucent rectangle —
+without it, glass on a white canvas looks like a rendering mistake.
+
+**Glass needs something to refract.** One slow ambient wash of `--accent-wash` behind the page gives
+it something to bend; on a flat white canvas glass is invisible. Keep it to a single soft field,
+well under the content, never animated fast enough to notice.
+
+**Fallback is mandatory.** Where `backdrop-filter` is unsupported, glass becomes `--paper` at 96%
+opacity with the same border. Never let a nav become unreadable because a filter didn't apply:
+
+```
+@supports not (backdrop-filter: blur(1px)) { … }
+```
+
+### Layout
 
 | Token | Value |
 | --- | --- |
-| Radius | 3px cards · 999px chips |
-| Elevation | none — 1px borders only |
-| Spacing | 4 · 8 · 12 · 16 · 24 · 40 · 64 |
-| Measure | 34rem (~65ch) |
-| Motion | 120ms ease-out, opacity + 2px translate only |
-| Borders | 1px, never 2 |
+| Shell max-width | `90rem` (1440px) |
+| Prose measure | `68ch` |
+| Section gap | `80px` (clamped down on small screens) |
+| Card padding | `24px` |
+| Spacing scale | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 80 · 96 |
 
-**No shadows anywhere.** A shadow implies something floating above something else, which implies
-urgency; a 1px hairline separates just as clearly and stays silent. Radius stays small — heavily
-rounded cards read as playful, and this product asks the user to concentrate.
+The reference caps its shell at 1200px. Ours is wider because it is an application shell as well as a
+marketing page, and 1200px stranded a third of a wide screen. **Prose still stops at 68ch** — filling
+the viewport is a layout decision, never a licence to run text to the window edge.
 
-#### Marketing-surface allowance (decided 2026-09-10, Wani's call)
+### Motion
 
-The landing page — and only the landing page — gets a livelier treatment than the working
-surfaces: **liquid glass** (translucent surfaces with `backdrop-filter` blur + saturate, a hairline
-that catches light along the top edge, a pointer-following sheen) and **iPhone-like springs**
-(`--spring: cubic-bezier(0.32, 0.72, 0, 1)`, `--spring-over` with a hint of overshoot for
-travelling objects; 600–900ms; opacity + translate only). Still no drop shadows — depth comes from
-translucency, not from floating — and still nothing red. Inside `/app` the product motion above
-(120ms, 2px) stands unchanged; the springs stop at the door. Reduced-motion collapses everything to
-instant, and scroll reveals are JS-gated so a no-JS render is simply visible.
+| Token | Value | Use |
+| --- | --- | --- |
+| `--motion` | `120ms ease-out` | every in-app state change |
+| `--spring` | `cubic-bezier(0.32, 1.4, 0.55, 1)` | glass only — the nav collapsing into its pill |
 
-### Logo — Stages (chosen)
+In-app motion stays at 120ms and changes opacity plus at most 2px of translate. The spring is a
+**marketing-surface allowance**: it belongs to glass, which is the one element permitted to feel
+physical. `prefers-reduced-motion` disables the spring and the ambient drift; glass itself stays,
+because it is material rather than movement.
 
-Four dots rising left to right, each more solid than the last. The mark **encodes the product's
-actual spine** — the pipeline from `saved` to `offer` — rather than decorating it, and the growing
-weight reads as progress without needing an arrow. It is also the only one of the three proposals
-that stays legible at 16px, because it has no enclosed counters to fill in.
+### Logo — Stages
 
-- Monochrome, drawn in `currentColor`, so it inherits `--accent` or `--ink` from context.
-- Opacity ramp `0.28 / 0.5 / 0.75 / 1.0`, mirroring the stage scale above — the mark and the pipeline
-  use the same visual logic, so the logo teaches the interface.
-- The final dot is larger (`r 4.4` against `r 3.2`), giving the sequence a destination.
-- Lockup: mark at cap height, wordmark in Newsreader 400, gap equal to one dot diameter.
+Four dots rising, each more solid than the last: the pipeline from `saved` to `offer`. The opacity
+ramp `0.28 / 0.5 / 0.75 / 1.0` is the same logic as the stage scale, so the mark and the interface
+teach each other. Final dot larger, giving the sequence a destination. Drawn in `currentColor`.
 
-Rejected: **Doorway** (an open arch — ages well but risks reading generic) and **Match** (two
-overlapping pages — closest to what the product literally does, but busiest at favicon size).
+### Taken and rejected
 
----
+| From the reference | Verdict |
+| --- | --- |
+| White canvas, no off-white | **Taken** — replaces `#FBFAFC` |
+| Separation by 1px border, not fill or shadow | **Taken** — already our instinct |
+| One chromatic accent, never on large surfaces | **Taken** |
+| Committed radius scale, no arbitrary values | **Taken**, extended so radius signals elevation |
+| 16px body floor, tightening tracking, modular scale | **Taken** |
+| Shadows at 0.03–0.05 or none | **Taken** for content; glass is the sole exception |
+| Inter as a single universal family | **Rejected** — Newsreader is the anti-CRM signal |
+| Pure grey neutrals | **Rejected** — ours keep a violet cast |
+| No glassmorphism at all | **Rejected**, but confined to floating elements only |
+| 1200px shell | **Rejected** — 1440px; we are an app, not only a doc site |
 
 ## 6 · How they connect
 
@@ -452,7 +554,14 @@ Two load-bearing joints:
 - **STAR stories are captured, never generated.**
 - **Watchlist companies are sourced from their own ATS boards**, aggregators handle broad discovery.
 - **No scraping** — pasted or screenshotted input wherever a site has no API.
-- **Palette: Heather** — muted periwinkle `#6F6A96` on `#FBFAFC`, light and dark tokens in §5.
+- **Palette: Heather** — muted periwinkle `#6F6A96`, now on a **pure white** canvas (§5).
+- **Light only.** No automatic `prefers-color-scheme` inversion; dark returns later as an explicit
+  toggle, if at all.
+- **Radius encodes elevation.** 4 / 12 / 20px for anything in the page; `999px` capsules reserved for
+  floating glass. A pill on a static element is a bug.
+- **Liquid glass has a strict habitat** — sticky nav, sheets, popovers, toasts, the landing hero card.
+  Never on content cards, table rows, form fields or the page background.
+- **Separation is a 1px hairline, not a shadow or a fill.** Glass is the only thing that casts.
 - **Logo: Stages** — four rising dots encoding the pipeline, in `currentColor`.
 - **Red is reserved for destructive confirmations only.** Rejection states are never red; closed is
   neutral taupe whatever the reason.
