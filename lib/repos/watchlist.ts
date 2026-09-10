@@ -1,31 +1,14 @@
 import { WatchlistEntrySchema, type NewWatchlistEntry, type WatchlistEntry } from "../watchlist/types";
-import type { AtsKind } from "../watchlist/ats";
 import { many, one, RepoError, type DbClient } from "./db";
+import type { WatchlistRow } from "./rows";
+
+export type { WatchlistRow };
 
 /**
- * Watchlist persistence (DESIGN.md section 4). Row shape mirrors
- * supabase/_pending/watchlist.sql; the row type and its mappers live here
- * (not in rows.ts) until the table is folded into schema.sql. Registering the
- * table on RowMap via module augmentation is what lets db.from("watchlist")
- * type-check against the shared DbClient without editing rows.ts.
+ * Watchlist persistence (DESIGN.md section 4). The row type lives in rows.ts
+ * with the other tables (schema.sql `watchlist`); the snake<->camel mappers
+ * for this table live here.
  */
-export interface WatchlistRow {
-  id: string;
-  user_id: string;
-  company: string;
-  careers_url: string;
-  ats: AtsKind;
-  token: string | null;
-  active: boolean;
-  added_at: string;
-  created_at?: string;
-}
-
-declare module "./rows" {
-  interface RowMap {
-    watchlist: WatchlistRow;
-  }
-}
 
 // ---- mappers (the only place snake<->camel lives for this table) ---------------
 
