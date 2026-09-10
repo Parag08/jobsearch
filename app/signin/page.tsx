@@ -5,12 +5,20 @@ import { isSupabaseConfigured } from "@/lib/db";
 import { signInWith } from "./actions";
 import styles from "./page.module.css";
 
-export const metadata: Metadata = { title: "Sign in - JobSearch" };
+export const metadata: Metadata = { title: "Get started - JobSearch" };
+
+/** Friendly text for the codes the callback and the action can redirect with. */
+function explain(code: string): string {
+  if (code === "not_configured") return "Sign-in is not connected yet.";
+  if (code === "missing_code") return "The sign-in did not come back with a code. Please try again.";
+  if (code === "no_redirect_url") return "Could not reach Google. Please try again.";
+  return "Sign-in did not complete. Please try again.";
+}
 
 /**
- * Onboarding screen 0 (docs/ONBOARDING.md). With Supabase configured the
- * providers are live; without it they are disabled rather than silently
- * inert, and the demo workspace is offered instead.
+ * Onboarding screen 0 (docs/ONBOARDING.md). One provider: Google. OAuth has no
+ * separate signup route - the same button creates an account or signs you in -
+ * so the copy has to carry that, or a new visitor never learns they can join.
  */
 export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const live = isSupabaseConfigured();
@@ -24,31 +32,30 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
       </Link>
 
       <div className={styles.panel}>
-        <h1>Sign in</h1>
-
-        <div className={styles.providers}>
-          <form action={signInWith.bind(null, "google")}>
-            <button type="submit" className={styles.provider} disabled={!live}>
-              Continue with Google
-            </button>
-          </form>
-          <form action={signInWith.bind(null, "linkedin_oidc")}>
-            <button type="submit" className={styles.provider} disabled={!live}>
-              Continue with LinkedIn
-            </button>
-          </form>
+        <div className={styles.intro}>
+          <h1>Get started</h1>
+          <p className={styles.sub}>
+            Continuing with Google creates your account if you do not have one yet, and signs you in if
+            you do.
+          </p>
         </div>
+
+        <form action={signInWith.bind(null, "google")}>
+          <button type="submit" className={styles.provider} disabled={!live}>
+            Continue with Google
+          </button>
+        </form>
 
         {!live && (
           <p className={styles.pending}>
-            Sign-in connects once Supabase is configured. Meanwhile, <Link href="/app">open the demo workspace</Link>.
+            Sign-in is not connected yet. Meanwhile, <Link href="/app">open the demo workspace</Link>.
           </p>
         )}
-        {error && <p className={styles.pending}>Sign-in did not complete ({error}). Try again.</p>}
+        {error && <p className={styles.pending}>{explain(error)}</p>}
 
         <p className={styles.note}>
-          Signing in with LinkedIn gets you in the door. It does not import your history - we ask for
-          that next, and you can bring a CV, a LinkedIn PDF, or just talk it through.
+          Next we help you build your record — bring a CV, a LinkedIn PDF, or just talk it through. We
+          only ever put things on your CV that your own record can back.
         </p>
 
         <Link href="/" className={styles.back}>

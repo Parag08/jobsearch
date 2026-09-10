@@ -13,6 +13,9 @@ import { addWatchlistEntry, removeWatchlistEntry, setWatchlistActive } from "@/l
 import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
+import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
+import { logTokens } from "@/lib/repos/token-ledger";
+import { processJd } from "@/lib/services/process-jd";
 
 async function ws() {
   const w = await getWorkspace();
@@ -84,4 +87,42 @@ export async function setJobStatus(id: string, status: "shortlisted" | "dismisse
   const { db, userId } = await ws();
   await setSourcedJobStatus(db, userId, id, status);
   revalidatePath("/app/watchlist");
+}
+
+/**
+ * Open an application from a pasted JD (DESIGN.md section 2). Runs the same
+ * tested processJd the API route does: extract ONCE via the routed small-tier
+ * provider, merge the sector node, open a `saved` application - and log the
+ * call to the token ledger. Returns an error string rather than throwing, so
+ * the board can say what went wrong instead of showing a crash.
+ */
+export async function createFromJd(_prev: string | null, formData: FormData): Promise<string | null> {
+  const { db, userId } = await ws();
+  const jd = String(formData.get("jd") ?? "").trim();
+  if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
+
+  const base = createLlm(process.env);
+  if (!base) return "No LLM key configured yet. Set GEMINI_API_KEY or GROQ_API_KEY (both free tiers).";
+
+  const day = today();
+  const llm = withLedger(base, async (e) => {
+    await logTokens(db, userId, {
+      date: day,
+      module: e.module,
+      model: e.model,
+      tokensIn: e.tokensIn,
+      tokensOut: e.tokensOut,
+    }).catch(() => undefined);
+  });
+
+  let applicationId: string;
+  try {
+    const result = await processJd({ db, llm }, userId, jd, day);
+    applicationId = result.application.id;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Could not read that posting.";
+  }
+
+  revalidatePath("/app");
+  redirect(`/app/applications/${applicationId}`);
 }

@@ -101,7 +101,10 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
               </p>
             </>
           ) : (
-            <p className={ui.empty}>No structured extract yet. Paste the JD through POST /api/jd to parse it once.</p>
+            <p className={ui.empty}>
+              No structured extract yet — open this application from a pasted posting on the{" "}
+              <Link href="/app">pipeline board</Link> and it will be parsed once.
+            </p>
           )}
         </section>
 

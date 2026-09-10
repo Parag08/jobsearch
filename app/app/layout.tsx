@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Logo } from "../_components/logo";
 import { getWorkspace } from "@/lib/db";
 import { signOut } from "../signin/actions";
+import { NavLinks } from "./nav-links";
 import styles from "./app.module.css";
 
 const NAV = [
@@ -31,13 +32,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <Logo size={20} />
             <span className={styles.wordmark}>JobSearch</span>
           </Link>
-          <div className={styles.links}>
-            {NAV.map(([href, label]) => (
-              <Link key={href} href={href} className={styles.link}>
-                {label}
-              </Link>
-            ))}
-          </div>
+          <NavLinks items={NAV} />
           <div className={styles.right}>
             <span className={styles.mode} data-mode={w.mode} title={w.mode === "demo" ? "Running on the sample corpus in memory - resets on restart" : w.email ?? ""}>
               {w.mode === "demo" ? "demo workspace" : (w.email ?? "signed in")}

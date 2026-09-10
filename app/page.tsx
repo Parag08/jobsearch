@@ -3,6 +3,7 @@ import { Logo } from "./_components/logo";
 import { GlassNav } from "./_components/glass-nav";
 import { HeroDemo } from "./_components/hero-demo";
 import { Reveal } from "./_components/reveal";
+import { isSupabaseConfigured } from "@/lib/db";
 import styles from "./page.module.css";
 
 const STEPS = [
@@ -25,6 +26,11 @@ const STEPS = [
 ];
 
 export default function Home() {
+  // The demo workspace only exists when Supabase is unconfigured (lib/db). With it
+  // configured, /app redirects a signed-out visitor to /signin - so offering "Demo"
+  // in production would be two prominent links that lead nowhere.
+  const demoAvailable = !isSupabaseConfigured();
+
   return (
     <>
       <div className={styles.ambient} aria-hidden="true" />
@@ -37,11 +43,16 @@ export default function Home() {
           </>
         }
       >
-        <Link href="/app" className={styles.navLink}>
-          Demo
+        {demoAvailable && (
+          <Link href="/app" className={styles.navLink}>
+            Demo
+          </Link>
+        )}
+        <Link href="/signin" className={styles.navLink}>
+          Sign in
         </Link>
         <Link href="/signin" className={styles.navCta}>
-          Sign in
+          Get started
         </Link>
       </GlassNav>
 
@@ -65,10 +76,13 @@ export default function Home() {
                 <Link href="/signin" className={styles.cta}>
                   Get started
                 </Link>
-                <Link href="/app" className={styles.ctaQuiet}>
-                  See it with sample data
-                </Link>
+                {demoAvailable && (
+                  <Link href="/app" className={styles.ctaQuiet}>
+                    See it with sample data
+                  </Link>
+                )}
               </div>
+              <p className={styles.ctaNote}>Free to start. Continue with Google — no password to make.</p>
             </Reveal>
           </div>
           <Reveal delay={200} className={styles.heroDemo}>
