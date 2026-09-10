@@ -2,6 +2,32 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state.
 
+## 2026-09-10 - Session 7 (Cowork, cloud): landing polish + four designed features built + working shell
+
+**Done** - 13 commits; **371 tests, 57 files, all green; tsc clean; production build passes** (fonts stubbed in the sandbox, see CLAUDE.md sandbox note).
+- **Landing page** rebuilt for Wani's brief (lively, iPhone-like, liquid glass, still minimal): glass nav that lifts into a blurred pill on scroll, a glass hero card walking one application through the stage scale with a springing puck and pointer sheen, staggered spring reveals (JS-gated), an ambient blob for the glass to blur, three quiet-fact tiles. Reduced-motion safe, no shadows, nothing red. DESIGN.md §5 gained the "marketing-surface allowance"; `/app` keeps 120ms motion. Stage-scale tokens added to globals (light + dark).
+- **Editorial layer** `lib/editorial/` (53 tests) - DESIGN §2's six mechanisms: composeSelection (pins with reasons, org caps as data, decisions log), fitToPage (short variant before a cut, pins never dropped), pageFit line model, collision + repeated-phrase audits, applicationGaps (cover letter input).
+- **Watchlist** `lib/watchlist/` + repo + `refreshWatchlist` service (52 tests) - detectAts from a careers URL (Greenhouse/Lever/Ashby/SmartRecruiters, unknown = manual), keyless board mappers, cross-source identity + dedupe, exclude-already-in-pipeline, declared-target boost (45) that outranks title overlap, per-board failure isolation.
+- **STAR stories + onboarding logic** `lib/stories/`, `lib/onboarding/` (80 tests) - Story schema, competency inference, story gap report, number consistency, prepSet scoped to the sent CV; skeleton merge rule with surfaced disagreements, provenance / needs-metric / strength-cap guards (ONBOARDING example pinned), readiness meter, proudest-three, nudge queue.
+- **Real LLM providers** (67 tests) - Gemini, Groq, Anthropic behind LlmProvider with injected fetch; `createLlm(env)` routes small -> Gemini then Groq, premium -> Anthropic (opt-in, falls back); `withLedger` logs every call. Env: GEMINI_API_KEY/MODEL, GROQ_API_KEY/MODEL, ANTHROPIC_API_KEY/MODEL.
+- **Freeze on send** - `snapshotCv` + `markApplied` service: the applied transition stamps appliedAt once and writes `application_cvs.sent_snapshot/sent_at` exactly once (override > variant > base; null for a bullet the bank lost). Second pass changes nothing; missing CV never blocks.
+- **Schema** - watchlist + stories tables, ats_kind enum, application_cvs.pins/decisions/page_fit/sent_snapshot/sent_at, projects.depth/bullet_cap folded into schema.sql (parser-checked, 67 statements). `_pending/` removed. **Not yet applied to the live project.**
+- **App layer** - `lib/db/getWorkspace()` (live via @supabase/ssr, demo = FakeDb from the corpus, tested), OAuth sign-in + `/auth/callback`, `/api/jd|cv-diff|brief` wired, and the `/app` shell: pipeline board, application detail (move, freeze, evidenced-vs-gap chips, CV recipe, tailor), bank (readiness, nudges, points), watchlist (add/pause/remove/check boards, sourced roles). Exercised end to end in the demo with Playwright: mark-applied froze the CV, watchlist add detected Greenhouse.
+
+**Decisions**
+- Demo mode shows the real corpus (it is already public in this repo) with a visible "demo workspace" badge; edits persist per server process only. Parag may prefer an anonymised sample - easy swap in `lib/db/demo.ts`.
+- Open decisions resolved by assumption inside the new modules are listed in each module's header comments and in the agent reports summarised here: watchlist is global per user; ATS derived from URL; dedupe = canonical URL then company|title|location; sourced jobs stay a shortlist (never auto-create applications); STAR intake assumed yes (DESIGN §7 Q2); prep = per application + whole story bank; no question generation; readiness weights 15/10/15/20/40.
+- `lib/editorial` checks variant text as evidence in `applicationGaps`; `buildDiff` still checks only base text/skills - align when tailoring adopts the editorial layer.
+
+**Not done / next (in order)**
+1. **Apply the new schema live** (`npm run db:apply` + `db:seed`) and set the Vercel env vars (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; GEMINI_API_KEY or GROQ_API_KEY for /api/jd). Enable Google + LinkedIn OIDC providers in Supabase Auth with redirect `<site>/auth/callback`.
+2. Wire `tailorCv` through the editorial layer (composeSelection -> fitToPage, persist pins/decisions/page_fit) - today the service still uses selectBullets + buildDiff directly.
+3. PDF/DOCX export of the resolved CV into a Supabase storage bucket (`application_cvs.file_path`). Cover letter still blocked on the format (DESIGN §7 Q1).
+4. Stories UI (capture form + prep view per application) - domain and table exist, no page yet. Watchlist refresh on a GitHub Actions cron.
+5. Onboarding screens 1-6 as UI over `lib/onboarding` (parsing uploads needs the vision/text LLM path).
+6. Verify provider API assumptions before first live LLM call (model ids, Gemini free-tier model, Groq json_object).
+7. `middleware.ts` for Supabase session refresh on navigation (server client refreshes on read today; fine for a start).
+
 ## 2026-09-09 - Session 6: onboarding design, rename to JobSearch, Vercel duplicate
 
 **Done**
