@@ -41,12 +41,12 @@
 /* ---- page ---- */
 
 .page {
-  max-width: 96rem;
+  max-width: var(--shell);
   margin: 0 auto;
   padding: 24px clamp(20px, 4vw, 72px) 64px;
   display: flex;
   flex-direction: column;
-  gap: clamp(64px, 10vw, 104px);
+  gap: clamp(56px, 8vw, 80px);
 }
 
 .wordmark {
@@ -61,7 +61,7 @@
   font-size: 0.875rem;
   text-decoration: none;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   transition: background var(--motion), color var(--motion), opacity var(--motion);
 }
 
@@ -133,7 +133,7 @@
   display: inline-flex;
   align-items: center;
   padding: 11px 20px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -250,11 +250,9 @@
   flex-direction: column;
   gap: 8px;
   padding: 18px 18px 16px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 62%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  border: 1px solid var(--line);
 }
 
 .quietNum {

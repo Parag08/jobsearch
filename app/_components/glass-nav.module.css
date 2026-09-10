@@ -11,13 +11,13 @@
 .bar {
   pointer-events: auto;
   width: 100%;
-  max-width: 96rem;
+  max-width: var(--shell);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 10px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   border: 1px solid transparent;
   background: transparent;
   transition:
@@ -44,11 +44,23 @@
   color: var(--accent);
   text-decoration: none;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
 }
 
 .actions {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Glass material (docs/DESIGN.md §5). The inset highlight is the lens edge - without it
+   glass on a white canvas reads as a rendering mistake rather than a floating surface. */
+.bar[data-scrolled] {
+  box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bar[data-scrolled] {
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
+  }
 }

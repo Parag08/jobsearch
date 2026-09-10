@@ -39,7 +39,7 @@
 .stat {
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background: var(--surface);
   display: flex;
   flex-direction: column;
@@ -107,7 +107,7 @@
   display: block;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background: var(--surface);
   text-decoration: none;
   color: inherit;
@@ -147,7 +147,7 @@
   font-size: 0.64rem;
   letter-spacing: 0.06em;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   color: var(--ink-soft);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
   margin-top: 6px;
@@ -167,7 +167,7 @@
 
 .panel {
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: var(--surface);
   padding: 16px 18px;
   display: flex;
@@ -213,7 +213,7 @@
 .chip {
   font-size: 0.72rem;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   color: var(--ink-soft);
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
@@ -292,7 +292,7 @@
 
 .meter {
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   background: var(--line-soft);
   overflow: hidden;
 }
@@ -317,7 +317,7 @@
   font-size: 0.9rem;
   padding: 18px;
   border: 1px dashed var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   max-width: 60ch;
 }
 
