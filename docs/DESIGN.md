@@ -117,25 +117,121 @@ is the first thing entered through the app rather than regenerated from `data/cv
 > *"Deliberately does NOT claim technology due diligence as a skill — he has never run one, and that is
 > the headline gap to raise in the cover letter rather than a line to write on the CV."*
 
-That is a genuinely good division of labour, and it falls straight out of the honesty rule: **the CV
-states only what the bullet bank evidences; the cover letter is where an honest gap gets addressed.**
-The rule makes the letter necessary rather than decorative.
+That division of labour falls straight out of the honesty rule: **the CV states only what the bullet
+bank evidences; the cover letter is where an honest gap gets addressed.** The rule makes the letter
+necessary rather than decorative.
 
-So the letter draws on three things the system already has:
+The mechanic is confirmed empirically. That note was written when the Nutanix diligence was a gap; by
+the time the TIG letter was sent, `nutanix-move-diligence` existed as a real point — and the letter
+**opens** with that story. Gap → letter → later a bullet, once the evidence exists.
 
-1. **The gap** — JD requirements with no evidencing bullet. This is `gapAnalysis`'s output, per
-   application rather than per sector.
-2. **The sector node** — company and market context, so the letter sounds informed (M1, M6).
-3. **The bullets actually on the page** — so the letter amplifies the CV rather than repeating it.
+### The format
 
-**Blocked:** the format itself. There is no cover letter anywhere in this repo — application files
-carry `id, company, role, reference, jd, pageSize, scale, selection, updatedAt, notes` and no letter
-field, and the only mention in the whole corpus is the prose note quoted above. The standing format
-has to be supplied before this section can specify structure, length, tone or salutation
-conventions. See §6.
+Derived from four letters actually sent (Bain General, Bain TIG, BCG Singapore, FTI), 7 September
+2026. **Bain General Consulting is the canonical example** — hold it unchanged as the reference.
+
+**Shape:** a date, a salutation, **exactly three paragraphs**, a close. No bullets, no headings, no
+postscript. Roughly 380–450 words; one page with room to spare.
+
+```
+7 September 2026
+
+Dear <named individual>,            ← team name only when no individual is known
+                                      ("Dear Tech Insights Group Recruitment Team,")
+
+¶1  Career spine, ending at INSEAD
+¶2  Why this firm, specifically
+¶3  Where I would be useful, logistics, close
+
+Yours sincerely,
+Parag Rahangdale
+```
+
+**¶1 — the spine.** Compresses the whole career into one paragraph and always lands on *"I am
+completing my MBA at INSEAD."* Names the same four anchors every time: the decade in software ending
+at Nutanix, the UAE home-healthcare summer, founding member at a blockchain startup, product
+strategist at a Singapore proptech platform.
+
+Two openers, and the choice is editorial:
+
+| Opener | Used when | Example |
+| --- | --- | --- |
+| **Career-first** | the role wants the operator record | *"I have spent more than ten years building software…"* (Bain General, TIG) |
+| **Story-first** | the role wants the consulting arc | *"This summer I spent two months as a management intern at Valeo Health…"* (BCG, FTI) |
+
+Companies are **named when the letter leads with their story** and **anonymised when they are
+supporting** — "Valeo Health" in the BCG and FTI letters, "a home healthcare provider in the UAE" in
+the two that lead with Nutanix. Same fact, different prominence.
+
+**¶2 — why this firm.** The most demanding paragraph and the one that cannot be faked. It names
+something the firm actually does or believes that is **not** marketing copy, and it earns the praise
+by first admitting scepticism:
+
+> *"I have read enough consulting marketing to be wary of it, so what held my attention about Bain was
+> the inconvenient parts."*
+
+What each letter found: Bain — tied economics, candour as a named value, Bill Bain founding on results
+rather than reports. TIG — that it pairs consultants with people who have run software products, across
+the whole investment lifecycle. BCG — Bruce Henderson, *Perspectives* from 1964, essays sized for a
+coat pocket, the vocabulary the firm wrote. FTI — that Strategy & Transformation sits inside Corporate
+Finance and Restructuring, and the Gulf healthcare build-out.
+
+The paragraph closes by turning the research into a want: *"That is the kind of consulting I want to
+practise."* / *"That is what draws me to TIG in particular."*
+
+**¶3 — where I would be useful.** Opens on a fixed move — *"It is also where I think I would be useful
+to you"* — then makes the signature argument: **he has lived on the implementation side, so he knows
+the specific ways a good recommendation dies.** That argument appears in three of the four letters as
+a triad of concrete failures, reworded each time:
+
+- *"the roadmap nobody sequenced, the process that quietly assumed a team twice the size, the change
+  that was announced rather than adopted"*
+- *"the process that quietly assumed a team twice the size, the tool nobody adopted because nobody
+  asked the people who would use it"*
+- *"the model whose assumptions nobody revisited, the process that quietly assumed a larger team, the
+  tool nobody adopted…"*
+
+**This is a variant bank at paragraph scale** — the same claim, re-angled per reader, exactly as
+`Bullet.variants` works for CV lines. It should be stored and selected, never regenerated.
+
+Then logistics — *"I graduate in December and am available from Spring 2027"*, extended where the
+posting asks (FTI's February/September starts, willingness to travel) — and a fixed close: *"I would
+welcome the chance to talk, and thank you for your time and consideration."*
+
+### Voice rules
+
+Observed without exception across all four:
+
+- **No contractions.** "I have", "it is", "do not" — never "I've", "it's", "don't".
+- **British spelling** — organises, modernising, specialised.
+- **Almost no numbers.** This is the sharpest split from the CV: the CV carries the metrics, the letter
+  carries the narrative. The Valeo story appears in three letters and the 30% never does.
+- **No superlatives and no enthusiasm words** — no "passionate", "excited", "thrilled", "world-class".
+- **Real people are named where they are real evidence** — Aryaman the BCG consultant, Mallika Gokarn
+  and Ariel Levy at TIG. This is the M4 contact graph doing work inside the letter, and it is only
+  usable when an actual interaction exists.
+- Plain declaratives. The rhetorical weight sits in specificity, never in adjectives.
+
+### What the generator needs
+
+1. **The gap** — JD requirements with no evidencing bullet (`applicationGaps` in `lib/editorial/`),
+   so ¶3 can address honestly what the CV left quiet.
+2. **The firm's inconvenient detail** for ¶2 — the one thing the system cannot invent. It has to come
+   from the sector node, the JD itself, or the user, and if none of them has it, the letter must ask
+   rather than generate a plausible-sounding claim about a firm. **A fabricated fact about the
+   employer is the worst possible failure of the honesty rule.**
+3. **The contact graph** (M4) — whether a real conversation with someone there exists.
+4. **The bullets on the page**, so the letter amplifies the CV instead of repeating it.
+5. **A paragraph-level variant bank** for the recurring ¶3 argument and the fixed openers and closes.
+
+### Open
+
+Storing the four letters as corpus data would let the system learn the format directly rather than
+from this description — but they name recruiters and alumni, and **this repository is public**. They
+are not committed for that reason. If they should live in the repo, they need the third-party names
+removed, or the corpus needs to move somewhere private.
 
 ---
-
 ## 3 · STAR interview prep
 
 An **eighth module**. `docs/SPEC.md` has seven; interview prep appears only in passing (M5's
@@ -516,16 +612,14 @@ Two load-bearing joints:
 
 **Blocking**
 
-1. **The cover letter format.** Not in this repo. Paste one or two letters actually sent, or say where
-   they live, and §2's cover letter section can be specified.
-2. **Does onboarding intake capture STAR-shaped material?** (§3) Changes the gap-interview ladder.
+1. **Does onboarding intake capture STAR-shaped material?** (§3) Changes the gap-interview ladder.
    Cheap now, expensive after onboarding ships.
 
 **Feature 2**
 
-3. How much of the editorial layer is automatic — "system proposes, you edit" or "system decides, you
+2. How much of the editorial layer is automatic — "system proposes, you edit" or "system decides, you
    review"? The six mechanisms are judgment calls.
-4. Premium LLM polish on the final CV — yes/no, and at what monthly cap? (`SPEC.md` §10 Q6)
+3. Premium LLM polish on the final CV — yes/no, and at what monthly cap? (`SPEC.md` §10 Q6)
 
 **Feature 3**
 
@@ -554,6 +648,10 @@ Two load-bearing joints:
 - **STAR stories are captured, never generated.**
 - **Watchlist companies are sourced from their own ATS boards**, aggregators handle broad discovery.
 - **No scraping** — pasted or screenshotted input wherever a site has no API.
+- **The cover letter format is fixed** (§2): three paragraphs — career spine ending at INSEAD, why this
+  firm with a researched inconvenient detail, where I would be useful plus logistics. No contractions,
+  British spelling, almost no numbers. Bain General Consulting is the canonical reference.
+- **The letters are not committed** — they name recruiters and alumni and the repo is public.
 - **Palette: Heather** — muted periwinkle `#6F6A96`, now on a **pure white** canvas (§5).
 - **Light only.** No automatic `prefers-color-scheme` inversion; dark returns later as an explicit
   toggle, if at all.
