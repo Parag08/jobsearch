@@ -11,7 +11,7 @@
 .bar {
   pointer-events: auto;
   width: 100%;
-  max-width: 52rem;
+  max-width: 96rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -29,7 +29,7 @@
 }
 
 .bar[data-scrolled] {
-  max-width: 44rem;
+  max-width: 72rem;
   padding: 8px 8px 8px 14px;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(170%);

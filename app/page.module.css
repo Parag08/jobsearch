@@ -41,9 +41,9 @@
 /* ---- page ---- */
 
 .page {
-  max-width: 52rem;
+  max-width: 96rem;
   margin: 0 auto;
-  padding: 24px clamp(20px, 5vw, 40px) 64px;
+  padding: 24px clamp(20px, 4vw, 72px) 64px;
   display: flex;
   flex-direction: column;
   gap: clamp(64px, 10vw, 104px);
@@ -88,8 +88,8 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(28px, 5vw, 56px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+  gap: clamp(28px, 5vw, 96px);
   align-items: center;
   padding-top: clamp(24px, 6vw, 72px);
 }
@@ -286,4 +286,25 @@
   border-top: 1px solid var(--line);
   font-size: 0.8125rem;
   color: var(--ink-faint);
+}
+
+/* ---- wide screens ------------------------------------------------------------------
+   The container fills the viewport, so the steps get a third column: number | title |
+   body, side by side. Without it the hairline rules run the full width while the text
+   stops at the reading measure, and the rows read as stranded rather than composed. */
+@media (min-width: 1024px) {
+  .step {
+    grid-template-columns: 2.25rem minmax(0, 18rem) minmax(0, var(--measure));
+    gap: 4px 40px;
+    align-items: start;
+  }
+
+  .step h2 {
+    grid-column: 2;
+  }
+
+  .step p {
+    grid-column: 3;
+    grid-row: 1;
+  }
 }
