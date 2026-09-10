@@ -353,6 +353,17 @@ sibling of the body face, so data never looks pasted in from another system. Use
 urgency; a 1px hairline separates just as clearly and stays silent. Radius stays small — heavily
 rounded cards read as playful, and this product asks the user to concentrate.
 
+#### Marketing-surface allowance (decided 2026-09-10, Wani's call)
+
+The landing page — and only the landing page — gets a livelier treatment than the working
+surfaces: **liquid glass** (translucent surfaces with `backdrop-filter` blur + saturate, a hairline
+that catches light along the top edge, a pointer-following sheen) and **iPhone-like springs**
+(`--spring: cubic-bezier(0.32, 0.72, 0, 1)`, `--spring-over` with a hint of overshoot for
+travelling objects; 600–900ms; opacity + translate only). Still no drop shadows — depth comes from
+translucency, not from floating — and still nothing red. Inside `/app` the product motion above
+(120ms, 2px) stands unchanged; the springs stop at the door. Reduced-motion collapses everything to
+instant, and scroll reveals are JS-gated so a no-JS render is simply visible.
+
 ### Logo — Stages (chosen)
 
 Four dots rising left to right, each more solid than the last. The mark **encodes the product's
