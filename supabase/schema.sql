@@ -293,3 +293,47 @@ create index on bullets (user_id, role_family);
 create index on watchlist (user_id, active);
 create index on stories (user_id, bullet_id);
 create index on stories (user_id, project_id);
+
+-- ---- new-user provisioning --------------------------------------------------------------
+-- Every table's user_id references profiles(user_id), so a profiles row must exist before
+-- the app can write anything. OAuth sign-up creates only the auth.users row - this trigger
+-- creates the matching profile. It sits on auth.users rather than in the callback route so
+-- that it cannot be bypassed: dashboard invites, magic links and any future auth method all
+-- insert into auth.users too. security definer, because the inserting role is not the user.
+--
+-- It creates a MINIMAL profile: identity only. Targets, geographies, languages and visa
+-- context are collected by onboarding screen 1 (docs/ONBOARDING.md), not guessed here.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (user_id, display_name)
+  values (
+    new.id,
+    coalesce(
+      new.raw_user_meta_data ->> 'full_name',
+      new.raw_user_meta_data ->> 'name',
+      ''
+    )
+  )
+  on conflict (user_id) do nothing;
+  return new;
+end;
+$$;
+
+-- The teardown above drops public tables only; this trigger lives on auth.users and
+-- survives a re-run, so it is dropped explicitly.
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Backfill: any auth.users row that predates this trigger (e.g. the owner account created
+-- by hand in the dashboard) still needs a profile. Idempotent.
+insert into public.profiles (user_id, display_name)
+select u.id, coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name', '')
+from auth.users u
+on conflict (user_id) do nothing;
