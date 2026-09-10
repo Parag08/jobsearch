@@ -5,6 +5,7 @@ import { GroqLlm } from "./groq";
 import { AnthropicLlm } from "./anthropic";
 import type { LlmUsage, UsageReportingLlm } from "./llm-http";
 import type { JdExtract } from "../types";
+import { VercelGatewayLlm, GATEWAY_SMALL_MODEL, GATEWAY_PREMIUM_MODEL } from "./vercel-gateway";
 
 const jd: JdExtract = {
   company: "Grab",
@@ -224,5 +225,39 @@ describe("withLedger", () => {
     });
     await llm.extractJd("raw");
     expect(logged).toEqual(["process-jd:gemini-2.0-flash"]);
+  });
+});
+
+describe("createLlm with the Vercel AI Gateway", () => {
+  it("prefers the gateway when AI_GATEWAY_API_KEY is set - one key, credit on the Vercel plan", () => {
+    const llm = createLlm({ AI_GATEWAY_API_KEY: "vck", GEMINI_API_KEY: "g", ANTHROPIC_API_KEY: "a" });
+    expect(llm).not.toBeNull();
+    expect(llm!.small).toBeInstanceOf(VercelGatewayLlm);
+    expect(llm!.premium).toBeInstanceOf(VercelGatewayLlm);
+  });
+
+  it("routes the two tiers at different models on the one key", () => {
+    const llm = createLlm({ AI_GATEWAY_API_KEY: "vck" })!;
+    expect((llm.small as VercelGatewayLlm).model).toBe(GATEWAY_SMALL_MODEL);
+    expect((llm.premium as VercelGatewayLlm).model).toBe(GATEWAY_PREMIUM_MODEL);
+  });
+
+  it("honours per-tier model overrides", () => {
+    const llm = createLlm({
+      AI_GATEWAY_API_KEY: "vck",
+      AI_GATEWAY_SMALL_MODEL: "openai/gpt-4o-mini",
+      AI_GATEWAY_PREMIUM_MODEL: "anthropic/claude-opus-5",
+    })!;
+    expect((llm.small as VercelGatewayLlm).model).toBe("openai/gpt-4o-mini");
+    expect((llm.premium as VercelGatewayLlm).model).toBe("anthropic/claude-opus-5");
+  });
+
+  it("falls back to the direct providers when no gateway key is present", () => {
+    const llm = createLlm({ GEMINI_API_KEY: "g" })!;
+    expect(llm.small).not.toBeInstanceOf(VercelGatewayLlm);
+  });
+
+  it("still returns null when nothing at all is configured", () => {
+    expect(createLlm({})).toBeNull();
   });
 });
