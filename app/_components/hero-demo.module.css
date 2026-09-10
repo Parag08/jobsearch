@@ -47,20 +47,6 @@
   z-index: -1;
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: color-mix(in srgb, var(--surface) 55%, transparent);
-    border-color: color-mix(in srgb, var(--ink) 14%, transparent);
-  }
-  .sheen {
-    background: radial-gradient(
-      closest-side at var(--mx) var(--my),
-      color-mix(in srgb, var(--accent) 22%, transparent),
-      transparent 70%
-    );
-  }
-}
-
 /* ---- content ---- */
 
 .head {
