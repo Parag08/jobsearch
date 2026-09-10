@@ -6,6 +6,7 @@ import { listContacts } from "@/lib/repos/contacts";
 import { funnelStats, staleApplications } from "@/lib/pipeline";
 import { followupsDue } from "@/lib/outreach";
 import { STAGES, type Application, type Stage } from "@/lib/types";
+import { JdForm } from "./jd-form";
 import ui from "./ui.module.css";
 
 const DEEP: Stage[] = ["interview", "case", "offer", "negotiation"];
@@ -40,6 +41,15 @@ export default async function Pipeline() {
         <div className={ui.stat} data-tone={stale.size ? "stale" : undefined}><b>{stale.size}</b><span>stale past 14 days</span></div>
         <div className={ui.stat} data-tone={due.length ? "due" : undefined}><b>{due.length}</b><span>follow-ups due</span></div>
       </div>
+
+      <section className={ui.panel}>
+        <h2>Paste a job description</h2>
+        <p className={ui.sub}>
+          It is read once into structure - company, role, seniority, skills - and opens a saved
+          application. The raw posting is kept for audit and never re-enters a prompt.
+        </p>
+        <JdForm />
+      </section>
 
       <div className={ui.board}>
         {STAGES.map((stage) => (

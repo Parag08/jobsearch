@@ -106,7 +106,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .hero h1 {
@@ -126,6 +126,12 @@
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 6px;
+}
+
+.ctaNote {
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
 }
 
 .cta,
@@ -229,7 +235,7 @@
 }
 
 .honesty h2 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   line-height: 1.25;
 }
 

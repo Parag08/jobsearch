@@ -60,7 +60,7 @@
 }
 
 .stat[data-tone="stale"] b {
-  color: var(--stale);
+  color: var(--stale-text);
 }
 
 .stat[data-tone="due"] b {
@@ -159,7 +159,7 @@
 }
 
 .badge[data-tone="frozen"] {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 
@@ -219,7 +219,7 @@
 }
 
 .chip[data-tone="hit"] {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 
@@ -360,4 +360,84 @@
 
 .snapshot li {
   font-size: 0.9rem;
+}
+
+/* ---- loading skeletons (app/app/loading.tsx) ---------------------------------------
+   Shaped like the content that is coming, so the page does not jump when it lands. */
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skelHead,
+.skelPanel,
+.skelRow > span {
+  background: var(--wash);
+  border-radius: var(--radius-card);
+}
+
+.skelHead {
+  height: 38px;
+  width: 40%;
+  max-width: 18rem;
+}
+
+.skelRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.skelRow > span {
+  height: 62px;
+}
+
+.skelPanel {
+  height: 240px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skelHead,
+  .skelPanel,
+  .skelRow > span {
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ---- JD intake (app/app/page.tsx) ---- */
+.jd {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.jd:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.warn {
+  font-size: 0.8125rem;
+  color: var(--stale-text);
+  align-self: center;
 }

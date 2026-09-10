@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
 }
 
@@ -118,4 +118,11 @@
   .bar {
     background: color-mix(in srgb, var(--paper) 96%, transparent);
   }
+}
+
+/* Current page (app/app/nav-links.tsx): state is carried by aria-current, and
+   shown as well as announced. */
+.link[aria-current="page"] {
+  color: var(--ink);
+  background: var(--accent-wash);
 }
