@@ -14,9 +14,24 @@
   --accent-soft: #e3e0ec;
   --stale: #b5904f;
 
+  /* stage scale (docs/DESIGN.md section 5): the accent deepens with progress;
+     closed steps sideways into neutral, never into red */
+  --stage-saved: #eeedf1;
+  --stage-applied: #e3e0ec;
+  --stage-screening: #d5d1e3;
+  --stage-interview: #b3adcb;
+  --stage-case: #8f89b0;
+  --stage-offer: #6f6a96;
+  --stage-negotiation: #595478;
+  --stage-closed: #98959e;
+
   --radius: 3px;
   --measure: 34rem;
   --motion: 120ms ease-out;
+  /* marketing-surface motion (landing page only): iPhone-like springs -
+     fast out, soft landing; -over adds a hint of overshoot for travelling objects */
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-over: cubic-bezier(0.34, 1.25, 0.64, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,7 +46,31 @@
     --accent: #a49ec6;
     --accent-soft: #2c2938;
     --stale: #c9a464;
+
+    --stage-saved: #24232b;
+    --stage-applied: #2c2938;
+    --stage-screening: #3a3650;
+    --stage-interview: #4f4a6e;
+    --stage-case: #6a649a;
+    --stage-offer: #a49ec6;
+    --stage-negotiation: #bcb6d9;
+    --stage-closed: #5a5763;
   }
+}
+
+/* scroll-reveal primitive (app/_components/reveal.tsx) */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 900ms var(--spring) var(--d, 0ms),
+    transform 900ms var(--spring) var(--d, 0ms);
+}
+
+[data-reveal][data-in],
+html:not([data-js]) [data-reveal] {
+  opacity: 1;
+  transform: none;
 }
 
 * {

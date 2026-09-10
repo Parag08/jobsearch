@@ -1,0 +1,213 @@
+/* Liquid glass: a translucent surface that blurs and saturates what sits
+   behind it, a hairline that catches light along the top edge, and a soft
+   specular highlight that follows the pointer. No drop shadow - depth comes
+   from translucency, not from floating (docs/DESIGN.md section 5, marketing
+   allowance). */
+
+.glass {
+  --mx: 30%;
+  --my: 20%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: transform 700ms var(--spring), border-color 300ms ease;
+}
+
+/* top-edge light catch */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 90%, transparent) 30%, color-mix(in srgb, var(--surface) 90%, transparent) 70%, transparent);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.sheen {
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(
+    closest-side at var(--mx) var(--my),
+    color-mix(in srgb, var(--surface) 55%, transparent),
+    transparent 70%
+  );
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+  z-index: -1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    border-color: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+  .sheen {
+    background: radial-gradient(
+      closest-side at var(--mx) var(--my),
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 70%
+    );
+  }
+}
+
+/* ---- content ---- */
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.company {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+/* the track: five stops, a puck that springs between them */
+.track {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 10px 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.track::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 17px;
+  height: 1px;
+  background: var(--line);
+}
+
+.stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 500ms ease, transform 500ms var(--spring);
+  /* the Stages ramp: each stop deeper than the last */
+  --c: color-mix(in srgb, var(--accent) calc(28% + var(--i) * 18%), var(--ground));
+}
+
+.stop[data-done] .dot {
+  background: var(--c);
+}
+
+.stop[data-active] .dot {
+  background: var(--c);
+  transform: scale(1.25);
+}
+
+/* only the active stop is labelled - five labels collide on a narrow card,
+   and the chip in the footer names the stage anyway */
+.label {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 400ms ease, transform 500ms var(--spring);
+  white-space: nowrap;
+}
+
+.stop[data-active] .label {
+  opacity: 1;
+  transform: none;
+  color: var(--ink);
+}
+
+/* the puck: a glass ring that carries the application forward */
+.puck {
+  position: absolute;
+  top: 6px;
+  left: calc(10% + var(--step) * 20%);
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: left 900ms var(--spring-over);
+}
+
+/* ---- foot: stage chip + next action, re-mounted per step so it re-enters ---- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 26px;
+  animation: enter 700ms var(--spring) both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stage {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--stage-saved);
+}
+
+.stage[data-stage="applied"] { background: var(--stage-applied); }
+.stage[data-stage="screening"] { background: var(--stage-screening); }
+.stage[data-stage="interview"] { background: var(--stage-interview); color: var(--surface); }
+.stage[data-stage="offer"] { background: var(--stage-offer); color: var(--surface); }
+
+.next {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 480px) {
+  .label { font-size: 0.58rem; }
+  .glass { padding: 16px 16px 14px; }
+}

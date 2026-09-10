@@ -1,0 +1,54 @@
+.wrap {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 12px clamp(12px, 3vw, 20px) 0;
+  pointer-events: none;
+}
+
+.bar {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 52rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition:
+    padding 600ms var(--spring),
+    max-width 600ms var(--spring),
+    background 400ms ease,
+    border-color 400ms ease,
+    backdrop-filter 400ms ease;
+}
+
+.bar[data-scrolled] {
+  max-width: 44rem;
+  padding: 8px 8px 8px 14px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  border-color: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
