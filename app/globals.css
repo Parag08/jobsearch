@@ -1,61 +1,80 @@
 /* JobSearch design system - see docs/DESIGN.md section 5.
-   Palette: Heather. No shadows anywhere; 1px hairlines only.
-   Red is reserved for destructive confirmations and appears nowhere in this file. */
+   Palette: Heather on a pure white canvas. LIGHT ONLY - there is deliberately no
+   prefers-color-scheme block; dark returns later as an explicit toggle, if at all.
+   Separation is a 1px hairline. Only floating glass casts a shadow.
+   Red is fenced to destructive confirmations and appears on no other surface. */
 
 :root {
-  --ground: #fbfafc;
-  --surface: #ffffff;
-  --ink: #2c2a33;
-  --ink-soft: #726f7c;
-  --ink-faint: #98959e;
-  --line: #e7e5ec;
-  --line-soft: #efeef3;
-  --accent: #6f6a96;
-  --accent-soft: #e3e0ec;
-  --stale: #b5904f;
+  /* ---- canvas and ink ---------------------------------------------------------------
+     Card surfaces are the same white as the page; they are separated by border, never
+     by fill. Neutrals carry a slight violet cast so they read as chosen, not inherited. */
+  --paper: #ffffff;
+  --wash: #f5f4f8;
+  --line: #e4e2ea;
+  --line-strong: #cfcbd9;
+  --ink: #17161c;
+  --ink-soft: #5a5766;
+  --ink-faint: #8b8797;
 
-  /* stage scale (docs/DESIGN.md section 5): the accent deepens with progress;
-     closed steps sideways into neutral, never into red */
-  --stage-saved: #eeedf1;
+  /* ---- accent -----------------------------------------------------------------------
+     Two tokens on purpose: --accent sits near the 4.5:1 AA floor on white, so anything
+     set as small TEXT uses --accent-text instead. Fills and marks use --accent. */
+  --accent: #6f6a96;
+  --accent-text: #55507a;
+  --accent-wash: #efedf5;
+
+  /* ---- semantic ---------------------------------------------------------------------
+     Only two states earn colour outside the stage scale, because a decision depends on
+     each. --danger is for destructive confirmation only: never for a rejection. */
+  --stale: #b5904f;
+  --stale-text: #8a6b2e;
+  --danger: #a8342e;
+  --danger-wash: #f7eae9;
+
+  /* ---- stage scale ------------------------------------------------------------------
+     The accent deepens with progress; closed steps sideways into neutral, never red. */
+  --stage-saved: #f0eff4;
   --stage-applied: #e3e0ec;
   --stage-screening: #d5d1e3;
   --stage-interview: #b3adcb;
   --stage-case: #8f89b0;
   --stage-offer: #6f6a96;
   --stage-negotiation: #595478;
-  --stage-closed: #98959e;
+  --stage-closed: #96939f;
 
-  --radius: 3px;
-  --measure: 34rem;
+  /* ---- radius encodes elevation -----------------------------------------------------
+     4 / 12 / 20 for anything sitting IN the page; the capsule is reserved for floating
+     glass and the controls clustered inside it. A pill on a static element is a bug. */
+  --radius: 4px;
+  --radius-card: 12px;
+  --radius-panel: 20px;
+  --radius-float: 999px;
+
+  /* ---- elevation --------------------------------------------------------------------
+     The only shadow in the system. In-page surfaces use a 1px --line border instead. */
+  --shadow-glass:
+    0 1px 2px rgba(23, 22, 28, 0.04),
+    0 8px 24px rgba(23, 22, 28, 0.06);
+
+  /* ---- layout ---- */
+  --shell: 90rem;
+  --measure: 68ch;
+
+  /* ---- motion ---- */
   --motion: 120ms ease-out;
-  /* marketing-surface motion (landing page only): iPhone-like springs -
-     fast out, soft landing; -over adds a hint of overshoot for travelling objects */
+  /* marketing-surface allowance (landing only): iPhone-like springs, fast out and soft
+     landing; -over adds a hint of overshoot for objects that travel. */
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --spring-over: cubic-bezier(0.34, 1.25, 0.64, 1);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #17161b;
-    --surface: #1e1d24;
-    --ink: #e9e7ee;
-    --ink-soft: #aba8b5;
-    --ink-faint: #7e7b88;
-    --line: #2e2c36;
-    --line-soft: #24232b;
-    --accent: #a49ec6;
-    --accent-soft: #2c2938;
-    --stale: #c9a464;
-
-    --stage-saved: #24232b;
-    --stage-applied: #2c2938;
-    --stage-screening: #3a3650;
-    --stage-interview: #4f4a6e;
-    --stage-case: #6a649a;
-    --stage-offer: #a49ec6;
-    --stage-negotiation: #bcb6d9;
-    --stage-closed: #5a5763;
-  }
+  /* ---- compatibility aliases --------------------------------------------------------
+     Earlier names kept so the module stylesheets keep resolving. Prefer the names above
+     in new code. */
+  --ground: var(--paper);
+  --surface: var(--paper);
+  --accent-soft: var(--accent-wash);
+  --accent-ink: var(--accent-text);
+  --line-soft: #f0eff4;
 }
 
 /* scroll-reveal primitive (app/_components/reveal.tsx) */
@@ -79,26 +98,48 @@ html:not([data-js]) [data-reveal] {
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
-  background: var(--ground);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
+  /* 16px floor, line-height never below 1.5 - both taken from the reference. */
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
 }
 
+/* Type scale: 1.2 ratio from 16px. Tracking tightens as size grows and loosens only on
+   uppercase labels (which set their own +0.08em locally). */
 h1,
 h2,
 h3 {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;
   font-weight: 400;
-  letter-spacing: -0.01em;
   text-wrap: balance;
   margin: 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
 }
 
 p {

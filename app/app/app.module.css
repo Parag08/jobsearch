@@ -20,7 +20,7 @@
   align-items: center;
   gap: 20px;
   padding: 6px 8px 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   background: color-mix(in srgb, var(--surface) 74%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
   backdrop-filter: blur(18px) saturate(160%);
@@ -52,7 +52,7 @@
   color: var(--ink-soft);
   text-decoration: none;
   padding: 6px 11px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   border: 0;
   background: none;
   font-family: inherit;
@@ -78,7 +78,7 @@
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-float);
   color: var(--ink-soft);
   background: color-mix(in srgb, var(--ink) 5%, transparent);
   max-width: 14rem;
@@ -105,5 +105,17 @@
 @media (max-width: 640px) {
   .links {
     display: none;
+  }
+}
+
+/* Glass material (docs/DESIGN.md §5) + mandatory fallback: a nav must never go
+   unreadable because backdrop-filter did not apply. */
+.bar {
+  box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bar {
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
   }
 }

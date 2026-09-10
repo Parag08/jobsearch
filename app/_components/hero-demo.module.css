@@ -10,7 +10,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: 20px 22px 18px;
   background: color-mix(in srgb, var(--surface) 62%, transparent);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
@@ -192,7 +192,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   color: var(--ink);
   background: var(--stage-saved);
 }
@@ -210,4 +210,16 @@
 @media (max-width: 480px) {
   .label { font-size: 0.58rem; }
   .glass { padding: 16px 16px 14px; }
+}
+
+/* Glass material (docs/DESIGN.md §5): the landing hero card is one of the five places
+   glass is permitted. */
+.glass {
+  box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
+  }
 }
