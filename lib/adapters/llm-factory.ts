@@ -3,6 +3,7 @@ import { AnthropicLlm } from "./anthropic";
 import { GeminiLlm } from "./gemini";
 import { GroqLlm } from "./groq";
 import { routeModel, type LlmTask } from "./llm";
+import { VercelGatewayLlm, GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "./vercel-gateway";
 import type { LlmCallResult, LlmUsage, UsageListener, UsageReportingLlm } from "./llm-http";
 
 /**
@@ -81,6 +82,18 @@ function key(env: LlmEnv, name: string): string | undefined {
  * Returns null when no key is set at all - callers 503 or fall back to FakeLlm.
  */
 export function createLlm(env: LlmEnv, fetchImpl: typeof fetch = fetch): RoutedLlm | null {
+  // The gateway wins when present: one key reaches every provider and the spend comes
+  // out of the credit included with the Vercel plan, so free-first (rule 5) holds
+  // without juggling a key per provider. Tiers differ only by model.
+  const gateway = key(env, "AI_GATEWAY_API_KEY");
+  if (gateway) {
+    const make = (model: string) => new VercelGatewayLlm({ apiKey: gateway, model, fetch: fetchImpl });
+    return new RoutedLlm({
+      small: make(key(env, "AI_GATEWAY_SMALL_MODEL") ?? GATEWAY_SMALL_MODEL),
+      premium: make(key(env, "AI_GATEWAY_PREMIUM_MODEL") ?? GATEWAY_PREMIUM_MODEL),
+    });
+  }
+
   const gemini = key(env, "GEMINI_API_KEY");
   const groq = key(env, "GROQ_API_KEY");
   const anthropic = key(env, "ANTHROPIC_API_KEY");

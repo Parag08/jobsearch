@@ -102,7 +102,7 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
   if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
 
   const base = createLlm(process.env);
-  if (!base) return "No LLM key configured yet. Set GEMINI_API_KEY or GROQ_API_KEY (both free tiers).";
+  if (!base) return "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY.";
 
   const day = today();
   const llm = withLedger(base, async (e) => {
