@@ -13,6 +13,8 @@
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
 drop table if exists token_ledger cascade;
+drop table if exists stories cascade;
+drop table if exists watchlist cascade;
 drop table if exists briefs cascade;
 drop table if exists sourced_jobs cascade;
 drop table if exists interactions cascade;
@@ -30,6 +32,7 @@ drop type if exists warmth_level cascade;
 drop type if exists contact_status cascade;
 drop type if exists interaction_channel cascade;
 drop type if exists sourced_status cascade;
+drop type if exists ats_kind cascade;
 
 -- ---- enums ------------------------------------------------------------------
 create type app_stage as enum
@@ -40,6 +43,7 @@ create type contact_status as enum
   ('not-contacted','awaiting-reply','in-conversation','met','dormant');
 create type interaction_channel as enum ('linkedin','whatsapp','email','coffee','call');
 create type sourced_status as enum ('new','shortlisted','tracked','dismissed');
+create type ats_kind as enum ('greenhouse','lever','ashby','smartrecruiters','unknown');
 
 -- ---- profiles: one row per user (workspace root) ----------------------------
 create table profiles (
@@ -82,6 +86,10 @@ create table projects (
   outcomes text[] not null default '{}',
   skills text[] not null default '{}',
   sector_tags uuid[] not null default '{}',          -- sectors.id refs (soft)
+  -- editorial depth (ONBOARDING.md screen 3): full story / one-liner / omit. The per-org
+  -- cap composeSelection consumes derives from it; bullet_cap overrides explicitly.
+  depth text not null default 'full' check (depth in ('full', 'one-liner', 'omit')),
+  bullet_cap smallint check (bullet_cap is null or bullet_cap >= 0),
   created_at timestamptz not null default now()
 );
 
@@ -116,6 +124,14 @@ create table application_cvs (
   bullet_ids uuid[] not null default '{}',           -- resolved final order
   summary_line text not null default '',
   file_path text,                                    -- exported DOCX/PDF location
+  -- editorial record (lib/editorial): why each bullet is on the page, and the page fit
+  pins jsonb not null default '[]',                  -- [{bulletId, reason}]
+  decisions jsonb not null default '[]',             -- [{bulletId, included, kind, reason, score, orgId}]
+  page_fit jsonb,                                    -- {pageSize, scale, linesUsed, lineBudget, overflow, actions[]}
+  -- DESIGN.md section 2 "freeze on send": resolved text as sent, written once on -> applied.
+  -- NULL while the application is a live recipe in `saved`.
+  sent_snapshot jsonb,                               -- {bullets: [{bulletId, text}], summaryLine}
+  sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -196,6 +212,36 @@ create table briefs (
   unique (user_id, date)
 );
 
+-- ---- feature 4: watchlist - declared target companies, sourced from their own ATS ----------
+create table watchlist (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  company text not null,                             -- the declared target's display name
+  careers_url text not null,                         -- what the user pasted
+  ats ats_kind not null default 'unknown',           -- derived by lib/watchlist/ats.ts, or set by hand
+  token text,                                        -- board token / company slug for the public API
+  active boolean not null default true,              -- inactive entries are kept but not refreshed
+  added_at date not null default current_date,
+  created_at timestamptz not null default now(),
+  unique (user_id, careers_url)
+);
+
+-- ---- feature 3: STAR stories - captured, never generated ---------------------------------
+create table stories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  project_id uuid not null references projects (id) on delete cascade,
+  bullet_id uuid references bullets (id) on delete set null,   -- nullable: a story may back one CV bullet
+  situation text not null default '',
+  task text not null default '',
+  action text not null default '',
+  result text not null,                                         -- no Result, no STAR
+  competencies text[] not null default '{}',                    -- labels from the user's vocabulary (data, not enum)
+  numbers text[] not null default '{}',                         -- metric strings as the user said them
+  captured_at date not null default current_date,
+  constraint result_not_blank check (length(btrim(result)) > 0)
+);
+
 -- ---- token economy ------------------------------------------------------------------
 create table token_ledger (
   id bigint generated always as identity primary key,
@@ -219,6 +265,8 @@ alter table contacts enable row level security;
 alter table interactions enable row level security;
 alter table sourced_jobs enable row level security;
 alter table briefs enable row level security;
+alter table watchlist enable row level security;
+alter table stories enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -228,7 +276,8 @@ do $$
 declare t text;
 begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
-                           'applications','contacts','interactions','sourced_jobs','briefs','token_ledger']
+                           'applications','contacts','interactions','sourced_jobs','briefs',
+                           'watchlist','stories','token_ledger']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
@@ -241,3 +290,6 @@ create index on contacts (user_id, next_followup);
 create index on interactions (contact_id, date desc);
 create index on sourced_jobs (user_id, status, score desc);
 create index on bullets (user_id, role_family);
+create index on watchlist (user_id, active);
+create index on stories (user_id, bullet_id);
+create index on stories (user_id, project_id);

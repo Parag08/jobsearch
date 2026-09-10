@@ -100,7 +100,42 @@ export interface ApplicationCvRow {
   bullet_ids: string[];
   summary_line: string;
   file_path: string | null;
+  /** DESIGN.md section 2 "freeze on send": written once on the -> applied transition. */
+  sent_snapshot?: SentSnapshot | null;
+  sent_at?: string | null;
   created_at?: string;
+}
+
+/** The resolved text of a CV as it left the user's hands. text is null for a bullet the bank no longer holds. */
+export interface SentSnapshot {
+  bullets: { bulletId: string; text: string | null }[];
+  summaryLine: string;
+}
+
+export interface WatchlistRow {
+  id: string;
+  user_id: string;
+  company: string;
+  careers_url: string;
+  ats: "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "unknown";
+  token: string | null;
+  active: boolean;
+  added_at: string;
+  created_at?: string;
+}
+
+export interface StoryRow {
+  id: string;
+  user_id: string;
+  project_id: string;
+  bullet_id: string | null;
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+  competencies: string[];
+  numbers: string[];
+  captured_at: string;
 }
 
 export interface ApplicationRow {
@@ -198,6 +233,8 @@ export interface RowMap {
   sourced_jobs: SourcedJobRow;
   briefs: BriefRow;
   token_ledger: TokenLedgerRow;
+  watchlist: WatchlistRow;
+  stories: StoryRow;
 }
 export type TableName = keyof RowMap;
 export type RowOf<T extends TableName> = RowMap[T];
@@ -231,6 +268,8 @@ export interface StoredApplicationCv {
   bulletIds: string[];
   summaryLine: string;
   filePath: string | null;
+  sentSnapshot?: SentSnapshot | null;
+  sentAt?: string | null;
 }
 
 // ---- mappers: row -> domain (zod-parsed at the boundary) ----------------------
@@ -310,6 +349,8 @@ export function toStoredApplicationCv(r: ApplicationCvRow): StoredApplicationCv 
     bulletIds: r.bullet_ids,
     summaryLine: r.summary_line,
     filePath: r.file_path,
+    sentSnapshot: r.sent_snapshot ?? null,
+    sentAt: r.sent_at ?? null,
   };
 }
 
