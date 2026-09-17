@@ -1,0 +1,43 @@
+# Keeps the Supabase project from pausing.
+#
+# Free-tier projects pause after ~7 days with no requests, and a paused project's
+# API subdomain stops resolving - which surfaces as a DNS error on sign-in, not as
+# anything that looks like a database problem. See the 2026-09-17 entry in
+# docs/MEMORY.md for the full signature.
+#
+# Cadence is Monday and Thursday, not every 7 days: a weekly ping races the 7-day
+# deadline, and GitHub's scheduled runs are best-effort and can be delayed by hours
+# under load. Twice a week leaves a 4-day maximum gap and plenty of margin.
+#
+# A `select 1` over the session pooler is unambiguously database activity. It reuses
+# the SUPABASE_DB_URL secret that db.yml already needs, so there is nothing new to
+# configure.
+#
+# If this job FAILS, that is worth reading rather than ignoring: it means the project
+# was already unreachable, and the notification is the earliest warning you will get.
+#
+# Note: GitHub disables scheduled workflows after 60 days with no repository activity.
+# If JobSearch goes dormant the keepalive stops too and the project pauses - which is
+# the right outcome, but re-enable this from the Actions tab when you pick it back up.
+name: keepalive
+
+on:
+  schedule:
+    - cron: "17 3 * * 1,4" # Mon + Thu, 03:17 UTC (off the hour - the top of the hour is congested)
+  workflow_dispatch: # manual run button in the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      # psql ships with the ubuntu-latest runner image, so this needs no checkout
+      # and no npm install - the whole job is a couple of seconds.
+      - name: Ping Postgres
+        env:
+          # The pooler terminates TLS with a chain psql will not always verify;
+          # require encryption without demanding verification, matching scripts/db-apply.mjs.
+          PGSSLMODE: require
+          # Passed via env rather than inline so the connection string never lands
+          # in the process list.
+          DBURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: psql "$DBURL" -v ON_ERROR_STOP=1 -c "select 1 as keepalive;"
