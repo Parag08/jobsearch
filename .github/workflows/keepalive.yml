@@ -40,4 +40,12 @@ jobs:
           # Passed via env rather than inline so the connection string never lands
           # in the process list.
           DBURL: ${{ secrets.SUPABASE_DB_URL }}
-        run: psql "$DBURL" -v ON_ERROR_STOP=1 -c "select 1 as keepalive;"
+        run: |
+          # Without this guard a missing secret makes psql fall back to a local
+          # socket, which fails with "is the server running locally?" - a message
+          # that sends you looking in entirely the wrong place.
+          if [ -z "$DBURL" ]; then
+            echo "::error::SUPABASE_DB_URL is not set. Add it under Settings -> Secrets and variables -> Actions (the session-pooler connection string, password included). db.yml needs the same secret."
+            exit 1
+          fi
+          psql "$DBURL" -v ON_ERROR_STOP=1 -c "select 1 as keepalive;"
