@@ -2,6 +2,27 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state.
 
+## 2026-09-17 - Supabase project paused (operational note)
+
+**Symptom:** sign-in on the live site dumps the browser on a Chrome DNS error at
+`<ref>.supabase.co/auth/v1/authorize?...`. Looks like broken auth; is not.
+
+**Diagnosis:** the project host returns NXDOMAIN, the pooler host still resolves (so it is not
+local DNS), the auth settings endpoint that answered on 09-10 returns 000, and the pooler reports
+`tenant/user postgres.<ref> not found`. That set of four is the signature of a **paused project**,
+not a code or config fault - the server action had correctly built the OAuth URL with redirect_to
+and a PKCE code_challenge before handing off.
+
+**Cause:** Supabase pauses free-tier projects after ~7 days of inactivity and the API subdomain
+stops resolving. Last activity 09-10 (schema apply + seed); this surfaced on 09-17, exactly 7 days.
+
+**Fix:** Supabase dashboard -> Restore. Data survives a pause. Nothing in the repo changes.
+
+**Worth knowing:** a job search runs in bursts, so this will recur. Options if it becomes annoying:
+a scheduled query to keep the project warm, or accept it and restore on demand. Also note
+`isSupabaseConfigured()` only checks that env vars exist, not that Supabase answers - so the app
+offers a sign-in button that cannot work. A health check on /signin would catch it.
+
 ## 2026-09-10 - Session 7 (Cowork, cloud): landing polish + four designed features built + working shell
 
 **Done** - 13 commits; **371 tests, 57 files, all green; tsc clean; production build passes** (fonts stubbed in the sandbox, see CLAUDE.md sandbox note).
