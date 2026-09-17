@@ -45,7 +45,19 @@ jobs:
           # socket, which fails with "is the server running locally?" - a message
           # that sends you looking in entirely the wrong place.
           if [ -z "$DBURL" ]; then
-            echo "::error::SUPABASE_DB_URL is not set. Add it under Settings -> Secrets and variables -> Actions (the session-pooler connection string, password included). db.yml needs the same secret."
+            echo "::error::SUPABASE_DB_URL is not set. Add it as a REPOSITORY secret under Settings -> Secrets and variables -> Actions (not an environment secret - these workflows declare no environment). db.yml needs the same one."
             exit 1
           fi
+          # psql only parses an argument as a connection URI when it starts with
+          # postgres:// or postgresql://. Anything else it treats as a bare database
+          # name and connects to a local socket - which is the confusing error above.
+          # The usual mix-up is pasting the API URL (https://<ref>.supabase.co)
+          # instead of the session-pooler connection string.
+          case "$DBURL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "::error::SUPABASE_DB_URL does not start with postgresql:// - psql is reading it as a database name, not a connection string. This is NOT the https://<ref>.supabase.co API URL. Use Supabase -> Project Settings -> Database -> Connection string -> Session pooler, with the database password filled in. It looks like: postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+              exit 1
+              ;;
+          esac
           psql "$DBURL" -v ON_ERROR_STOP=1 -c "select 1 as keepalive;"
