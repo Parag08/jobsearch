@@ -62,7 +62,16 @@ try {
 } catch (err) {
   if (err instanceof LlmHttpError) {
     console.error(`\nGateway returned HTTP ${err.status}.`);
-    if (err.status === 401 || err.status === 403) console.error("The key was rejected - check AI_GATEWAY_API_KEY.");
+    if (err.status === 401) console.error("The key was rejected - check AI_GATEWAY_API_KEY.");
+    // 403 is NOT an auth failure here. The gateway returns RestrictedModelsError when
+    // the key is valid but the team's tier cannot reach that model - a different fix
+    // entirely, and saying "check your key" sends you to the wrong place.
+    if (err.status === 403) {
+      console.error(
+        `The key is valid but your tier cannot access "${model}".\n` +
+          "Either add paid AI Gateway credits, or set AI_GATEWAY_MODEL to a model your tier allows.",
+      );
+    }
     if (err.status === 402) console.error("Out of AI Gateway credits, or the team needs a payment method.");
     if (err.status === 404) console.error(`Model "${model}" was not found - check /v1/models.`);
     process.exit(1);
