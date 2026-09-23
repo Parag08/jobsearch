@@ -70,3 +70,84 @@ function parse(raw: string): URL | null {
     return null;
   }
 }
+
+// ---- board ownership --------------------------------------------------------------
+
+/**
+ * A board token that RETURNS postings is not evidence the board belongs to the
+ * company. The 2026-09-23 probe run found four confident false positives, all
+ * answering with real current jobs: `mas` is an HVAC firm in Illinois, `edb` is
+ * EnterpriseDB, `sia` is Sia Partners and `bcg` is somebody's test board. Nothing
+ * downstream would have caught them, because every later stage trusts the source.
+ */
+
+/** What a fetched board reveals about who owns it. Both fields are often absent. */
+export interface BoardProof {
+  /** Employer name the board reports (SmartRecruiters provides one; others do not). */
+  boardName?: string | null;
+  /** A job or apply URL from the board, which often carries the employer's domain. */
+  jobUrl?: string | null;
+}
+
+/** Which signal accepted a board, or null when none did. */
+export type Corroboration = "board-name" | "employer-domain" | "token-name" | null;
+
+/** Names the length ratio below which an overlap is a fragment, not a match. */
+const NAME_RATIO = 0.6;
+/** Below this, a token is too short to stand on its own ("mas", "edb", "sia", "bcg"). */
+const MIN_LONE_TOKEN = 5;
+
+const alnum = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * Registrable domain, keeping multi-part public suffixes intact so `tech.gov.sg`
+ * does not collapse to `gov.sg` and match every Singapore government site.
+ */
+export function registrableDomain(raw: string): string | null {
+  try {
+    const host = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).hostname.toLowerCase();
+    const parts = host.split(".");
+    if (parts.length < 2) return null;
+    const twoPartSuffix = /^(gov|com|co|org|net|edu|ac)$/.test(parts[parts.length - 2] ?? "");
+    return parts.slice(twoPartSuffix ? -3 : -2).join(".");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Does this board belong to this company? Returns the signal that accepted it, or
+ * null to reject.
+ *
+ * Deliberately strict, and it produces false negatives as well as catching frauds:
+ * `lever/nium` is genuinely Nium, but only its subsidiary's name inside the posting
+ * text says so, and that is not in the payload. Prefer the false negative - a missed
+ * company gets a manual check, a false positive silently poisons everything
+ * downstream. The seed file's `confirmed: true` is the escape hatch.
+ */
+export function corroborateBoard(
+  company: string,
+  careersUrl: string,
+  token: string,
+  proof: BoardProof,
+): Corroboration {
+  const want = alnum(company);
+  const got = alnum(proof.boardName);
+
+  if (got && want) {
+    // Containment alone is how "Sia" passes for "SIA Engineering"; demand the two
+    // names also be comparable in length.
+    const overlaps = got.includes(want) || want.includes(got);
+    const ratio = Math.min(got.length, want.length) / Math.max(got.length, want.length);
+    if (overlaps && ratio >= NAME_RATIO) return "board-name";
+  }
+
+  const careers = registrableDomain(careersUrl);
+  const job = proof.jobUrl ? registrableDomain(proof.jobUrl) : null;
+  if (careers && job && careers === job) return "employer-domain";
+
+  if (token.length >= MIN_LONE_TOKEN && want && (want === token || want.startsWith(token) || token.startsWith(want))) {
+    return "token-name";
+  }
+  return null;
+}
