@@ -38,7 +38,9 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const model = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-6-astra";
+// gpt-6-astra needs paid credits; this default runs on a free-tier team. Override
+// with AI_GATEWAY_MODEL once credits exist.
+const model = process.env.AI_GATEWAY_MODEL ?? "google/gemini-2.5-flash-lite";
 const prompt =
   process.argv.slice(2).join(" ").trim() ||
   "In three sentences, explain why a job-search tool should refuse to put a claim on a CV that the candidate's own record cannot evidence.";
