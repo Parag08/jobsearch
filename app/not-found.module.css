@@ -51,15 +51,21 @@
   margin-top: 12px;
 }
 
+/* Used on both <a> (not-found) and <button> (error boundary), so it normalises the
+   button chrome browsers add - otherwise "Try again" renders with a system border
+   and font while the link beside it does not. */
 .cta,
-.ctaBtn,
 .quiet {
   display: inline-flex;
   align-items: center;
   padding: 10px 18px;
+  border: 0;
   border-radius: var(--radius);
+  font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
   text-decoration: none;
   transition: opacity var(--motion), background var(--motion);
 }
