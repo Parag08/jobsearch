@@ -13,7 +13,8 @@
     "db:apply": "node scripts/db-apply.mjs",
     "db:seed": "node scripts/db-apply.mjs supabase/seed.sql",
     "seed:build": "vite-node scripts/import-cvbuilder.ts",
-    "boards:probe": "node scripts/probe-boards.mjs"
+    "boards:probe": "node scripts/probe-boards.mjs",
+    "companies:sync": "vite-node scripts/sync-companies.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

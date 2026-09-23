@@ -14,6 +14,7 @@
 -- ---- teardown (full replace, no live data yet) -----------------------------
 drop table if exists token_ledger cascade;
 drop table if exists stories cascade;
+drop table if exists companies cascade;
 drop table if exists watchlist cascade;
 drop table if exists briefs cascade;
 drop table if exists sourced_jobs cascade;
@@ -226,6 +227,23 @@ create table watchlist (
   unique (user_id, careers_url)
 );
 
+-- ---- company directory: CENTRAL, the one table with no user_id --------------------
+-- Shared reference data (DESIGN.md section 4): every user reads the same rows, so a
+-- board verified once is verified for everyone. A `watchlist` row is the personal act
+-- of following one of these; the directory itself belongs to nobody.
+-- Written by `npm run companies:sync` from data/singapore/companies.json.
+create table companies (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,                         -- display name; the upsert key
+  type text not null,                                -- how they hire: bank | us-tech-apac | ...
+  careers_url text not null,                         -- human-facing careers page
+  ats ats_kind not null default 'unknown',           -- VERIFIED by scripts/probe-boards.mjs
+  token text,                                        -- board token, verified alongside ats
+  confirmed boolean not null default false,          -- a human checked it is the right employer
+  probed_at date,
+  created_at timestamptz not null default now()
+);
+
 -- ---- feature 3: STAR stories - captured, never generated ---------------------------------
 create table stories (
   id uuid primary key default gen_random_uuid(),
@@ -271,6 +289,15 @@ alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- The directory is the exception to "each user sees only their workspace": it is shared
+-- reference data with no user_id, so every signed-in user reads every row. No insert,
+-- update or delete policy exists at all - `npm run companies:sync` writes it with the
+-- service key, which bypasses RLS. That asymmetry is deliberate: a shared table anyone
+-- can write is a shared table anyone can poison.
+alter table companies enable row level security;
+create policy "directory is readable by any signed-in user" on companies
+  for select to authenticated using (true);
 
 do $$
 declare t text;

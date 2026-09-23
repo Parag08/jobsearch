@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listWatchlist } from "@/lib/repos/watchlist";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
-import { addWatchlist, refreshWatchlistAction, removeWatchlist, setJobStatus, toggleWatchlist } from "../actions";
+import { addWatchlist, refreshWatchlistAction, removeWatchlist, setJobStatus, toggleWatchlist, watchAllReadable, watchCompany } from "../actions";
+import { listCompanies } from "@/lib/repos/companies";
 import ui from "../ui.module.css";
 
 /**
@@ -15,7 +16,15 @@ export default async function Watchlist() {
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [entries, jobs] = await Promise.all([listWatchlist(db, userId), listSourcedJobs(db, userId)]);
+  const [entries, jobs, directory] = await Promise.all([
+    listWatchlist(db, userId),
+    listSourcedJobs(db, userId),
+    listCompanies(db),
+  ]);
+  const watched = new Set(entries.map((e) => e.company));
+  const byType = new Map<string, typeof directory>();
+  for (const c of directory) byType.set(c.type, [...(byType.get(c.type) ?? []), c]);
+  const unwatchedReadable = directory.filter((c) => c.ats !== "unknown" && c.token && !watched.has(c.name)).length;
   const open = jobs.filter((j) => j.status === "new" || j.status === "shortlisted");
 
   return (
