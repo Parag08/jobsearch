@@ -11,6 +11,7 @@ const NAV = [
   ["/app", "Pipeline"],
   ["/app/bank", "Bank"],
   ["/app/watchlist", "Watchlist"],
+  ["/app/interview", "Interview"],
 ] as const;
 
 /**
