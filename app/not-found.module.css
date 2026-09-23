@@ -52,6 +52,7 @@
 }
 
 .cta,
+.ctaBtn,
 .quiet {
   display: inline-flex;
   align-items: center;
