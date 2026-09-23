@@ -220,6 +220,23 @@ export interface TokenLedgerRow {
   tokens_out: number;
 }
 
+/**
+ * Company directory row - the ONLY table with no user_id. The directory is
+ * shared reference data (DESIGN.md section 4), so every user reads the same
+ * rows and only the sync script writes them.
+ */
+export interface CompanyRow {
+  id: string;
+  name: string;
+  type: string;
+  careers_url: string;
+  ats: "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "unknown";
+  token: string | null;
+  confirmed: boolean;
+  probed_at: string | null;
+  created_at?: string;
+}
+
 export interface RowMap {
   profiles: ProfileRow;
   sectors: SectorRow;
@@ -235,6 +252,7 @@ export interface RowMap {
   token_ledger: TokenLedgerRow;
   watchlist: WatchlistRow;
   stories: StoryRow;
+  companies: CompanyRow;
 }
 export type TableName = keyof RowMap;
 export type RowOf<T extends TableName> = RowMap[T];

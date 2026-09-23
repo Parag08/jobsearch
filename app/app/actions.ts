@@ -13,6 +13,7 @@ import { addWatchlistEntry, removeWatchlistEntry, setWatchlistActive } from "@/l
 import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
+import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
@@ -125,4 +126,46 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
 
   revalidatePath("/app");
   redirect(`/app/applications/${applicationId}`);
+}
+
+/**
+ * Watch a company from the central directory (DESIGN.md section 4).
+ *
+ * Carries the directory's VERIFIED ats and token across rather than re-deriving
+ * them from the careers URL: probing checked them against the live board, and most
+ * verified boards sit behind a vanity domain that detectAts would call "unknown"
+ * (grab.careers is a SmartRecruiters board; nothing in the URL says so).
+ */
+export async function watchCompany(companyId: string): Promise<void> {
+  const { db, userId } = await ws();
+  const directory = await listCompanies(db);
+  const c = directory.find((x) => x.id === companyId);
+  if (!c) return;
+
+  await addWatchlistEntry(db, userId, {
+    company: c.name,
+    careersUrl: c.careersUrl,
+    ats: c.ats,
+    token: c.token,
+    active: true,
+    addedAt: today(),
+  });
+  revalidatePath("/app/watchlist");
+}
+
+/** Watch every directory company whose board can actually be read today. */
+export async function watchAllReadable(): Promise<void> {
+  const { db, userId } = await ws();
+  const readable = await watchableCompanies(db);
+  for (const c of readable) {
+    await addWatchlistEntry(db, userId, {
+      company: c.name,
+      careersUrl: c.careersUrl,
+      ats: c.ats,
+      token: c.token,
+      active: true,
+      addedAt: today(),
+    });
+  }
+  revalidatePath("/app/watchlist");
 }
