@@ -1,0 +1,592 @@
+{
+  "_readme": [
+    "Seed list of Singapore employers for the sourcing pipeline (DESIGN.md section 4).",
+    "This is DATA, not code (CLAUDE.md rule 4): nothing here may be hardcoded in lib/.",
+    "",
+    "`type` groups employers by how they hire, which is the useful axis - a US tech",
+    "company staffs Singapore as an APAC sales base, a regional platform staffs product",
+    "here. The 2026-09-23 sourcing run found 185 Singapore roles across 27 US tech boards",
+    "and exactly 2 were product roles; that finding is what `type` exists to capture.",
+    "",
+    "`ats`, `token` and `probed` are FILLED IN by `npm run boards:probe` - do not hand-edit",
+    "them. `ats: \"unknown\"` means no public JSON board was found, so the careers page needs",
+    "the HTML route or a manual check.",
+    "",
+    "`careersUrl` is the human-facing careers page. Add companies freely.",
+    "",
+    "`confirmed: true` marks a board a human has verified. Corroboration is strict and",
+    "produces false negatives (lever/nium is really Nium - its postings name Instarem,",
+    "its subsidiary - but nothing in the payload proves it). Confirmed entries are kept."
+  ],
+  "companies": [
+    {
+      "company": "Grab",
+      "type": "regional-platform",
+      "careersUrl": "https://grab.careers/",
+      "ats": "smartrecruiters",
+      "token": "grab",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Sea Group",
+      "type": "regional-platform",
+      "careersUrl": "https://career.sea.com/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Shopee",
+      "type": "regional-platform",
+      "careersUrl": "https://careers.shopee.sg/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "GoTo Group",
+      "type": "regional-platform",
+      "careersUrl": "https://www.gotocompany.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Lazada",
+      "type": "regional-platform",
+      "careersUrl": "https://www.lazada.com/en/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "ByteDance / TikTok",
+      "type": "regional-platform",
+      "careersUrl": "https://careers.tiktok.com/",
+      "ats": "smartrecruiters",
+      "token": "bytedance",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Carousell",
+      "type": "regional-platform",
+      "careersUrl": "https://careers.carousell.com/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "PropertyGuru",
+      "type": "proptech",
+      "careersUrl": "https://www.propertygurugroup.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Ninja Van",
+      "type": "logistics",
+      "careersUrl": "https://www.ninjavan.co/en-sg/careers",
+      "ats": "lever",
+      "token": "ninjavan",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "ShopBack",
+      "type": "regional-platform",
+      "careersUrl": "https://careers.shopback.com/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Klook",
+      "type": "regional-platform",
+      "careersUrl": "https://www.klook.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Stripe",
+      "type": "us-tech-apac",
+      "careersUrl": "https://stripe.com/jobs/search",
+      "ats": "greenhouse",
+      "token": "stripe",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Databricks",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.databricks.com/company/careers/open-positions",
+      "ats": "greenhouse",
+      "token": "databricks",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Datadog",
+      "type": "us-tech-apac",
+      "careersUrl": "https://careers.datadoghq.com/",
+      "ats": "greenhouse",
+      "token": "datadog",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "MongoDB",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.mongodb.com/careers",
+      "ats": "greenhouse",
+      "token": "mongodb",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Cloudflare",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.cloudflare.com/careers/jobs/",
+      "ats": "greenhouse",
+      "token": "cloudflare",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Elastic",
+      "type": "us-tech-apac",
+      "careersUrl": "https://jobs.elastic.co/jobs",
+      "ats": "greenhouse",
+      "token": "elastic",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Figma",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.figma.com/careers/",
+      "ats": "greenhouse",
+      "token": "figma",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Anthropic",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.anthropic.com/careers",
+      "ats": "greenhouse",
+      "token": "anthropic",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "GitLab",
+      "type": "us-tech-apac",
+      "careersUrl": "https://about.gitlab.com/jobs/",
+      "ats": "greenhouse",
+      "token": "gitlab",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Atlassian",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.atlassian.com/company/careers/all-jobs",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Canva",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.lifeatcanva.com/en/jobs/",
+      "ats": "smartrecruiters",
+      "token": "canva",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Twilio",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.twilio.com/en-us/company/jobs",
+      "ats": "greenhouse",
+      "token": "twilio",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Okta",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.okta.com/company/careers/",
+      "ats": "greenhouse",
+      "token": "okta",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Coinbase",
+      "type": "crypto",
+      "careersUrl": "https://www.coinbase.com/careers/positions",
+      "ats": "greenhouse",
+      "token": "coinbase",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Vercel",
+      "type": "us-tech-apac",
+      "careersUrl": "https://vercel.com/careers",
+      "ats": "greenhouse",
+      "token": "vercel",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Amplitude",
+      "type": "us-tech-apac",
+      "careersUrl": "https://amplitude.com/careers",
+      "ats": "greenhouse",
+      "token": "amplitude",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Braze",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.braze.com/company/careers",
+      "ats": "greenhouse",
+      "token": "braze",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Intercom",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.intercom.com/careers",
+      "ats": "greenhouse",
+      "token": "intercom",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Asana",
+      "type": "us-tech-apac",
+      "careersUrl": "https://asana.com/jobs",
+      "ats": "greenhouse",
+      "token": "asana",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Fivetran",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.fivetran.com/careers",
+      "ats": "greenhouse",
+      "token": "fivetran",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Samsara",
+      "type": "us-tech-apac",
+      "careersUrl": "https://www.samsara.com/company/careers/roles",
+      "ats": "greenhouse",
+      "token": "samsara",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Affirm",
+      "type": "fintech",
+      "careersUrl": "https://www.affirm.com/careers",
+      "ats": "greenhouse",
+      "token": "affirm",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Airwallex",
+      "type": "fintech",
+      "careersUrl": "https://www.airwallex.com/careers",
+      "ats": "ashby",
+      "token": "airwallex",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Nium",
+      "type": "fintech",
+      "careersUrl": "https://www.nium.com/careers",
+      "ats": "lever",
+      "token": "nium",
+      "probed": "2026-09-23",
+      "confirmed": true
+    },
+    {
+      "company": "Thunes",
+      "type": "fintech",
+      "careersUrl": "https://www.thunes.com/careers/",
+      "ats": "greenhouse",
+      "token": "thunes",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Wise",
+      "type": "fintech",
+      "careersUrl": "https://www.wise.jobs/",
+      "ats": "smartrecruiters",
+      "token": "wise",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Revolut",
+      "type": "fintech",
+      "careersUrl": "https://www.revolut.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Xendit",
+      "type": "fintech",
+      "careersUrl": "https://www.xendit.co/en/careers/",
+      "ats": "greenhouse",
+      "token": "xendit",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Coda Payments",
+      "type": "fintech",
+      "careersUrl": "https://www.codapayments.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Aspire",
+      "type": "fintech",
+      "careersUrl": "https://aspireapp.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Endowus",
+      "type": "fintech",
+      "careersUrl": "https://endowus.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "StashAway",
+      "type": "fintech",
+      "careersUrl": "https://www.stashaway.sg/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Syfe",
+      "type": "fintech",
+      "careersUrl": "https://www.syfe.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Funding Societies",
+      "type": "fintech",
+      "careersUrl": "https://fundingsocieties.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Atome",
+      "type": "fintech",
+      "careersUrl": "https://www.atome.sg/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Triple-A",
+      "type": "crypto",
+      "careersUrl": "https://triple-a.io/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Matrixport",
+      "type": "crypto",
+      "careersUrl": "https://www.matrixport.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Amber Group",
+      "type": "crypto",
+      "careersUrl": "https://www.ambergroup.io/careers",
+      "ats": "lever",
+      "token": "ambergroup",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "DBS Bank",
+      "type": "bank",
+      "careersUrl": "https://www.dbs.com/careers/default.page",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "OCBC",
+      "type": "bank",
+      "careersUrl": "https://www.ocbc.com/group/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "UOB",
+      "type": "bank",
+      "careersUrl": "https://www.uobgroup.com/careers/index.page",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Standard Chartered",
+      "type": "bank",
+      "careersUrl": "https://www.sc.com/en/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Citi Singapore",
+      "type": "bank",
+      "careersUrl": "https://jobs.citi.com/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "HSBC Singapore",
+      "type": "bank",
+      "careersUrl": "https://www.hsbc.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "ST Engineering",
+      "type": "defence-engineering",
+      "careersUrl": "https://careers.stengg.com/search/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Keppel",
+      "type": "defence-engineering",
+      "careersUrl": "https://www.keppel.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Sembcorp",
+      "type": "defence-engineering",
+      "careersUrl": "https://www.sembcorp.com/en/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "SIA Engineering",
+      "type": "defence-engineering",
+      "careersUrl": "https://www.siaec.com.sg/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "PSA International",
+      "type": "logistics",
+      "careersUrl": "https://www.globalpsa.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "GovTech Singapore",
+      "type": "gov-tech",
+      "careersUrl": "https://www.tech.gov.sg/careers/",
+      "ats": "greenhouse",
+      "token": "govtech",
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "MAS",
+      "type": "gov-tech",
+      "careersUrl": "https://www.mas.gov.sg/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "EDB Singapore",
+      "type": "gov-tech",
+      "careersUrl": "https://www.edb.gov.sg/en/careers.html",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Singtel",
+      "type": "telco",
+      "careersUrl": "https://www.singtel.com/about-us/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "StarHub",
+      "type": "telco",
+      "careersUrl": "https://www.starhub.com/about-us/careers.html",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Bain & Company",
+      "type": "consulting",
+      "careersUrl": "https://www.bain.com/careers/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "BCG",
+      "type": "consulting",
+      "careersUrl": "https://careers.bcg.com/",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "McKinsey",
+      "type": "consulting",
+      "careersUrl": "https://www.mckinsey.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "FTI Consulting",
+      "type": "consulting",
+      "careersUrl": "https://www.fticonsulting.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Kearney",
+      "type": "consulting",
+      "careersUrl": "https://www.kearney.com/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    },
+    {
+      "company": "Accenture Singapore",
+      "type": "consulting",
+      "careersUrl": "https://www.accenture.com/sg-en/careers",
+      "ats": "unknown",
+      "token": null,
+      "probed": "2026-09-23"
+    }
+  ]
+}

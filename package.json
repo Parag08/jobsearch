@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "db:apply": "node scripts/db-apply.mjs",
     "db:seed": "node scripts/db-apply.mjs supabase/seed.sql",
-    "seed:build": "vite-node scripts/import-cvbuilder.ts"
+    "seed:build": "vite-node scripts/import-cvbuilder.ts",
+    "boards:probe": "node scripts/probe-boards.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
