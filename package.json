@@ -15,7 +15,8 @@
     "seed:build": "vite-node scripts/import-cvbuilder.ts",
     "boards:probe": "vite-node scripts/probe-boards.ts",
     "companies:sync": "vite-node scripts/sync-companies.ts",
-    "source:sg": "vite-node scripts/source-singapore.ts"
+    "source:sg": "vite-node scripts/source-singapore.ts",
+    "ai:stream": "vite-node scripts/stream-demo.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

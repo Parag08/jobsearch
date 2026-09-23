@@ -9,3 +9,8 @@ next-env.d.ts
 .env*.local
 .DS_Store
 .vercel
+
+# Agent tooling: installed skills are vendored third-party content, not product code.
+# skills-lock.json is kept so the set is reproducible via `npx skills install`.
+.agents/
+.claude/
