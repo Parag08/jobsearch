@@ -349,8 +349,71 @@ but it needs the credential in the runtime.
 
 ATS public endpoints and aggregator APIs are fine. **LinkedIn and Indeed scraping is not** — and
 `docs/SPEC.md` M4 already took that position: *"no scraping, no API, no ToS risk — it's his own browser
-view."* Keep it consistent: where a site has no API, the user pastes or screenshots, exactly as with
-contacts.
+view."*
+
+**Revised 2026-09-23 — a company's own careers page is now in bounds.** The original rule said "no
+scraping" full stop. That was aimed at LinkedIn and Indeed: ToS-protected aggregators whose whole
+business is the listing data. It over-reached. A company's own careers page is public, unauthenticated,
+server-rendered, and published precisely so people read it. Reading ST Engineering's board is not the
+same act as scraping LinkedIn's.
+
+The line, stated so it cannot drift:
+
+| In bounds | Out of bounds |
+| --- | --- |
+| Public ATS JSON endpoints | LinkedIn, Indeed, Glassdoor, any aggregator |
+| A named watchlist company's own careers page, server-rendered, no auth | Anything behind a login or a paywall |
+| Polite rate limits, honoured `robots.txt`, identifying User-Agent | Headless-browser evasion, rotating IPs, CAPTCHA solving |
+
+Only companies the user has explicitly named are fetched. This is not a crawler.
+
+### Board discovery, and why a token that answers proves nothing
+
+`data/singapore/companies.json` holds the seed list (company, type, careers URL) and
+`npm run boards:probe` fills in the verified ATS and token. The type matters more than it looks: it
+records **how an employer hires**, which the 2026-09-23 run showed is the dominant variable.
+
+The trap, found the hard way: **a board token that returns postings is not evidence the board belongs
+to the company.** Probing by name alone produced four confident false positives —
+
+| Token | Assumed | Actually |
+| --- | --- | --- |
+| `mas` | Monetary Authority of Singapore | an HVAC company in Hillside, Illinois |
+| `edb` | Singapore EDB | EnterpriseDB |
+| `sia` | SIA Engineering | Sia Partners (consulting) |
+| `bcg` | Boston Consulting Group | somebody's test board in Tampa |
+
+All four answered with real, current jobs. Unchecked, the pipeline would have fed Illinois HVAC
+vacancies into a Singapore product search — and nothing downstream would have noticed, because every
+later stage trusts the source.
+
+So a token is accepted only with corroboration: the board's own employer name matching at comparable
+length (a fragment match is how "Sia" passes for "SIA Engineering"), or the employer's domain appearing
+in its job links, or a token long and unambiguous enough to stand alone. Strictness costs false
+negatives — `lever/nium` is genuinely Nium, but only its subsidiary's name in the posting text says so
+— which is why `confirmed: true` exists for boards a human has checked. **Prefer a false negative: a
+missed company gets a manual check, a false positive silently poisons everything downstream.**
+
+### Coverage is inverted against what the user needs
+
+After probing 71 employers, by type:
+
+| Type | Companies | Readable as JSON |
+| --- | --- | --- |
+| US tech (APAC) | 20 | **19** |
+| Fintech | 14 | 6 |
+| Regional platform | 9 | 2 |
+| Bank | 6 | **0** |
+| Consulting | 6 | **0** |
+| Defence / engineering | 4 | **0** |
+| Telco | 2 | **0** |
+
+The companies the pipeline reads best are the ones staffing Singapore as a **sales hub** — 185 roles
+across those boards, two of them product. The companies that actually hire product here — Sea, Shopee,
+GoTo, Lazada, Carousell, the banks, ST Engineering — are almost entirely invisible to it.
+
+That is the argument for the HTML route: not completeness for its own sake, but because the JSON
+boards systematically cover the wrong half of the market.
 
 ---
 
