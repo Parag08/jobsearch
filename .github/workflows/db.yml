@@ -39,3 +39,17 @@ jobs:
       - run: npm run db:seed
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # seed.sql carries the CVbuilder workspace ONLY. The company directory is
+      # separate data with its own source file, so the drop wipes it too - and on
+      # 2026-09-23 it did exactly that, the first time this workflow ever ran green.
+      # Needs two more secrets than the steps above; skipped cleanly if absent.
+      - name: Reload the company directory
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY not set - the company directory was NOT restored after the drop. Run 'npm run companies:sync' locally."
+            exit 0
+          fi
+          npm run companies:sync
