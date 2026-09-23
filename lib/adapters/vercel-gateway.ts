@@ -13,7 +13,20 @@ export const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
  * Premium mirrors the direct-Anthropic default, for polish and outreach only.
  */
 export const GATEWAY_SMALL_MODEL = "google/gemini-2.5-flash-lite";
-export const GATEWAY_PREMIUM_MODEL = "anthropic/claude-sonnet-4.5";
+
+/**
+ * Premium default. NOT anthropic/claude-sonnet-4.5, which is the better model but
+ * returns 403 RestrictedModelsError on a free-tier team - a default that cannot run
+ * is not a default (rule 5, free-first).
+ *
+ * Both defaults were chosen by testing JSON mode, not price or reputation. Several
+ * models answer 200 and then return prose, which is useless to extractJd: openai/
+ * gpt-oss-20b, deepseek/deepseek-r1 and minimax/minimax-m2 all fail that way, and
+ * alibaba/qwen3.7-flash burned 1,720 completion tokens and 24 seconds on a 4-field
+ * extraction. Restore claude-sonnet-4.5 via AI_GATEWAY_PREMIUM_MODEL once the team
+ * has paid credits.
+ */
+export const GATEWAY_PREMIUM_MODEL = "mistral/mistral-medium-3.5";
 
 export interface VercelGatewayOptions {
   apiKey: string;
