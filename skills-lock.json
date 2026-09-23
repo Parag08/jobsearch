@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-gateway": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/ai-gateway/SKILL.md",
+      "computedHash": "15682d339f7f33bc0ead0dde1a6789776a867283991ffab9a525d1f22f7d7c8a"
+    }
+  }
+}

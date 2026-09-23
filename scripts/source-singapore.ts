@@ -81,10 +81,13 @@ const failures: string[] = [];
 await Promise.all(
   readable.map(async (c) => {
     try {
-      const endpoint = atsEndpoint(c.ats as Exclude<typeof c.ats, "unknown">, c.token!);
+      // `readable` already excludes unknown/tokenless entries; narrow for the compiler,
+      // which cannot carry that filter into this closure.
+      const ats = c.ats as "greenhouse" | "lever" | "ashby" | "smartrecruiters";
+      const endpoint = atsEndpoint(ats, c.token as string);
       const res = await fetch(endpoint, { headers: { accept: "application/json" } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const jobs = mapBoardPayload(c.ats as never, await res.json(), c.company);
+      const jobs = mapBoardPayload(ats, await res.json(), c.company);
       for (const j of jobs) {
         const loc = j.location ?? "";
         if (!SG.test(loc)) continue;
