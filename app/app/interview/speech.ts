@@ -1,7 +1,9 @@
 /**
  * Browser speech, shared by spoken practice and the case interviewer. Platform APIs only:
- * speech synthesis to ask, the browser's speech recognition to transcribe. Nothing here
- * sends audio anywhere - only the resulting text ever leaves the page.
+ * speech synthesis to ask, the browser's speech recognition to transcribe. JobSearch's own
+ * server only ever receives text. Note what the browser does, though: Chrome's and Edge's
+ * recognition stream the microphone audio to Google's / Microsoft's speech services to
+ * transcribe it. Synthesis uses the voices installed with the OS or browser.
  */
 
 // Minimal typings - the Web Speech API is not in TypeScript's DOM lib yet.

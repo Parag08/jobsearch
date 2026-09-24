@@ -10,9 +10,10 @@ import ui from "../ui.module.css";
  * Spoken practice: the page asks the question aloud, records your answer, transcribes
  * it live, and sends the transcript to be scored.
  *
- * Everything audio happens in the browser - speech synthesis to ask, the browser's
- * speech recognition to transcribe, MediaRecorder so you can hear yourself back. Only
- * the transcript goes to the server, and no audio is ever stored (DESIGN.md section 3).
+ * Audio is handled by the browser - speech synthesis to ask, the browser's speech
+ * recognition to transcribe (Chrome/Edge send the audio to Google's/Microsoft's speech
+ * service for this), MediaRecorder so you can hear yourself back (kept in the page only).
+ * JobSearch's server receives only the transcript; no audio is stored (DESIGN.md section 3).
  * No new dependency: these are platform APIs.
  */
 
@@ -230,7 +231,7 @@ export function PracticePanel({ questionId, questionText, firm }: { questionId: 
           <button className={ui.btn} data-primary="" type="button" onClick={score} disabled={phase === "scoring" || transcript.trim().length === 0}>
             {phase === "scoring" ? "Scoring…" : "Score my answer"}
           </button>
-          <span className={ui.sub}>Only the transcript is sent. Audio stays on this device.</span>
+          <span className={ui.sub}>JobSearch receives only the transcript. Your browser's speech service (Google in Chrome, Microsoft in Edge) hears the audio to transcribe it.</span>
         </div>
       )}
 
