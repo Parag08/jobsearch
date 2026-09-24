@@ -255,6 +255,24 @@ export interface RowMap {
   companies: CompanyRow;
   interview_answers: InterviewAnswerRow;
   interview_attempts: InterviewAttemptRow;
+  case_sessions: CaseSessionRow;
+}
+
+/** One attempt at a case interview; `session` is the whole CaseSession, saved every turn. */
+export interface CaseSessionRow {
+  id: string;
+  user_id: string;
+  case_id: string;
+  status: "running" | "done";
+  session: unknown;
+  scores: Record<string, number> | null;
+  overall: number | null;
+  strengths: string[];
+  improvements: string[];
+  per_question: unknown;
+  model: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /** One written answer per (user, question id from data/interview/questions.json). */

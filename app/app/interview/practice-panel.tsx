@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { scoreAnswerAction, type ScoreResult } from "../actions";
 import { DIMENSION_HELP, SCORE_DIMENSIONS } from "@/lib/interview/score";
+import { LANGS, recognitionCtor, type SpeechRecognitionLike } from "./speech";
 import ui from "../ui.module.css";
 
 /**
@@ -14,42 +15,6 @@ import ui from "../ui.module.css";
  * the transcript goes to the server, and no audio is ever stored (DESIGN.md section 3).
  * No new dependency: these are platform APIs.
  */
-
-// Minimal typings - the Web Speech API is not in TypeScript's DOM lib yet.
-interface SpeechRecognitionResultLike {
-  isFinal: boolean;
-  0: { transcript: string };
-}
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<SpeechRecognitionResultLike>;
-}
-interface SpeechRecognitionLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-}
-type RecognitionCtor = new () => SpeechRecognitionLike;
-
-function recognitionCtor(): RecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
-
-/** Accent choices are data about the speaker, never assumed (rule 4). */
-const LANGS = [
-  { id: "en-US", label: "English (US)" },
-  { id: "en-GB", label: "English (UK)" },
-  { id: "en-IN", label: "English (India)" },
-  { id: "en-SG", label: "English (Singapore)" },
-  { id: "en-AU", label: "English (Australia)" },
-];
 
 type Phase = "idle" | "recording" | "recorded" | "scoring";
 

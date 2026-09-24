@@ -17,8 +17,28 @@ import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { buildScoringPrompt, deliverySignals, numberDrift, overallScore, parseScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
 import { firmNote } from "@/lib/interview/questions";
-import { parseJsonLoose } from "@/lib/adapters/llm-http";
+import { parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
 import { questionBank } from "./interview/bank";
+import { findCase } from "./interview/cases";
+import {
+  advance as advanceCase,
+  applyTurn,
+  buildDebriefPrompt,
+  buildTurnPrompt,
+  caseSignals,
+  checkMath,
+  currentQuestion,
+  forcedAdvance,
+  guardReply,
+  overallCaseScore,
+  parseDebrief,
+  parseTurnReply,
+  startSession,
+  type CaseScores,
+  type CaseSession,
+  type CaseSignals,
+} from "@/lib/interview/case-session";
+import { createCaseSession, finishCaseSession, getCaseSession, saveCaseSession } from "@/lib/repos/case-sessions";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -370,4 +390,135 @@ export async function scoreAnswerAction(input: {
 
   revalidatePath("/app/interview");
   return { overall, scores: parsed.scores, strengths: parsed.strengths, improvements: parsed.improvements, signals, saidNotWritten, model };
+}
+
+// ---- case interviews ------------------------------------------------------------------------
+
+export interface CaseTurnResult {
+  error?: string;
+  /** Set when the AI provider rate-limited us: seconds until the page should retry. */
+  retryAfter?: number;
+  sessionId?: string;
+  session?: CaseSession;
+}
+
+/** Start a fresh attempt at a case. The opening prompt is from the sheet - no model call. */
+export async function startCaseAction(caseId: string): Promise<CaseTurnResult> {
+  const { db, userId } = await ws();
+  const sheet = findCase(caseId);
+  if (!sheet) return { error: "Unknown case." };
+  const stored = await createCaseSession(db, userId, startSession(sheet, new Date().toISOString()));
+  return { sessionId: stored.id, session: stored.session };
+}
+
+/**
+ * One exchange with the interviewer. Code checks any math and decides what the model sees;
+ * the model only phrases the reply and says whether this question is done. Saved every turn.
+ */
+export async function caseTurnAction(input: { sessionId: string; text: string }): Promise<CaseTurnResult> {
+  const { db, userId } = await ws();
+  const stored = await getCaseSession(db, userId, input.sessionId);
+  if (!stored) return { error: "That interview could not be found." };
+  const sheet = findCase(stored.caseId);
+  if (!sheet) return { error: "Unknown case." };
+  const s = stored.session;
+  if (s.status === "done") return { error: "This interview has finished." };
+  const text = input.text.trim();
+  if (!text) return { error: "Say or type something first." };
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+
+  const q = currentQuestion(sheet, s);
+  const check =
+    q?.kind === "math" && q.answer ? { questionId: q.id, expected: q.answer.value, ...checkMath(q.answer, text) } : undefined;
+
+  // Code guarantees progress (a correct answer or the turn cap closes the question); the model
+  // then only acknowledges, so it cannot ask the next question over the top of the engine.
+  const forced = forcedAdvance(sheet, s, check);
+
+  // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
+  const model = process.env.AI_GATEWAY_CASE_MODEL || GATEWAY_SMALL_MODEL;
+  let reply;
+  try {
+    let out = "";
+    for await (const d of streamGatewayText({ apiKey, model, prompt: buildTurnPrompt(sheet, s, text, check, forced !== null), json: true, maxOutputTokens: 300 })) {
+      out += d;
+    }
+    reply = parseTurnReply(parseJsonLoose(out));
+    if (forced) reply = { ...reply, advance: true };
+    // Never let a line with an invented figure, or a repeated nudge, reach the candidate.
+    const g = guardReply(sheet, s, text, reply);
+    reply = { say: g.say, advance: g.advance };
+  } catch (err) {
+    const wait = retryAfterSeconds(err);
+    if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+    return { error: err instanceof Error ? `The interviewer lost the thread: ${err.message}` : "The interviewer lost the thread." };
+  }
+
+  const next = applyTurn(sheet, s, text, reply, new Date().toISOString(), check);
+  await saveCaseSession(db, userId, stored.id, next);
+  await logTokens(db, userId, { date: today(), module: "case-turn", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  return { sessionId: stored.id, session: next };
+}
+
+/** Skip ahead when you are stuck - the next question is asked by code, no model call. */
+export async function caseNextQuestionAction(sessionId: string): Promise<CaseTurnResult> {
+  const { db, userId } = await ws();
+  const stored = await getCaseSession(db, userId, sessionId);
+  const sheet = stored && findCase(stored.caseId);
+  if (!stored || !sheet) return { error: "That interview could not be found." };
+  const next = advanceCase(sheet, stored.session, new Date().toISOString());
+  await saveCaseSession(db, userId, stored.id, next);
+  return { sessionId: stored.id, session: next };
+}
+
+export interface CaseDebriefResult {
+  error?: string;
+  overall?: number;
+  scores?: CaseScores;
+  strengths?: string[];
+  improvements?: string[];
+  perQuestion?: { questionId: string; note: string }[];
+  signals?: CaseSignals;
+  model?: string;
+}
+
+/** End the interview and score it. Judgement, so the premium tier (token rule #5). */
+export async function finishCaseAction(sessionId: string): Promise<CaseDebriefResult> {
+  const { db, userId } = await ws();
+  const stored = await getCaseSession(db, userId, sessionId);
+  const sheet = stored && findCase(stored.caseId);
+  if (!stored || !sheet) return { error: "That interview could not be found." };
+  if (!stored.session.turns.some((t) => t.role === "candidate")) return { error: "Answer at least one question before asking for feedback." };
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+
+  const signals = caseSignals(sheet, stored.session);
+  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  let debrief;
+  try {
+    let out = "";
+    for await (const d of streamGatewayText({ apiKey, model, prompt: buildDebriefPrompt(sheet, stored.session, signals), json: true, maxOutputTokens: 900 })) {
+      out += d;
+    }
+    debrief = parseDebrief(parseJsonLoose(out));
+  } catch (err) {
+    return { error: err instanceof Error ? `Could not score the interview: ${err.message}` : "Could not score the interview." };
+  }
+
+  const overall = overallCaseScore(debrief.scores);
+  await finishCaseSession(db, userId, stored.id, {
+    session: { ...stored.session, status: "done" },
+    scores: debrief.scores,
+    overall,
+    strengths: debrief.strengths,
+    improvements: debrief.improvements,
+    perQuestion: debrief.perQuestion,
+    model,
+  });
+  await logTokens(db, userId, { date: today(), module: "case-debrief", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  revalidatePath("/app/interview");
+  return { overall, scores: debrief.scores, strengths: debrief.strengths, improvements: debrief.improvements, perQuestion: debrief.perQuestion, signals, model };
 }

@@ -278,6 +278,32 @@ stories they already told.
   failure, conflict, or influencing without authority."* Structurally identical to `gapAnalysis` in
   `lib/sector-graph.ts`.
 
+### Case interviews (Casing tab)
+
+A live case interviewer, Bain-style and candidate-led: you drive, ask for data, and the interviewer
+hands it over only when asked. Type or talk (browser speech; only text leaves the page).
+
+- **Cases are data** (`data/interview/cases.json`, validated by `lib/interview/case-sheet.ts`): prompt,
+  facts released on request, and a path of questions - structure, brainstorm, math, chart,
+  recommendation - each with what a strong answer contains and the answer with its working. The ten
+  shipped cases each keep the flow and central insight of a published casebook case, re-set in tech
+  M&A and PE with fictional companies and new numbers; the source map lives with the user's casebook
+  library, not in this public repo.
+- **Code owns the path; the model only talks** (`lib/interview/case-session.ts`). Code decides the
+  current question, asks the next one, puts exhibits on the table, and checks math deterministically
+  (`checkMath`, scale-aware). Models proved reluctant to move a case on, so code guarantees progress: a
+  correct answer closes a math question and each question has a turn cap. The model's line is then
+  guarded: any figure not already in the case or the conversation, or a repeated nudge, is replaced
+  with a neutral prompt - a practice tool must never teach a wrong number.
+- **The bar is shared** (`lib/interview/case-method.ts`): the same "what good looks like" steps go into
+  the interviewer's prompt and onto the page.
+- **Debrief** (premium tier): six dimensions scored against the case's own answers, plus measured
+  signals (math right, clarifying questions, how far you got). The model answer unlocks after.
+- **Saved every turn** (`case_sessions`, migration 0002), so a refresh resumes the interview.
+- Turns use the small tier for speed; the gateway plan allows 5 requests a minute per model, so a
+  rate-limited turn tells you and re-sends itself after the wait. `npm run case:drill -- <id>` plays a
+  simulated candidate against the real interviewer as a live check.
+
 ---
 
 ## 4 · Company-targeted sourcing

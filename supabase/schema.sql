@@ -18,6 +18,7 @@
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
 drop table if exists token_ledger cascade;
+drop table if exists case_sessions cascade;
 drop table if exists interview_attempts cascade;
 drop table if exists interview_answers cascade;
 drop table if exists stories cascade;
@@ -311,6 +312,24 @@ create table interview_attempts (
 );
 create index interview_attempts_user_question on interview_attempts (user_id, question_id, created_at desc);
 
+-- Case interviews (migration 0002): the whole session is saved every turn.
+create table case_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  case_id text not null,
+  status text not null default 'running' check (status in ('running', 'done')),
+  session jsonb not null,
+  scores jsonb,
+  overall numeric(3, 1),
+  strengths text[] not null default '{}',
+  improvements text[] not null default '{}',
+  per_question jsonb,
+  model text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index case_sessions_user_case on case_sessions (user_id, case_id, created_at desc);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -327,6 +346,7 @@ alter table watchlist enable row level security;
 alter table stories enable row level security;
 alter table interview_answers enable row level security;
 alter table interview_attempts enable row level security;
+alter table case_sessions enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -347,7 +367,7 @@ begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
-                           'interview_answers','interview_attempts']
+                           'interview_answers','interview_attempts','case_sessions']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);

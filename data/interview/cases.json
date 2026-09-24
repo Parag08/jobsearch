@@ -1,0 +1,852 @@
+{
+  "_readme": [
+    "Case interviews for the Casing tab (lib/interview/case-sheet.ts validates this file; a test fails the build if it stops parsing).",
+    "This is DATA, not code (CLAUDE.md rule 4).",
+    "",
+    "Each case keeps the question flow and the central insight of a published casebook case, re-set in technology with",
+    "fictional companies and new numbers so it can be practised as a Bain-style candidate-led interview. No text is copied.",
+    "The mapping to the source cases is kept locally with the user's casebook library, not in this public repository.",
+    "The method (facts only on request; structure, brainstorm, math, chart, recommendation; the bar for each) is restated",
+    "in our own words in lib/interview/case-method.ts.",
+    "",
+    "Answer values are absolute: US$360m is 360000000, 20% is 20, 2.1x is 2.1, six months is 6. Tolerance is relative."
+  ],
+  "cases": [
+    {
+      "id": "bain-ledgerline-target-screen",
+      "title": "Ledgerline: which software company to buy?",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "m-and-a",
+      "sector": "software",
+      "level": "medium",
+      "minutes": 30,
+      "prompt": "Our client, Ledgerline, sells accounting and regulatory-reporting software to listed small and mid-sized companies across Southeast Asia. After several strong years it has US$100 million of revenue, US$30 million of EBITDA and US$150 million of cash, and wants to make an acquisition. The CEO has three companies in mind: SiteForge, which builds websites for regional banks; ClinicLedger, which makes billing and accounting software for private hospitals; and StockTrail, which makes inventory software for fashion retailers. Which one should Ledgerline buy, and what should it pay?",
+      "facts": [
+        { "id": "goal", "ask": ["goal", "objective", "criteria", "success", "what does the ceo want"], "text": "The CEO wants a deal that makes sense both strategically and financially." },
+        { "id": "ledgerline", "ask": ["ledgerline", "our client", "capabilities", "strengths", "culture"], "text": "Ledgerline is the market leader in its niche, with strong engineering teams in Singapore and Ho Chi Minh City and a professional, process-driven culture. It does no web development or inventory software, and does not sell to hospitals." },
+        { "id": "siteforge", "ask": ["siteforge", "bank website", "web"], "text": "SiteForge builds award-winning websites for about a dozen regional banks, with roughly 10% share of a flat market. Two graduates founded it eight years ago; it has a start-up culture. Its main competitor is banks' own IT teams." },
+        { "id": "clinicledger", "ask": ["clinicledger", "hospital", "clinic"], "text": "ClinicLedger's product is middle-of-the-road and it holds about 2% share. Its market's growth has risen from 2% to 6% a year over four years, because new e-invoicing and insurance-claims rules force hospitals to upgrade. It is building a module for those rules. Its founder has been CEO since 2001; the culture is professional." },
+        { "id": "stocktrail", "ask": ["stocktrail", "inventory", "retail"], "text": "StockTrail holds about 5% share of a market growing 3% a year. It holds its own against larger rivals and plans to move into grocery. A private-equity fund bought it 18 months ago." },
+        { "id": "regulation", "ask": ["regulat", "antitrust", "approval"], "text": "None of the three deals raises competition or regulatory issues." },
+        { "id": "synergies", "ask": ["synerg"], "text": "The team sees no real synergies with SiteForge or StockTrail. For ClinicLedger - you tell me." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": [
+            "Ledgerline itself: cash, capabilities, culture, what it wants from a deal",
+            "Each target: market size and growth, share, customers, profitability, capabilities",
+            "Fit and synergies: how close each is to Ledgerline's core, and what Ledgerline could improve",
+            "The deal: price against comparable deals, whether the owner will sell, culture, regulation"
+          ],
+          "advanced": ["Sets up a consistent screen so the three targets are compared on the same criteria"]
+        },
+        {
+          "id": "brainstorm-fit",
+          "kind": "brainstorm",
+          "ask": "Before we look at numbers - what are the strategic pros and cons of each target?",
+          "ideas": [
+            { "bucket": "SiteForge", "items": ["Pro: high quality and strong share", "Con: flat market", "Con: web development is far from Ledgerline's core", "Con: start-up culture clash"] },
+            { "bucket": "ClinicLedger", "items": ["Pro: accounting software - close to Ledgerline's core capabilities", "Pro: a regulation-driven tailwind", "Con: mediocre product and small share", "Con: key-person risk in a long-serving founder"] },
+            { "bucket": "StockTrail", "items": ["Pro: competes well and has a growth plan", "Con: not core", "Con: PE owner bought recently, so it may not want to sell yet or will want a high price"] }
+          ],
+          "advanced": ["Judges targets on fit with the core, not on growth alone"]
+        },
+        {
+          "id": "chart-pnl",
+          "kind": "chart",
+          "ask": "Here are the financials for all three targets and for Ledgerline. Which looks best financially?",
+          "exhibit": {
+            "title": "Financials and headcount (US$ million; people)",
+            "columns": ["Company", "Revenue", "Cost of delivery", "SG&A", "EBITDA", "Sales staff", "Developers"],
+            "rows": [
+              ["Ledgerline", 100, 55, 15, 30, 80, 250],
+              ["SiteForge", 20, 9, 3, 8, 16, 50],
+              ["ClinicLedger", 40, 32, 8, 0, 64, 130],
+              ["StockTrail", 30, 19.5, 4.5, 6, 24, 75]
+            ]
+          },
+          "keyPoints": [
+            "Before any synergies SiteForge looks best at a 40% EBITDA margin, StockTrail 20%, ClinicLedger 0%",
+            "ClinicLedger is badly overstaffed: US$0.625m revenue per salesperson against US$1.25m at Ledgerline and the others, and about US$0.31m per developer against US$0.4m",
+            "ClinicLedger's zero margin is a cost problem Ledgerline knows how to fix, not a market problem"
+          ],
+          "advanced": ["Turns costs into % of revenue and revenue per head to compare companies of different sizes"]
+        },
+        {
+          "id": "math-synergies",
+          "kind": "math",
+          "ask": "Suppose Ledgerline ran ClinicLedger the way it runs itself. What would ClinicLedger's EBITDA be?",
+          "onRequest": ["Assume ClinicLedger can reach Ledgerline's cost ratios: cost of delivery 55% of revenue and SG&A 15%, with revenue unchanged."],
+          "answer": {
+            "value": 12000000,
+            "display": "US$12m (a 30% margin)",
+            "tolerance": 0.03,
+            "working": ["Cost of delivery: 55% x US$40m = US$22m, down from US$32m", "SG&A: 15% x US$40m = US$6m, down from US$8m", "EBITDA: US$40m - US$22m - US$6m = US$12m, a 30% margin, from zero", "Headcount at Ledgerline's productivity: about 32 salespeople (from 64) and 100 developers (from 130)"]
+          },
+          "advanced": ["After synergies ClinicLedger earns more than SiteForge or StockTrail, so the pre-synergy screen points at the wrong target"]
+        },
+        {
+          "id": "math-price",
+          "kind": "math",
+          "ask": "Here are recent deals in each space. What should Ledgerline be willing to pay for ClinicLedger?",
+          "exhibit": {
+            "title": "Recent deals (US$ million)",
+            "columns": ["Deal", "Space", "Revenue", "EBITDA", "Price"],
+            "rows": [
+              ["MedBill Asia", "Healthcare billing software", 60, 12, 84],
+              ["CarePay", "Healthcare billing software", 45, 9, 63],
+              ["GlobalHealth Systems (US)", "Healthcare billing software", 2000, 400, 4800],
+              ["BankSite", "Bank web platforms", 30, 8, 112],
+              ["WebNova", "Bank web platforms", 40, 10, 140],
+              ["TinyWeb", "Bank web platforms", 3, 1, 40],
+              ["ShelfWise", "Retail inventory software", 50, 10, 60],
+              ["RackPro", "Retail inventory software", 70, 14, 84],
+              ["MegaRetail Tech (US)", "Retail inventory software", 3000, 500, 6000]
+            ]
+          },
+          "answer": {
+            "value": 84000000,
+            "display": "about US$84m (7x synergised EBITDA)",
+            "tolerance": 0.03,
+            "working": ["Drop the outliers: GlobalHealth (a giant US company), TinyWeb (tiny) and MegaRetail (a giant US company)", "Healthcare billing software trades at 7x EBITDA (84/12, 63/9)", "ClinicLedger: 7 x US$12m synergised EBITDA = US$84m", "For comparison: SiteForge 14 x US$8m = US$112m; StockTrail 6 x US$6m = US$36m - all affordable from US$150m cash"]
+          },
+          "advanced": ["US$84m prices in synergies only Ledgerline can deliver - on its own ClinicLedger earns nothing, so Ledgerline should open far lower", "Web assets trade at rich multiples, while accounting software is cheap relative to the synergies"]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "The CEO is on the line. What's your recommendation?" }
+      ],
+      "recommendation": {
+        "answer": "Buy ClinicLedger, paying no more than about US$84m and opening well below it, because its standalone earnings are zero.",
+        "reasoning": ["Closest to Ledgerline's core: accounting software in a market growing 6% on new rules", "Ledgerline's cost ratios lift its EBITDA from zero to about US$12m", "SiteForge's 40% margin is flattering - flat market, non-core, and it trades at 14x"],
+        "risks": ["The founder retires and takes relationships with him", "Integration cuts (about 30 salespeople and 30 developers) disrupt customers", "The product needs investment to catch up"],
+        "next": ["Test whether the founder will sell and stay through integration", "Diligence the hospital customer base and the new-rules module", "Plan the headcount changes"]
+      }
+    },
+    {
+      "id": "bain-kairos-arcton-synergies",
+      "title": "Kairos Devices: finding the synergies after a deal",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "post-merger-integration",
+      "sector": "it-hardware",
+      "level": "medium",
+      "minutes": 35,
+      "prompt": "Our client, Kairos Devices, makes networking hardware - routers, mesh Wi-Fi systems and smart cameras - with US$15 billion of revenue. It has just acquired a competitor, Arcton, with US$3 billion of revenue. The market reacted badly to the premium Kairos paid, and the CEO has promised investors US$300 million of synergies in the near term. Where can Kairos find them?",
+      "facts": [
+        { "id": "products", "ask": ["product", "mix", "portfolio", "what do they sell"], "text": "Both companies sell the same product categories in about the same proportions. Each makes its own proprietary products and runs its own operations." },
+        { "id": "channels", "ask": ["channel", "retail", "distribution", "how they sell", "direct"], "text": "Both sell only through retailers and online marketplaces; neither plans to sell direct." },
+        { "id": "brands", "ask": ["brand", "differentiat", "quality", "customers"], "text": "The products are similar in quality and features; the brands are what set them apart, and each has loyal customers. The CEO wants to keep both brands." },
+        { "id": "growth", "ask": ["growth", "market", "revenue trend"], "text": "Both companies are growing steadily; neither has a revenue problem." },
+        { "id": "optimised", "ask": ["labour", "labor", "distribution cost", "logistics", "assembly"], "text": "Both companies' assembly labour and distribution are already well optimised - there is little to gain there." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you look for the US$300 million?",
+          "keyPoints": [
+            "Revenue synergies are unlikely: same products, same channels, both brands kept - so focus on costs",
+            "Split costs into those that scale with volume (components, packaging, assembly) and those that do not (overhead, marketing)",
+            "For each cost, compare Arcton with Kairos and ask what Kairos's scale could achieve",
+            "Near-term versus longer-term synergies"
+          ],
+          "advanced": ["Notices early that Kairos is five times Arcton's size - the ratio that makes benchmarking possible"]
+        },
+        {
+          "id": "chart-costs",
+          "kind": "chart",
+          "ask": "Here is how the two companies' costs break down. Where would you dig?",
+          "exhibit": {
+            "title": "Costs by category, US$ million",
+            "columns": ["Category", "Kairos", "Arcton"],
+            "rows": [["Marketing", 4500, 900], ["Distribution", 3000, 600], ["Components", 2500, 700], ["Packaging", 1000, 260], ["Overhead", 1200, 400], ["Assembly labour", 800, 160]]
+          },
+          "keyPoints": [
+            "Kairos is 5x Arcton's revenue, so at Kairos's efficiency Arcton's volume-driven costs should be one-fifth of Kairos's",
+            "Marketing, distribution and assembly labour are exactly one-fifth - no gap (and marketing protects the brands anyway)",
+            "Components (700 vs 500) and packaging (260 vs 200) are above one-fifth: that is where to dig, components first as the larger pool",
+            "Overhead also looks high, but overhead does not scale with revenue"
+          ]
+        },
+        {
+          "id": "math-components",
+          "kind": "math",
+          "ask": "Here is the detail on components. If Arcton could buy at Kairos's prices, how much would it save?",
+          "exhibit": {
+            "title": "Component costs, US$ million",
+            "columns": ["Component", "Kairos", "Arcton"],
+            "rows": [["Chipsets", 1200, 320], ["Circuit boards", 800, 230], ["Plastic housings", 500, 150]]
+          },
+          "answer": {
+            "value": 200000000,
+            "display": "US$200m",
+            "tolerance": 0.02,
+            "working": ["Arcton's target is Kairos's cost divided by 5", "Chipsets: 1,200 / 5 = 240 against 320, saving 80", "Circuit boards: 800 / 5 = 160 against 230, saving 70", "Plastic housings: 500 / 5 = 100 against 150, saving 50", "Total: US$200m"]
+          },
+          "advanced": ["The logic is purchasing power: the combined company renegotiates Arcton's supply at Kairos's volumes"]
+        },
+        {
+          "id": "math-packaging",
+          "kind": "math",
+          "ask": "Now packaging. What can Kairos save there?",
+          "exhibit": {
+            "title": "Packaging costs, US$ million",
+            "columns": ["Material", "Kairos", "Arcton"],
+            "rows": [["Cardboard", 500, 0], ["Foam inserts", 300, 110], ["Plastic trays", 200, 90], ["Moulded pulp", 0, 60]]
+          },
+          "answer": {
+            "value": 100000000,
+            "display": "US$100m",
+            "tolerance": 0.02,
+            "working": ["Compare only like-for-like materials", "Foam inserts: 300 / 5 = 60 against 110, saving 50", "Plastic trays: 200 / 5 = 40 against 90, saving 50", "Cardboard and moulded pulp are different materials - no saving claimed", "Total US$100m, which with components makes exactly the US$300m target"]
+          },
+          "advanced": ["Refuses to force a number on materials that are not comparable"]
+        },
+        {
+          "id": "chart-overhead",
+          "kind": "chart",
+          "ask": "The CFO thinks overhead is the biggest opportunity. Here's the detail - do you agree?",
+          "exhibit": {
+            "title": "Overhead, US$ million",
+            "columns": ["Line", "Kairos", "Arcton"],
+            "rows": [["IT systems", 300, 200], ["Salaried staff", 900, 200]]
+          },
+          "keyPoints": [
+            "Dividing by 5 suggests US$140m on IT (200 against 60) - but overhead does not scale with revenue, so that benchmark does not hold",
+            "Merging IT systems is a real but longer-term synergy, with one-off costs, not the near-term money the CEO promised",
+            "Salaried staff is already at one-fifth"
+          ],
+          "advanced": ["Separates near-term purchasing synergies from long-term integration synergies"]
+        },
+        {
+          "id": "brainstorm-longer-term",
+          "kind": "brainstorm",
+          "ask": "Beyond the next year, where else could the combined company find savings?",
+          "ideas": [
+            { "bucket": "Operations", "items": ["Consolidate factories and remove excess capacity", "Share distribution centres and freight contracts", "Common product platforms and parts across both brands"] },
+            { "bucket": "Overhead", "items": ["Merge IT systems", "Combine finance, HR and procurement", "One headquarters"] },
+            { "bucket": "R&D", "items": ["Shared chipset and firmware development", "Cut duplicate product lines"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "The CEO needs to tell investors something next week. What do you recommend?" }
+      ],
+      "recommendation": {
+        "answer": "Renegotiate Arcton's supplier contracts at Kairos's prices: about US$200m on components and US$100m on packaging, which meets the US$300m target. Treat overhead as a longer-term integration programme.",
+        "reasoning": ["Kairos's 5x scale gives it the purchasing power", "Components and packaging are the only volume-driven costs where Arcton pays more", "Marketing must stay to protect both brands"],
+        "risks": ["Arcton's long-term supplier contracts may block quick renegotiation", "The savings assume equivalent quality", "Suppliers may resist"],
+        "next": ["Review Arcton's contract terms and end dates", "Approach the main suppliers", "Launch a study of IT and overhead integration"]
+      }
+    },
+    {
+      "id": "bain-lanternhill-tessera-turnaround",
+      "title": "Lanternhill Partners: a bold fix for an IT company",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "pe-value-creation",
+      "sector": "it-services",
+      "level": "medium",
+      "minutes": 30,
+      "prompt": "Lanternhill Partners, a private-equity firm, bought Tessera two years ago. Tessera is a US$4 billion IT company serving businesses across Southeast Asia and Australia, selling devices, software, consulting and security services. Revenue has been flat for years and its margin trails competitors. Lanternhill plans to sell Tessera in about three years and has asked us for bold options to turn it around - previous advisers, it says, were not bold enough.",
+      "facts": [
+        { "id": "goal", "ask": ["goal", "objective", "target", "margin target"], "text": "Lanternhill wants at least a 15% profit margin within three years, and will accept lower revenue to get there." },
+        { "id": "offerings", "ask": ["products", "offerings", "segments", "what they sell", "business lines"], "text": "Tessera has four businesses: devices and hardware for employees, software resale and licensing, IT consulting, and managed security. All were built in-house." },
+        { "id": "footprint", "ask": ["countries", "geograph", "footprint", "where"], "text": "It operates in 11 countries. Performance does not differ much by country." },
+        { "id": "cost-cutting", "ask": ["cost cutting", "cost reduction", "tried", "efficiency", "previous"], "text": "Several small cost-cutting programmes have had very little effect." },
+        { "id": "competitors", "ask": ["competitor", "peers", "competition", "industry margin"], "text": "Competitors earn margins of 15-25% and do not share Tessera's problems." },
+        { "id": "m-and-a", "ask": ["acquisition", "m&a", "deals", "open to", "buy"], "text": "Lanternhill is open to acquisitions and disposals. Tessera has done no deals in years because it has no M&A team." },
+        { "id": "brand", "ask": ["brand", "reputation", "strength", "weakness"], "text": "Tessera is trusted as a reliable provider but not seen as innovative." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Make the goal explicit: 15% margin in three years, even at lower revenue", "Profit tree: revenue and costs by business line", "Market and competitors: growth, scale, how peers perform", "Capabilities and options: fix, sell, buy, cut - including bold moves", "Risks and feasibility within the exit timeline"],
+          "advanced": ["Asks for performance by business line early"]
+        },
+        {
+          "id": "chart-peers",
+          "kind": "chart",
+          "ask": "Here is how Tessera compares with its main competitors. What do you see?",
+          "exhibit": {
+            "title": "Revenue, growth and acquisitions: Tessera vs competitors",
+            "columns": ["Company", "Revenue (US$bn)", "Annual growth, last 3 years", "Acquisitions, last 3 years"],
+            "rows": [["Peer A", 12, "11%", 14], ["Peer B", 9, "16%", 22], ["Peer C", 7, "24%", 31], ["Tessera", 4, "2%", 0], ["Peer D", 3, "9%", 5]]
+          },
+          "keyPoints": ["Tessera is subscale and the slowest-growing", "Growth tracks acquisitions: the most acquisitive peer grew fastest, and Tessera made none", "Having done no M&A has probably cost Tessera its growth"],
+          "advanced": ["Reads the two measures together rather than one at a time"]
+        },
+        {
+          "id": "math-margin",
+          "kind": "math",
+          "ask": "Here is Tessera by business line. What would its margin be if it sold the devices business?",
+          "exhibit": {
+            "title": "Tessera by business line",
+            "columns": ["Business", "Revenue (US$bn)", "Annual growth", "Profit margin"],
+            "rows": [["Devices and hardware", 1.2, "-3%", "-15%"], ["Software resale", 1.2, "-1%", "5%"], ["IT consulting", 1.0, "12%", "22%"], ["Managed security", 0.6, "8%", "35%"]]
+          },
+          "answer": {
+            "value": 17.5,
+            "display": "about 17.5%",
+            "tolerance": 0.03,
+            "working": ["Profit today: devices -US$180m, software US$60m, consulting US$220m, security US$210m = US$310m on US$4bn, about 7.75%", "Without devices: revenue US$2.8bn, profit US$490m", "Margin: 490 / 2,800 = 17.5% - above the 15% target"]
+          },
+          "advanced": ["The two largest businesses are the two worst - which is why company-wide cost cutting never worked", "One loss-making line explains most of the margin gap"]
+        },
+        {
+          "id": "brainstorm-options",
+          "kind": "brainstorm",
+          "ask": "What bold options would you put to Lanternhill, and what are the risks of each?",
+          "ideas": [
+            { "bucket": "Sell", "items": ["Sell or exit devices", "Restructure or sell software resale", "Risk: stranded costs and a smaller company"] },
+            { "bucket": "Buy", "items": ["Acquire in consulting and security, where growth and margins are highest", "Buy-and-build to catch up on scale", "Risk: no M&A experience - integration and culture"] },
+            { "bucket": "Fix", "items": ["Bold cost cuts in the remaining businesses", "Shift the sales force to consulting and security", "Risk: disruption before the sale"] },
+            { "bucket": "Exit story", "items": ["Reposition as a higher-margin services business that buyers value more", "Risk: three years is short"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Lanternhill's partners are waiting. What do you recommend?" }
+      ],
+      "recommendation": {
+        "answer": "Sell the devices business, restructure or sell software resale, and use the proceeds to buy growth in consulting and managed security - building an M&A capability first.",
+        "reasoning": ["Exiting devices alone takes the margin from about 8% to 17.5%, above the 15% target", "Peers grew through acquisitions; Tessera made none", "Consulting and security grow fastest at the highest margins"],
+        "risks": ["No M&A experience: integration and culture risk", "Selling a large business is slow and may leave stranded costs", "Revenue falls to about US$2.8bn before acquisitions"],
+        "next": ["Screen buyers for the devices business", "Screen acquisition targets in consulting and security", "Hire an M&A and integration team; build a three-year roadmap"]
+      }
+    },
+    {
+      "id": "bain-crestline-northpier-capacity",
+      "title": "Crestline: moving data-centre capacity to AI customers",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "pe-value-creation",
+      "sector": "data-centres",
+      "level": "hard",
+      "minutes": 30,
+      "prompt": "Crestline, a private-equity fund, recently bought NorthPier, which runs data centres in Singapore and Johor, Malaysia. Crestline plans to sell NorthPier within five years and wants to raise its profits before then. How can NorthPier become more profitable?",
+      "facts": [
+        { "id": "sites", "ask": ["sites", "capacity", "mw", "where", "facilities", "plants"], "text": "NorthPier's Singapore site has 60 MW of high-density, AI-ready capacity, fully leased. Its Johor site has 20 MW of standard capacity, fully leased to enterprises for ordinary colocation. Both sites are full." },
+        { "id": "conversion", "ask": ["convert", "conversion", "upgrade", "retrofit", "switch"], "text": "Johor could be upgraded to AI-ready capacity with liquid cooling and power upgrades, costing about US$60 million. Crestline has the funds." },
+        { "id": "prices", "ask": ["price", "rent", "revenue per", "pricing"], "text": "AI-ready capacity leases for about US$250,000 per MW per month; standard colocation for about US$150,000." },
+        { "id": "margins", "ask": ["margin", "cost", "profit", "ebitda"], "text": "AI-ready capacity earns about a 45% margin; standard colocation about 15%." },
+        { "id": "market", "ask": ["market", "demand", "growth", "share"], "text": "Demand for AI-ready capacity in Singapore and Johor is about 600 MW and growing 20% a year. NorthPier's AI-ready leasing has grown 30% a year, and that is expected to continue for two years." },
+        { "id": "customers", "ask": ["customers", "tenants", "who leases", "contracts"], "text": "AI-ready customers are cloud providers and AI companies. Johor's enterprise tenants are on contracts that end within the next year." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Revenue and cost by product: AI-ready versus standard colocation", "Capacity: both sites are full, so profit grows only by using capacity better or adding more", "Demand: can the market absorb more AI-ready capacity?", "The five-year exit: payback and what a buyer will value", "Risks: power, customers, technology"],
+          "advanced": ["Sees immediately that with full sites, mix is the lever"]
+        },
+        {
+          "id": "math-unit-margins",
+          "kind": "math",
+          "ask": "Let's compare the two products. How much more profit does a MW of AI-ready capacity earn in a year than a MW of standard colocation?",
+          "given": ["AI-ready: about US$250,000 per MW per month at a 45% margin.", "Standard: about US$150,000 per MW per month at a 15% margin."],
+          "answer": {
+            "value": 1080000,
+            "display": "about US$1.08m more per MW per year",
+            "tolerance": 0.03,
+            "working": ["AI-ready: US$250k x 12 = US$3.0m a year; x 45% = US$1.35m profit", "Standard: US$150k x 12 = US$1.8m; x 15% = US$0.27m", "Difference: US$1.08m per MW per year - five times as profitable"]
+          }
+        },
+        {
+          "id": "math-conversion",
+          "kind": "math",
+          "ask": "So should NorthPier convert Johor? What would it add to annual profit, and how fast would the US$60 million pay back?",
+          "given": ["Johor has 20 MW. Conversion costs about US$60m."],
+          "answer": {
+            "value": 21600000,
+            "display": "about US$21.6m a year; payback under 3 years",
+            "tolerance": 0.03,
+            "working": ["As AI-ready: 20 x US$1.35m = US$27m a year", "Given up: 20 x US$0.27m = US$5.4m", "Gain: US$21.6m a year", "Payback: US$60m / US$21.6m = about 2.8 years - if every MW is leased"]
+          },
+          "advanced": ["The payback assumes all 20 MW lease at once - demand needs checking before endorsing it"]
+        },
+        {
+          "id": "math-demand",
+          "kind": "math",
+          "ask": "Would the market take the extra capacity? How much of Johor's 20 MW would NorthPier need in the first year?",
+          "onRequest": ["NorthPier's AI-ready leasing grows 30% a year from today's 60 MW. The market is 600 MW, growing 20% a year."],
+          "answer": {
+            "value": 18,
+            "display": "about 18 MW in year one",
+            "tolerance": 0.04,
+            "working": ["Year one: 60 x 1.3 = 78 MW of demand, against 60 MW in Singapore - 18 MW needed from Johor", "Year two: 78 x 1.3 = about 101 MW - NorthPier runs out of capacity again", "Share needed: 78 / 720 = about 10.8% in year one, 101 / 864 = about 11.7% in year two, up from 10% - achievable"]
+          },
+          "advanced": ["By year two NorthPier is full again - the next expansion has to be planned now to pay off before exit", "At 18 MW leased the first-year gain is about US$18.9m, so payback slips slightly"]
+        },
+        {
+          "id": "brainstorm-risks",
+          "kind": "brainstorm",
+          "ask": "Beyond the numbers, what could go wrong with the conversion?",
+          "ideas": [
+            { "bucket": "Execution", "items": ["Time to upgrade - phase it hall by hall", "Grid power for high-density racks", "Cooling water availability"] },
+            { "bucket": "Customers", "items": ["Enterprise tenants leaving before AI customers sign", "Concentration in a few AI customers", "Different sales skills needed"] },
+            { "bucket": "Market", "items": ["AI demand cools", "Competitors add capacity", "Chip generations change density requirements"] },
+            { "bucket": "People", "items": ["Staff need new skills", "Hiring specialist engineers"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Crestline's deal partner wants your recommendation." }
+      ],
+      "recommendation": {
+        "answer": "Convert Johor to AI-ready capacity, phased as enterprise contracts end, and start planning the next expansion now - NorthPier will be full again within two years.",
+        "reasoning": ["AI-ready capacity earns five times the profit per MW", "Conversion adds about US$21.6m a year and pays back in under three years", "Demand needs about 18 MW in year one and more in year two"],
+        "risks": ["AI demand growth slows", "Power and cooling limits in Johor", "Losing enterprise tenants before AI customers sign"],
+        "next": ["Confirm power and cooling feasibility", "Pre-lease with AI customers before converting", "Plan the next capacity addition within the exit window"]
+      }
+    },
+    {
+      "id": "bain-harbourline-fixpoint-dd",
+      "title": "Harbourline: buying an IT-support company in a crowded market",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "pe-due-diligence",
+      "sector": "it-services",
+      "level": "medium",
+      "minutes": 30,
+      "prompt": "Harbourline, a Singapore-based private-equity fund, is considering buying FixPoint, which provides outsourced IT support - helpdesk and device management - for office workers at companies in the Philippines and Malaysia. Is buying FixPoint a good idea?",
+      "facts": [
+        { "id": "fund-goal", "ask": ["goal", "objective", "return", "target", "criteria"], "text": "Harbourline has not set a specific return target for this deal; it wants to know whether it is attractive." },
+        { "id": "fixpoint", "ask": ["fixpoint", "size", "position", "rank", "target"], "text": "FixPoint supports about 150,000 workers ('seats'). It is among the ten largest providers in its markets, but not the top five." },
+        { "id": "model", "ask": ["business model", "services", "how they make money", "pricing"], "text": "FixPoint charges a fee per supported seat per year. It does not sell hardware." },
+        { "id": "market", "ask": ["market size", "market", "industry"], "text": "The Southeast Asian market for outsourced IT support was about US$2.6 billion in 2025." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Market: size, growth, key players, typical margins", "Target: services, customers, position, operations", "Financials and valuation: revenue, costs, price, returns and exit", "Risks of the acquisition"],
+          "advanced": ["Asks about Harbourline's return criteria and exit route"]
+        },
+        {
+          "id": "chart-landscape",
+          "kind": "chart",
+          "ask": "Here is how the market divides up. What do you take from it?",
+          "exhibit": {
+            "title": "Share of supported seats, Southeast Asia, 2025",
+            "columns": ["Provider", "Share of seats"],
+            "rows": [["Provider 1", "6.0%"], ["Provider 2", "2.5%"], ["Provider 3", "2.0%"], ["Provider 4", "1.8%"], ["Provider 5", "1.7%"], ["FixPoint", "1.2%"], ["All others", "84.8%"]],
+            "note": "About 80% of providers support fewer than 5,000 seats."
+          },
+          "keyPoints": ["The top five hold only 14% - a highly fragmented market", "Fragmentation usually means price competition and thin margins", "It also means consolidation is likely - FixPoint could be a buy-and-build platform"],
+          "advanced": ["Links fragmentation to the investment thesis rather than just describing it"]
+        },
+        {
+          "id": "math-market",
+          "kind": "math",
+          "ask": "Here is how the market has developed. How big will it be in 2030?",
+          "exhibit": {
+            "title": "Southeast Asia outsourced IT support",
+            "columns": ["Year", "Seats supported (m)", "Price per seat per year (US$)", "Market (US$bn)"],
+            "rows": [["2020", 8.0, 300, 2.40], ["2021", 8.6, 280, 2.41], ["2022", 9.4, 255, 2.40], ["2023", 10.2, 240, 2.45], ["2024", 11.0, 228, 2.51], ["2025", 12.0, 220, 2.64]]
+          },
+          "onRequest": ["Seats are expected to grow 50% from 2025 to 2030.", "In a conservative scenario the price falls to US$160 per seat by 2030."],
+          "answer": {
+            "value": 2880000000,
+            "display": "about US$2.9bn",
+            "tolerance": 0.03,
+            "working": ["Seats: 12.0m x 1.5 = 18.0m", "Market: 18.0m x US$160 = US$2.88bn", "From US$2.64bn, that is under 2% a year - despite 50% more seats"]
+          },
+          "advanced": ["Volume growth hides steady price deflation - the market barely grows in dollars", "Prices fell by over a quarter in five years, so US$160 may not be conservative"]
+        },
+        {
+          "id": "brainstorm-prices",
+          "kind": "brainstorm",
+          "ask": "Why do you think the price per seat keeps falling?",
+          "ideas": [
+            { "bucket": "Supply", "items": ["Many small providers competing on price", "Automation and AI helpdesks lower the cost to serve", "Offshore providers entering"] },
+            { "bucket": "Demand", "items": ["Customers use self-service tools from software vendors", "Cloud apps need less support", "Buyers consolidating vendors and negotiating harder"] },
+            { "bucket": "Substitutes", "items": ["Device makers bundling support", "Managed-services firms including it free"] }
+          ]
+        },
+        {
+          "id": "brainstorm-risks",
+          "kind": "brainstorm",
+          "ask": "What are the main risks of this acquisition?",
+          "ideas": [
+            { "bucket": "Market", "items": ["Continued price deflation", "Consolidators outbid Harbourline for bolt-ons", "AI reduces the need for human support"] },
+            { "bucket": "Financial", "items": ["Growth assumptions too optimistic", "Paying too much for a subscale player"] },
+            { "bucket": "Operational", "items": ["Agent attrition", "Customer concentration", "Harbourline lacks operating expertise in the sector"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Harbourline's investment committee wants your view." }
+      ],
+      "recommendation": {
+        "answer": "Invest only at a price that assumes prices keep falling, and only as a buy-and-build platform: acquire small providers and automate support to win on cost.",
+        "reasoning": ["The market grows under 2% a year in dollars despite strong seat growth", "It is highly fragmented, so consolidation creates value", "Scale and automation are what win in a deflating market"],
+        "risks": ["Prices fall faster than modelled", "AI shrinks demand for human support", "Competition for bolt-on targets"],
+        "next": ["Diligence FixPoint's cost to serve and automation", "Build a price-scenario valuation", "Build a pipeline of bolt-on targets"]
+      }
+    },
+    {
+      "id": "bain-straits-freightmesh-stake",
+      "title": "Straits Logistics: invest in a freight-booking platform?",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "m-and-a",
+      "sector": "logistics-software",
+      "level": "medium",
+      "minutes": 30,
+      "prompt": "Our client is Straits Logistics, one of the larger freight forwarders in Southeast Asia. The founders of FreightMesh, a start-up building an online platform where forwarders book space with shipping lines and trucking companies, have made an offer: Straits can invest US$100 million for 20% of FreightMesh, and become its first customer. What should Straits do?",
+      "facts": [
+        { "id": "today", "ask": ["today", "current", "how do they book", "process", "cost per booking", "booking cost"], "text": "Straits books through phone calls, emails and an old in-house system. Each booking costs it about US$40 in staff time and errors." },
+        { "id": "volume", "ask": ["volume", "bookings", "how many", "transactions"], "text": "Straits makes about 600,000 bookings a year. There are about 25 forwarders of similar size in the region." },
+        { "id": "platform-cost", "ask": ["platform cost", "fee", "new cost", "price per booking", "cost on the platform"], "text": "On FreightMesh, each booking costs US$5 paid to FreightMesh plus about US$7 of Straits' own staff time." },
+        { "id": "licence", "ask": ["licence", "license", "joining", "upfront", "setup", "integration"], "text": "Joining costs a one-time licence and integration fee of US$15 million." },
+        { "id": "freightmesh-costs", "ask": ["freightmesh costs", "fixed costs", "variable", "their costs", "profit"], "text": "FreightMesh has almost no variable costs and about US$15 million of fixed costs a year." },
+        { "id": "carriers", "ask": ["carriers", "shipping lines", "suppliers", "trucking", "who pays"], "text": "Carriers pay nothing to join the platform." },
+        { "id": "power", "ask": ["bargaining", "power", "prices from carriers", "rates"], "text": "The platform does not change the freight rates Straits pays - it only makes booking cheaper." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Split the offer into two decisions: Straits as an investor, and Straits as a customer", "As investor: FreightMesh's revenue potential, costs, value of a 20% stake against US$100m", "As customer: saving per booking against the licence fee - and the risk of being first", "The market: how bookings are done today, competitors, whether carriers will join"],
+          "advanced": ["Separates the two decisions at the start - the founders have bundled them"]
+        },
+        {
+          "id": "brainstorm-network",
+          "kind": "brainstorm",
+          "ask": "What has to be true for a platform like this to be valuable to Straits?",
+          "ideas": [
+            { "bucket": "Supply side", "items": ["Enough carriers join, which depends on it being free for them", "Real-time capacity and prices"] },
+            { "bucket": "Demand side", "items": ["Enough forwarders use it", "Integration with forwarders' systems"] },
+            { "bucket": "Platform", "items": ["Reliable and secure software", "A company that survives - the start-up must not go bust"] }
+          ],
+          "advanced": ["Names the network effect: the platform is only worth using once many carriers are on it"]
+        },
+        {
+          "id": "math-stake",
+          "kind": "math",
+          "ask": "Let's look at Straits as an investor. What is a 20% stake in FreightMesh worth?",
+          "onRequest": ["Assume every forwarder of Straits' size joins: 25 forwarders, each with 600,000 bookings a year.", "Value the profits as a perpetuity at a 20% discount rate, which suits a software start-up."],
+          "answer": {
+            "value": 60000000,
+            "display": "about US$60m",
+            "tolerance": 0.03,
+            "working": ["Revenue: US$5 x 600,000 x 25 = US$75m a year", "Less US$15m fixed costs = US$60m profit", "Straits' 20%: US$12m a year", "Undiscounted payback on US$100m: over 8 years", "As a perpetuity at 20%: US$12m / 0.2 = US$60m - less than the US$100m asked"]
+          },
+          "advanced": ["Using Straits' own low cost of capital would overvalue the stake - the rate must reflect the start-up's risk", "Even this assumes every forwarder joins"]
+        },
+        {
+          "id": "math-customer",
+          "kind": "math",
+          "ask": "Now as a customer. How much would Straits save each year, and how fast does the licence pay back?",
+          "answer": {
+            "value": 16800000,
+            "display": "about US$16.8m a year; payback under a year",
+            "tolerance": 0.03,
+            "working": ["Cost per booking falls from US$40 to US$5 + US$7 = US$12, a saving of US$28", "US$28 x 600,000 = US$16.8m a year", "Against the US$15m licence: payback in about 11 months"]
+          },
+          "advanced": ["Being the FIRST customer carries extra risk: few carriers yet, early bugs, and the start-up could fail and take the US$15m with it"]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Straits' CEO needs to reply to the founders. What do you recommend?" }
+      ],
+      "recommendation": {
+        "answer": "Decline the US$100m investment, but adopt the platform as a customer - and only be the first customer if FreightMesh compensates Straits for the risk.",
+        "reasoning": ["The 20% stake is worth about US$60m, well below US$100m", "As a customer, Straits saves about US$16.8m a year and pays back the licence in under a year", "Being first means taking the risk before the network exists"],
+        "risks": ["Not enough carriers join", "Early software problems", "FreightMesh fails and the licence fee is lost"],
+        "next": ["Negotiate a reduced licence or free period in return for going first", "Check carrier commitments", "Plan the integration with Straits' systems"]
+      }
+    },
+    {
+      "id": "bain-payroute-growth-moves",
+      "title": "PayRoute: license the software, or buy a competitor?",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "m-and-a",
+      "sector": "fintech",
+      "level": "hard",
+      "minutes": 35,
+      "prompt": "Our client, PayRoute, processes card payments for banks across Southeast Asia - authorisation, fraud checks and reporting - and earns a share of each transaction's fee. It has grown by double digits for fifteen years, but growth is slowing. The CEO wants to know how PayRoute can keep growing at 15% a year.",
+      "facts": [
+        { "id": "position", "ask": ["share", "position", "clients", "customers", "banks"], "text": "PayRoute serves 10 of the region's 20 largest card-issuing banks, which account for 85% of the market. The other 10 either use competitors or process in-house." },
+        { "id": "market-growth", "ask": ["market growth", "growth", "transactions", "card market"], "text": "Card transactions are growing about 4% a year." },
+        { "id": "pricing", "ask": ["price", "pricing", "how they charge", "revenue model"], "text": "PayRoute takes a percentage of each transaction's fee." },
+        { "id": "licensing", "ask": ["licens", "software", "in-house", "new model", "other revenue"], "text": "PayRoute could license its software to banks to run in-house: an upfront fee plus annual maintenance." },
+        { "id": "qr-debit", "ask": ["debit", "qr", "wallet", "other segments", "adjacent", "new segment"], "text": "PayRoute also processes QR and debit payments, where it has about 4% share. That market is fragmented - no player has more than 10% - and is growing about 18% a year." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Core: share with the top banks, market growth, pricing", "New business models such as licensing", "Adjacent segments: QR and debit", "Inorganic growth: acquisitions and partnerships", "Link every option back to the 15% goal"],
+          "advanced": ["Notices quickly that a 4% market with half the top banks already won cannot deliver 15%"]
+        },
+        {
+          "id": "math-licensing",
+          "kind": "math",
+          "ask": "Let's test licensing. Over five years, what would PayRoute's revenue from the top 20 banks be with licensing, compared with without it?",
+          "given": ["Without licensing, each of the 10 client banks pays PayRoute about US$2m a year."],
+          "onRequest": ["Half of the 10 current clients would switch to licensing.", "6 of the 10 banks that are not clients would take a licence.", "A licence earns US$5m upfront plus US$0.5m a year.", "Ignore the time value of money."],
+          "answer": {
+            "value": 132500000,
+            "display": "about US$132.5m, against US$100m without licensing",
+            "tolerance": 0.02,
+            "working": ["Without licensing: 10 x US$2m x 5 years = US$100m", "5 clients stay: 5 x US$10m = US$50m", "5 clients switch: 5 x (US$5m + 5 x US$0.5m) = US$37.5m", "6 new banks: 6 x US$7.5m = US$45m", "Total US$132.5m - US$32.5m more"]
+          },
+          "advanced": ["Licensing looks like cannibalisation, but it wins because it reaches banks that would never outsource", "Asks whether the switchers really would switch - that assumption drives the loss"]
+        },
+        {
+          "id": "chart-qr-debit",
+          "kind": "chart",
+          "ask": "Here's the QR and debit processing market. How would PayRoute grow here?",
+          "exhibit": {
+            "title": "QR and debit processors, Southeast Asia",
+            "columns": ["Processor", "Market share", "Annual growth", "EBITDA margin", "Indicative price (US$m)"],
+            "rows": [["QRLink", "9%", "25%", "20%", 400], ["SwiftDebit", "7%", "8%", "30%", 250], ["MerchantPulse", "6%", "30%", "5%", 300], ["PayRoute", "4%", "10%", "25%", "-"], ["All others", "74%", "-", "-", "-"]]
+          },
+          "keyPoints": ["The market is fragmented and fast-growing, so buying share is realistic", "QRLink combines scale and growth; combined with PayRoute it would lead at about 13%", "SwiftDebit is profitable but slow; MerchantPulse grows fastest but barely makes money"],
+          "advanced": ["Compares targets on growth, margin and price - not just size"]
+        },
+        {
+          "id": "brainstorm-share",
+          "kind": "brainstorm",
+          "ask": "Apart from acquiring, what else could PayRoute do to win QR and debit share, and what are the risks of each route?",
+          "ideas": [
+            { "bucket": "Buy", "items": ["Acquire QRLink or another processor", "Risk: price, integration, culture"] },
+            { "bucket": "Partner", "items": ["Partner with a wallet or a bank", "Joint venture with a competitor", "Risk: shared control"] },
+            { "bucket": "Build", "items": ["Price incentives for new merchants", "Bundle with card processing for existing banks", "Risk: slow and costly"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "The CEO wants your recommendation." }
+      ],
+      "recommendation": {
+        "answer": "Pursue both moves: launch licensing, which adds about US$32.5m of revenue over five years, and acquire into QR and debit - QRLink is the best fit - to reach a leading position in a fragmented market growing 18% a year.",
+        "reasoning": ["The core card market grows only 4%, so it cannot deliver 15%", "Licensing reaches banks that will never outsource", "Buying QRLink makes PayRoute the QR and debit leader at about 13% share"],
+        "risks": ["Cannibalisation if more clients switch to licensing than expected", "Overpaying for QRLink", "Integration distraction"],
+        "next": ["Test licensing appetite with client and non-client banks", "Diligence QRLink and the alternative targets", "Model the combined growth path against the 15% goal"]
+      }
+    },
+    {
+      "id": "bain-carevia-wardworks-growth",
+      "title": "Carevia: a software acquisition that isn't paying off",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "post-merger-integration",
+      "sector": "health-software",
+      "level": "hard",
+      "minutes": 35,
+      "prompt": "Our client, Carevia, is a medical-devices group. Five years ago it bought WardWorks, which sells finance and administration software to large hospitals across Southeast Asia and Australia. WardWorks' growth has not justified the price Carevia paid, and margins are under pressure. How can WardWorks grow?",
+      "facts": [
+        { "id": "customers", "ask": ["customers", "who buys", "hospitals", "buyers"], "text": "Most of the market is large hospitals. Four hospital networks now account for about 45% of it, and they increasingly buy centrally for all their hospitals and want fewer vendors." },
+        { "id": "trends", "ask": ["trend", "upgrade", "changing"], "text": "Hospitals are replacing old systems, and networks are consolidating vendors to cut costs." },
+        { "id": "parent", "ask": ["carevia", "parent", "devices", "cross-sell", "synerg"], "text": "Software is chosen by hospital IT; devices by clinicians. So Carevia's device relationships help WardWorks very little." },
+        { "id": "margins", "ask": ["margin", "gross margin", "profit"], "text": "Gross margins are about 25-30% in finance/administration and patient-flow software, and about 50% in clinical workflow software." },
+        { "id": "lost-customer", "ask": ["lost", "switched", "why customers leave", "customer interview", "churn", "talk to a customer"], "text": "A customer that recently switched to Qarestack said Qarestack offered a better price and service across finance, patient flow and clinical workflow together. WardWorks' product was 'the reliable old option'. WardWorks never sent anyone to see them; Qarestack pitched the next day." },
+        { "id": "internal", "ask": ["sales", "organisation", "organization", "internal", "capabilities", "product"], "text": "WardWorks' sales team is organised by country, with no teams for the big hospital networks. Its product is modular, and some modules could be adapted for patient flow. Its customer support is strong." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Market: segments, size, growth, margins", "Competitors: who is winning and how", "Customers: who buys, how buying is changing", "WardWorks' capabilities: product, sales, service", "Growth options: defend the core, enter adjacent segments - build or buy"]
+        },
+        {
+          "id": "chart-competitors",
+          "kind": "chart",
+          "ask": "Here are the three hospital-software segments and the main players. What do you see?",
+          "exhibit": {
+            "title": "Hospital software segments: size, growth and largest players (US$ million revenue, annual growth)",
+            "columns": ["Segment", "Market size", "Market growth", "Largest players"],
+            "rows": [
+              ["Finance and administration", 900, "4%", "WardWorks 420 (3%), HelixSoft 80 (8%), CareSys 70 (2%), AdminPlus 50 (1%), Qarestack 40 (18%)"],
+              ["Patient flow", 700, "6%", "Qarestack 250 (6%), FlowMed 180 (5%), BedTrack 60 (3%), HelixSoft 30 (17%), PatientOne 20 (0%)"],
+              ["Clinical workflow", 800, "14%", "HelixSoft 110 (17%), ClinixAI 70 (12%), Qarestack 25 (30%), OrthoSoft 20 (15%), CardioFlow 15 (14%)"]
+            ]
+          },
+          "keyPoints": ["WardWorks is growing 3% in a 4% market - losing share in its core", "Qarestack and HelixSoft each lead one segment and are growing fast in the others - they are building bundles", "Clinical workflow is the largest growth pool and fragmented: the top five hold only 30%"],
+          "advanced": ["The top five hold about 73% of finance/admin and 77% of patient flow, against 30% of clinical workflow"]
+        },
+        {
+          "id": "math-profit-pools",
+          "kind": "math",
+          "ask": "Let's size where the money is going. How much new gross profit will clinical workflow add next year, compared with finance and administration?",
+          "onRequest": ["Use about 50% gross margin for clinical workflow and about 28% for finance and administration."],
+          "answer": {
+            "value": 56000000,
+            "display": "about US$56m for clinical workflow, against about US$10m for finance and administration",
+            "tolerance": 0.03,
+            "working": ["Clinical workflow: US$800m x 14% = US$112m new revenue; x 50% = US$56m gross profit", "Finance and administration: US$900m x 4% = US$36m; x 28% = about US$10m", "The new profit pool in clinical workflow is more than five times larger"]
+          }
+        },
+        {
+          "id": "brainstorm-why-losing",
+          "kind": "brainstorm",
+          "ask": "Why do you think WardWorks is losing share in its own core, and how would you find out?",
+          "ideas": [
+            { "bucket": "Competitors", "items": ["Rivals bundle all three segments", "Better price and service from rivals"] },
+            { "bucket": "Customers", "items": ["Hospital networks buy centrally and want fewer vendors", "Networks upgrading old systems"] },
+            { "bucket": "WardWorks itself", "items": ["Sales organised by country, missing the central buyers", "Product seen as dated"] },
+            { "bucket": "How to find out", "items": ["Interview customers who recently switched", "Win-loss analysis of recent tenders"] }
+          ],
+          "advanced": ["Suggests talking to a customer that switched - that is where the real reason comes from"]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Carevia's CEO wants your recommendation." }
+      ],
+      "recommendation": {
+        "answer": "First fix go-to-market by creating teams for the big hospital networks; then add patient flow by building on WardWorks' modular product; and enter clinical workflow by acquiring a larger player such as ClinixAI.",
+        "reasoning": ["Revenue lags because of how WardWorks sells, not what it sells - buyers now purchase bundles centrally", "Clinical workflow adds about US$56m of new gross profit a year and is fragmented", "WardWorks lacks clinical capability, so buying is faster than building"],
+        "risks": ["Rivals keep taking core share during the transition", "Clinical software is technically harder to integrate", "Overpaying for a growth asset"],
+        "next": ["Stand up network account teams", "Validate bundle demand with customer interviews", "Screen clinical-workflow acquisition targets"]
+      }
+    },
+    {
+      "id": "bain-shieldapp-vaultkey",
+      "title": "ShieldApp: should it buy a password manager?",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "m-and-a",
+      "sector": "consumer-software",
+      "level": "medium",
+      "minutes": 30,
+      "prompt": "Our client, ShieldApp, sells a consumer security app - antivirus and phone protection - to people across Southeast Asia, with about US$400 million of revenue. Its core market is growing slowly as phone makers build in more protection. To diversify, ShieldApp is considering acquiring VaultKey, a password-manager app. Is this a good idea?",
+      "facts": [
+        { "id": "goal", "ask": ["goal", "objective", "diversify", "why"], "text": "ShieldApp wants a new source of growth without hurting the profitability of its current business." },
+        { "id": "scope", "ask": ["scope", "business", "enterprise", "consumer"], "text": "Only consumer password managers - not business ones." },
+        { "id": "users", "ask": ["population", "internet users", "users", "people"], "text": "There are about 400 million internet users in ShieldApp's markets." },
+        { "id": "vaultkey", "ask": ["vaultkey", "share", "target", "margin", "revenue"], "text": "VaultKey has about 20% of the consumer password-manager market, at a 25% operating margin." },
+        { "id": "price", "ask": ["price", "asking", "cost", "how much"], "text": "The owners are asking US$250 million." },
+        { "id": "shieldapp-margin", "ask": ["shieldapp margin", "our margin", "operating margin", "profitab"], "text": "ShieldApp's operating margin is 30%." },
+        { "id": "flat", "ask": ["growth", "assume", "time value"], "text": "Assume revenue and costs stay flat, and ignore the time value of money." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you approach this?",
+          "keyPoints": ["Market: size and growth of consumer password managers", "Target: share, profitability, product", "Deal economics: price against profit, payback", "Fit: synergies (cross-selling, shared marketing) and cannibalisation", "Risks: integration, brand, ability to afford it"]
+        },
+        {
+          "id": "math-market",
+          "kind": "math",
+          "ask": "How big is the consumer password-manager market in ShieldApp's region?",
+          "onRequest": ["About 90% of internet users pay for no password manager.", "About 7% pay for an individual plan, at about US$24 a year.", "About 3% pay for a family or premium plan, at about US$48 a year."],
+          "answer": {
+            "value": 1248000000,
+            "display": "about US$1.25bn",
+            "tolerance": 0.04,
+            "working": ["Individual: 7% x 400m = 28m x US$24 = US$672m", "Family/premium: 3% x 400m = 12m x US$48 = US$576m", "Total about US$1.25bn"]
+          },
+          "advanced": ["Segments users by how they pay and sense-checks the result"]
+        },
+        {
+          "id": "math-payback",
+          "kind": "math",
+          "ask": "Is US$250 million a reasonable price? How long would VaultKey take to pay back?",
+          "answer": {
+            "value": 4,
+            "display": "about 4 years",
+            "tolerance": 0.05,
+            "working": ["VaultKey revenue: 20% x US$1.25bn = US$250m", "Profit: 25% x US$250m = US$62.5m a year", "Payback: US$250m / US$62.5m = 4 years"]
+          },
+          "advanced": ["Offers to look at synergies and cannibalisation before calling it reasonable"]
+        },
+        {
+          "id": "brainstorm-for-against",
+          "kind": "brainstorm",
+          "ask": "What are the arguments for and against the deal?",
+          "ideas": [
+            { "bucket": "For", "items": ["Cross-sell to ShieldApp's users", "Use ShieldApp's marketing and app-store reach", "Shared security technology", "Stop a competitor buying VaultKey"] },
+            { "bucket": "Against", "items": ["Cannibalisation: ShieldApp's premium tier already includes a basic password feature", "Brand confusion", "Ties up cash", "Integration risk"] }
+          ],
+          "advanced": ["Raises cannibalisation without being prompted"]
+        },
+        {
+          "id": "math-cannibalisation",
+          "kind": "math",
+          "ask": "ShieldApp estimates that bundling VaultKey would cannibalise about 8% of its own revenue. What does that cost in profit?",
+          "answer": {
+            "value": 9600000,
+            "display": "about US$9.6m a year",
+            "tolerance": 0.03,
+            "working": ["Lost revenue: 8% x US$400m = US$32m", "Lost profit: 30% x US$32m = US$9.6m a year", "Net gain: US$62.5m - US$9.6m = about US$52.9m, so payback is about 4.7 years"]
+          },
+          "advanced": ["Asks for ShieldApp's own margin rather than assuming VaultKey's"]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "ShieldApp's CEO wants your recommendation." }
+      ],
+      "recommendation": {
+        "answer": "Acquire VaultKey: even after cannibalisation it pays back in under five years and gives ShieldApp a growing second product.",
+        "reasoning": ["VaultKey earns about US$62.5m a year on a US$250m price", "Cannibalisation costs about US$9.6m a year, which leaves payback at about 4.7 years", "It diversifies away from a core that phone makers are eroding"],
+        "risks": ["Cannibalisation higher than 8%", "Brand confusion between the two apps", "Password managers also get built into phones"],
+        "next": ["Negotiate the price", "Plan how to bundle and position the two brands", "Test cross-sell take-up with ShieldApp users"]
+      }
+    },
+    {
+      "id": "bain-northstar-one-platform",
+      "title": "Northstar IT Group: one platform after twelve acquisitions",
+      "firm": "bain",
+      "style": "candidate-led",
+      "caseType": "post-merger-integration",
+      "sector": "it-services",
+      "level": "medium",
+      "minutes": 25,
+      "prompt": "Our client, Northstar IT Group, has grown by acquiring twelve IT consulting firms across Southeast Asia. Each still runs its own tools for tracking projects, time and billing - some just spreadsheets. Northstar is considering buying one professional-services platform and moving every office onto it. Should it invest?",
+      "facts": [
+        { "id": "goal", "ask": ["goal", "objective", "payback", "target"], "text": "Northstar wants the investment to pay back within one year." },
+        { "id": "business", "ask": ["business", "services", "consultants", "people", "size"], "text": "Northstar has about 5,000 billable consultants in 40 offices, doing IT consulting of all kinds." },
+        { "id": "tools", "ask": ["tools", "systems", "current", "today"], "text": "The acquired firms use a mix of tools, from spreadsheets to older project systems. Best practice in the industry is a single platform." }
+      ],
+      "questions": [
+        {
+          "id": "structure",
+          "kind": "structure",
+          "ask": "How would you decide whether to invest?",
+          "keyPoints": ["The platform: features, fit, implementation time, references", "Financials: upfront and ongoing costs, effect on revenue and costs", "Strategic value: integration of the acquired firms, data, client experience", "Risks: market, financial, operational"],
+          "advanced": ["Notes that time tracking feeds billing, so this is also a revenue question"]
+        },
+        {
+          "id": "brainstorm-financials",
+          "kind": "brainstorm",
+          "ask": "How could one platform affect Northstar's financials?",
+          "ideas": [
+            { "bucket": "Revenue", "items": ["Capture billable hours that go unrecorded today", "Bill faster and with fewer errors", "Staff projects across offices to use idle consultants", "Better data for pricing bids"] },
+            { "bucket": "Costs", "items": ["Less admin time", "Retire twelve sets of tools", "Better utilisation data"] },
+            { "bucket": "New costs", "items": ["Upfront licence and migration", "Annual subscription", "Training"] }
+          ]
+        },
+        {
+          "id": "math-payback",
+          "kind": "math",
+          "ask": "Let's test the one-year payback. How long would it take to earn back the investment, in months?",
+          "given": ["The platform costs about US$6 million upfront."],
+          "onRequest": ["The annual subscription is half the upfront cost.", "With proper time tracking, each consultant bills about one more hour a week.", "Consultants work about 50 weeks a year.", "An hour is billed at about US$120, and a consultant's hour costs about US$60."],
+          "answer": {
+            "value": 6,
+            "display": "about 6 months",
+            "tolerance": 0.05,
+            "working": ["Margin per extra hour: US$120 - US$60 = US$60", "Extra profit: 5,000 x 1 hour x 50 weeks x US$60 = US$15m a year", "Less subscription: US$15m - US$3m = US$12m a year", "Payback: US$6m / US$12m = half a year, about 6 months"]
+          },
+          "advanced": ["It rests on one assumption: one extra billed hour a week. At half an hour, profit is US$4.5m and payback takes about 16 months - beyond the target", "It assumes no roll-out period, which is unrealistic across twelve firms"]
+        },
+        {
+          "id": "brainstorm-risks",
+          "kind": "brainstorm",
+          "ask": "What are the risks of this investment?",
+          "ideas": [
+            { "bucket": "Adoption", "items": ["Consultants resist logging time", "Acquired firms' leaders resist losing their tools"] },
+            { "bucket": "Financial", "items": ["Costs underestimated", "Vendor raises prices once Northstar is locked in", "The extra-hours assumption is too optimistic"] },
+            { "bucket": "Operational", "items": ["Long roll-out across 40 offices", "Billing disruption during migration", "Data migration errors"] }
+          ]
+        },
+        { "id": "recommendation", "kind": "recommendation", "ask": "Northstar's CEO wants your recommendation." }
+      ],
+      "recommendation": {
+        "answer": "Invest in one platform and move every office onto it, but plan for a phased roll-out and treat the one-extra-hour assumption as the thing to prove first.",
+        "reasoning": ["Payback of about six months on the base case", "Both revenue (captured hours) and cost gains", "It turns twelve acquisitions into one operating company"],
+        "risks": ["The extra billed hour does not materialise - at half an hour payback slips beyond a year", "A long roll-out delays the benefit", "Resistance from acquired firms"],
+        "next": ["Pilot in two offices to measure captured hours", "Diligence platform vendors", "Build a phased roll-out plan"]
+      }
+    }
+  ]
+}

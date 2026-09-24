@@ -10,6 +10,9 @@ import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
 import { FIRMS, firmLabel, questionBank } from "./bank";
 import { BehaviouralView } from "./behavioural-view";
+import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
+import { caseLibrary } from "./cases";
+import { CaseRoom } from "./case-room";
 import ui from "../ui.module.css";
 
 /**
@@ -31,7 +34,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default async function Interview({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string; firm?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; firm?: string; case?: string; type?: string }>;
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
@@ -41,11 +44,12 @@ export default async function Interview({
   const tab: Tab = TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
   const firm = params.firm === "all" || FIRMS.includes(params.firm ?? "") ? (params.firm as string) : "bain";
 
-  const [projects, profile, answers, attempts] = await Promise.all([
+  const [projects, profile, answers, attempts, caseSessions] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     listAnswers(db, userId),
     listAttempts(db, userId),
+    tab === "casing" ? listCaseSessions(db, userId) : Promise.resolve([]),
   ]);
   const bullets = projects.flatMap((p) => p.bullets);
 
@@ -74,7 +78,9 @@ export default async function Interview({
       {tab === "behavioural" && (
         <Behavioural answers={answers} attempts={attempts} bullets={bullets} />
       )}
-      {tab === "casing" && <Casing bullets={bullets} />}
+      {tab === "casing" && (
+        <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} />
+      )}
       {tab === "technical" && <Technical bullets={bullets} extras={(profile?.cvExtras ?? []) as CvExtra[]} />}
     </>
   );
@@ -130,37 +136,158 @@ function Behavioural({
 
 // ---- casing ---------------------------------------------------------------------------------
 
-function Casing({ bullets }: { bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[] }) {
+/** Display names for case types; an unknown type falls back to its id, prettified. */
+const CASE_TYPE_LABEL: Record<string, string> = {
+  "m-and-a": "M&A",
+  "post-merger-integration": "Post-merger",
+  "pe-due-diligence": "PE due diligence",
+  "pe-value-creation": "PE value creation",
+};
+const caseTypeLabel = (t: string) => CASE_TYPE_LABEL[t] ?? t.replace(/-/g, " ");
+const pretty = (s: string) => s.replace(/-/g, " ");
+
+function Casing({
+  bullets,
+  sessions,
+  selectedId,
+  type,
+}: {
+  bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[];
+  sessions: StoredCaseSession[];
+  selectedId?: string;
+  type?: string;
+}) {
+  const types = [...new Set(caseLibrary.cases.map((c) => c.caseType))];
+  const activeType = type && types.includes(type) ? type : "all";
+  const shown = caseLibrary.cases.filter((c) => activeType === "all" || c.caseType === activeType);
+  const selected = caseLibrary.cases.find((c) => c.id === selectedId);
+
+  const best = new Map<string, number>();
+  const tries = new Map<string, number>();
+  for (const s of sessions) {
+    tries.set(s.caseId, (tries.get(s.caseId) ?? 0) + 1);
+    if (s.overall !== null) best.set(s.caseId, Math.max(best.get(s.caseId) ?? 0, s.overall));
+  }
+  const latest = selected ? sessions.find((s) => s.caseId === selected.id) : undefined; // newest first
+
+  const link = (next: { case?: string; type?: string }) => {
+    const sp = new URLSearchParams({ tab: "casing" });
+    const t = next.type ?? activeType;
+    if (t !== "all") sp.set("type", t);
+    if (next.case) sp.set("case", next.case);
+    return `/app/interview?${sp.toString()}`;
+  };
+
   const cases = caseTypeFits(bullets);
   const text = (id: string) => bullets.find((b) => b.id === id)?.text ?? id;
   const short = (s: string) => (s.length > 90 ? `${s.slice(0, 90)}…` : s);
+
   return (
-    <section className={ui.panel}>
-      <h2>Casing</h2>
-      <p className={ui.sub}>
-        Frameworks come from books. What a book cannot give you is a case type you have actually run —
-        an interviewer who hears a real operating example in a cost case is hearing something no
-        framework produces. Lived types first.
-      </p>
-      <ul className={ui.rows}>
-        {cases.map((c) => (
-          <li key={c.caseType} className={ui.row}>
-            <div>
-              <p>
-                <b>{c.caseType.replace(/-/g, " ")}</b>{" "}
-                {c.lived ? (
-                  <span className={ui.chip} data-tone="hit">lived</span>
-                ) : (
-                  <span className={ui.chip} data-tone="gap">practice ground</span>
-                )}
-              </p>
-              {c.lived && <span className={ui.mono}>{short(text(c.evidence[0]))}</span>}
-            </div>
-            <span className={ui.mono}>{c.evidence.length || "—"}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      {selected ? (
+        <section className={ui.stack} aria-label={selected.title}>
+          <Link href={link({})} scroll={false} className={ui.mono}>
+            ← All cases
+          </Link>
+          <div className={ui.head}>
+            <h2>{selected.title}</h2>
+            <span className={ui.chips}>
+              <span className={ui.chip}>{caseTypeLabel(selected.caseType)}</span>
+              <span className={ui.chip}>{pretty(selected.sector)}</span>
+              <span className={ui.chip}>{selected.level}</span>
+            </span>
+          </div>
+          <CaseRoom
+            key={latest?.id ?? "new"}
+            sheet={selected}
+            latest={
+              latest
+                ? {
+                    id: latest.id,
+                    session: latest.session,
+                    debrief:
+                      latest.status === "done" && latest.scores
+                        ? {
+                            overall: latest.overall ?? undefined,
+                            scores: latest.scores,
+                            strengths: latest.strengths,
+                            improvements: latest.improvements,
+                            perQuestion: latest.perQuestion,
+                            model: latest.model,
+                          }
+                        : null,
+                  }
+                : null
+            }
+          />
+        </section>
+      ) : (
+        <section className={ui.stack}>
+          <p className={ui.sub}>
+            Bain-style candidate-led interviews: you drive, ask for data, and the interviewer hands it over only when
+            you ask. Each case follows the flow of a published casebook case, re-set in technology deals. Type or talk.
+          </p>
+          <nav className={ui.segmented} aria-label="Case type">
+            {["all", ...types].map((t) => (
+              <Link key={t} href={link({ type: t })} scroll={false} className={ui.pill} aria-current={t === activeType ? "true" : undefined}>
+                {t === "all" ? "All" : caseTypeLabel(t)}
+              </Link>
+            ))}
+          </nav>
+          <div className={ui.caseList}>
+            {shown.map((c) => (
+              <Link key={c.id} href={link({ case: c.id })} className={ui.caseCard}>
+                <b>{c.title}</b>
+                <span className={ui.chips}>
+                  <span className={ui.chip}>{caseTypeLabel(c.caseType)}</span>
+                  <span className={ui.chip}>{pretty(c.sector)}</span>
+                  <span className={ui.chip}>
+                    {c.level} · {c.minutes} min
+                  </span>
+                </span>
+                <span className={ui.sub}>
+                  {best.has(c.id) ? (
+                    <>
+                      Best <b>{best.get(c.id)!.toFixed(1)}</b> / 5 · {tries.get(c.id)} {tries.get(c.id) === 1 ? "attempt" : "attempts"}
+                    </>
+                  ) : tries.has(c.id) ? (
+                    "In progress"
+                  ) : (
+                    "Not tried yet"
+                  )}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <details className={ui.panel}>
+        <summary>Case types you have lived</summary>
+        <p className={ui.sub}>
+          A real operating example beats a framework. These are the case types your CV shows you have actually worked
+          on - reach for them when an interviewer asks whether you have seen this before.
+        </p>
+        <ul className={ui.rows}>
+          {cases.map((c) => (
+            <li key={c.caseType} className={ui.row}>
+              <div>
+                <p>
+                  <b>{c.caseType.replace(/-/g, " ")}</b>{" "}
+                  {c.lived ? (
+                    <span className={ui.chip} data-tone="hit">lived</span>
+                  ) : (
+                    <span className={ui.chip} data-tone="gap">practice ground</span>
+                  )}
+                </p>
+                {c.lived && <span className={ui.mono}>{short(text(c.evidence[0]))}</span>}
+              </div>
+              <span className={ui.mono}>{c.evidence.length || "—"}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </>
   );
 }
 
