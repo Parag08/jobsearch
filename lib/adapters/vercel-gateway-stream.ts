@@ -23,6 +23,8 @@ export interface StreamOptions {
   /** Override for tests/proxies. */
   url?: string;
   maxOutputTokens?: number;
+  /** Ask for a JSON object (OpenAI-compatible JSON mode). The prompt must mention JSON. */
+  json?: boolean;
 }
 
 export interface SseParseResult {
@@ -89,6 +91,7 @@ export async function* streamGatewayText(opts: StreamOptions): AsyncGenerator<st
       messages: [{ role: "user", content: opts.prompt }],
       stream: true,
       max_tokens: opts.maxOutputTokens,
+      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
     }),
   });
 

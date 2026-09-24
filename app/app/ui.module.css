@@ -441,3 +441,165 @@
   color: var(--stale-text);
   align-self: center;
 }
+
+/* ==== interview prep: tabs, question list, answer editor, spoken practice ==== */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tab {
+  padding: 10px 14px;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color var(--motion), border-color var(--motion);
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+.progress { display: flex; flex-direction: column; gap: 8px; }
+.progress p { font-size: 0.9375rem; }
+
+.pill {
+  font-size: 0.8125rem;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: background var(--motion), color var(--motion);
+}
+.pill:hover { color: var(--ink); background: var(--wash); }
+.pill[aria-current="true"] { color: var(--accent-text); background: var(--accent-wash); border-color: var(--accent-wash); }
+
+/* List on the left, the selected question on the right; stacked on narrow screens. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .split { grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); }
+  .qlist { position: sticky; top: 88px; max-height: calc(100vh - 110px); overflow-y: auto; }
+}
+
+.qlist { display: flex; flex-direction: column; gap: 18px; }
+.qgroup { display: flex; flex-direction: column; gap: 2px; }
+.qgroup > .mono { margin-bottom: 4px; }
+.qitem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition: background var(--motion), color var(--motion);
+}
+.qitem:hover { background: var(--wash); color: var(--ink); }
+.qitem[aria-current="true"] { background: var(--accent-wash); color: var(--ink); }
+.qtext { min-width: 0; }
+.qstatus { flex: none; }
+
+.qdetail { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.qdetail h2 { font-size: 1.5rem; line-height: 1.25; }
+.firmNote {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+}
+
+.segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segment {
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 0;
+  cursor: pointer;
+}
+.segment + .segment { border-left: 1px solid var(--line); }
+.segment[aria-selected="true"] { background: var(--accent-wash); color: var(--accent-text); font-weight: 500; }
+
+.answerBox {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.answerBox:focus { outline: none; border-color: var(--accent); }
+
+.starField { display: flex; flex-direction: column; gap: 6px; }
+.starLabel { font-size: 0.9rem; }
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--wash);
+}
+
+/* Recording state pulses in the accent. Never red: recording is not an error. */
+.recording {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+}
+.recording[data-live]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live 1.2s ease-in-out infinite;
+}
+@keyframes live { 50% { opacity: 0.3; } }
+
+.audio { width: 100%; max-width: 28rem; height: 36px; }
+
+.scoreBars { display: flex; flex-direction: column; gap: 8px; }
+.scoreRow {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) 1.5rem;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.scoreName { text-transform: capitalize; color: var(--ink-soft); }
+.scoreTrack { height: 6px; background: var(--line); border-radius: var(--radius-float); overflow: hidden; }
+.scoreTrack i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
