@@ -15,12 +15,11 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 5. **Free-first.** $0 defaults (Gemini/Groq free tiers, Supabase free, Adzuna/Jooble free feeds); paid components opt-in and swappable behind adapters.
 
 ## Database data model
-- **The canonical data model is `supabase/schema.sql`** - one file, edited in place.
-- **Policy until live data exists:** full drop-and-recreate, no incremental migrations. Re-run the whole file after each change.
-- **When live data arrives:** freeze schema.sql, switch to numbered files in supabase/migrations/. (Flip this section when that happens.)
+- **FLIPPED 2026-09-24: the live project changes only through numbered migrations.** Interview answers are typed by hand into the app and cannot be regenerated, so drop-and-recreate is over. Every schema change: add `supabase/migrations/NNNN_name.sql` (idempotent - `if not exists`, guarded policies), run `npm run db:migrate`, then mirror the change into `schema.sql`. `db.yml` applies pending migrations on push; it never drops.
+- **`supabase/schema.sql` is the complete snapshot** for building a *fresh* project (then `db:migrate`). It begins by dropping every table, so `db-apply` refuses to run it without `--force-drop`. Never run it against the live project.
 - **`supabase/seed.sql` is GENERATED** from `data/cvbuilder/` - never hand-edit it. Change the data, run `npm run seed:build`, commit both. (A test fails if they drift.) Apply with `npm run db:seed` after `npm run db:apply`; it upserts, so re-running is safe.
 - **Live as of 2026-09-02**: schema.sql applied clean to project `nntoalvvozwrlcilbnop` (Singapore) and seed.sql loaded - the DB now holds real data (1 profile, 10 projects, 20 bullets, 7 master CVs, 2 sectors, 3 applications + CVs). Connect over the **session pooler** (`aws-0-ap-southeast-1.pooler.supabase.com:5432`, user `postgres.<ref>`); the direct `db.<ref>.supabase.co` host is IPv6-only and does not resolve.
-- Live data now exists, but it is all regenerable from `data/cvbuilder/` - so drop-and-recreate stays valid for now. Freeze schema.sql and switch to migrations as soon as anything is entered through the app (applications advanced, contacts, interactions).
+- Not everything in the DB is regenerable any more: `interview_answers` and `interview_attempts` are hand-written; `sourced_jobs` and `watchlist` come from `npm run source:sg`; `companies` from `npm run companies:sync`. Only the CVbuilder workspace comes from `seed.sql`.
 
 ## Architecture
 - Next.js 15 App Router + TypeScript strict + Vitest + zod. Deploy target: Vercel. DB: Supabase (Postgres + auth + RLS).

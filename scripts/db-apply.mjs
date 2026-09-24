@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Apply a SQL file (default supabase/schema.sql) WHOLESALE to SUPABASE_DB_URL.
-//   npm run db:apply   -> supabase/schema.sql (drop-and-recreate, see below)
-//   npm run db:seed    -> supabase/seed.sql   (upserts the CVbuilder import)
-// Drop-and-recreate policy (CLAUDE.md): this wipes and rebuilds every table.
-// Valid ONLY until live data exists - then freeze schema.sql, switch to
-// numbered migrations, and delete this script + the db.yml workflow.
+// Apply a SQL file WHOLESALE to SUPABASE_DB_URL.
+//   npm run db:seed                                   -> supabase/seed.sql (upserts; safe)
+//   node scripts/db-apply.mjs supabase/schema.sql --force-drop   -> DROPS EVERY TABLE
+//
+// Since 2026-09-24 the live project changes only through `npm run db:migrate`. schema.sql
+// begins by dropping every table, and interview answers are typed by hand and cannot be
+// regenerated - so applying it is refused unless --force-drop says you meant to, e.g.
+// when building a brand-new project.
 //
 // Reads SUPABASE_DB_URL from the environment, falling back to .env.local then .env.
 // Usage: npm run db:apply
@@ -31,7 +33,16 @@ if (!url) {
   process.exit(1);
 }
 
-const file = process.argv[2] ?? "supabase/schema.sql";
+const args = process.argv.slice(2);
+const file = args.find((a) => !a.startsWith("--")) ?? "supabase/schema.sql";
+if (/schema\.sql$/.test(file) && !args.includes("--force-drop")) {
+  console.error(
+    "Refusing to apply schema.sql: it DROPS every table, including hand-written interview answers.\n" +
+      "  Changing the live schema?  Add a file to supabase/migrations/ and run: npm run db:migrate\n" +
+      "  Building a new project?    node scripts/db-apply.mjs supabase/schema.sql --force-drop",
+  );
+  process.exit(1);
+}
 const sql = readFileSync(resolve(root, file), "utf8");
 // Supabase poolers terminate TLS with certs pg can't always chain; the URL itself is the trust anchor here.
 const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });

@@ -1,28 +1,23 @@
-# Schema deploys through git, matching the drop-and-recreate policy:
-# any push to main that touches supabase/schema.sql re-applies the whole file
-# and then RELOADS supabase/seed.sql, because the drop wipes the imported
-# workspace (profile, projects, bullets, master CVs, applications).
+# Schema changes through git - ADDITIVE migrations only (switched 2026-09-24).
 #
-# !! This DROPS AND RECREATES every table. Everything seed.sql carries is
-# !! regenerable from data/cvbuilder/, so nothing is lost - but anything
-# !! entered through the app (advanced stages, contacts, interactions) IS.
-# !! The moment such data exists, delete this workflow (and
-# !! scripts/db-apply.mjs) and switch to numbered migrations - see the
-# !! data-model policy in CLAUDE.md.
+# This workflow used to re-apply schema.sql on every push that touched it, which dropped
+# and recreated every table. That was right while all data was regenerable from
+# data/cvbuilder/. It stopped being right the moment the app started holding things
+# typed by hand - interview answers and practice attempts - so it now applies only the
+# new numbered files in supabase/migrations/, each once, never dropping anything.
 #
-# Needs one repo secret: SUPABASE_DB_URL (Settings -> Secrets and variables
-# -> Actions) - the session-pooler connection string from the Supabase
-# dashboard, with the database password filled in.
+# Needs one repo secret: SUPABASE_DB_URL (Settings -> Secrets and variables -> Actions,
+# the REPOSITORY section) - the session-pooler connection string, password included.
 name: db
 
 on:
   push:
     branches: [main]
-    paths: [supabase/schema.sql]
-  workflow_dispatch: # manual re-run button in the Actions tab
+    paths: [supabase/migrations/**]
+  workflow_dispatch: # manual run button in the Actions tab
 
 jobs:
-  apply-schema:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,25 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run db:apply
+      - name: Apply pending migrations
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      # Restore the imported workspace the drop just removed. Upserts, so it is
-      # safe whether or not the schema actually changed.
-      - run: npm run db:seed
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-      # seed.sql carries the CVbuilder workspace ONLY. The company directory is
-      # separate data with its own source file, so the drop wipes it too - and on
-      # 2026-09-23 it did exactly that, the first time this workflow ever ran green.
-      # Needs two more secrets than the steps above; skipped cleanly if absent.
-      - name: Reload the company directory
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-        run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
-            echo "::warning::NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY not set - the company directory was NOT restored after the drop. Run 'npm run companies:sync' locally."
-            exit 0
-          fi
-          npm run companies:sync
+        run: npm run db:migrate
