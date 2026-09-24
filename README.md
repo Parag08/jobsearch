@@ -41,7 +41,7 @@ Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=y
 - `lib/import/` - CVbuilder -> JobSearch transform and the seed-SQL generator
 - `lib/adapters/` - provider boundaries: LLM routing (small vs premium tier), job-feed mappers
 - `app/` - Next.js shell (UI lands after Supabase wiring)
-- `docs/SPEC.md` - full product spec · `docs/MEMORY.md` - work log · `CLAUDE.md` - project memory & rules
+- `docs/SPEC.md` - full product spec · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
 
 ## Development discipline
 TDD (red -> green -> refactor), typecheck clean, and the token-economy rules in CLAUDE.md apply to every feature.

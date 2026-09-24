@@ -3,6 +3,13 @@
 Read this first in every session. Update it whenever a decision or convention changes.
 The running work log (what happened when, what's next) is docs/MEMORY.md - update it at the end of every working session.
 
+## How sessions run (token economy for Claude itself)
+- **One task per session.** The user `/clear`s between tasks; this file + docs/MEMORY.md are the whole handoff, so end every task by updating docs/MEMORY.md with what a cold session needs (done, decided, next).
+- **Keep the handoff small.** docs/MEMORY.md holds only the last two or three sessions; move older entries to docs/MEMORY-archive.md and grep that when history is needed, never read it whole. Durable facts belong in this file, not the log.
+- **No subagents unless the user asks** or the task truly needs a wide read (e.g. the whole casebook library). Search and read directly; read only the lines needed.
+- **Take batched requests in one pass**, and when a request names a file or page, go straight there.
+- If a task is small and routine, it is fine to say once that Sonnet (`/model`) would do; design work stays on Opus.
+
 ## What this is
 JobSearch: a personal job-search operating system, built first for Parag (target: AI/PM roles in **Singapore**), designed generic so peers can use it. Seven modules around one shared brain. Full product spec: docs/SPEC.md.
 
@@ -19,6 +26,7 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 - **`supabase/schema.sql` is the complete snapshot** for building a *fresh* project (then `db:migrate`). It begins by dropping every table, so `db-apply` refuses to run it without `--force-drop`. Never run it against the live project.
 - **`supabase/seed.sql` is GENERATED** from `data/cvbuilder/` - never hand-edit it. Change the data, run `npm run seed:build`, commit both. (A test fails if they drift.) Apply with `npm run db:seed` after `npm run db:apply`; it upserts, so re-running is safe.
 - **Live as of 2026-09-02**: schema.sql applied clean to project `nntoalvvozwrlcilbnop` (Singapore) and seed.sql loaded - the DB now holds real data (1 profile, 10 projects, 20 bullets, 7 master CVs, 2 sectors, 3 applications + CVs). Connect over the **session pooler** (`aws-0-ap-southeast-1.pooler.supabase.com:5432`, user `postgres.<ref>`); the direct `db.<ref>.supabase.co` host is IPv6-only and does not resolve.
+- **Free tier pauses after ~7 idle days.** Signature: sign-in lands on a DNS error at `<ref>.supabase.co`, the project host is NXDOMAIN, the pooler says `tenant/user not found`. Not a code fault - Restore in the Supabase dashboard; data survives. (Full diagnosis: docs/MEMORY-archive.md, 2026-09-17.)
 - Not everything in the DB is regenerable any more: `interview_answers`, `interview_attempts` and `case_sessions` are hand-written; `sourced_jobs` and `watchlist` come from `npm run source:sg`; `companies` from `npm run companies:sync`. Only the CVbuilder workspace comes from `seed.sql`.
 
 ## Architecture
