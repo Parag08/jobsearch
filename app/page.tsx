@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./_components/logo";
 import { GlassNav } from "./_components/glass-nav";
+import { ThemeToggle } from "./_components/theme-toggle";
 import { HeroDemo } from "./_components/hero-demo";
 import { Reveal } from "./_components/reveal";
 import { isSupabaseConfigured } from "@/lib/db";
@@ -43,6 +44,7 @@ export default function Home() {
           </>
         }
       >
+        <ThemeToggle />
         {demoAvailable && (
           <Link href="/app" className={styles.navLink}>
             Demo

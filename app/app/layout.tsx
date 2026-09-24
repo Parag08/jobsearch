@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Logo } from "../_components/logo";
 import { getWorkspace } from "@/lib/db";
 import { signOut } from "../signin/actions";
+import { ThemeToggle } from "../_components/theme-toggle";
 import { NavLinks } from "./nav-links";
 import styles from "./app.module.css";
 
@@ -35,6 +36,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <NavLinks items={NAV} />
           <div className={styles.right}>
+            <ThemeToggle />
             <span className={styles.mode} data-mode={w.mode} title={w.mode === "demo" ? "Running on the sample corpus in memory - resets on restart" : w.email ?? ""}>
               {w.mode === "demo" ? "demo workspace" : (w.email ?? "signed in")}
             </span>

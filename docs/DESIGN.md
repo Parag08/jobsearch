@@ -469,14 +469,20 @@ So the pill is not decoration — it is the signal that a thing floats. And glas
 the whole UI — it is a material with a strict habitat. Both references stay intact because they
 govern different layers.
 
-### Light only
+### Light by day, dark by night
 
-**The system commits to light.** No automatic `prefers-color-scheme` inversion.
+Still no automatic `prefers-color-scheme` inversion: the theme is never an OS default we inherit.
+(An earlier build flipped with the OS, which is why the live site once rendered dark on Parag's machine.)
 
-This is a real change: today `app/globals.css` flips to a dark palette whenever the viewer's OS is
-dark, which is why the live site renders dark on Parag's machine. One canvas is easier to design
-against, matches the reference, and matches the stated preference. Dark can return later as an
-**explicit toggle** — a deliberate choice by the user, not an OS default we inherit.
+Dark returned on 2026-09-24 as the **explicit toggle** this section promised. The toggle is a capsule
+button in both navs that cycles **Auto → Light → Dark**, saved per browser in `localStorage`. **Auto**
+follows the viewer's *local clock*, meaning the browser's own time and timezone: dark from 19:00 to 07:00.
+An inline script sets `<html data-theme>` before first paint so there is no white flash, and the
+toggle re-checks at the next switch and when the tab returns. Logic and tests: `lib/theme.ts`.
+
+The dark twin in `globals.css` keeps every role and rule. The canvas is a violet-cast ink, not black.
+The stage scale inverts, so progress still reads as "more accent" by brightening instead of
+deepening. The glass edge highlight is a token (`--glass-edge`) so it dims in dark.
 
 ### The governing principle (unchanged)
 
@@ -742,8 +748,8 @@ Two load-bearing joints:
   British spelling, almost no numbers. Bain General Consulting is the canonical reference.
 - **The letters are not committed** — they name recruiters and alumni and the repo is public.
 - **Palette: Heather** — muted periwinkle `#6F6A96`, now on a **pure white** canvas (§5).
-- **Light only.** No automatic `prefers-color-scheme` inversion; dark returns later as an explicit
-  toggle, if at all.
+- **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
+  both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
 - **Radius encodes elevation.** 4 / 12 / 20px for anything in the page; `999px` capsules reserved for
   floating glass. A pill on a static element is a bug.
 - **Liquid glass has a strict habitat** — sticky nav, sheets, popovers, toasts, the landing hero card.
