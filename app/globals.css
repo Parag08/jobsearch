@@ -1,6 +1,7 @@
 /* JobSearch design system - see docs/DESIGN.md section 5.
-   Palette: Heather on a pure white canvas. LIGHT ONLY - there is deliberately no
-   prefers-color-scheme block; dark returns later as an explicit toggle, if at all.
+   Palette: Heather on a pure white canvas, with a Heather-on-ink dark twin. There is
+   deliberately no prefers-color-scheme block: <html data-theme> is set by the user's
+   choice or, on auto, by their local clock (lib/theme.ts).
    Separation is a 1px hairline. Only floating glass casts a shadow.
    Red is fenced to destructive confirmations and appears on no other surface. */
 
@@ -55,6 +56,8 @@
   --shadow-glass:
     0 1px 2px rgba(23, 22, 28, 0.04),
     0 8px 24px rgba(23, 22, 28, 0.06);
+  /* the lens edge on floating glass */
+  --glass-edge: rgba(255, 255, 255, 0.6);
 
   /* ---- layout ---- */
   --shell: 90rem;
@@ -75,6 +78,46 @@
   --accent-soft: var(--accent-wash);
   --accent-ink: var(--accent-text);
   --line-soft: #f0eff4;
+}
+
+/* ---- dark twin ----------------------------------------------------------------------
+   Same roles, same rules. The canvas is a violet-cast ink, not black; the stage scale
+   inverts so progress still reads as "more accent" - it brightens instead of deepening,
+   and the deep stages' --surface text becomes dark on a light fill. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #141318;
+  --wash: #1c1b22;
+  --line: #2c2a35;
+  --line-strong: #3f3c4b;
+  --ink: #ecebf1;
+  --ink-soft: #aeaabb;
+  --ink-faint: #85818f;
+
+  --accent: #9d97c6;
+  --accent-text: #bab5de;
+  --accent-wash: #25233a;
+
+  --stale: #c9a468;
+  --stale-text: #d6b57e;
+  --danger: #e0706a;
+  --danger-wash: #3a1f1e;
+
+  --stage-saved: #25242c;
+  --stage-applied: #2e2c3b;
+  --stage-screening: #3a374d;
+  --stage-interview: #8d87b3;
+  --stage-case: #a39dc6;
+  --stage-offer: #b7b1d8;
+  --stage-negotiation: #cbc6e6;
+  --stage-closed: #6a6773;
+
+  --shadow-glass:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --line-soft: #211f28;
 }
 
 /* scroll-reveal primitive (app/_components/reveal.tsx) */

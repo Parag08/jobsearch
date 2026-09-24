@@ -1,0 +1,20 @@
+/* A control clustered inside floating glass, so it takes the capsule (DESIGN §5). */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-float);
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--motion), color var(--motion);
+}
+
+.toggle:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
