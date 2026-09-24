@@ -435,6 +435,11 @@
   flex-direction: column;
   gap: 10px;
 }
+/* A display rule beats the hidden attribute; put it back. */
+.stack[hidden],
+.starGrid[hidden] {
+  display: none;
+}
 
 .warn {
   font-size: 0.8125rem;
@@ -446,9 +451,10 @@
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   border-bottom: 1px solid var(--line);
-  overflow-x: auto;
+  margin-bottom: 8px;
 }
 .tab {
   padding: 10px 14px;
@@ -467,34 +473,61 @@
   font-weight: 500;
 }
 
-.progress { display: flex; flex-direction: column; gap: 8px; }
-.progress p { font-size: 0.9375rem; }
+.progress { display: flex; flex-direction: column; gap: 6px; }
+.progress p { font-size: 0.8125rem; color: var(--ink-soft); }
+.progress b { color: var(--ink); font-weight: 600; }
 
+/* Firm filter: one segmented control, same shape as Blank box / STAR. */
 .pill {
+  flex: 1;
+  text-align: center;
   font-size: 0.8125rem;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  padding: 6px 8px;
   color: var(--ink-soft);
   text-decoration: none;
+  white-space: nowrap;
   transition: background var(--motion), color var(--motion);
 }
+.pill + .pill { border-left: 1px solid var(--line); }
 .pill:hover { color: var(--ink); background: var(--wash); }
-.pill[aria-current="true"] { color: var(--accent-text); background: var(--accent-wash); border-color: var(--accent-wash); }
+.pill[aria-current="true"] { color: var(--accent-text); background: var(--accent-wash); font-weight: 500; }
 
-/* List on the left, the selected question on the right; stacked on narrow screens. */
+/* The selected question first, then the list, on narrow screens; side by side when wide. */
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  gap: 28px;
   align-items: start;
 }
+.split > .qside { order: 2; }
+.qside { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.qsideHead { display: flex; flex-direction: column; gap: 12px; }
+.qsideHead .segmented { display: flex; align-self: stretch; }
+
 @media (min-width: 960px) {
-  .split { grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); }
-  .qlist { position: sticky; top: 88px; max-height: calc(100vh - 110px); overflow-y: auto; }
+  .split { grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 36px; }
+  .split > .qside { order: 0; }
+  /* The whole sidebar sticks; only the list inside it scrolls, with a quiet scrollbar. */
+  .qside { position: sticky; top: 88px; max-height: calc(100vh - 104px); }
+  .qlist {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    scrollbar-gutter: stable;
+    margin-right: -8px;
+    padding-right: 4px;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
+  .qlist:hover { scrollbar-color: var(--line) transparent; }
+  .qlist::-webkit-scrollbar { width: 6px; }
+  .qlist::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
+  .qlist:hover::-webkit-scrollbar-thumb { background: var(--line); }
 }
 
-.qlist { display: flex; flex-direction: column; gap: 18px; }
+.qlist { display: flex; flex-direction: column; gap: 18px; padding-bottom: 24px; }
 .qgroup { display: flex; flex-direction: column; gap: 2px; }
 .qgroup > .mono { margin-bottom: 4px; }
 .qitem {
@@ -543,10 +576,12 @@
 .segment + .segment { border-left: 1px solid var(--line); }
 .segment[aria-selected="true"] { background: var(--accent-wash); color: var(--accent-text); font-weight: 500; }
 
+/* Answer boxes grow with what you write (field-sizing), so there is no scroll inside a scroll. */
 .answerBox {
   width: 100%;
-  min-height: 220px;
-  resize: vertical;
+  min-height: 180px;
+  field-sizing: content;
+  resize: none;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -558,8 +593,16 @@
 }
 .answerBox:focus { outline: none; border-color: var(--accent); }
 
+.starGrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 1200px) { .starGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .starField { display: flex; flex-direction: column; gap: 6px; }
-.starLabel { font-size: 0.9rem; }
+.starLabel { font-size: 0.875rem; display: flex; gap: 8px; align-items: baseline; }
+.starLabel .sub { font-size: 0.8125rem; }
+.starField .answerBox { min-height: 96px; font-size: 0.9rem; }
+
+.editorHead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.editorFoot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.editorFoot .sub, .editorFoot .warn { font-size: 0.8125rem; }
 
 .callout {
   display: flex;

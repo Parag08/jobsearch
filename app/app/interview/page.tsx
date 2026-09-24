@@ -70,7 +70,7 @@ export default async function Interview({
 
       <nav className={ui.tabs} aria-label="Interview prep">
         {TABS.map((t) => (
-          <Link key={t.id} href={href({ tab: t.id })} className={ui.tab} aria-current={t.id === tab ? "page" : undefined}>
+          <Link key={t.id} href={href({ tab: t.id })} scroll={false} className={ui.tab} aria-current={t.id === tab ? "page" : undefined}>
             {t.label}
           </Link>
         ))}
@@ -125,29 +125,36 @@ function Behavioural({
 
   return (
     <>
-      <div className={ui.progress}>
-        <p>
-          <b>{answered}</b> of {questions.length} answered · <b>{practised}</b> practised out loud
-        </p>
-        <div className={ui.meter} aria-label={`${answered} of ${questions.length} answered`}>
-          <i style={{ "--w": `${questions.length ? (answered / questions.length) * 100 : 0}%` } as React.CSSProperties} />
-        </div>
-        <p className={ui.sub}>
-          You do not need all of them. Seven strong stories, each told a few ways, cover most interviews —
-          write the ones you would dread being asked first.
-        </p>
-      </div>
-
-      <div className={ui.chips} aria-label="Firm">
-        {[...FIRMS, "all"].map((f) => (
-          <Link key={f} href={href({ firm: f, q: selected?.id })} className={ui.pill} aria-current={f === firm ? "true" : undefined}>
-            {firmLabel(f)}
-          </Link>
-        ))}
-      </div>
-
       <div className={ui.split}>
-        <aside className={ui.qlist} aria-label="Questions">
+        <aside className={ui.qside} aria-label="Questions">
+          <div className={ui.qsideHead}>
+            <nav className={ui.segmented} aria-label="Firm">
+              {[...FIRMS, "all"].map((f) => (
+                <Link
+                  key={f}
+                  href={href({ firm: f, q: selected?.id })}
+                  scroll={false}
+                  className={ui.pill}
+                  aria-current={f === firm ? "true" : undefined}
+                >
+                  {f === "all" ? "All" : firmLabel(f)}
+                </Link>
+              ))}
+            </nav>
+            <div className={ui.progress}>
+              <p>
+                <b>{answered}</b>/{questions.length} answered · <b>{practised}</b> practised aloud
+              </p>
+              <div className={ui.meter} aria-label={`${answered} of ${questions.length} answered`}>
+                <i style={{ "--w": `${questions.length ? (answered / questions.length) * 100 : 0}%` } as React.CSSProperties} />
+              </div>
+              {answered < 7 && (
+                <p>Seven strong stories cover most interviews. Start with the ones you would dread.</p>
+              )}
+            </div>
+          </div>
+
+          <div className={ui.qlist}>
           {groupQuestions(questionBank, questions).map(({ group, questions: qs }) => (
             <div key={group.id} className={ui.qgroup}>
               <p className={ui.mono}>{group.label}</p>
@@ -174,6 +181,7 @@ function Behavioural({
               })}
             </div>
           ))}
+          </div>
         </aside>
 
         {selected && (
@@ -194,7 +202,6 @@ function Behavioural({
             </div>
 
             <div className={ui.panel}>
-              <h3>Your answer</h3>
               <AnswerEditor
                 questionId={selected.id}
                 questionText={selected.text}
@@ -211,10 +218,7 @@ function Behavioural({
 
             <div className={ui.panel}>
               <h3>Practise out loud</h3>
-              <p className={ui.sub}>
-                The page asks the question, you answer, and it is scored on structure, ownership,
-                specificity, impact, reflection and relevance.
-              </p>
+              <p className={ui.sub}>Hear the question, answer it aloud, get scored.</p>
               <PracticePanel questionId={selected.id} questionText={selected.text} firm={firm} />
             </div>
 
