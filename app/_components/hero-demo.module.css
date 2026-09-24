@@ -28,7 +28,7 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 90%, transparent) 30%, color-mix(in srgb, var(--surface) 90%, transparent) 70%, transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--glass-light) 90%, transparent) 30%, color-mix(in srgb, var(--glass-light) 90%, transparent) 70%, transparent);
   opacity: 0.9;
   pointer-events: none;
 }
@@ -38,7 +38,7 @@
   inset: -40%;
   background: radial-gradient(
     closest-side at var(--mx) var(--my),
-    color-mix(in srgb, var(--surface) 55%, transparent),
+    color-mix(in srgb, var(--glass-light) 55%, transparent),
     transparent 70%
   );
   opacity: 0.55;
@@ -70,12 +70,16 @@
   color: var(--ink-faint);
 }
 
-/* the track: five stops, a puck that springs between them */
+/* the track: five stops, a puck that springs between them. --rail is the one
+   horizontal centre line: the line, every dot and the puck are all centred on it,
+   so they cannot drift apart when a size changes. */
 .track {
+  --rail: 14px;
+  --dot: 8px;
   position: relative;
   list-style: none;
   margin: 0;
-  padding: 10px 0 0;
+  padding: calc(var(--rail) - var(--dot) / 2) 0 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
 }
@@ -85,9 +89,10 @@
   position: absolute;
   left: 10%;
   right: 10%;
-  top: 17px;
+  top: var(--rail);
   height: 1px;
-  background: var(--line);
+  transform: translateY(-50%);
+  background: var(--line-strong);
 }
 
 .stop {
@@ -99,13 +104,13 @@
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: var(--dot);
+  height: var(--dot);
   border-radius: 50%;
-  background: var(--line);
+  background: var(--line-strong);
   transition: background 500ms ease, transform 500ms var(--spring);
   /* the Stages ramp: each stop deeper than the last */
-  --c: color-mix(in srgb, var(--accent) calc(28% + var(--i) * 18%), var(--ground));
+  --c: color-mix(in srgb, var(--accent) calc(28% + var(--i) * 18%), var(--line-strong));
 }
 
 .stop[data-done] .dot {
@@ -113,7 +118,7 @@
 }
 
 .stop[data-active] .dot {
-  background: var(--c);
+  background: var(--accent);
   transform: scale(1.25);
 }
 
@@ -139,11 +144,11 @@
 /* the puck: a glass ring that carries the application forward */
 .puck {
   position: absolute;
-  top: 6px;
+  top: var(--rail);
   left: calc(10% + var(--step) * 20%);
   width: 22px;
   height: 22px;
-  margin-left: -11px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);

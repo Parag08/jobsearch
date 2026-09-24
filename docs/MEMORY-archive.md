@@ -2,6 +2,36 @@
 
 Moved out of docs/MEMORY.md on 2026-09-24 so a fresh session reads only the current state. Newest first. Search here (grep) rather than reading it whole.
 
+## 2026-09-24 - Interview prep rebuilt; drop-and-recreate is over
+
+**Schema policy FLIPPED to migrations.** Interview answers are the first data typed by hand
+into the app, and nothing regenerates them - the next push touching `schema.sql` would have
+wiped them via `db.yml`. Now: `supabase/migrations/NNNN_*.sql` (idempotent), `npm run
+db:migrate` (records each in `schema_migrations`, one transaction per file), `db.yml` applies
+pending migrations on push and never drops. `schema.sql` stays the full snapshot for a fresh
+project; `db-apply` refuses it without `--force-drop`. Applied 0001 live: 131 sourced jobs, 9
+watchlist, 71 companies, 23 bullets all survived.
+
+**Interview tab** (`/app/interview`) is now three tabs - Behavioural / Casing / Technical - with
+tab, question and firm in the URL.
+- Behavioural: 26 MBB questions as DATA in `data/interview/questions.json` (firm tags, what a
+  strong answer shows, Bain notes grounded in Bain's public values - not a leaked script).
+  Per question: a written answer (blank box OR STAR, both drafts always kept) and spoken
+  practice.
+- Spoken practice uses browser APIs only - speech synthesis asks the question, Web Speech
+  transcribes live (Chrome/Edge; typing fallback elsewhere), MediaRecorder for playback. Only
+  the transcript reaches the server; audio is never stored. No new dependency.
+- Scoring (`lib/interview/score.ts`): measured first, deterministically - length, pace, "I"
+  versus "we", and numbers said aloud that the written answer lacks. Only judgement goes to the
+  model (premium tier, JSON mode), output validated and clamped. Verified live: planted a spoken
+  40% against a written 30%, and it was caught; model feedback stayed about delivery, never new
+  content.
+- The one-off story form from 09-24 morning is retired; `lib/stories` stays as the bank.
+
+**Next:** stories/answers are not yet linked to CV bullets, so number consistency against the
+*CV* (not just the written answer) is unwired. Application-scoped prep (`prepSet`, built and
+unused) is still the highest-value addition.
+
 ## 2026-09-17 - Supabase project paused (operational note)
 
 **Symptom:** sign-in on the live site dumps the browser on a Chrome DNS error at

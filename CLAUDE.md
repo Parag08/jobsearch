@@ -17,7 +17,7 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 1. **TDD.** Red -> green -> refactor. No domain code without a failing test first. Tests live next to code: `lib/**/*.test.ts`, run with `npm test`.
 2. **Token economy** (spec section 6). Parse once and store structured JSON; rules/lexical matching before LLM calls; prompts carry IDs + compact summaries, never documents; CV tailoring emits a diff from the master, not a regenerated CV; model routing via `lib/adapters/llm.ts` (small tier for extraction, premium only for polish/outreach); every LLM call logged to token_ledger.
 3. **Honesty rule.** A CV never mirrors a JD keyword unless it is evidenced in the bullet bank (`buildDiff` enforces this - keep it that way). Naming a specific tool, firm or method is itself a claim: it needs a bullet behind it, not a plausible inference (the CVbuilder notes in `data/cvbuilder/` are full of worked examples).
-   Two selection rules the CV work relies on that this codebase does NOT yet implement - honour them when tailoring lands: **cap points per org** (Parag's standing instruction: Valeo and EverHaus get at most two each, so an internship and a part-time role never outweigh the full-time ones), and **prefer a short variant over cutting a bullet** when a page runs long.
+   Two selection rules the CV work relies on are implemented and tested in `lib/editorial/` (`select.ts` per-org caps, `fit.ts` short-variant-before-cut) but NOT yet called by `tailorCv` - wire them in when tailoring is next touched (docs/ROADMAP.md): **cap points per org** (Parag's standing instruction: Valeo and EverHaus get at most two each, so an internship and a part-time role never outweigh the full-time ones), and **prefer a short variant over cutting a bullet** when a page runs long.
 4. **Generic multi-user.** Personal facts (INSEAD, Singapore) are DATA, never schema or code constants. Every table has user_id + RLS.
 5. **Free-first.** $0 defaults (Gemini/Groq free tiers, Supabase free, Adzuna/Jooble free feeds); paid components opt-in and swappable behind adapters.
 
@@ -52,7 +52,7 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 - All matching/normalization goes through `norm()` in types.ts.
 
 ## Current status + next steps
-See docs/MEMORY.md (keep it current - that file is the handoff).
+See docs/MEMORY.md (keep it current - that file is the handoff). **What to build next: docs/ROADMAP.md** - the product loop (Sourcing -> Networking -> Applying -> Interview prep -> Offer, with Improve looping back), status of every capability, and a ranked Now/Next/Later. Keep it in step with the landing page process map (`app/_components/process-map.tsx`): a step there loses `coming` only when it ships.
 
 ## Related, outside this repo
 - The Cowork pilot (folder-based JobSearch the user runs in chat) lives in the user's parag/jobpilot folder with a dashboard artifact; this repo is its productization. Keep concepts aligned (same stage names, same JdExtract fields) so pilot data can migrate.
