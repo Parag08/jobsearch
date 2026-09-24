@@ -548,7 +548,7 @@
 .qtext { min-width: 0; }
 .qstatus { flex: none; }
 
-.qdetail { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.qdetail { display: flex; flex-direction: column; gap: 20px; min-width: 0; scroll-margin-top: 88px; }
 .qdetail h2 { font-size: 1.5rem; line-height: 1.25; }
 .firmNote {
   font-size: 0.9rem;

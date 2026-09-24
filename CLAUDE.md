@@ -23,6 +23,7 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 
 ## Architecture
 - Next.js 15 App Router + TypeScript strict + Vitest + zod. Deploy target: Vercel. DB: Supabase (Postgres + auth + RLS).
+- **Functions run in `sin1` (vercel.json `regions`)**, next to the Supabase project in ap-southeast-1. The default (iad1) put every query on a US-Singapore round trip. Keep them co-located if either moves.
 - `lib/` is the pure domain layer - no I/O, no framework imports, fully unit-tested:
   - types.ts (zod schemas, STAGES, norm()) | sector-graph.ts (M1) | bullet-matcher.ts + cv-diff.ts (M3)
   - pipeline.ts (M5) | outreach.ts (M4) | scoring.ts (M7) | token-meter.ts

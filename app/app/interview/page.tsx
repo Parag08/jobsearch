@@ -8,10 +8,8 @@ import { DEFAULT_COMPETENCIES } from "@/lib/stories/types";
 import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
-import { firmNote, groupQuestions, questionsForFirm } from "@/lib/interview/questions";
 import { FIRMS, firmLabel, questionBank } from "./bank";
-import { AnswerEditor } from "./answer-editor";
-import { PracticePanel } from "./practice-panel";
+import { BehaviouralView } from "./behavioural-view";
 import ui from "../ui.module.css";
 
 /**
@@ -29,9 +27,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "casing", label: "Casing" },
   { id: "technical", label: "Technical" },
 ];
-
-const hasText = (a: Answer | undefined) =>
-  Boolean(a && [a.body, a.situation, a.task, a.action, a.result].some((s) => s.trim()));
 
 export default async function Interview({
   searchParams,
@@ -77,7 +72,7 @@ export default async function Interview({
       </nav>
 
       {tab === "behavioural" && (
-        <Behavioural firm={firm} selectedId={params.q} answers={answers} attempts={attempts} bullets={bullets} href={href} />
+        <Behavioural answers={answers} attempts={attempts} bullets={bullets} />
       )}
       {tab === "casing" && <Casing bullets={bullets} />}
       {tab === "technical" && <Technical bullets={bullets} extras={(profile?.cvExtras ?? []) as CvExtra[]} />}
@@ -87,162 +82,34 @@ export default async function Interview({
 
 // ---- behavioural ---------------------------------------------------------------------------
 
+/**
+ * The server side of the behavioural tab: read everything once, hand it to the client
+ * view. Question and firm switching then happen in the browser with no round trip.
+ */
 function Behavioural({
-  firm,
-  selectedId,
   answers,
   attempts,
   bullets,
-  href,
 }: {
-  firm: string;
-  selectedId?: string;
   answers: Answer[];
   attempts: Attempt[];
   bullets: { id: string; text: string; skills: string[] }[];
-  href: (n: { tab?: Tab; q?: string; firm?: string }) => string;
 }) {
-  const questions = questionsForFirm(questionBank, firm);
-  const byQuestion = new Map(answers.map((a) => [a.questionId, a]));
-  const bestScore = new Map<string, number>();
-  for (const a of attempts) bestScore.set(a.questionId, Math.max(bestScore.get(a.questionId) ?? 0, a.overall));
-
-  const answered = questions.filter((q) => hasText(byQuestion.get(q.id))).length;
-  const practised = questions.filter((q) => bestScore.has(q.id)).length;
-
-  // Open on what you asked for; otherwise on the first question you have not answered.
-  const selected =
-    questions.find((q) => q.id === selectedId) ??
-    questions.find((q) => !hasText(byQuestion.get(q.id))) ??
-    questions[0];
-  const current = selected ? byQuestion.get(selected.id) : undefined;
-  const history = selected ? attempts.filter((a) => a.questionId === selected.id) : [];
-  const note = selected ? firmNote(selected, firm) : null;
-
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
   for (const b of bullets) for (const h of matchCompetencies(`${b.text} ${b.skills.join(" ")}`)) evidenced.add(h.competency);
+  const firmLabels = Object.fromEntries([...FIRMS, "all"].map((f) => [f, firmLabel(f)]));
 
   return (
     <>
-      <div className={ui.split}>
-        <aside className={ui.qside} aria-label="Questions">
-          <div className={ui.qsideHead}>
-            <nav className={ui.segmented} aria-label="Firm">
-              {[...FIRMS, "all"].map((f) => (
-                <Link
-                  key={f}
-                  href={href({ firm: f, q: selected?.id })}
-                  scroll={false}
-                  className={ui.pill}
-                  aria-current={f === firm ? "true" : undefined}
-                >
-                  {f === "all" ? "All" : firmLabel(f)}
-                </Link>
-              ))}
-            </nav>
-            <div className={ui.progress}>
-              <p>
-                <b>{answered}</b>/{questions.length} answered · <b>{practised}</b> practised aloud
-              </p>
-              <div className={ui.meter} aria-label={`${answered} of ${questions.length} answered`}>
-                <i style={{ "--w": `${questions.length ? (answered / questions.length) * 100 : 0}%` } as React.CSSProperties} />
-              </div>
-              {answered < 7 && (
-                <p>Seven strong stories cover most interviews. Start with the ones you would dread.</p>
-              )}
-            </div>
-          </div>
-
-          <div className={ui.qlist}>
-          {groupQuestions(questionBank, questions).map(({ group, questions: qs }) => (
-            <div key={group.id} className={ui.qgroup}>
-              <p className={ui.mono}>{group.label}</p>
-              {qs.map((q) => {
-                const done = hasText(byQuestion.get(q.id));
-                const best = bestScore.get(q.id);
-                return (
-                  <Link
-                    key={q.id}
-                    href={href({ q: q.id })}
-                    className={ui.qitem}
-                    aria-current={q.id === selected?.id ? "true" : undefined}
-                  >
-                    <span className={ui.qtext}>{q.text}</span>
-                    <span className={ui.qstatus}>
-                      {best !== undefined ? (
-                        <span className={ui.chip} data-tone="hit">{best.toFixed(1)}</span>
-                      ) : done ? (
-                        <span className={ui.chip}>draft</span>
-                      ) : null}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-          </div>
-        </aside>
-
-        {selected && (
-          <section className={ui.qdetail}>
-            <div className={ui.stack}>
-              <h2>{selected.text}</h2>
-              <p className={ui.sub}>
-                <b>A strong answer shows:</b> {selected.lookFor}
-              </p>
-              {note && (
-                <p className={ui.firmNote}>
-                  <b>{firmLabel(firm)}:</b> {note}
-                </p>
-              )}
-              {evidenced.has(selected.competency) && (
-                <p className={ui.sub}>Your CV already evidences this — start from the bullet behind it.</p>
-              )}
-            </div>
-
-            <div className={ui.panel}>
-              <AnswerEditor
-                questionId={selected.id}
-                questionText={selected.text}
-                initial={{
-                  mode: current?.mode ?? "free",
-                  body: current?.body ?? "",
-                  situation: current?.situation ?? "",
-                  task: current?.task ?? "",
-                  action: current?.action ?? "",
-                  result: current?.result ?? "",
-                }}
-              />
-            </div>
-
-            <div className={ui.panel}>
-              <h3>Practise out loud</h3>
-              <p className={ui.sub}>Hear the question, answer it aloud, get scored.</p>
-              <PracticePanel questionId={selected.id} questionText={selected.text} firm={firm} />
-            </div>
-
-            {history.length > 0 && (
-              <div className={ui.panel}>
-                <h3>Your attempts</h3>
-                <ul className={ui.rows}>
-                  {history.map((a) => (
-                    <li key={a.id} className={ui.row}>
-                      <div>
-                        <p>{a.transcript.length > 140 ? `${a.transcript.slice(0, 140)}…` : a.transcript}</p>
-                        {a.improvements[0] && <span className={ui.sub}>Next time: {a.improvements[0]}</span>}
-                      </div>
-                      <span className={ui.mono}>
-                        {a.overall.toFixed(1)} · {a.createdAt.slice(0, 10)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-      </div>
+      <BehaviouralView
+        bank={questionBank}
+        firms={FIRMS}
+        firmLabels={firmLabels}
+        answers={answers}
+        attempts={attempts}
+        evidenced={[...evidenced]}
+      />
 
       <details className={ui.panel}>
         <summary>What your CV already evidences</summary>
