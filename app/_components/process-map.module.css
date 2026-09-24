@@ -1,0 +1,397 @@
+/* The job-search loop (landing). In-page surfaces: 12px cards, hairline borders,
+   no shadow, no capsules (docs/DESIGN.md section 5). */
+
+.map {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---- the flow -----------------------------------------------------------------------
+   Wide: one row, stage | arrow | stage ... with the loop drawn in a second row under
+   Sourcing..Interview prep. Every stage column is the same width, which is what lets
+   the loop's legs land exactly under the centres of the first and fourth stage. */
+
+.flow {
+  --arrow: 44px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr) var(--arrow)) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stage {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion), background var(--motion);
+}
+
+.stage:hover {
+  border-color: var(--line-strong);
+}
+
+.stage[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.num {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.ai,
+.kind[data-kind="ai"] {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: var(--radius);
+  color: var(--paper);
+  background: var(--accent);
+  white-space: nowrap;
+}
+
+/* AI planned but not built: the same shape, drawn in outline so it cannot be
+   mistaken for a working AI step */
+.aiSoon {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  padding: 0 5px;
+  border-radius: var(--radius);
+  color: var(--accent-text);
+  border: 1px dashed var(--accent);
+  white-space: nowrap;
+}
+
+/* Arrows are decoration: they never take a click meant for a stage. */
+.arrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.arrowLabel {
+  position: absolute;
+  bottom: calc(50% + 8px);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--accent-text);
+}
+
+/* ---- the loop: out of Interview prep, down, back along, up into Sourcing ---- */
+
+.loop {
+  grid-row: 2;
+  grid-column: 1 / 8;
+  position: relative;
+  height: 60px;
+  /* half a stage column on each side: 3 arrows sit inside this span */
+  margin: 0 calc((100% - 3 * var(--arrow)) / 8) 34px;
+  border: 1.5px solid var(--line-strong);
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+}
+
+/* the arrowhead where the loop re-enters Sourcing */
+.loopHead {
+  position: absolute;
+  top: 1px;
+  left: -0.75px;
+  width: 9px;
+  height: 9px;
+  border-left: 1.5px solid var(--line-strong);
+  border-top: 1.5px solid var(--line-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.loopBack,
+.loopOut {
+  position: absolute;
+  top: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.loopBack {
+  left: 12px;
+}
+
+.loopOut {
+  right: 12px;
+}
+
+.loopNode {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
+  width: min(15rem, 60%);
+}
+
+/* ---- narrow: a column, top to bottom; the loop becomes its own box ---- */
+
+@media (max-width: 760px) {
+  .flow {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .arrow {
+    height: 32px;
+  }
+
+  .arrowSvg {
+    transform: rotate(90deg);
+  }
+
+  .arrowLabel {
+    position: static;
+    margin-right: 8px;
+  }
+
+  .loop {
+    height: auto;
+    margin: 20px 0 0;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-card);
+  }
+
+  .loopHead {
+    display: none;
+  }
+
+  .loopBack,
+  .loopOut {
+    position: static;
+  }
+
+  .loopOut {
+    order: -1;
+  }
+
+  .loopOut::after {
+    content: " - after Interview prep";
+  }
+
+  .loopBack::after {
+    content: " - back to 01 Sourcing";
+  }
+
+  .loopNode {
+    position: static;
+    transform: none;
+    width: auto;
+  }
+}
+
+/* ---- the detail panel: expands downward (0fr -> 1fr), one stage at a time.
+   Wide screens use the shared panel under the whole flow; narrow screens use the
+   inline one under the tapped stage, so the steps open where the finger is. ---- */
+
+.detail,
+.inline {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease-out;
+}
+
+.inline {
+  display: none;
+}
+
+.detail[data-open],
+.inline[data-open] {
+  grid-template-rows: 1fr;
+}
+
+@media (max-width: 760px) {
+  .detail {
+    display: none;
+  }
+
+  .inline {
+    display: grid;
+  }
+
+  .inline[data-open] .panel {
+    margin-top: 8px;
+  }
+}
+
+.detailInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--paper);
+  animation: enter 300ms ease-out both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.panelHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.panelTitle {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.panelSummary {
+  color: var(--ink-soft);
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 16px;
+  padding: 12px 0 12px 14px;
+  border-top: 1px solid var(--line);
+  border-left: 2px solid transparent;
+}
+
+/* AI steps carry the accent rule down their edge, so they read at a glance */
+.step[data-kind="ai"] {
+  border-left-color: var(--accent);
+}
+
+.step[data-coming] .stepName,
+.step[data-coming] .stepDetail {
+  color: var(--ink-faint);
+}
+
+.stepName {
+  font-weight: 500;
+}
+
+.stepDetail {
+  grid-column: 1;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.tags {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.kind {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: var(--wash);
+  white-space: nowrap;
+}
+
+.coming {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  padding: 0 5px;
+  border-radius: var(--radius);
+  color: var(--ink-faint);
+  border: 1px dashed var(--line-strong);
+  white-space: nowrap;
+}
+
+/* ---- legend ---- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+/* each key stays with its explanation when the legend wraps */
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .step {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tags {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

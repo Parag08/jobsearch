@@ -2,6 +2,34 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-09-25 (overnight) - Landing page rebuilt around the job-search loop; roadmap written
+
+**The product's shape, decided with Parag:** Sourcing -> Networking -> Applying -> Interview prep ->
+Offer & negotiation, with **Improve** looping back to Sourcing after a rejection. Networking means
+talking to people in the target office, even before a role is posted - Parag will build it. The salary
+negotiation framework comes from Parag later.
+
+- **Hero card fixed:** the track line, dots and moving ring were each placed with their own magic
+  offsets (centres at 14 / 17.5 / 17px). Now one `--rail` variable centres all three. Dark mode: the
+  card's sheen and edge light used `--surface` (near-black in dark), so they darkened the card - new
+  token `--glass-light`.
+- **Landing copy rewritten** around the whole search, with AI named where it does the work. Removed
+  claims that were not true: cover letters, PDF/DOCX download, CV/LinkedIn upload, "checked daily".
+- **Process map** (`app/_components/process-map.tsx`) at the foot of the landing page: six stages with
+  arrows plus the Improve loop. Click a stage to open its steps; each step is tagged AI / Automatic /
+  You, plus `coming` if not built. A stage shows a solid `AI` badge only when it has working AI, and
+  `AI soon` when its only AI steps are still coming. On phones the steps open under the stage tapped.
+- **docs/ROADMAP.md** (written by a subagent, spot-checked): status of every capability per stage,
+  and a ranked Now/Next/Later. Its findings: the in-app watchlist Refresh has no city/role filter (only
+  the script does), so it can flood; per-org cap and short-variant rules exist in `lib/editorial` but
+  `tailorCv` never calls them (CLAUDE.md corrected); no UI to add contacts; `prepSet` still unwired.
+- Headless-Chrome gotchas when screenshotting: a stale `--user-data-dir` renders blank; resizing the
+  viewport to capture the full page can restart CSS animations, so panels look faded when they are not.
+  Drive Chrome over its DevTools protocol (Node 24 has WebSocket built in).
+
+**Next:** pick from ROADMAP "Now" - start with sourcing you can trust (filter into the in-app refresh,
+retire closed roles, daily cron).
+
 ## 2026-09-24 (night) - Dark mode
 
 Toggle (`app/_components/theme-toggle.tsx`) in the app nav and the landing nav cycles Auto / Light /
@@ -38,34 +66,3 @@ functions pinned to `sin1` next to Supabase (vercel.json).
 
 **Next:** try a case end to end in the browser (needs `AI_GATEWAY_API_KEY` on Vercel for production);
 more cases (the runners-up in the source map); case attempts could feed a "weakest dimension" drill.
-
-## 2026-09-24 - Interview prep rebuilt; drop-and-recreate is over
-
-**Schema policy FLIPPED to migrations.** Interview answers are the first data typed by hand
-into the app, and nothing regenerates them - the next push touching `schema.sql` would have
-wiped them via `db.yml`. Now: `supabase/migrations/NNNN_*.sql` (idempotent), `npm run
-db:migrate` (records each in `schema_migrations`, one transaction per file), `db.yml` applies
-pending migrations on push and never drops. `schema.sql` stays the full snapshot for a fresh
-project; `db-apply` refuses it without `--force-drop`. Applied 0001 live: 131 sourced jobs, 9
-watchlist, 71 companies, 23 bullets all survived.
-
-**Interview tab** (`/app/interview`) is now three tabs - Behavioural / Casing / Technical - with
-tab, question and firm in the URL.
-- Behavioural: 26 MBB questions as DATA in `data/interview/questions.json` (firm tags, what a
-  strong answer shows, Bain notes grounded in Bain's public values - not a leaked script).
-  Per question: a written answer (blank box OR STAR, both drafts always kept) and spoken
-  practice.
-- Spoken practice uses browser APIs only - speech synthesis asks the question, Web Speech
-  transcribes live (Chrome/Edge; typing fallback elsewhere), MediaRecorder for playback. Only
-  the transcript reaches the server; audio is never stored. No new dependency.
-- Scoring (`lib/interview/score.ts`): measured first, deterministically - length, pace, "I"
-  versus "we", and numbers said aloud that the written answer lacks. Only judgement goes to the
-  model (premium tier, JSON mode), output validated and clamped. Verified live: planted a spoken
-  40% against a written 30%, and it was caught; model feedback stayed about delivery, never new
-  content.
-- The one-off story form from 09-24 morning is retired; `lib/stories` stays as the bank.
-
-**Next:** stories/answers are not yet linked to CV bullets, so number consistency against the
-*CV* (not just the written answer) is unwired. Application-scoped prep (`prepSet`, built and
-unused) is still the highest-value addition.
-

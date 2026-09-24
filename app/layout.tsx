@@ -22,7 +22,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "JobSearch",
   description:
-    "Write your experience down once. JobSearch tailors a CV and cover letter to each job from what you have actually done.",
+    "Your job search, end to end: find roles, read each job, build an honest CV, track applications and practise interviews with AI.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

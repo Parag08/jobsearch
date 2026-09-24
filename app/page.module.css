@@ -223,6 +223,37 @@
   max-width: var(--measure);
 }
 
+/* what does the work in each step - quiet, mono, never a badge */
+.stepAi {
+  grid-column: 2;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--accent-text);
+}
+
+/* ---- coming next: named honestly, kept visibly separate from what ships ---- */
+
+.coming {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: var(--measure);
+}
+
+.coming h2 {
+  font-size: 1.25rem;
+}
+
+.coming ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* ---- honesty ---- */
 
 .honesty {
@@ -311,4 +342,28 @@
     grid-column: 3;
     grid-row: 1;
   }
+
+  .stepAi {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* ---- the whole process (app/_components/process-map.tsx) ---- */
+
+.process {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.process h2 {
+  font-size: 1.75rem;
+  line-height: 1.25;
+}
+
+.processLede {
+  color: var(--ink-soft);
+  max-width: var(--measure);
+  margin-bottom: 8px;
 }
