@@ -113,3 +113,17 @@ describe("streamGatewayText", () => {
     expect(out).toEqual(["partial"]);
   });
 });
+
+describe("streamGatewayText JSON mode", () => {
+  it("asks for a JSON object when json is set, which structured scoring needs", async () => {
+    const { fetch, calls } = stubFetch(sseResponse([delta("{}"), "data: [DONE]\n\n"]));
+    await collect(streamGatewayText({ apiKey: "k", model: "google/gemini-2.5-flash-lite", prompt: "json please", json: true, fetch }));
+    expect(JSON.parse(String(calls[0].init.body)).response_format).toEqual({ type: "json_object" });
+  });
+
+  it("does not ask for JSON by default - prose stays prose", async () => {
+    const { fetch, calls } = stubFetch(sseResponse([delta("hi"), "data: [DONE]\n\n"]));
+    await collect(streamGatewayText({ apiKey: "k", model: "google/gemini-2.5-flash-lite", prompt: "hi", fetch }));
+    expect(JSON.parse(String(calls[0].init.body)).response_format).toBeUndefined();
+  });
+});

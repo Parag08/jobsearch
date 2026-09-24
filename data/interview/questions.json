@@ -1,0 +1,355 @@
+{
+  "_readme": [
+    "Behavioural and fit questions for the interview tab (DESIGN.md section 3).",
+    "This is DATA, not code (CLAUDE.md rule 4): add firms, groups or questions here, never in lib/.",
+    "",
+    "These are questions commonly asked in MBB fit and behavioural rounds, compiled from",
+    "widely published prep material and the firms' own stated values. They are NOT a leaked",
+    "script, and no firm asks all of them. `firms` marks where a question is especially",
+    "likely; `lookFor` says what a strong answer shows; a firm-specific note is advice",
+    "grounded in that firm's public values, not insider knowledge.",
+    "",
+    "`competency` uses the same labels as lib/stories/types.ts DEFAULT_VOCAB where one",
+    "fits, so a written answer is indexed against the same gaps the rest of the tab shows."
+  ],
+  "firmLabels": {
+    "bain": "Bain",
+    "bcg": "BCG",
+    "mckinsey": "McKinsey"
+  },
+  "groups": [
+    {
+      "id": "fit",
+      "label": "Fit & motivation"
+    },
+    {
+      "id": "team",
+      "label": "Teamwork & leadership"
+    },
+    {
+      "id": "influence",
+      "label": "Influence & conflict"
+    },
+    {
+      "id": "problem",
+      "label": "Problem-solving"
+    },
+    {
+      "id": "resilience",
+      "label": "Failure & resilience"
+    },
+    {
+      "id": "impact",
+      "label": "Drive & impact"
+    }
+  ],
+  "questions": [
+    {
+      "id": "fit-cv-walk",
+      "group": "fit",
+      "competency": "fit",
+      "text": "Walk me through your CV.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A two-minute story with a through-line, not a list of jobs. Each move should have a reason, and it should end pointing at this firm.",
+      "bain": "Almost always the opener. It sets the tone for the whole conversation, so rehearse the first sentence until it is automatic."
+    },
+    {
+      "id": "fit-why-consulting",
+      "group": "fit",
+      "competency": "fit",
+      "text": "Why consulting?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A reason rooted in something you have done, not a generic appeal to learning and variety. Specific beats enthusiastic."
+    },
+    {
+      "id": "fit-why-firm",
+      "group": "fit",
+      "competency": "fit",
+      "text": "Why this firm, and not the others?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "Something true about this firm that is not on its homepage, and ideally a person you have actually spoken to there.",
+      "bain": "Bain's stated values include candour, results over reports, and a team culture it describes as never letting a colleague fail. An answer that names one of these AND connects it to your own experience lands far better than praise."
+    },
+    {
+      "id": "fit-why-mba",
+      "group": "fit",
+      "competency": "fit",
+      "text": "Why did you decide to do an MBA?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A real trigger and a real timing reason. A decision has a moment; a manufactured one does not, and interviewers press on exactly that."
+    },
+    {
+      "id": "fit-mba-learning",
+      "group": "fit",
+      "competency": "fit",
+      "text": "What did you learn during your MBA that will make you a better consultant?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "One demonstrated change in how you work, shown through something you did - not a list of courses."
+    },
+    {
+      "id": "fit-weakness",
+      "group": "fit",
+      "competency": "fit",
+      "text": "What is a genuine development area for you?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A real weakness, evidence you have noticed it in action, and what you are concretely doing about it. Disguised strengths are spotted instantly."
+    },
+    {
+      "id": "team-led-team",
+      "group": "team",
+      "competency": "leadership",
+      "text": "Tell me about a time you led a team through something difficult.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "What made it difficult, what YOU did specifically, and how the team came out of it - not only the outcome."
+    },
+    {
+      "id": "team-teamwork",
+      "group": "team",
+      "competency": "leadership",
+      "text": "Describe a time you were part of a team that was not working well. What did you do?",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "Diagnosis of why it was not working, a personal intervention, and a changed dynamic.",
+      "bain": "Team orientation is central to how Bain describes itself. Expect this or a close variant, and expect a follow-up on how you supported someone else rather than yourself."
+    },
+    {
+      "id": "team-helped-colleague",
+      "group": "team",
+      "competency": "leadership",
+      "text": "Tell me about a time you helped a colleague succeed at your own expense.",
+      "firms": [
+        "bain"
+      ],
+      "lookFor": "A real cost to you, a clear benefit to them, and no hint of martyrdom.",
+      "bain": "This probes the 'never let a colleague fail' value directly. A strong answer shows the trade-off you made was deliberate."
+    },
+    {
+      "id": "team-diverse",
+      "group": "team",
+      "competency": "leadership",
+      "text": "Tell me about working with someone very different from you.",
+      "firms": [
+        "bain",
+        "mckinsey"
+      ],
+      "lookFor": "Real difference in working style or view, what you adapted, and what you learned from them."
+    },
+    {
+      "id": "influence-senior",
+      "group": "influence",
+      "competency": "influencing-without-authority",
+      "text": "Tell me about a time you persuaded someone senior who did not have to listen to you.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "The objection they raised, how you reframed around what they cared about, and the moment they moved."
+    },
+    {
+      "id": "influence-no-authority",
+      "group": "influence",
+      "competency": "influencing-without-authority",
+      "text": "Describe a time you got something done without formal authority.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "Who you needed, why they had no reason to help, and what you did to earn it."
+    },
+    {
+      "id": "conflict-disagreement",
+      "group": "influence",
+      "competency": "conflict",
+      "text": "Tell me about a serious disagreement with a colleague or manager.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A real disagreement, how you handled it directly and respectfully, and the outcome - including if you were wrong.",
+      "bain": "Bain names candour as a value. Expect a follow-up on whether you raised it directly, and with whom."
+    },
+    {
+      "id": "conflict-unpopular",
+      "group": "influence",
+      "competency": "conflict",
+      "text": "Tell me about a time you had to deliver an unpopular message.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "Why it had to be said, how you prepared, how it was received, and what happened next.",
+      "bain": "Directly tests candour. The best answers show you said it early rather than letting a problem grow."
+    },
+    {
+      "id": "problem-ambiguous",
+      "group": "problem",
+      "competency": "ambiguity",
+      "text": "Walk me through a problem you solved with no clear structure or data.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "How you created structure: the hypotheses you formed, how you tested them, and what you ruled out."
+    },
+    {
+      "id": "problem-data",
+      "group": "problem",
+      "competency": "data-driven-decision",
+      "text": "Tell me about a time you used data to change a decision.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "The decision before, the analysis, the specific insight, and the decision after - with the number that moved it."
+    },
+    {
+      "id": "problem-prioritise",
+      "group": "problem",
+      "competency": "prioritisation",
+      "text": "Tell me about a time you had too much to do. How did you decide what mattered?",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "An explicit prioritisation logic, what you deliberately dropped, and who you told."
+    },
+    {
+      "id": "problem-customer",
+      "group": "problem",
+      "competency": "customer-insight",
+      "text": "Tell me about a time you understood a customer's problem better than they did.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "What they asked for, what they actually needed, how you found the gap, and what changed."
+    },
+    {
+      "id": "resilience-failure",
+      "group": "resilience",
+      "competency": "failure",
+      "text": "Tell me about a time you failed.",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "A genuine failure with real consequences, your share of the responsibility, and a specific change you made afterwards. A success in disguise is spotted instantly."
+    },
+    {
+      "id": "resilience-setback",
+      "group": "resilience",
+      "competency": "failure",
+      "text": "Describe a time a plan you were responsible for went wrong.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "How early you noticed, how you communicated it, and how you recovered."
+    },
+    {
+      "id": "resilience-feedback",
+      "group": "resilience",
+      "competency": "failure",
+      "text": "Tell me about the most difficult feedback you have received.",
+      "firms": [
+        "bain",
+        "mckinsey"
+      ],
+      "lookFor": "Feedback that stung, why it was fair, and evidence you acted on it."
+    },
+    {
+      "id": "resilience-pressure",
+      "group": "resilience",
+      "competency": "delivery-under-pressure",
+      "text": "Tell me about a time you delivered under serious time pressure.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "The real constraint, the trade-offs you made to meet it, and the quality of what shipped."
+    },
+    {
+      "id": "impact-proudest",
+      "group": "impact",
+      "competency": "leadership",
+      "text": "What achievement are you most proud of, and why?",
+      "firms": [
+        "bain",
+        "bcg",
+        "mckinsey"
+      ],
+      "lookFor": "The why matters more than the what. It reveals what you value.",
+      "bain": "Bain's focus on results means the impact should be concrete - say the number."
+    },
+    {
+      "id": "impact-initiative",
+      "group": "impact",
+      "competency": "ambiguity",
+      "text": "Tell me about something you started that nobody asked you to.",
+      "firms": [
+        "bain",
+        "mckinsey"
+      ],
+      "lookFor": "The gap you spotted, why you acted without permission, and the lasting result."
+    },
+    {
+      "id": "impact-changed-mind",
+      "group": "impact",
+      "competency": "data-driven-decision",
+      "text": "Tell me about a time you changed your mind.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "What you believed, what evidence moved you, and how quickly you acted on it."
+    },
+    {
+      "id": "impact-client",
+      "group": "impact",
+      "competency": "customer-insight",
+      "text": "Tell me about a time your work made a measurable difference to a client or customer.",
+      "firms": [
+        "bain",
+        "bcg"
+      ],
+      "lookFor": "The client, the difference, and the number.",
+      "bain": "Maps directly onto Bain's 'results, not reports'. Lead with the outcome."
+    }
+  ]
+}

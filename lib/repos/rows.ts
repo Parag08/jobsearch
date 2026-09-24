@@ -253,6 +253,37 @@ export interface RowMap {
   watchlist: WatchlistRow;
   stories: StoryRow;
   companies: CompanyRow;
+  interview_answers: InterviewAnswerRow;
+  interview_attempts: InterviewAttemptRow;
+}
+
+/** One written answer per (user, question id from data/interview/questions.json). */
+export interface InterviewAnswerRow {
+  id: string;
+  user_id: string;
+  question_id: string;
+  mode: "free" | "star";
+  body: string;
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+  updated_at?: string;
+}
+
+/** One spoken practice attempt. Transcript only - audio is never stored. */
+export interface InterviewAttemptRow {
+  id: string;
+  user_id: string;
+  question_id: string;
+  transcript: string;
+  duration_seconds: number | null;
+  scores: Record<string, number>;
+  overall: number;
+  strengths: string[];
+  improvements: string[];
+  model: string;
+  created_at?: string;
 }
 export type TableName = keyof RowMap;
 export type RowOf<T extends TableName> = RowMap[T];

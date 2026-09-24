@@ -14,9 +14,13 @@ import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
-import { draftStory, saveStory } from "@/lib/repos/stories";
+import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
+import { buildScoringPrompt, deliverySignals, numberDrift, overallScore, parseScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
+import { firmNote } from "@/lib/interview/questions";
+import { parseJsonLoose } from "@/lib/adapters/llm-http";
+import { questionBank } from "./interview/bank";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
-import { GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
+import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
@@ -173,34 +177,38 @@ export async function watchAllReadable(): Promise<void> {
   revalidatePath("/app/watchlist");
 }
 
-/** Capture a STAR story the user wrote (DESIGN.md section 3: captured, never generated). */
-export async function saveStoryAction(_prev: string | null, formData: FormData): Promise<string | null> {
+export interface SaveState {
+  saved?: boolean;
+  error?: string;
+}
+
+/**
+ * Save the written answer to one bank question. Both drafts are saved every time - the
+ * free-text one and the STAR one - so switching mode never discards anything.
+ * Captured, never generated (DESIGN.md section 3): nothing here writes on your behalf.
+ */
+export async function saveAnswerAction(_prev: SaveState | null, formData: FormData): Promise<SaveState> {
   const { db, userId } = await ws();
-  const projectId = String(formData.get("projectId") ?? "").trim();
-  if (!projectId) return "Pick which role this story comes from.";
+  const questionId = String(formData.get("questionId") ?? "");
+  if (!questionBank.questions.some((q) => q.id === questionId)) return { error: "Unknown question." };
 
-  const result = String(formData.get("result") ?? "").trim();
-  if (!result) return "A story needs a Result - what changed because of it?";
-
+  const field = (k: string) => String(formData.get(k) ?? "").trim();
+  const mode = field("mode") === "free" ? "free" : "star";
   try {
-    await saveStory(
-      db,
-      userId,
-      draftStory({
-        projectId,
-        bulletId: String(formData.get("bulletId") ?? "") || null,
-        situation: String(formData.get("situation") ?? "").trim(),
-        task: String(formData.get("task") ?? "").trim(),
-        action: String(formData.get("action") ?? "").trim(),
-        result,
-        capturedAt: today(),
-      }),
-    );
+    await upsertAnswer(db, userId, {
+      questionId,
+      mode,
+      body: field("body"),
+      situation: field("situation"),
+      task: field("task"),
+      action: field("action"),
+      result: field("result"),
+    });
   } catch (err) {
-    return err instanceof Error ? err.message : "Could not save that story.";
+    return { error: err instanceof Error ? err.message : "Could not save that answer." };
   }
   revalidatePath("/app/interview");
-  return null;
+  return { saved: true };
 }
 
 /**
@@ -219,26 +227,36 @@ export interface ProbeState {
 export async function probeStoryAction(_prev: ProbeState | null, formData: FormData): Promise<ProbeState> {
   const { db, userId } = await ws();
 
-  const parts = ["situation", "task", "action", "result"].map((k) => String(formData.get(k) ?? "").trim());
-  if (parts.join(" ").trim().length < 40) {
+  const field = (k: string) => String(formData.get(k) ?? "").trim();
+  const free = field("mode") === "free";
+  const draft = free
+    ? [`Answer: ${field("body")}`]
+    : [
+        `Situation: ${field("situation")}`,
+        `Task: ${field("task")}`,
+        `Action: ${field("action")}`,
+        `Result: ${field("result")}`,
+      ];
+  const substance = free ? field("body") : ["situation", "task", "action", "result"].map(field).join(" ");
+  if (substance.trim().length < 40) {
     return { error: "Write a rough draft first - the questions come from what you wrote." };
   }
 
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
-  const [situation, task, action, result] = parts;
+  const question = field("question");
   const prompt = [
-    "You are a consulting interviewer reading a candidate's draft STAR answer.",
+    "You are a consulting interviewer reading a candidate's draft answer to a behavioural question.",
+    question ? `The question was: ${question}` : "",
     "Ask the 4 sharpest follow-up questions you would actually ask to test whether this is real and whether they personally did it.",
     "Probe for: what THEY did versus the team, what resisted them, what the number really measures, and what they would do differently.",
-    "Do NOT rewrite or extend their story. Do NOT invent detail. Output only the questions, one per line, no numbering.",
+    "Do NOT rewrite or extend their answer. Do NOT invent detail. Output only the questions, one per line, no numbering.",
     "",
-    `Situation: ${situation}`,
-    `Task: ${task}`,
-    `Action: ${action}`,
-    `Result: ${result}`,
-  ].join("\n");
+    ...draft,
+  ]
+    .filter((l, i) => l !== "" || i > 1)
+    .join("\n");
 
   let text = "";
   try {
@@ -271,4 +289,85 @@ export async function probeStoryAction(_prev: ProbeState | null, formData: FormD
     .slice(0, 5);
 
   return questions.length ? { questions } : { error: "The model returned nothing usable. Try again." };
+}
+
+export interface ScoreResult {
+  error?: string;
+  overall?: number;
+  scores?: Scores;
+  strengths?: string[];
+  improvements?: string[];
+  signals?: DeliverySignals;
+  saidNotWritten?: string[];
+  model?: string;
+}
+
+/**
+ * Score a spoken practice answer. The browser transcribes; this scores.
+ *
+ * What can be measured is measured deterministically first (lib/interview/score.ts):
+ * length, pace, "I" versus "we", and numbers said aloud that the written answer does not
+ * contain. Only the judgement - structure, specificity, reflection - goes to the model,
+ * whose output is validated and clamped rather than trusted. The attempt is saved, so the
+ * score history becomes the progress record.
+ */
+export async function scoreAnswerAction(input: {
+  questionId: string;
+  transcript: string;
+  durationSeconds: number | null;
+  firm: string;
+}): Promise<ScoreResult> {
+  const { db, userId } = await ws();
+  const question = questionBank.questions.find((q) => q.id === input.questionId);
+  if (!question) return { error: "Unknown question." };
+
+  const transcript = input.transcript.trim();
+  if (transcript.split(/\s+/).length < 20) {
+    return { error: "That is too short to score - give it at least a full sentence or three." };
+  }
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+
+  const signals = deliverySignals(transcript, input.durationSeconds);
+  const answers = await listAnswers(db, userId);
+  const mine = answers.find((a) => a.questionId === question.id);
+  const written = mine ? [mine.body, mine.situation, mine.task, mine.action, mine.result].join(" ") : "";
+  const { saidNotWritten } = numberDrift(transcript, written);
+
+  // Judgement, not extraction - so the premium tier (token rule #5).
+  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const prompt = buildScoringPrompt({
+    question: question.text,
+    lookFor: question.lookFor,
+    firmNote: firmNote(question, input.firm),
+    transcript,
+  });
+
+  let text = "";
+  let parsed;
+  try {
+    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 600 })) text += d;
+    parsed = parseScore(parseJsonLoose(text));
+  } catch (err) {
+    return { error: err instanceof Error ? `Could not score that: ${err.message}` : "Could not score that." };
+  }
+
+  const overall = overallScore(parsed.scores);
+  await saveAttempt(db, userId, {
+    questionId: question.id,
+    transcript,
+    durationSeconds: signals.durationSeconds,
+    scores: parsed.scores,
+    overall,
+    strengths: parsed.strengths,
+    improvements: parsed.improvements,
+    model,
+  });
+  await logTokens(db, userId, { date: today(), module: "interview-score", model, tokensIn: 0, tokensOut: 0 }).catch(
+    () => undefined,
+  );
+
+  revalidatePath("/app/interview");
+  return { overall, scores: parsed.scores, strengths: parsed.strengths, improvements: parsed.improvements, signals, saidNotWritten, model };
 }
