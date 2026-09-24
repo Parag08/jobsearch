@@ -3,6 +3,7 @@ import {
   buildJdExtractPrompt,
   buildSummarizePrompt,
   parseJsonLoose,
+  retryAfterSeconds,
   validateJdExtract,
   LlmHttpError,
   readBodyOrThrow,
@@ -45,12 +46,33 @@ describe("buildSummarizePrompt", () => {
   });
 });
 
+describe("retryAfterSeconds", () => {
+  it("reads the wait from a rate-limit error", () => {
+    const body = '{"error":{"message":"Rate limit exceeded ... Retry after 18s.","type":"rate_limit_exceeded"}}';
+    expect(retryAfterSeconds(new LlmHttpError("vercel-gateway", 429, body))).toBe(18);
+  });
+  it("defaults to a short wait for a 429 that does not say", () => {
+    expect(retryAfterSeconds(new LlmHttpError("vercel-gateway", 429, "slow down"))).toBe(15);
+  });
+  it("is null for anything that is not a rate limit", () => {
+    expect(retryAfterSeconds(new LlmHttpError("vercel-gateway", 500, "Retry after 5s"))).toBeNull();
+    expect(retryAfterSeconds(new Error("boom"))).toBeNull();
+  });
+});
+
 describe("parseJsonLoose", () => {
   it("parses clean JSON", () => {
     expect(parseJsonLoose('{"a":1}')).toEqual({ a: 1 });
   });
   it("strips ```json fences", () => {
     expect(parseJsonLoose('```json\n{"a":1}\n```')).toEqual({ a: 1 });
+  });
+  it("keeps the first complete object when a model repeats a fragment after it", () => {
+    // Seen live from a small model in JSON mode: a valid object, then a stray duplicated tail.
+    expect(parseJsonLoose('{"say": "Okay, good.", "advance": false} ": false}')).toEqual({ say: "Okay, good.", advance: false });
+  });
+  it("is not fooled by braces inside strings when finding the first complete object", () => {
+    expect(parseJsonLoose('{"say": "use {curly} braces", "n": 1} trailing }')).toEqual({ say: "use {curly} braces", n: 1 });
   });
   it("strips bare ``` fences", () => {
     expect(parseJsonLoose("```\n[1,2]\n```")).toEqual([1, 2]);

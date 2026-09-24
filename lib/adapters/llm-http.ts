@@ -101,8 +101,39 @@ export function parseJsonLoose(text: string): unknown {
   try {
     return JSON.parse(candidate);
   } catch (e) {
+    // A model sometimes emits a valid value and then a stray tail containing another
+    // closer. Fall back to the first balanced value before giving up.
+    const first = firstBalanced(s, start);
+    if (first) {
+      try {
+        return JSON.parse(first);
+      } catch {
+        /* fall through to the original error */
+      }
+    }
     throw new Error(`LLM response contained invalid JSON: ${(e as Error).message}; text: ${preview(candidate)}`);
   }
+}
+
+/** The first balanced {...} or [...] starting at `start`, skipping brackets inside strings. */
+function firstBalanced(s: string, start: number): string | null {
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') inString = true;
+    else if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 /** Validate parsed JSON against JdExtractSchema; the error names the offending field(s). */
@@ -219,4 +250,14 @@ export abstract class HttpLlmBase implements UsageReportingLlm {
 /** Coerce a possibly-missing numeric usage field to a non-negative integer. */
 export function usageInt(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0;
+}
+
+/**
+ * For a rate-limit (429) error, how long to wait before retrying: the provider's own
+ * "Retry after Ns" when it says, else a short default. Null for any other error.
+ */
+export function retryAfterSeconds(err: unknown): number | null {
+  if (!(err instanceof LlmHttpError) || err.status !== 429) return null;
+  const m = err.body.match(/retry after (\d+)\s*s/i);
+  return m ? Number(m[1]) : 15;
 }

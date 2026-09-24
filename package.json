@@ -17,6 +17,7 @@
     "companies:sync": "vite-node scripts/sync-companies.ts",
     "source:sg": "vite-node scripts/source-singapore.ts",
     "ai:stream": "vite-node scripts/stream-demo.ts",
+    "case:drill": "vite-node scripts/case-drill.ts",
     "db:migrate": "node scripts/db-migrate.mjs"
   },
   "dependencies": {
