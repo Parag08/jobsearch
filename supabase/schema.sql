@@ -1,10 +1,15 @@
 -- ============================================================================
 -- JobSearch database data model - THE canonical schema file.
 --
--- Policy (agreed 2026-08-29): until there is live data, we do NOT keep
--- incremental migrations. Edit this file in place and re-run it wholesale -
--- it drops everything and recreates it. Once real data exists, switch to
--- numbered migrations in supabase/migrations/ and freeze this file.
+-- Policy (switched 2026-09-24): the live project now changes ONLY through numbered,
+-- additive migrations in supabase/migrations/ (npm run db:migrate). Interview answers
+-- are typed by hand into the app and nothing can regenerate them, so drop-and-recreate
+-- is over for the live database.
+--
+-- This file remains the complete snapshot: use it to build a FRESH project, then run
+-- db:migrate. Every schema change goes in a migration first and is mirrored here.
+-- Running this file against the live project destroys user data; db-apply refuses to
+-- unless given --force-drop.
 --
 -- Multi-user by design (spec section 7): every table carries user_id with
 -- row-level security; "INSEAD" and "Singapore" are data, not schema.
@@ -13,6 +18,8 @@
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
 drop table if exists token_ledger cascade;
+drop table if exists interview_attempts cascade;
+drop table if exists interview_answers cascade;
 drop table if exists stories cascade;
 drop table if exists companies cascade;
 drop table if exists watchlist cascade;
@@ -271,6 +278,39 @@ create table token_ledger (
   tokens_out int not null default 0
 );
 
+-- ---- interview answers + practice (migration 0001) ---------------------------------------
+-- One written answer per (user, question id from data/interview/questions.json), both the
+-- free-text and STAR drafts kept. Attempts are append-only and store the transcript only -
+-- audio is never kept.
+create table interview_answers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  question_id text not null,
+  mode text not null default 'star' check (mode in ('free', 'star')),
+  body text not null default '',
+  situation text not null default '',
+  task text not null default '',
+  action text not null default '',
+  result text not null default '',
+  updated_at timestamptz not null default now(),
+  unique (user_id, question_id)
+);
+
+create table interview_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  question_id text not null,
+  transcript text not null,
+  duration_seconds int,
+  scores jsonb not null,
+  overall numeric(3, 1) not null,
+  strengths text[] not null default '{}',
+  improvements text[] not null default '{}',
+  model text not null default '',
+  created_at timestamptz not null default now()
+);
+create index interview_attempts_user_question on interview_attempts (user_id, question_id, created_at desc);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -285,6 +325,8 @@ alter table sourced_jobs enable row level security;
 alter table briefs enable row level security;
 alter table watchlist enable row level security;
 alter table stories enable row level security;
+alter table interview_answers enable row level security;
+alter table interview_attempts enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -304,7 +346,8 @@ declare t text;
 begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
                            'applications','contacts','interactions','sourced_jobs','briefs',
-                           'watchlist','stories','token_ledger']
+                           'watchlist','stories','token_ledger',
+                           'interview_answers','interview_attempts']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
