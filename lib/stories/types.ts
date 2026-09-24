@@ -48,6 +48,10 @@ export const DEFAULT_VOCAB: CompetencyVocab = {
   conflict: [
     "conflict", "disagreement", "disagreements", "difficult conversations", "pushback",
     "push back", "negotiation", "negotiate", "negotiating", "escalation", "escalations",
+    // Past tenses matter here more than anywhere else: a capture form is written in
+    // the past tense ("I pushed back", "we disagreed"), and the noun forms above miss
+    // every one of them.
+    "pushed back", "disagreed", "disagree", "objected", "escalated", "stood my ground",
   ],
   failure: [
     "failure", "failures", "failed", "post-mortem", "post-mortems", "postmortem", "postmortems",

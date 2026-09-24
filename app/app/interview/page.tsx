@@ -6,6 +6,8 @@ import { DEFAULT_COMPETENCIES } from "@/lib/stories/types";
 import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
+import { listStories } from "@/lib/repos/stories";
+import { StoryForm } from "../story-form";
 import ui from "../ui.module.css";
 
 /**
@@ -24,7 +26,13 @@ export default async function Interview() {
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [projects, profile] = await Promise.all([listProjects(db, userId), getProfile(db, userId)]);
+  const [projects, profile, stories] = await Promise.all([
+    listProjects(db, userId),
+    getProfile(db, userId),
+    listStories(db, userId),
+  ]);
+  const roles = projects.map((p) => ({ id: p.id, label: p.role ? `${p.org} — ${p.role}` : p.org }));
+  const storyCompetencies = new Set(stories.flatMap((s) => s.competencies));
   const bullets = projects.flatMap((p) => p.bullets);
 
   // Which competencies the bank can carry, and the bullets behind each.
@@ -74,11 +82,48 @@ export default async function Interview() {
             <p className={ui.mono}>No evidence — write these before you interview</p>
             <div className={ui.chips}>
               {gaps.map(([c]) => (
-                <span key={c} className={ui.chip} data-tone="gap">{c.replace(/-/g, " ")}</span>
+                <span key={c} className={ui.chip} data-tone={storyCompetencies.has(c) ? "hit" : "gap"}>
+                  {c.replace(/-/g, " ")}
+                  {storyCompetencies.has(c) ? " ✓ story written" : ""}
+                </span>
               ))}
             </div>
+            {/* Seeded with the first gap, because that is the one to write next. */}
+            <StoryForm roles={roles} competency={gaps[0][0]} />
           </>
         )}
+
+        <div className={ui.head}>
+          <h3>Your stories</h3>
+          <span className={ui.mono}>{stories.length} captured</span>
+        </div>
+        {stories.length === 0 ? (
+          <p className={ui.empty}>
+            Nothing captured yet. Bullets tell an interviewer what happened; a story tells them what
+            you did. Write one above.
+          </p>
+        ) : (
+          <ul className={ui.rows}>
+            {stories.map((s) => (
+              <li key={s.id} className={ui.row}>
+                <div>
+                  <p>{short(s.result)}</p>
+                  <div className={ui.chips} style={{ marginTop: 6 }}>
+                    {s.competencies.map((c) => (
+                      <span key={c} className={ui.chip} data-tone="hit">{c.replace(/-/g, " ")}</span>
+                    ))}
+                    {s.numbers.map((n) => (
+                      <span key={n} className={ui.chip}>{n}</span>
+                    ))}
+                    {!s.action.trim() && <span className={ui.chip} data-tone="gap">no Action yet</span>}
+                  </div>
+                </div>
+                <span className={ui.mono}>{s.capturedAt}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {gaps.length === 0 && <StoryForm roles={roles} />}
 
         <ul className={ui.rows}>
           {covered.map(([competency, ids]) => (

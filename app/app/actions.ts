@@ -14,6 +14,9 @@ import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
+import { draftStory, saveStory } from "@/lib/repos/stories";
+import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
+import { GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
@@ -168,4 +171,104 @@ export async function watchAllReadable(): Promise<void> {
     });
   }
   revalidatePath("/app/watchlist");
+}
+
+/** Capture a STAR story the user wrote (DESIGN.md section 3: captured, never generated). */
+export async function saveStoryAction(_prev: string | null, formData: FormData): Promise<string | null> {
+  const { db, userId } = await ws();
+  const projectId = String(formData.get("projectId") ?? "").trim();
+  if (!projectId) return "Pick which role this story comes from.";
+
+  const result = String(formData.get("result") ?? "").trim();
+  if (!result) return "A story needs a Result - what changed because of it?";
+
+  try {
+    await saveStory(
+      db,
+      userId,
+      draftStory({
+        projectId,
+        bulletId: String(formData.get("bulletId") ?? "") || null,
+        situation: String(formData.get("situation") ?? "").trim(),
+        task: String(formData.get("task") ?? "").trim(),
+        action: String(formData.get("action") ?? "").trim(),
+        result,
+        capturedAt: today(),
+      }),
+    );
+  } catch (err) {
+    return err instanceof Error ? err.message : "Could not save that story.";
+  }
+  revalidatePath("/app/interview");
+  return null;
+}
+
+/**
+ * AI assist for a story draft - and note what it deliberately does NOT do.
+ *
+ * It returns the follow-up questions a real interviewer would ask about what the
+ * user wrote. It does not write, extend or embellish the story: a fabricated
+ * interview answer collapses on the first probe, which is exactly the moment it
+ * matters (DESIGN.md section 3). Probing a draft adds no claim; writing one does.
+ */
+export interface ProbeState {
+  questions?: string[];
+  error?: string;
+}
+
+export async function probeStoryAction(_prev: ProbeState | null, formData: FormData): Promise<ProbeState> {
+  const { db, userId } = await ws();
+
+  const parts = ["situation", "task", "action", "result"].map((k) => String(formData.get(k) ?? "").trim());
+  if (parts.join(" ").trim().length < 40) {
+    return { error: "Write a rough draft first - the questions come from what you wrote." };
+  }
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+
+  const [situation, task, action, result] = parts;
+  const prompt = [
+    "You are a consulting interviewer reading a candidate's draft STAR answer.",
+    "Ask the 4 sharpest follow-up questions you would actually ask to test whether this is real and whether they personally did it.",
+    "Probe for: what THEY did versus the team, what resisted them, what the number really measures, and what they would do differently.",
+    "Do NOT rewrite or extend their story. Do NOT invent detail. Output only the questions, one per line, no numbering.",
+    "",
+    `Situation: ${situation}`,
+    `Task: ${task}`,
+    `Action: ${action}`,
+    `Result: ${result}`,
+  ].join("\n");
+
+  let text = "";
+  try {
+    for await (const delta of streamGatewayText({
+      apiKey,
+      model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL,
+      prompt,
+      maxOutputTokens: 300,
+    })) {
+      text += delta;
+    }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not reach the model." };
+  }
+
+  // Usage is not itemised by the streaming endpoint here, so the ledger records the
+  // call without token counts rather than inventing them.
+  await logTokens(db, userId, {
+    date: today(),
+    module: "interview-probe",
+    model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL,
+    tokensIn: 0,
+    tokensOut: 0,
+  }).catch(() => undefined);
+
+  const questions = text
+    .split("\n")
+    .map((l) => l.replace(/^\s*[-*\d.)\s]+/, "").trim())
+    .filter((l) => l.length > 8)
+    .slice(0, 5);
+
+  return questions.length ? { questions } : { error: "The model returned nothing usable. Try again." };
 }
