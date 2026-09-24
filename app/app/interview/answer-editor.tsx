@@ -42,13 +42,16 @@ export function AnswerEditor({
       <input type="hidden" name="question" value={questionText} />
       <input type="hidden" name="mode" value={mode} />
 
-      <div className={ui.segmented} role="tablist" aria-label="How to write it">
-        <button type="button" role="tab" aria-selected={mode === "free"} className={ui.segment} onClick={() => setMode("free")}>
-          Blank box
-        </button>
-        <button type="button" role="tab" aria-selected={mode === "star"} className={ui.segment} onClick={() => setMode("star")}>
-          STAR
-        </button>
+      <div className={ui.editorHead}>
+        <h3>Your answer</h3>
+        <div className={ui.segmented} role="tablist" aria-label="How to write it">
+          <button type="button" role="tab" aria-selected={mode === "free"} className={ui.segment} onClick={() => setMode("free")}>
+            Blank box
+          </button>
+          <button type="button" role="tab" aria-selected={mode === "star"} className={ui.segment} onClick={() => setMode("star")}>
+            STAR
+          </button>
+        </div>
       </div>
 
       {/* Hidden, not unmounted: hidden fields still submit, so the other draft survives. */}
@@ -62,14 +65,14 @@ export function AnswerEditor({
         />
       </div>
 
-      <div hidden={mode !== "star"} className={ui.stack}>
+      <div hidden={mode !== "star"} className={ui.starGrid}>
         <StarField name="situation" label="Situation" hint="What was going on?" initial={initial.situation} />
         <StarField name="task" label="Task" hint="What were you responsible for?" initial={initial.task} />
         <StarField name="action" label="Action" hint="What did YOU personally do?" initial={initial.action} />
-        <StarField name="result" label="Result" hint="What changed because of it - with the number." initial={initial.result} />
+        <StarField name="result" label="Result" hint="What changed - with the number." initial={initial.result} />
       </div>
 
-      <div className={ui.actions}>
+      <div className={ui.editorFoot}>
         <button className={ui.btn} data-primary="" type="submit" formAction={save} disabled={saving}>
           {saving ? "Saving…" : "Save answer"}
         </button>
@@ -104,7 +107,7 @@ function StarField({ name, label, hint, initial }: { name: string; label: string
       <span className={ui.starLabel}>
         <b>{label}</b> <span className={ui.sub}>{hint}</span>
       </span>
-      <textarea name={name} className={ui.jd} defaultValue={initial} />
+      <textarea name={name} className={ui.answerBox} defaultValue={initial} />
     </label>
   );
 }
