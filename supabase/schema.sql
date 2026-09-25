@@ -60,6 +60,8 @@ create table profiles (
   display_name text not null default '',
   target_geos text[] not null default '{}',          -- e.g. {Singapore}
   role_families text[] not null default '{}',        -- e.g. {product-management}
+  target_titles text[] not null default '{}',        -- title phrases the watchlist keeps (0003)
+  excluded_titles text[] not null default '{}',      -- title phrases it drops (0003)
   networks jsonb not null default '[]',              -- [{name:"INSEAD", fields:[...]}]
   visa_context text,                                 -- e.g. EP/COMPASS note
   premium_llm_budget_usd_month numeric not null default 0,

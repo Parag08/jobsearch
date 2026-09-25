@@ -10,6 +10,8 @@ const ws: ImportedWorkspace = {
     displayName: "Ada O'Hara",
     targetGeos: ["Singapore"],
     roleFamilies: ["product-management"],
+    targetTitles: ["product manager"],
+    excludedTitles: ["designer"],
     networks: [{ name: "INSEAD", program: "MBA", location: "Singapore" }],
     visaContext: "Student visa",
     premiumLlmBudgetUsdMonth: 0,
@@ -121,6 +123,9 @@ describe("toSeedSql", () => {
 
   it("is re-runnable: every row upserts, on its natural key where it has one", () => {
     expect(sql).toContain("on conflict (user_id) do update set"); // profiles
+    expect(sql).toContain("target_titles");
+    expect(sql).toContain("array['product manager']::text[]");
+    expect(sql).toContain("array['designer']::text[]");
     expect(sql).toContain("on conflict (user_id, path) do update set"); // sectors
     expect(sql).toContain("on conflict (user_id, role_family, version) do update set"); // master_cvs
     expect((sql.match(/on conflict \(id\) do update set/g) ?? []).length).toBe(4);

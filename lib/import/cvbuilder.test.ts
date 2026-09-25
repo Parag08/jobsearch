@@ -84,11 +84,13 @@ const points = {
 };
 
 const archetypes = {
+  excludedTitleKeywords: ["designer", "intern"],
   archetypes: [
     {
       id: "product-management",
       label: "Product Management",
       targetRoles: "PM roles",
+      titleKeywords: ["Product Manager", "product lead"],
       budget: 15,
       pin: ["acme-launch"],
       exclude: [],
@@ -102,6 +104,7 @@ const archetypes = {
       id: "engineering-manager",
       label: "Engineering Management",
       targetRoles: "EM roles",
+      titleKeywords: ["engineering manager", "product manager"],
       budget: 15,
       pin: [],
       exclude: [],
@@ -179,6 +182,9 @@ describe("importCvbuilder", () => {
       visaContext: "British; Singapore Student Visa",
     });
     expect(ws.profile.roleFamilies).toContain("product-management");
+    // title targets: every role family's keywords, deduped case-insensitively, first spelling kept
+    expect(ws.profile.targetTitles).toEqual(["Product Manager", "product lead", "engineering manager"]);
+    expect(ws.profile.excludedTitles).toEqual(["designer", "intern"]);
     expect(ws.profile.contactLines).toEqual(["ada@example.com", "+65 10000000"]);
     expect(ws.profile.cvExtras).toEqual(profile.additional);
     expect(ws.profile.networks).toContainEqual({

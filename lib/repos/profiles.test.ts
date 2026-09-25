@@ -15,6 +15,8 @@ describe("profiles repo", () => {
       displayName: "Parag",
       targetGeos: ["Singapore"],
       roleFamilies: ["product-management"],
+      targetTitles: ["product manager"],
+      excludedTitles: ["designer"],
       networks: [{ name: "INSEAD" }],
       visaContext: "EP sponsorship needed",
       premiumLlmBudgetUsdMonth: 5,
@@ -25,6 +27,8 @@ describe("profiles repo", () => {
     await saveProfile(db, { ...profile, displayName: "Parag S." });
     const reread = await getProfile(db, "u1");
     expect(reread?.displayName).toBe("Parag S.");
+    expect(reread?.targetTitles).toEqual(["product manager"]);
+    expect(reread?.excludedTitles).toEqual(["designer"]);
     expect(db.rows("profiles")).toHaveLength(1);
   });
 });

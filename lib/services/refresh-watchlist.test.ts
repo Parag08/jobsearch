@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { insertApplication, type NewApplication } from "../repos/applications";
 import { insertContact } from "../repos/contacts";
+import { saveProfile } from "../repos/profiles";
 import { insertBullets, insertProject } from "../repos/projects";
 import { saveSector } from "../repos/sectors";
 import { listSourcedJobs, upsertSourcedJobs } from "../repos/sourced-jobs";
@@ -116,5 +117,41 @@ describe("refreshWatchlist", () => {
     const adzuna = (await listSourcedJobs(db, "u1")).filter((j) => j.source === "adzuna");
     expect(adzuna).toHaveLength(1);
     expect(adzuna[0]?.score).toBe(10);
+  });
+
+  it("keeps only roles in the profile's target cities and titles, and counts what it filtered", async () => {
+    const db = new FakeDb();
+    const { acme, beta } = await seed(db);
+    await saveProfile(db, {
+      userId: "u1",
+      displayName: "U",
+      targetGeos: ["Singapore"],
+      roleFamilies: [],
+      targetTitles: ["product manager", "product lead"],
+      excludedTitles: ["designer"],
+      networks: [],
+      visaContext: null,
+      premiumLlmBudgetUsdMonth: 0,
+      contactLines: [],
+      cvExtras: [],
+    });
+    const designer = { id: 4, title: "Senior Product Designer", absolute_url: "https://boards.greenhouse.io/acmecorp/jobs/4", location: { name: "Singapore" }, updated_at: "2026-09-01T00:00:00Z" };
+    const fetcher = new FakeBoardFetcher({ [acme.id]: { jobs: [...acmeBoard.jobs, designer] }, [beta.id]: betaBoard });
+
+    const result = await refreshWatchlist({ db, fetcher }, "u1", TODAY);
+
+    // London "Senior Associate" (city), the designer (excluded), and "Head of Product" and "Mirror"
+    // (no target phrase) go
+    expect(result).toMatchObject({ fetched: 6, filtered: 4 });
+    const stored = await listSourcedJobs(db, "u1");
+    expect(stored.map((j) => j.title).sort()).toEqual(["Product Lead", "Senior Product Manager, Platform"]);
+  });
+
+  it("a profile with no targets filters nothing", async () => {
+    const db = new FakeDb();
+    const { acme, beta } = await seed(db);
+    const fetcher = new FakeBoardFetcher({ [acme.id]: acmeBoard, [beta.id]: betaBoard });
+    const result = await refreshWatchlist({ db, fetcher }, "u1", TODAY);
+    expect(result.filtered).toBe(0);
   });
 });

@@ -12,6 +12,8 @@ import { refreshWatchlist } from "@/lib/services/refresh-watchlist";
 import { addWatchlistEntry, removeWatchlistEntry, setWatchlistActive } from "@/lib/repos/watchlist";
 import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
+import { parseTargetList } from "@/lib/watchlist/targets";
+import { getProfile, saveProfile } from "@/lib/repos/profiles";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
@@ -108,6 +110,21 @@ export async function removeWatchlist(id: string): Promise<void> {
 export async function refreshWatchlistAction(): Promise<void> {
   const { db, userId } = await ws();
   await refreshWatchlist({ db, fetcher: new HttpBoardFetcher(fetch) }, userId, today());
+  revalidatePath("/app/watchlist");
+}
+
+/** What the watchlist keeps: cities, title phrases, excluded phrases (lib/watchlist/targets.ts). */
+export async function saveJobTargets(form: FormData): Promise<void> {
+  const { db, userId } = await ws();
+  const profile = await getProfile(db, userId);
+  if (!profile) return;
+  const list = (name: string) => parseTargetList(String(form.get(name) ?? ""));
+  await saveProfile(db, {
+    ...profile,
+    targetGeos: list("geos"),
+    targetTitles: list("titles"),
+    excludedTitles: list("excluded"),
+  });
   revalidatePath("/app/watchlist");
 }
 

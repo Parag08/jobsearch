@@ -305,6 +305,31 @@
   transition: width 400ms var(--spring);
 }
 
+/* watchlist targets: three labelled lists side by side, stacking on narrow screens */
+.targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.targets .actions {
+  grid-column: 1 / -1;
+}
+
+.targetField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.targetField textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listWatchlist } from "@/lib/repos/watchlist";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
-import { addWatchlist, refreshWatchlistAction, removeWatchlist, setJobStatus, toggleWatchlist, watchAllReadable, watchCompany } from "../actions";
+import { addWatchlist, refreshWatchlistAction, removeWatchlist, saveJobTargets, setJobStatus, toggleWatchlist, watchAllReadable, watchCompany } from "../actions";
+import { getProfile } from "@/lib/repos/profiles";
 import { listCompanies } from "@/lib/repos/companies";
 import ui from "../ui.module.css";
 
@@ -16,7 +17,8 @@ export default async function Watchlist() {
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [entries, jobs, directory] = await Promise.all([
+  const [profile, entries, jobs, directory] = await Promise.all([
+    getProfile(db, userId),
     listWatchlist(db, userId),
     listSourcedJobs(db, userId),
     listCompanies(db),
@@ -37,6 +39,31 @@ export default async function Watchlist() {
           </button>
         </form>
       </div>
+
+      <section className={ui.panel}>
+        <h2>What you are looking for</h2>
+        <p className={ui.sub}>
+          Checking boards keeps only roles in these cities whose title contains one of your phrases, as whole words - and
+          none of the excluded ones. Leave a box empty and it filters nothing. One per line, or separated by commas.
+        </p>
+        <form action={saveJobTargets} className={ui.targets}>
+          <label className={ui.targetField}>
+            <span>Cities</span>
+            <textarea className={ui.input} name="geos" rows={3} defaultValue={(profile?.targetGeos ?? []).join("\n")} placeholder="Singapore" />
+          </label>
+          <label className={ui.targetField}>
+            <span>Titles to keep</span>
+            <textarea className={ui.input} name="titles" rows={6} defaultValue={(profile?.targetTitles ?? []).join("\n")} placeholder={"product manager\nchief of staff"} />
+          </label>
+          <label className={ui.targetField}>
+            <span>Titles to drop</span>
+            <textarea className={ui.input} name="excluded" rows={6} defaultValue={(profile?.excludedTitles ?? []).join("\n")} placeholder={"designer\nsales"} />
+          </label>
+          <div className={ui.actions}>
+            <button className={ui.btn} type="submit" disabled={!profile}>Save</button>
+          </div>
+        </form>
+      </section>
 
       <section className={ui.panel}>
         <h2>Companies you are watching</h2>
