@@ -2,6 +2,33 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-09-25 (morning) - Sourcing filter in the app; hero card shows the whole loop
+
+**Job filter (ROADMAP Now #1, first half - shipped).** `lib/watchlist/targets.ts` (tested): a role is
+kept if its location contains a target city and its title contains a target phrase as WHOLE words,
+and no excluded phrase ("intern" never hits "internal"). Empty lists filter nothing. Used by
+`refreshWatchlist` (the in-app button, which had no filter and could flood the table) AND
+`scripts/source-singapore.ts` (its hardcoded regexes are gone; it refuses to run with no targets).
+- Data: profile columns `target_titles`, `excluded_titles` (migration **0003, applied live**;
+  mirrored in schema.sql). Parag's phrases are DATA in `data/cvbuilder/archetypes.json`:
+  `titleKeywords` per role family + top-level `excludedTitleKeywords`; the importer unions them.
+- Editable on `/app/watchlist` ("What you are looking for": cities / titles to keep / to drop).
+- Live: set the two columns directly (NOT `db:seed`, which would reset app-edited applications),
+  ran the real refresh (153 matches), and dismissed the 9 saved roles that no longer match
+  (designers, an intern role, product-ops specialists). 161 open. Engineering-manager roles now
+  appear because that is one of Parag's five role families - he can drop it on the watchlist page.
+
+**Hero card** now plays the whole loop: sourcing, networking, applying, interview, then Improve (loop
+arc lights, ring returns to start), round two, offer. Each frame is tagged AI / automatic / soon. On
+wrap the ring re-mounts and fades in instead of sliding back (the old glitch). H1 is now "From the
+first search to the final offer."; the lede says negotiation is coming.
+
+Tooling note: in this Bash tool, `\\n` inside a heredoc arrives as `\n` - use the Edit tool (or a
+separate file) for code containing escape sequences.
+
+**Next:** rest of ROADMAP Now #1 - daily cron + retire closed roles (several roles marked `new` are
+already gone from their boards).
+
 ## 2026-09-25 (overnight) - Landing page rebuilt around the job-search loop; roadmap written
 
 **The product's shape, decided with Parag:** Sourcing -> Networking -> Applying -> Interview prep ->
@@ -41,28 +68,3 @@ the root layout's `<head>`. Dark palette = `:root[data-theme="dark"]` in `global
 
 **Next:** the choice is per browser, not per account. Save it to the profile if that matters.
 Consider letting a user set their own switch hours.
-
-## 2026-09-24 (later) - Case interviewer; interview tab made fast
-
-**Casing tab is now a live case interviewer** (DESIGN.md §3 "Case interviews"). Ten Bain-style,
-candidate-led cases in `data/interview/cases.json` - M&A, post-merger, PE due diligence and PE value
-creation, all in tech. Ten scouts read the user's casebook library (`Documents\caseprep`); it holds
-no case that is both Bain-sourced and tech M&A, so each app case keeps one real case's flow and insight
-(Columbia Accountware, Ross C.M. Burns, INSEAD Techking, Stern "PE and a Soda", Real MBB almond farm,
-Darden airline marketplace, McKinsey card processor, Emory GenCo, Wharton Going Nuts, Peter K
-OmegaMed) re-set in tech with fictional names and numbers. Source map:
-`Documents\caseprep\index\app-case-sources.md` (kept out of this public repo). The same pass split the
-Peter K book, previously one 420-page index row, into its 24 cases in `caseprep\index`.
-
-What live testing forced, in order: the model never moved a case on (code now closes a question on a
-correct math answer or a turn cap); it asked the next question itself (code strips questions from a
-closing line); it once stated a wrong sum as fact (code now replaces any line with a figure not in
-the case or the conversation); small models emit stray JSON tails (`parseJsonLoose` falls back to the
-first balanced value); the gateway allows 5 requests/min per model (rate-limited turns re-send after
-the wait). Migration 0002 (`case_sessions`) applied live.
-
-**Interview tab speed:** question/firm switching is client-side (`behavioural-view.tsx`, pushState);
-functions pinned to `sin1` next to Supabase (vercel.json).
-
-**Next:** try a case end to end in the browser (needs `AI_GATEWAY_API_KEY` on Vercel for production);
-more cases (the runners-up in the source map); case attempts could feed a "weakest dimension" drill.

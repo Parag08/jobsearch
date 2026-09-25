@@ -70,18 +70,15 @@
   color: var(--ink-faint);
 }
 
-/* the track: five stops, a puck that springs between them. --rail is the one
-   horizontal centre line: the line, every dot and the puck are all centred on it,
-   so they cannot drift apart when a size changes. */
+/* the track: five stops, a ring that springs between them, and the loop arcing
+   back over the top from interview to sourcing. --rail is the one horizontal centre
+   line: the line, every dot and the ring are all centred on it, so they cannot drift
+   apart when a size changes. --arc is the headroom the loop needs above the rail. */
 .track {
-  --rail: 14px;
+  --arc: 20px;
+  --rail: calc(var(--arc) + 12px);
   --dot: 8px;
   position: relative;
-  list-style: none;
-  margin: 0;
-  padding: calc(var(--rail) - var(--dot) / 2) 0 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
 }
 
 .track::before {
@@ -93,6 +90,14 @@
   height: 1px;
   transform: translateY(-50%);
   background: var(--line-strong);
+}
+
+.stops {
+  list-style: none;
+  margin: 0;
+  padding: calc(var(--rail) - var(--dot) / 2) 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .stop {
@@ -141,7 +146,66 @@
   color: var(--ink);
 }
 
-/* the puck: a glass ring that carries the application forward */
+/* The loop: legs down onto the sourcing (10%) and interview (70%) stops, joined
+   over the top. Quiet and dashed until a round ends; then it lights up while the
+   ring travels back to the start. */
+.loop {
+  position: absolute;
+  left: 10%;
+  width: 60%;
+  top: 4px;
+  height: calc(var(--rail) - 4px - 9px);
+  border: 1px dashed var(--line-strong);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  transition: border-color 400ms ease;
+}
+
+/* arrowhead on the sourcing leg, pointing down into the stop */
+.loop::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 1px;
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  transform: translateX(calc(-50% - 0.5px)) rotate(45deg);
+  transition: border-color 400ms ease;
+}
+
+.loopLabel {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 0 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--accent-text);
+  background: var(--paper);
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.track[data-loop] .loop {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.track[data-loop] .loop::after {
+  border-color: var(--accent);
+}
+
+.track[data-loop] .loopLabel {
+  opacity: 1;
+}
+
+/* the ring: a glass ring that carries the search forward */
 .puck {
   position: absolute;
   top: var(--rail);
@@ -155,15 +219,29 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   transition: left 900ms var(--spring-over);
+  animation: ring-in 500ms ease-out both;
+}
+
+/* a new round starts with the ring fading in at the start, not sliding back */
+@keyframes ring-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ---- foot: stage chip + next action, re-mounted per step so it re-enters ---- */
 
 .foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  min-height: 26px;
+  gap: 6px 8px;
+  /* two lines' worth, so a wrapping frame never makes the card jump */
+  min-height: 3.1rem;
+  align-content: flex-start;
   animation: enter 700ms var(--spring) both;
 }
 
@@ -192,8 +270,33 @@
 .stage[data-stage="screening"] { background: var(--stage-screening); }
 .stage[data-stage="interview"] { background: var(--stage-interview); color: var(--surface); }
 .stage[data-stage="offer"] { background: var(--stage-offer); color: var(--surface); }
+.stage[data-stage="closed"] { background: var(--stage-closed); color: var(--surface); }
+
+/* who does the work - the same three tags as the process map */
+.tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: var(--wash);
+}
+
+.tag[data-tag="ai"] {
+  color: var(--paper);
+  background: var(--accent);
+}
+
+.tag[data-tag="soon"] {
+  padding: 0 5px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+}
 
 .next {
+  flex-basis: 100%;
   font-size: 0.875rem;
   color: var(--ink-soft);
 }

@@ -26,7 +26,7 @@ const SOURCING: Stage = {
   steps: [
     { name: "Choose the companies to watch", detail: "Pick the firms you want; the app knows which job-board system each one runs on.", kind: "you" },
     { name: "Pull every open role", detail: "Straight from each company's own job board, not an aggregator.", kind: "auto" },
-    { name: "Keep the ones that match", detail: "Filtered to your city and your line of work, so the list is short enough to read.", kind: "auto", coming: true },
+    { name: "Keep the ones that match", detail: "Filtered to your cities and the titles you want - whole words, so a designer never slips in as a product manager.", kind: "auto" },
     { name: "Score each role for fit", detail: "Sector, skill overlap, network and location - scored by rules, without spending a token.", kind: "auto" },
     { name: "Explain why a role fits you", detail: "A two-line case for each match, drawn from your own record.", kind: "ai", coming: true },
     { name: "Retire roles that close", detail: "Postings that vanish from a board leave your list on their own.", kind: "auto", coming: true },
