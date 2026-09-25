@@ -13,7 +13,7 @@ import styles from "./page.module.css";
 const STEPS = [
   {
     title: "Find the roles worth your time",
-    body: "Watch the companies you care about. JobSearch reads their own job boards - not aggregators - and brings back their open roles, scored for how well each fits you.",
+    body: "Watch the companies you care about. JobSearch reads their own job boards - not aggregators - and brings back the open roles in your cities and your line of work, scored for fit.",
     ai: "Scored by rules, so it costs nothing to run",
   },
   {
@@ -84,13 +84,14 @@ export default function Home() {
               <p className={styles.eyebrow}>Your job search, end to end</p>
             </Reveal>
             <Reveal delay={80}>
-              <h1>From the first search to the final interview.</h1>
+              <h1>From the first search to the final offer.</h1>
             </Reveal>
             <Reveal delay={160}>
               <p className={styles.lede}>
                 JobSearch finds the roles, reads each job, builds your CV from what you have actually
-                done, tracks every application and rehearses you for the interview - with AI doing the
-                heavy lifting, and never claiming anything your record cannot back.
+                done, tracks every application and rehearses you for the interview - and, soon, helps you
+                negotiate the offer. AI does the heavy lifting, and nothing is ever claimed that your
+                record cannot back.
               </p>
             </Reveal>
             <Reveal delay={240}>

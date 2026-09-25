@@ -2,6 +2,31 @@
 
 Moved out of docs/MEMORY.md on 2026-09-24 so a fresh session reads only the current state. Newest first. Search here (grep) rather than reading it whole.
 
+## 2026-09-24 (later) - Case interviewer; interview tab made fast
+
+**Casing tab is now a live case interviewer** (DESIGN.md §3 "Case interviews"). Ten Bain-style,
+candidate-led cases in `data/interview/cases.json` - M&A, post-merger, PE due diligence and PE value
+creation, all in tech. Ten scouts read the user's casebook library (`Documents\caseprep`); it holds
+no case that is both Bain-sourced and tech M&A, so each app case keeps one real case's flow and insight
+(Columbia Accountware, Ross C.M. Burns, INSEAD Techking, Stern "PE and a Soda", Real MBB almond farm,
+Darden airline marketplace, McKinsey card processor, Emory GenCo, Wharton Going Nuts, Peter K
+OmegaMed) re-set in tech with fictional names and numbers. Source map:
+`Documents\caseprep\index\app-case-sources.md` (kept out of this public repo). The same pass split the
+Peter K book, previously one 420-page index row, into its 24 cases in `caseprep\index`.
+
+What live testing forced, in order: the model never moved a case on (code now closes a question on a
+correct math answer or a turn cap); it asked the next question itself (code strips questions from a
+closing line); it once stated a wrong sum as fact (code now replaces any line with a figure not in
+the case or the conversation); small models emit stray JSON tails (`parseJsonLoose` falls back to the
+first balanced value); the gateway allows 5 requests/min per model (rate-limited turns re-send after
+the wait). Migration 0002 (`case_sessions`) applied live.
+
+**Interview tab speed:** question/firm switching is client-side (`behavioural-view.tsx`, pushState);
+functions pinned to `sin1` next to Supabase (vercel.json).
+
+**Next:** try a case end to end in the browser (needs `AI_GATEWAY_API_KEY` on Vercel for production);
+more cases (the runners-up in the source map); case attempts could feed a "weakest dimension" drill.
+
 ## 2026-09-24 - Interview prep rebuilt; drop-and-recreate is over
 
 **Schema policy FLIPPED to migrations.** Interview answers are the first data typed by hand
