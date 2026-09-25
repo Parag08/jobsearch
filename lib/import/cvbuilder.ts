@@ -81,11 +81,15 @@ export const CvbTaxonomySchema = z.object({
 });
 
 export const CvbArchetypesSchema = z.object({
+  /** Title phrases that rule a sourced role out, whatever the family (lib/watchlist/targets.ts). */
+  excludedTitleKeywords: z.array(z.string()).default([]),
   archetypes: z.array(
     z.object({
       id: z.string(),
       label: z.string(),
       targetRoles: z.string().default(""),
+      /** Job-title phrases this family goes by - what the watchlist keeps. */
+      titleKeywords: z.array(z.string()).default([]),
       pin: z.array(z.string()).default([]),
       exclude: z.array(z.string()).default([]),
       variants: z.record(z.string(), z.string()).default({}),
@@ -267,6 +271,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Dedupe case-insensitively, keeping the first spelling seen. */
+function uniqueByNorm(list: string[]): string[] {
+  const seen = new Map<string, string>();
+  for (const s of list) {
+    const k = norm(s);
+    if (k && !seen.has(k)) seen.set(k, s.trim());
+  }
+  return [...seen.values()];
+}
+
 function containsWord(haystack: string, word: string): boolean {
   return new RegExp(`\\b${escapeRegExp(norm(word))}\\b`).test(norm(haystack));
 }
@@ -277,7 +291,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
   const warnings: string[] = [];
   const profileSrc = CvbProfileSchema.parse(src.profile);
   const { points } = CvbPointsSchema.parse(src.points);
-  const { archetypes } = CvbArchetypesSchema.parse(src.archetypes);
+  const { archetypes, excludedTitleKeywords } = CvbArchetypesSchema.parse(src.archetypes);
   const taxonomy = CvbTaxonomySchema.parse(src.taxonomy);
   const files = src.applications.map((a) => CvbApplicationSchema.parse(a));
   const byFileId = new Map(files.map((f) => [f.id, f]));
@@ -339,6 +353,8 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     displayName,
     targetGeos: geoTokens.filter((g) => authLine && containsWord(authLine.text, g)),
     roleFamilies: archetypes.map((a) => a.id),
+    targetTitles: uniqueByNorm(archetypes.flatMap((a) => a.titleKeywords)),
+    excludedTitles: uniqueByNorm(excludedTitleKeywords),
     networks: profileSrc.education.map((e) => ({
       name: e.org,
       program: e.roles[0]?.title ?? "",

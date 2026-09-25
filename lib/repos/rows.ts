@@ -36,6 +36,9 @@ export interface ProfileRow {
   display_name: string;
   target_geos: string[];
   role_families: string[];
+  /** Added by migration 0003; absent on rows read before it ran. */
+  target_titles?: string[];
+  excluded_titles?: string[];
   networks: unknown[];
   visa_context: string | null;
   premium_llm_budget_usd_month: number;
@@ -313,6 +316,10 @@ export interface Profile {
   displayName: string;
   targetGeos: string[];
   roleFamilies: string[];
+  /** Title phrases a sourced role must contain (lib/watchlist/targets.ts). */
+  targetTitles: string[];
+  /** Title phrases that rule a sourced role out. */
+  excludedTitles: string[];
   networks: unknown[];
   visaContext: string | null;
   premiumLlmBudgetUsdMonth: number;
@@ -476,6 +483,8 @@ export function toProfile(r: ProfileRow): Profile {
     displayName: r.display_name,
     targetGeos: r.target_geos,
     roleFamilies: r.role_families,
+    targetTitles: r.target_titles ?? [],
+    excludedTitles: r.excluded_titles ?? [],
     networks: r.networks,
     visaContext: r.visa_context,
     premiumLlmBudgetUsdMonth: r.premium_llm_budget_usd_month,
@@ -657,6 +666,8 @@ export function profileRow(p: Profile): ProfileRow {
     display_name: p.displayName,
     target_geos: p.targetGeos,
     role_families: p.roleFamilies,
+    target_titles: p.targetTitles,
+    excluded_titles: p.excludedTitles,
     networks: p.networks,
     visa_context: p.visaContext,
     premium_llm_budget_usd_month: p.premiumLlmBudgetUsdMonth,

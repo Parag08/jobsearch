@@ -1,15 +1,15 @@
 /**
- * One-off: pull Singapore roles that match the target profile into a user's
- * sourced_jobs, and watch the companies that produced them.
+ * Pull the roles that match the profile's targets (target_geos, target_titles,
+ * excluded_titles - lib/watchlist/targets.ts) from every readable board in the
+ * company catalogue into a user's sourced_jobs, and watch the companies that
+ * produced them.
  *
  *   npm run source:sg
  *   npm run source:sg -- --dry
  *
- * Why this is not just `refreshWatchlist`: that service has no geography or role
- * filter, so watching Databricks alone would insert 883 postings and the 31 readable
- * boards together would insert several thousand, almost all irrelevant. Filtering
- * belongs in the service - until it is there, this script does the narrow thing
- * rather than flooding the table. See DESIGN.md section 4.
+ * Why this is not just `refreshWatchlist`: that reads only boards already on the
+ * watchlist; this sweeps the whole catalogue to find which companies to watch. Both
+ * use the same filter, so they agree on what a match is.
  *
  * Reads only public keyless boards, through the same mappers the app uses.
  */
@@ -20,6 +20,7 @@ import { atsEndpoint } from "../lib/watchlist/ats";
 import { mapBoardPayload } from "../lib/watchlist/mappers";
 import { upsertSourcedJobs } from "../lib/repos/sourced-jobs";
 import { addWatchlistEntry } from "../lib/repos/watchlist";
+import { hasTargets, matchesTargets, type JobTargets } from "../lib/watchlist/targets";
 import { COMPANY_SEED_PATH, type CompanySeedEntry } from "../lib/companies/types";
 import type { DbClient } from "../lib/repos/db";
 import type { SourcedJob } from "../lib/types";
@@ -46,20 +47,6 @@ if (!url || !key) {
 
 const DRY = process.argv.includes("--dry");
 
-/** Singapore, including regional postings that list it among their locations. */
-const SG = /singapore/i;
-
-/**
- * Roles worth surfacing for a post-MBA product/strategy target. Deliberately wider
- * than "product manager": the 2026-09-23 run showed Singapore product roles are rare,
- * and strategy/ops adjacencies are where the real matches were.
- */
-const WANTED =
-  /(product manager|product lead|senior product|principal product|group product|product owner|product strateg|platform product|technical product|product operations|ai product|head of product|program manager|programme manager|strategy|chief of staff|business operations|bizops|corporate development|transformation|innovation)/i;
-
-/** Roles that match WANTED but are not what he is looking for. */
-const NOT_WANTED = /(account executive|sales|recruiter|recruiting|payroll|accounting|counsel|marketing manager)/i;
-
 const doc = JSON.parse(readFileSync(resolve(COMPANY_SEED_PATH), "utf8")) as { companies: CompanySeedEntry[] };
 const readable = doc.companies.filter((c) => c.ats && c.ats !== "unknown" && c.token);
 
@@ -67,13 +54,29 @@ const supabase = createClient(url, key, { auth: { persistSession: false } });
 const db = supabase as unknown as DbClient;
 
 // The workspace owner: one profile today, so resolve rather than hardcode an id.
-const { data: profiles, error } = await supabase.from("profiles").select("user_id, display_name");
+const { data: profiles, error } = await supabase
+  .from("profiles")
+  .select("user_id, display_name, target_geos, target_titles, excluded_titles");
 if (error || !profiles?.length) {
   console.error("Could not read profiles:", error?.message ?? "none found");
   process.exit(1);
 }
 const userId = profiles[0].user_id as string;
-console.log(`Workspace: ${profiles[0].display_name || userId}\n`);
+console.log(`Workspace: ${profiles[0].display_name || userId}`);
+
+const targets: JobTargets = {
+  geos: profiles[0].target_geos ?? [],
+  titles: profiles[0].target_titles ?? [],
+  excludedTitles: profiles[0].excluded_titles ?? [],
+};
+if (!hasTargets(targets)) {
+  // Every role on every board would be written - thousands of rows. Refuse instead.
+  console.error("The profile has no target cities or titles yet. Set them on the Watchlist page first.");
+  process.exit(1);
+}
+console.log(
+  `Targets: ${targets.geos.join(", ") || "any city"} · ${targets.titles.length} title phrases · ${targets.excludedTitles.length} excluded\n`,
+);
 
 const matches: { job: Omit<SourcedJob, "id">; company: CompanySeedEntry }[] = [];
 const failures: string[] = [];
@@ -89,9 +92,7 @@ await Promise.all(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const jobs = mapBoardPayload(ats, await res.json(), c.company);
       for (const j of jobs) {
-        const loc = j.location ?? "";
-        if (!SG.test(loc)) continue;
-        if (!WANTED.test(j.title) || NOT_WANTED.test(j.title)) continue;
+        if (!matchesTargets(j, targets)) continue;
         const { id: _drop, ...rest } = j;
         matches.push({ job: rest, company: c });
       }
@@ -103,7 +104,7 @@ await Promise.all(
 
 matches.sort((a, b) => a.job.company.localeCompare(b.job.company) || a.job.title.localeCompare(b.job.title));
 
-console.log(`${matches.length} Singapore matches across ${readable.length} boards:\n`);
+console.log(`${matches.length} matches across ${readable.length} boards:\n`);
 for (const { job } of matches) {
   console.log(`  ${job.company.padEnd(22)} ${job.title}`);
   console.log(`  ${"".padEnd(22)} ${job.location ?? ""}`);

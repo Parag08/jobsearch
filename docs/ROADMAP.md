@@ -34,17 +34,17 @@ One record (bullet bank, stories, applications) feeds every stage; Improve write
 | Company catalogue + which ATS each runs | Shipped (sync is a script) | Rules | `lib/companies`, `lib/watchlist/ats.ts`, `npm run companies:sync`, `/app/watchlist` |
 | Watch / unwatch companies | Shipped | You | `/app/watchlist`, `actions.ts` `addWatchlist`, `watchCompany` |
 | Pull every open role from company boards | Shipped (manual button) | Rules | `lib/services/refresh-watchlist.ts`, `lib/watchlist/{fetcher,mappers,identity}.ts` |
-| Filter to city + line of work | **Script only** | Rules | `scripts/source-singapore.ts` (`WANTED`/`NOT_WANTED` regex, hardcoded to Parag) |
+| Filter to city + line of work | Shipped (2026-09-25) | Rules | `lib/watchlist/targets.ts`, profile `target_geos`/`target_titles`/`excluded_titles` (migration 0003), edited on `/app/watchlist`; used by the in-app Refresh and the script |
 | Fit score (sector, skills, network, location, target boost) | Shipped | Rules | `lib/scoring.ts`, `lib/watchlist/scoring.ts` |
 | Scheduled refresh | Not started | Rules | DESIGN §4 "Scheduling" picks GitHub Actions cron; only `keepalive.yml` exists |
 | Retire roles that close | Not started | Rules | - |
 | "Why this role fits you" (two lines) | Not started | AI | - |
 | Broad aggregator feed (Adzuna) | Built, not wired | Rules | `lib/adapters/adzuna.ts` |
 
-Caution: the in-app **Refresh** button calls `refreshWatchlist`, which has no geography or role
-filter - the script's own header says watching Databricks alone inserts 883 postings. The filter
-that makes the list readable lives only in the script. The script's title filter also lets
-"Senior Product Designer" through.
+Fixed 2026-09-25: the in-app Refresh and the script now share one filter driven by profile data
+(whole-word title phrases, so "Senior Product Designer" and "intern" no longer slip through). Parag's
+phrases live in `data/cvbuilder/archetypes.json` (`titleKeywords` per role family,
+`excludedTitleKeywords`). Still open: the schedule and retiring closed roles.
 
 ### 2. Networking
 
@@ -117,10 +117,9 @@ that makes the list readable lives only in the script. The script's title filter
 
 Ranked for a search that is live today. Each is a session or two.
 
-1. **Make sourcing trustworthy and automatic** (M). Move the role/geography filter out of the script
-   into `refreshWatchlist` as profile data (target titles, exclusions, cities - rule 4, no regex
-   constants), tighten it (designers out), retire postings absent from a board on two refreshes, and
-   run it daily from a GitHub Actions cron. *Why now:* the in-app Refresh button floods the table
+1. **Make sourcing automatic** (S-M). ~~Move the filter into `refreshWatchlist` as profile data~~
+   (shipped 2026-09-25). Left: retire postings absent from a board on two refreshes, and run the
+   refresh daily from a GitHub Actions cron. *Why now:* the in-app Refresh button floods the table
    today, and a list that goes stale or fills with dead roles stops being read. Deps: none.
 2. **Application-scoped prep on the application page** (S). Render `prepSet` - the likely
    competencies, the story or bullet for each, and the gaps - on `/app/applications/[id]`, with a
@@ -193,3 +192,4 @@ Ranked for a search that is live today. Each is a session or two.
 ## Log
 
 - 2026-09-24 - first version, written against the code at commit `1e51c90`.
+- 2026-09-25 - sourcing filter shipped (profile targets, shared by app and script).
