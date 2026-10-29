@@ -2,6 +2,18 @@
 
 Moved out of docs/MEMORY.md on 2026-09-24 so a fresh session reads only the current state. Newest first. Search here (grep) rather than reading it whole.
 
+## 2026-09-24 (night) - Dark mode
+
+Toggle (`app/_components/theme-toggle.tsx`) in the app nav and the landing nav cycles Auto / Light /
+Dark, stored in `localStorage` (`jobsearch-theme`). Auto = the browser's local clock, dark 19:00-07:00;
+never the OS scheme. `lib/theme.ts` (tested) holds the rule and the pre-paint boot script in
+the root layout's `<head>`. Dark palette = `:root[data-theme="dark"]` in `globals.css`; new token
+`--glass-edge`. Checked in headless Chrome (demo mode) on `/`, `/app` and `/app/interview`. DESIGN.md
+§5 is updated.
+
+**Next:** the choice is per browser, not per account. Save it to the profile if that matters.
+Consider letting a user set their own switch hours.
+
 ## 2026-09-24 (later) - Case interviewer; interview tab made fast
 
 **Casing tab is now a live case interviewer** (DESIGN.md §3 "Case interviews"). Ten Bain-style,
