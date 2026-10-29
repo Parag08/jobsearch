@@ -74,7 +74,7 @@ const INTERVIEW: Stage = {
     { name: "Say it out loud", detail: "The question is read aloud and your answer transcribed as you speak.", kind: "auto" },
     { name: "Get feedback on delivery", detail: "Pace, structure and numbers are measured; AI judges the rest.", kind: "ai" },
     { name: "Run a live case", detail: "An AI interviewer leads a full consulting case and pushes back, while the app checks the maths.", kind: "ai" },
-    { name: "Prep for this exact application", detail: "Questions and stories chosen for the role and the CV you actually sent.", kind: "ai", coming: true },
+    { name: "Prep for this exact application", detail: "The competencies the role will probe, the story or CV line you have for each, and the gaps - from the CV you actually sent.", kind: "auto" },
   ],
 };
 

@@ -14,3 +14,4 @@ export { inferCompetencies, matchCompetencies, jdCompetencyText, type Competency
 export { storyGapReport, type StoryGapReport } from "./gap-report";
 export { numberConsistency, extractNumbers, canonicalNumber, type NumberConsistency } from "./consistency";
 export { prepSet, type PrepSet, type PrepItem, type StoryMatch } from "./prep";
+export { competencyPrep, type CompetencyPrep, type CompetencyStatus } from "./prep-view";
