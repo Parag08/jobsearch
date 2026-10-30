@@ -2,6 +2,23 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-10-29 - Interview prep on the application page (ROADMAP Now #2, shipped)
+
+`/app/applications/[id]` has a new panel, "Interview prep for this application": for each competency
+the JD implies (`inferCompetencies` via `prepSet`'s gap report) it shows **story ready** (the story's
+Result), **CV line only** (the first line on this application's CV that evidences it, plus a count of
+others), or **gap**, with a "practise" link to the first bank question with that competency
+(`/app/interview?tab=behavioural&firm=all&q=<id>`) and a "question bank" link. A collapsed list
+shows each CV line with its backing story (pinned or same-project), "needs a story", number
+mismatches, and CV ids no longer in the bank. Rules only, zero tokens.
+- New pure helper `lib/stories/prep-view.ts` `competencyPrep` (7 tests); exported from `lib/stories`.
+- CV line text on the page now goes through one `shownText` (override > chosen variant > bank text).
+- Process map step "Prep for this exact application" lost `coming` and is now `auto`.
+- No schema change. `stakeholder-management` has no bank question, so it shows no practise link.
+
+**Next:** no form writes `stories` yet, so live prep shows only "CV line only" or "gap". A story
+capture form (`draftStory`/`saveStory`) is the natural follow-on; otherwise ROADMAP Now #1 / #3.
+
 ## 2026-09-25 (morning) - Sourcing filter in the app; hero card shows the whole loop
 
 **Job filter (ROADMAP Now #1, first half - shipped).** `lib/watchlist/targets.ts` (tested): a role is
@@ -56,15 +73,3 @@ negotiation framework comes from Parag later.
 
 **Next:** pick from ROADMAP "Now" - start with sourcing you can trust (filter into the in-app refresh,
 retire closed roles, daily cron).
-
-## 2026-09-24 (night) - Dark mode
-
-Toggle (`app/_components/theme-toggle.tsx`) in the app nav and the landing nav cycles Auto / Light /
-Dark, stored in `localStorage` (`jobsearch-theme`). Auto = the browser's local clock, dark 19:00-07:00;
-never the OS scheme. `lib/theme.ts` (tested) holds the rule and the pre-paint boot script in
-the root layout's `<head>`. Dark palette = `:root[data-theme="dark"]` in `globals.css`; new token
-`--glass-edge`. Checked in headless Chrome (demo mode) on `/`, `/app` and `/app/interview`. DESIGN.md
-§5 is updated.
-
-**Next:** the choice is per browser, not per account. Save it to the profile if that matters.
-Consider letting a user set their own switch hours.

@@ -13,7 +13,7 @@ Status words: **Shipped** = a user can reach it in the app. **Built, not wired**
 in `lib/` that no page, route or job calls. **Script only** = runs from `npm run`, not from the app.
 **Not started** = nothing in code. AI column: AI = model call; Rules = code, no tokens; You = the user.
 
-Last reviewed: 2026-09-24.
+Last reviewed: 2026-10-29.
 
 ## The loop
 
@@ -83,7 +83,8 @@ phrases live in `data/cvbuilder/archetypes.json` (`titleKeywords` per role famil
 | Delivery scoring (measured + model judgement) | Shipped | AI (premium) | `lib/interview/score.ts`, `scoreAnswerAction` |
 | Live case interviewer (10 tech M&A / PE cases) | Shipped; production needs `AI_GATEWAY_API_KEY` on Vercel | AI | `lib/interview/case-*.ts`, `case-room.tsx`, `data/interview/cases.json` |
 | Technical tab (claims surface from the CV) | Shipped | Rules | `lib/interview/technical.ts` |
-| Prep for this exact application | **Built, not wired** | Rules today | `lib/stories/prep.ts` `prepSet`, `gap-report.ts`, `competencies.ts` |
+| Prep for this exact application | Shipped (2026-10-29) | Rules | `lib/stories/{prep,prep-view}.ts` (`prepSet`, `competencyPrep`) on `/app/applications/[id]`, links into `/app/interview` |
+| Capture a STAR story in the app | Not started | You | `lib/repos/stories.ts` `draftStory`/`saveStory` exist; no form calls them, so prep shows "CV line only" or "gap" until one does |
 | Answers checked against CV bullet numbers | Built, not wired | Rules | `lib/stories/consistency.ts` - answers carry no bullet link |
 
 ### 5. Improve
@@ -121,10 +122,9 @@ Ranked for a search that is live today. Each is a session or two.
    (shipped 2026-09-25). Left: retire postings absent from a board on two refreshes, and run the
    refresh daily from a GitHub Actions cron. *Why now:* the in-app Refresh button floods the table
    today, and a list that goes stale or fills with dead roles stops being read. Deps: none.
-2. **Application-scoped prep on the application page** (S). Render `prepSet` - the likely
-   competencies, the story or bullet for each, and the gaps - on `/app/applications/[id]`, with a
-   link into the question bank. *Why now:* every interview invitation needs it, the code is done
-   and tested, and it is the loop's first join between Applying and Interview. Deps: none.
+2. ~~**Application-scoped prep on the application page**~~ (shipped 2026-10-29). Follow-on: a
+   story capture form (`draftStory`/`saveStory`), so a "gap" or "CV line only" row can become a
+   story from the same page.
 3. **A CV you can actually send** (M). Wire the editorial layer into `tailorCv` (per-org cap: Valeo and
    EverHaus at most two; short variant before a cut; page fit; collision audit), then export DOCX and
    PDF from the resolved CV into a per-user storage bucket. *Why now:* the tailored CV currently
@@ -193,3 +193,4 @@ Ranked for a search that is live today. Each is a session or two.
 
 - 2026-09-24 - first version, written against the code at commit `1e51c90`.
 - 2026-09-25 - sourcing filter shipped (profile targets, shared by app and script).
+- 2026-10-29 - application-scoped interview prep shipped on `/app/applications/[id]`.
