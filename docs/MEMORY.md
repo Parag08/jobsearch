@@ -2,6 +2,17 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-09 - Security scan + threat model (Devin)
+
+Added `SECURITY_MODEL.md` at the repo root: trust boundaries, named components, entry points, assets,
+attackers and the owner's risk decisions (open OAuth sign-up is intended; LLM keys are capped / free
+tier so quota abuse is low impact; nothing out of scope). Security scans start from it, so update it
+when a boundary, entry point or risk decision changes. No code or schema change.
+- First scan found 3 low findings: no max input length / rate limit on AI server actions and
+  `/api/jd`, and an unchecked `next` redirect in `app/auth/callback/route.ts`.
+
+**Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
+
 ## 2026-10-29 - Interview prep on the application page (ROADMAP Now #2, shipped)
 
 `/app/applications/[id]` has a new panel, "Interview prep for this application": for each competency
@@ -45,31 +56,3 @@ separate file) for code containing escape sequences.
 
 **Next:** rest of ROADMAP Now #1 - daily cron + retire closed roles (several roles marked `new` are
 already gone from their boards).
-
-## 2026-09-25 (overnight) - Landing page rebuilt around the job-search loop; roadmap written
-
-**The product's shape, decided with Parag:** Sourcing -> Networking -> Applying -> Interview prep ->
-Offer & negotiation, with **Improve** looping back to Sourcing after a rejection. Networking means
-talking to people in the target office, even before a role is posted - Parag will build it. The salary
-negotiation framework comes from Parag later.
-
-- **Hero card fixed:** the track line, dots and moving ring were each placed with their own magic
-  offsets (centres at 14 / 17.5 / 17px). Now one `--rail` variable centres all three. Dark mode: the
-  card's sheen and edge light used `--surface` (near-black in dark), so they darkened the card - new
-  token `--glass-light`.
-- **Landing copy rewritten** around the whole search, with AI named where it does the work. Removed
-  claims that were not true: cover letters, PDF/DOCX download, CV/LinkedIn upload, "checked daily".
-- **Process map** (`app/_components/process-map.tsx`) at the foot of the landing page: six stages with
-  arrows plus the Improve loop. Click a stage to open its steps; each step is tagged AI / Automatic /
-  You, plus `coming` if not built. A stage shows a solid `AI` badge only when it has working AI, and
-  `AI soon` when its only AI steps are still coming. On phones the steps open under the stage tapped.
-- **docs/ROADMAP.md** (written by a subagent, spot-checked): status of every capability per stage,
-  and a ranked Now/Next/Later. Its findings: the in-app watchlist Refresh has no city/role filter (only
-  the script does), so it can flood; per-org cap and short-variant rules exist in `lib/editorial` but
-  `tailorCv` never calls them (CLAUDE.md corrected); no UI to add contacts; `prepSet` still unwired.
-- Headless-Chrome gotchas when screenshotting: a stale `--user-data-dir` renders blank; resizing the
-  viewport to capture the full page can restart CSS animations, so panels look faded when they are not.
-  Drive Chrome over its DevTools protocol (Node 24 has WebSocket built in).
-
-**Next:** pick from ROADMAP "Now" - start with sourcing you can trust (filter into the in-app refresh,
-retire closed roles, daily cron).
