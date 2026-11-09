@@ -134,7 +134,7 @@ Ranked for a search that is live today. Each is a session or two.
    the CV cannot claim become the letter's argument, only evidenced facts named, frozen with the CV
    on send. *Why now:* the honesty rule makes the letter necessary, and it is the most visible
    `coming` step in Applying. Deps: item 3's resolved-CV structure for shared export; the
-   letters-corpus question below.
+   private letters corpus (decided: allowed, kept out of the repo).
 
 ## Next
 
@@ -172,14 +172,19 @@ Ranked for a search that is live today. Each is a session or two.
 ## Open questions for Parag
 
 - **Networking:** do you want to build the CRM yourself, or should a session build the minimum in
-  item 5 for you to extend? And where do alumni names come from - a manual list, an INSEAD
-  directory export, or only contacts you add? (Scraping LinkedIn is off the table.)
-- **Cover letters:** can the four sent letters live somewhere private for the model to learn the
-  format (DESIGN §2 "Open"), or should it work from the written description only?
-- **Tailoring:** "system proposes, you edit" or "system decides, you review" (DESIGN §7 Q2)?
-- **Sourced jobs:** do high scorers auto-create `saved` applications, or stay a shortlist (DESIGN §7 Q11)?
-- **Brief delivery:** in-app only, or email as well (SPEC §10 Q5)?
-- **Negotiation framework:** what form will it come in, so the data shape can be ready?
+  item 5 for you to extend? (Where contacts come from is decided - see below.)
+- **Negotiation framework:** what form will it come in, so the data shape can be ready? (TBD.)
+
+## Decided with Parag (2026-11-10)
+
+- **Networking source:** the user adds contacts by typing a name or pasting a LinkedIn profile URL.
+  The URL is stored as a link only - never fetched or scraped. No directory export import.
+- **Cover letters:** yes, the four sent letters may be used as a corpus for the model - but they
+  must live somewhere private (not this public repo), e.g. a private per-user storage bucket.
+- **Tailoring:** "system proposes, you edit" (DESIGN §7 Q2).
+- **Sourced jobs:** high scorers auto-create `saved` applications (DESIGN §7 Q11); the threshold is
+  set when item 1 or 10 is built.
+- **Brief delivery:** in-app only, no email (SPEC §10 Q5).
 
 ## Parked / not doing
 
@@ -194,3 +199,5 @@ Ranked for a search that is live today. Each is a session or two.
 - 2026-09-24 - first version, written against the code at commit `1e51c90`.
 - 2026-09-25 - sourcing filter shipped (profile targets, shared by app and script).
 - 2026-10-29 - application-scoped interview prep shipped on `/app/applications/[id]`.
+- 2026-11-10 - Parag answered five open questions (networking source, letters corpus, tailoring mode,
+  auto-saved applications, in-app brief); negotiation framework still TBD.
