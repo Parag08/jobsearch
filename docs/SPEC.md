@@ -253,6 +253,6 @@ All tables carry a `user_id` (workspace) key. `users` (id, profile, target_geos[
 2. How many active sector nodes to start — 2–3 focused (e.g. AI-in-Singapore, PM-in-SEA) or broad?
 3. Is Singapore exclusive, or keep a UAE/GCC pack active in parallel?
 4. Outreach volume target per week? (Drives how much CRM automation matters.)
-5. Where should the daily brief arrive — in-app, email, or WhatsApp-to-self?
+5. ~~Where should the daily brief arrive?~~ **Decided 2026-11-10: in-app only.**
 6. Comfort level with premium LLM spend for final CV drafts (e.g. cap at $5/mo)?
 7. For the peer version: invite-only workspaces first, or design for self-serve signup from day one?
