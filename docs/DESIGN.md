@@ -228,8 +228,8 @@ Observed without exception across all four:
 
 Storing the four letters as corpus data would let the system learn the format directly rather than
 from this description — but they name recruiters and alumni, and **this repository is public**. They
-are not committed for that reason. If they should live in the repo, they need the third-party names
-removed, or the corpus needs to move somewhere private.
+are not committed for that reason. **Decided 2026-11-10:** Parag agrees the model may learn from the
+letters; the corpus lives somewhere private (a per-user storage bucket), never in this repo.
 
 ---
 ## 3 · STAR interview prep
@@ -712,8 +712,7 @@ Two load-bearing joints:
 
 **Feature 2**
 
-2. How much of the editorial layer is automatic — "system proposes, you edit" or "system decides, you
-   review"? The six mechanisms are judgment calls.
+2. ~~How much of the editorial layer is automatic?~~ **Decided 2026-11-10: system proposes, you edit.**
 3. Premium LLM polish on the final CV — yes/no, and at what monthly cap? (`SPEC.md` §10 Q6)
 
 **Feature 3**
@@ -727,7 +726,8 @@ Two load-bearing joints:
 8. The actual target-company list — and is it global or per sector node?
 9. ATS mapping: derive from a pasted careers URL, or maintain by hand?
 10. Cross-source dedupe identity — canonical URL, or normalised company + title + location?
-11. Do high-scoring sourced jobs auto-create `saved` applications, or stay a shortlist until promoted?
+11. ~~Do high-scoring sourced jobs auto-create `saved` applications?~~ **Decided 2026-11-10: yes**,
+    above a score threshold.
 
 **Still open elsewhere:** `docs/ONBOARDING.md` §6 (four decisions), `docs/SPEC.md` §10 (seven).
 
@@ -746,7 +746,11 @@ Two load-bearing joints:
 - **The cover letter format is fixed** (§2): three paragraphs — career spine ending at INSEAD, why this
   firm with a researched inconvenient detail, where I would be useful plus logistics. No contractions,
   British spelling, almost no numbers. Bain General Consulting is the canonical reference.
-- **The letters are not committed** — they name recruiters and alumni and the repo is public.
+- **The letters are not committed** — they name recruiters and alumni and the repo is public. They may
+  be used as a private corpus (2026-11-10).
+- **Editorial layer: system proposes, you edit** (2026-11-10).
+- **High-scoring sourced jobs auto-create `saved` applications** (2026-11-10).
+- **Contacts are added by name or pasted LinkedIn URL**, stored as a link, never fetched (2026-11-10).
 - **Palette: Heather** — muted periwinkle `#6F6A96`, now on a **pure white** canvas (§5).
 - **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
   both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
