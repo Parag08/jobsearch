@@ -13,6 +13,28 @@ when a boundary, entry point or risk decision changes. No code or schema change.
 
 **Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
 
+## 2026-11-10 (late) - Delivery measured from your voice, in the page
+
+Parag asked whether tone, modulation, breaks and fillers were analysed - they were not.
+Step 1 (on-device, $0) is built; step 2 (ElevenLabs/other transcription that keeps "um"/"uh",
+which sends audio out and costs credits) is NOT built and would need an opt-in.
+- `lib/interview/voice.ts` (pure, 19 tests): `pitchHz` (YIN, 70-400Hz, ~1.5ms per 2048-sample
+  frame), `summarizeVoice` (speech by adaptive RMS threshold; pauses >= 600ms inside the answer,
+  longest pause, words/min over first-to-last word, median pitch, pitch SD in semitones),
+  `combineVoice`, `hedgeCounts` (basically, sort of, kind of, you know, I guess, I mean,
+  actually, literally, um/uh/erm when they survive; "like" deliberately not counted),
+  `deliveryNotes` (fast > 175 wpm, slow < 115, flat < 2 semitones, choppy > 12 pauses/min,
+  hesitation >= 3s, hedging >= 3), `voicePromptLine`, `parseVoiceSummary` (zod).
+- `speech.ts` `openMicLevel(rms, pitch)` now also returns `sample()` (float RMS + pitch).
+  `mock-interview.tsx` samples every 50ms while listening, summarises per answer, commits the
+  summary only when the answer is accepted, and sends `combineVoice(...)` with the feedback
+  request. Only numbers leave the page.
+- `mockFeedbackAction` validates the summary, counts hedges from the transcript, adds the measured
+  line to the debrief prompt (one delivery improvement at most, "never guess at tone"), and returns
+  `voice` + `hedges`; the page shows a "Delivery - measured from your voice" section.
+- Not stored: `interview_attempts` has no column for it (would need a migration).
+- Untested end to end: needs a real microphone and the AI key (live site).
+
 ## 2026-11-10 (night) - Company questions instead of firm filter; quieter interview page
 
 **Parag: behavioural questions should not be firm-specific; company questions should be "Why X?".**

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
+import { combineVoice, deliveryNotes, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
 import { ScoreCard } from "./score-card";
 import { AgentAvatar } from "./agent-avatar";
 import {
@@ -15,6 +16,7 @@ import {
   speak,
   speechActivity,
   stopSpeaking,
+  type MicMeter,
   type SpeechRecognitionLike,
 } from "./speech";
 import ui from "../ui.module.css";
@@ -59,6 +61,8 @@ const STATE_LABEL: Record<AgentState, string> = {
 type Busy = "start" | "turn" | "feedback" | null;
 
 const SETTINGS_KEY = "jobsearch.mock-interview";
+/** One loudness + pitch reading every 50ms while you speak. */
+const VOICE_FRAME_MS = 50;
 interface Settings {
   tone: Tone;
   maxFollowUps: number;
@@ -121,7 +125,11 @@ export function MockInterview({ questionId }: { questionId: string }) {
   const interimRef = useRef("");
   const sessionRef = useRef<MockSession | null>(null);
   const handsFreeRef = useRef(handsFree);
-  const mic = useRef<{ level: () => number; close: () => void } | null>(null);
+  const mic = useRef<MicMeter | null>(null);
+  // Delivery: numbers per frame while you speak (never audio), one summary per spoken answer.
+  const voiceFrames = useRef<VoiceFrame[]>([]);
+  const voiceClock = useRef<{ start: number; timer: ReturnType<typeof setInterval> | null }>({ start: 0, timer: null });
+  const spoken = useRef<VoiceSummary[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 
   draftRef.current = draft;
@@ -207,6 +215,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
   function reset() {
     stopListening();
     stopSpeaking();
+    voiceFrames.current = [];
+    spoken.current = [];
     setSession(null);
     setDraft("");
     setInterim("");
@@ -233,9 +243,17 @@ export function MockInterview({ questionId }: { questionId: string }) {
     } catch {
       /* already stopped */
     }
+    if (voiceClock.current.timer) clearInterval(voiceClock.current.timer);
+    voiceClock.current.timer = null;
     mic.current?.close();
     mic.current = null;
     setMicLevel(0);
+  }
+
+  /** This answer's delivery, from the frames so far. Committed only once the answer is accepted. */
+  function voiceFor(answer: string): VoiceSummary | null {
+    const words = answer.split(/\s+/).filter(Boolean).length;
+    return summarizeVoice(voiceFrames.current, VOICE_FRAME_MS, words);
   }
 
   function startListening() {
@@ -281,9 +299,15 @@ export function MockInterview({ questionId }: { questionId: string }) {
     listeningRef.current = true;
     setListening(true);
     r.start();
-    void openMicLevel(rmsLevel).then((m) => {
-      if (m && listeningRef.current) mic.current = m;
-      else m?.close();
+    void openMicLevel(rmsLevel, pitchHz).then((m) => {
+      if (!m || !listeningRef.current) return m?.close();
+      mic.current = m;
+      // Frame times run on across mute/unmute within one answer.
+      if (!voiceFrames.current.length) voiceClock.current.start = performance.now();
+      voiceClock.current.timer = setInterval(() => {
+        if (!mic.current) return;
+        voiceFrames.current.push({ t: performance.now() - voiceClock.current.start, ...mic.current.sample() });
+      }, VOICE_FRAME_MS);
     });
   }
 
@@ -311,6 +335,7 @@ export function MockInterview({ questionId }: { questionId: string }) {
     const answer = `${draftRef.current} ${interimRef.current}`.trim();
     if (!s || !answer || s.status === "done" || busyRef.current) return;
     stopListening();
+    const v = voiceFor(answer);
     setBusy("turn");
     busyRef.current = "turn";
     setError(null);
@@ -325,6 +350,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
     setBusy(null);
     busyRef.current = null;
     if (r.error || !r.session) return setError(r.error ?? "The interviewer lost the thread.");
+    if (v) spoken.current.push(v);
+    voiceFrames.current = [];
     setDraft("");
     setSession(r.session);
     sessionRef.current = r.session;
@@ -344,7 +371,9 @@ export function MockInterview({ questionId }: { questionId: string }) {
     busyRef.current = "feedback";
     setError(null);
     const answer = s.status === "running" ? `${draftRef.current} ${interimRef.current}`.trim() : undefined;
-    const r = await mockFeedbackAction({ session: s, answer: answer || undefined });
+    const v = answer ? voiceFor(answer) : null;
+    const voiceSummary = combineVoice(v ? [...spoken.current, v] : spoken.current);
+    const r = await mockFeedbackAction({ session: s, answer: answer || undefined, voice: voiceSummary });
     setBusy(null);
     busyRef.current = null;
     if (r.session) {
@@ -353,6 +382,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
     }
     if (answer) setDraft("");
     if (r.error) return setError(r.error);
+    if (v) spoken.current.push(v);
+    voiceFrames.current = [];
     setFeedback(r);
   }
 
@@ -630,6 +661,26 @@ export function MockInterview({ questionId }: { questionId: string }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+          {(feedback.voice || (feedback.hedges && Object.keys(feedback.hedges).length > 0)) && (
+            <div className={ui.callout}>
+              <p className={ui.mono}>Delivery - measured from your voice</p>
+              {feedback.voice ? (
+                <ul className={ui.rows}>
+                  {deliveryNotes(feedback.voice, feedback.hedges ?? {}).map((n) => (
+                    <li key={n.kind} className={ui.row}>
+                      <p>{n.text}</p>
+                      <span className={ui.chip} data-tone={n.tone}>
+                        {n.kind}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={ui.sub}>You typed your answers, so there is no voice to measure - only the words.</p>
+              )}
+              <p className={ui.sub}>Measured in your browser. Only these numbers were sent - never your voice.</p>
             </div>
           )}
           <ScoreCard result={feedback} />

@@ -258,6 +258,8 @@ export function buildMockDebriefPrompt(input: {
   lookFor: string;
   firmNote: string | null;
   session: MockSession;
+  /** Measured delivery (voicePromptLine) - pace, pauses, pitch, hedges. Empty when typed. */
+  delivery?: string;
 }): string {
   const rubric = SCORE_DIMENSIONS.map((d) => `- ${d}: ${DIMENSION_HELP[d]}`).join("\n");
   const probes = input.session.turns.flatMap((t) => (t.probe ? [`- ${t.probe}: "${t.text}"`] : []));
@@ -280,6 +282,10 @@ export function buildMockDebriefPrompt(input: {
     "- Improvements must be about HOW they told it (lead with the result, say what you personally did,",
     "  name the number) - never new content for their story.",
     "- Quote their own words where it helps. Ignore speech-to-text typos.",
+    input.delivery
+      ? "- If it matters, include ONE improvement about delivery, based only on the measured line below - never guess at tone."
+      : "",
+    input.delivery ?? "",
     "",
     "Reply with JSON only, exactly this shape:",
     `{"scores":{${SCORE_DIMENSIONS.map((d) => `"${d}":1`).join(",")}},"strengths":["..."],"improvements":["..."],"followUps":[{"probe":"result","verdict":"held","note":"..."}]}`,

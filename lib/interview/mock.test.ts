@@ -213,6 +213,14 @@ describe("debrief", () => {
     expect(p).toContain("I ran the workshop.");
   });
 
+  it("passes measured delivery to the model only when there is some", () => {
+    const line = "Measured delivery (from the microphone, not judged): pace 190 words/min.";
+    const withVoice = buildMockDebriefPrompt({ question: question.text, lookFor: "Evidence", firmNote: null, session: s, delivery: line });
+    expect(withVoice).toContain(line);
+    expect(withVoice).toMatch(/never guess at tone/);
+    expect(buildMockDebriefPrompt({ question: question.text, lookFor: "Evidence", firmNote: null, session: s })).not.toMatch(/Measured delivery/);
+  });
+
   it("parses scores and keeps only verdicts for probes that were asked", () => {
     const d = parseMockDebrief(
       {

@@ -57,6 +57,7 @@ import {
   type MockSession,
   type Tone,
 } from "@/lib/interview/mock";
+import { hedgeCounts, parseVoiceSummary, voicePromptLine, type VoiceSummary } from "@/lib/interview/voice";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -570,6 +571,9 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
 
 export interface MockFeedbackResult extends ScoreResult {
   followUps?: FollowUpVerdict[];
+  /** Measured in the page while you spoke; null for typed answers. */
+  voice?: VoiceSummary | null;
+  hedges?: Record<string, number>;
   session?: MockSession;
 }
 
@@ -580,6 +584,8 @@ export interface MockFeedbackResult extends ScoreResult {
 export async function mockFeedbackAction(input: {
   session: unknown;
   answer?: string;
+  /** Delivery numbers from the page - never audio. Validated; ignored if malformed. */
+  voice?: unknown;
 }): Promise<MockFeedbackResult> {
   const { db, userId } = await ws();
   let s: MockSession;
@@ -606,7 +612,15 @@ export async function mockFeedbackAction(input: {
   const signals = deliverySignals(first, null);
   const { saidNotWritten } = numberDrift(said, await writtenAnswerFor(question.id));
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
-  const prompt = buildMockDebriefPrompt({ question: question.text, lookFor: question.lookFor, firmNote: context, session: s });
+  const voice = parseVoiceSummary(input.voice);
+  const hedges = hedgeCounts(said);
+  const prompt = buildMockDebriefPrompt({
+    question: question.text,
+    lookFor: question.lookFor,
+    firmNote: context,
+    session: s,
+    delivery: voicePromptLine(voice, hedges),
+  });
 
   let debrief;
   try {
@@ -636,6 +650,8 @@ export async function mockFeedbackAction(input: {
     strengths: debrief.strengths,
     improvements: debrief.improvements,
     followUps: debrief.followUps,
+    voice,
+    hedges,
     signals,
     saidNotWritten,
     model,
