@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { scoreAnswerAction, type ScoreResult } from "../actions";
 import { DIMENSION_HELP, SCORE_DIMENSIONS } from "@/lib/interview/score";
-import { LANGS, recognitionCtor, type SpeechRecognitionLike } from "./speech";
+import { LANGS, recognitionCtor, speak, stopSpeaking, type SpeechRecognitionLike } from "./speech";
 import ui from "../ui.module.css";
 
 /**
  * Spoken practice: the page asks the question aloud, records your answer, transcribes
  * it live, and sends the transcript to be scored.
  *
- * Audio is handled by the browser - speech synthesis to ask, the browser's speech
- * recognition to transcribe (Chrome/Edge send the audio to Google's/Microsoft's speech
+ * The question is read aloud by ElevenLabs when the server has it configured (text only
+ * goes there), else by the browser's speech synthesis. The browser's speech
+ * recognition transcribes (Chrome/Edge send the audio to Google's/Microsoft's speech
  * service for this), MediaRecorder so you can hear yourself back (kept in the page only).
  * JobSearch's server receives only the transcript; no audio is stored (DESIGN.md section 3).
  * No new dependency: these are platform APIs.
@@ -58,15 +59,10 @@ export function PracticePanel({ questionId, questionText, firm }: { questionId: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionId]);
 
-  useEffect(() => () => stopAll(), []);
+  useEffect(() => () => { stopAll(); stopSpeaking(); }, []);
 
   function speakQuestion() {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(questionText);
-    u.lang = lang;
-    u.rate = 0.95;
-    window.speechSynthesis.speak(u);
+    void speak(questionText, lang, 0.95);
   }
 
   function stopAll() {
@@ -87,7 +83,7 @@ export function PracticePanel({ questionId, questionText, firm }: { questionId: 
     setFinalText("");
     setInterim("");
     setAudioUrl(null);
-    window.speechSynthesis?.cancel();
+    stopSpeaking();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

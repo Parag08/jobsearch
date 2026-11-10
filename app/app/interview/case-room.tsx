@@ -11,7 +11,7 @@ import {
 import type { CaseSheet, Exhibit, QuestionKind } from "@/lib/interview/case-sheet";
 import { CASE_DIMENSIONS, CASE_DIMENSION_HELP, type CaseSession } from "@/lib/interview/case-session";
 import { BARS, OPENING } from "@/lib/interview/case-method";
-import { LANGS, recognitionCtor, speak, type SpeechRecognitionLike } from "./speech";
+import { LANGS, recognitionCtor, speak, stopSpeaking, type SpeechRecognitionLike } from "./speech";
 import ui from "../ui.module.css";
 
 /**
@@ -87,12 +87,12 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [turnCount, pending, debrief]);
 
-  useEffect(() => () => stopListening(), []);
+  useEffect(() => () => { stopListening(); stopSpeaking(); }, []);
 
   function sayNew(before: number, s: CaseSession) {
     if (!voice) return;
     const lines = s.turns.slice(before).filter((t) => t.role === "interviewer").map((t) => t.text);
-    if (lines.length) speak(lines.join(" "), lang);
+    if (lines.length) void speak(lines.join(" "), lang);
   }
 
   async function start() {
@@ -144,7 +144,7 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
   async function finish() {
     if (!sessionId) return;
     stopListening();
-    window.speechSynthesis?.cancel();
+    stopSpeaking();
     setBusy("finish");
     setError(null);
     const r = await finishCaseAction(sessionId);
@@ -157,7 +157,7 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
   function startListening() {
     const Ctor = recognitionCtor();
     if (!Ctor) return;
-    window.speechSynthesis?.cancel();
+    stopSpeaking();
     const r = new Ctor();
     r.lang = lang;
     r.continuous = true;

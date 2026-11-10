@@ -13,6 +13,26 @@ when a boundary, entry point or risk decision changes. No code or schema change.
 
 **Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
 
+## 2026-11-10 - ElevenLabs voice for the interviewer (branch feat/elevenlabs-voice)
+
+Spoken practice ("Ask me the question") and the case room now speak through ElevenLabs when the
+server has it configured, else the browser voice as before. Text only goes to ElevenLabs; answers
+are still transcribed by the browser and never reach ElevenLabs.
+- `lib/adapters/elevenlabs.ts` (pure, 9 tests): `ttsConfigFromEnv` (null unless all five
+  `ELEVENLABS_*` vars are set - no code defaults), `ttsRequest`, `ttsLedgerEntry` (characters
+  logged to token_ledger as module `interview-tts`, model `elevenlabs/<model>`).
+- `app/api/tts/route.ts`: 501 when unconfigured (client falls back and stops asking), 401 signed
+  out, 400 empty/over `ELEVENLABS_MAX_CHARS`, 502 upstream failure; streams audio/mpeg back.
+- `speech.ts`: `speak()` is now async and tries /api/tts first; `stopSpeaking()` replaces every
+  direct `speechSynthesis.cancel()`. practice-panel no longer calls speechSynthesis itself.
+- Verified locally: unconfigured -> 501 -> browser voice; with Parag's key the interview page
+  plays ElevenLabs audio (200, audio/mpeg) and the browser voice stays silent. Voice is the
+  premade "George" (`JBFqnCBsd6RMkjVDRZzb`) for now. The key is text-to-speech only, so it cannot
+  list voices - copy IDs from the ElevenLabs Voices page (about 20 characters).
+
+**Next:** add the five vars on Vercel and redeploy; swap the voice if Parag picks another. A case-room turn
+longer than ELEVENLABS_MAX_CHARS falls back to the browser voice for that turn.
+
 ## 2026-10-29 - Interview prep on the application page (ROADMAP Now #2, shipped)
 
 `/app/applications/[id]` has a new panel, "Interview prep for this application": for each competency
