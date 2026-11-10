@@ -13,6 +13,28 @@ when a boundary, entry point or risk decision changes. No code or schema change.
 
 **Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
 
+## 2026-11-10 (evening) - The mock interview becomes a meeting with an AI agent
+
+Parag: the text thread did not feel like an interview; make it a meeting with an animated AI
+agent (Three.js). `mock-interview.tsx` now has a lobby (agent idle, settings, "Join the
+interview") and a room: stage with the agent, status ("Your turn", "Listening", "Thinking…",
+"Speaking"), clock and follow-up count, live captions (the interviewer's words roll in step
+with its audio; your words while you talk; its last line stays up otherwise), a "You" tile
+with a mic meter, and meeting controls (Mute/Unmute, Done answering, Type instead, Captions,
+Transcript, End and get feedback). Opens with a spoken "Hi, thanks for joining." when the voice
+is on. Feedback appears under the stage at the end.
+- `agent-avatar.tsx`: `three` (new dependency, loaded with `import("three")` only when the panel
+  opens). Shader orb with simplex-noise displacement + particle ring; looks per state ease
+  in; reads `getState`/`getLevel` per frame (no React re-render); stops off screen; falls back
+  to a CSS orb without WebGL.
+- `lib/interview/agent.ts` (pure, 14 tests): `agentState`, `rmsLevel`, `smoothLevel`, `captionWindow`.
+- `speech.ts`: `primeAudio()` (call in the click), `speechActivity()` (speaking / level /
+  progress; ElevenLabs audio goes through an AnalyserNode only if the AudioContext is running,
+  browser voice uses word-boundary pulses), `onSpeakingChange`, `openMicLevel` (meter only, not
+  routed anywhere).
+- Checked locally with voice off and /api/tts blocked (zero credits): lobby, join, caption,
+  typed answer, missing-AI-key message. Not yet seen with the live voice or the real follow-ups.
+
 ## 2026-11-10 (later) - Behavioural mock interview with follow-ups (same branch)
 
 **Parag is done with MBB cases; behavioural is the focus now.** New panel "Mock interview" on

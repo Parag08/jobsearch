@@ -760,5 +760,11 @@ Two load-bearing joints:
   Never on content cards, table rows, form fields or the page background.
 - **Separation is a 1px hairline, not a shadow or a fill.** Glass is the only thing that casts.
 - **Logo: Stages** — four rising dots encoding the pipeline, in `currentColor`.
+- **The mock interview is a meeting, and its AI agent is the one animated thing in the app**
+  (2026-11-10, Parag's call). A Three.js orb (`agent-avatar.tsx`) on a deep violet-ink stage that
+  keeps its colours in both themes, like a video call. It moves with the interviewer's voice and
+  yours; everything around it still follows the 120ms in-app rule. `prefers-reduced-motion` keeps
+  it nearly still. Deliberately abstract, not a face. Captions replace the chat log; the
+  transcript is one click away.
 - **Red is reserved for destructive confirmations only.** Rejection states are never red; closed is
   neutral taupe whatever the reason.
