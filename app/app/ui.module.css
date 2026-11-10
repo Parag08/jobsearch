@@ -756,3 +756,70 @@
 .modelAnswer[open] > summary { margin-bottom: 8px; }
 .modelAnswer ul { margin: 0; padding-left: 18px; font-size: 0.875rem; color: var(--ink-soft); display: flex; flex-direction: column; gap: 3px; }
 .modelAnswer > .stack { padding-top: 10px; border-top: 1px solid var(--line-soft); }
+
+/* ---- Mock interview as a meeting: the AI agent on a stage ----------------------------
+   The stage is a room, not a card, so it keeps its own deep violet-ink canvas in both
+   themes (like a video call). It sits in the page, so card radius, a hairline, no shadow. */
+.meeting { display: flex; flex-direction: column; gap: 12px; }
+.stage {
+  position: relative;
+  min-height: 420px;
+  aspect-ratio: 16 / 9;
+  max-height: 62vh;
+  border-radius: var(--radius-card);
+  border: 1px solid #2c2a35;
+  background: radial-gradient(120% 90% at 50% 40%, #22203a 0%, #131219 62%, #0d0c12 100%);
+  color: #ecebf1;
+  overflow: hidden;
+}
+.stage[data-size="lobby"] { min-height: 300px; aspect-ratio: 21 / 9; }
+.agentCanvas { position: absolute; inset: 0; }
+.agentCanvas canvas { display: block; }
+.agentFallback {
+  position: absolute; left: 50%; top: 50%; width: 180px; height: 180px; margin: -90px 0 0 -90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #e9e6ff 0%, var(--accent) 45%, #2a2740 100%);
+}
+.stageTop {
+  position: absolute; top: 12px; left: 14px; right: 14px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 0.8125rem;
+}
+.agentName { font-weight: 600; letter-spacing: 0.01em; }
+.statusPill {
+  padding: 2px 10px; border-radius: var(--radius); border: 1px solid #3f3c4b;
+  color: #aeaabb; transition: color var(--motion), border-color var(--motion);
+}
+.statusPill[data-state="listening"] { color: #ecebf1; border-color: #9d97c6; }
+.statusPill[data-state="speaking"] { color: #ecebf1; border-color: #c9c4ef; }
+.statusPill[data-state="thinking"] { color: #c9c4ef; }
+.stageClock { margin-left: auto; color: #85818f; font-family: var(--font-mono), monospace; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.caption {
+  position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+  width: min(46rem, calc(100% - 32px));
+  margin: 0; padding: 8px 14px; border-radius: var(--radius);
+  background: rgba(13, 12, 18, 0.72);
+  color: #ecebf1; font-size: 1rem; line-height: 1.5; text-align: center;
+}
+.caption b { color: #c9c4ef; font-weight: 600; margin-right: 6px; }
+.selfTile {
+  position: absolute; right: 12px; bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: var(--radius);
+  border: 1px solid #2c2a35; background: rgba(13, 12, 18, 0.72);
+  font-size: 0.8125rem;
+}
+.selfTile[data-live] { border-color: #9d97c6; }
+.selfTile .sub { color: #85818f; font-size: 0.75rem; }
+.micBars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.micBars i { width: 3px; background: #3f3c4b; border-radius: 1px; transition: background var(--motion); }
+.micBars i:nth-child(1) { height: 4px; }
+.micBars i:nth-child(2) { height: 7px; }
+.micBars i:nth-child(3) { height: 10px; }
+.micBars i:nth-child(4) { height: 14px; }
+.micBars i[data-on] { background: #c9c4ef; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+@media (max-width: 640px) {
+  .stage { aspect-ratio: 4 / 5; min-height: 360px; }
+  .caption { bottom: 56px; font-size: 0.9375rem; }
+}
