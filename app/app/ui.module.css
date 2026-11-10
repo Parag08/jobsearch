@@ -557,7 +557,6 @@
 .qgroup > .mono { margin-bottom: 4px; }
 .qitem {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
   padding: 8px 10px;
@@ -768,7 +767,7 @@
   max-height: 62vh;
   border-radius: var(--radius-card);
   border: 1px solid #2c2a35;
-  background: radial-gradient(120% 90% at 50% 40%, #22203a 0%, #131219 62%, #0d0c12 100%);
+  background: radial-gradient(120% 90% at 50% 40%, #34315a 0%, #211f35 60%, #1a1929 100%);
   color: #ecebf1;
   overflow: hidden;
 }
@@ -786,31 +785,15 @@
   font-size: 0.8125rem;
 }
 .agentName { font-weight: 600; letter-spacing: 0.01em; }
-.statusPill {
-  padding: 2px 10px; border-radius: var(--radius); border: 1px solid #3f3c4b;
-  color: #aeaabb; transition: color var(--motion), border-color var(--motion);
-}
-.statusPill[data-state="listening"] { color: #ecebf1; border-color: #9d97c6; }
-.statusPill[data-state="speaking"] { color: #ecebf1; border-color: #c9c4ef; }
-.statusPill[data-state="thinking"] { color: #c9c4ef; }
 .stageClock { margin-left: auto; color: #85818f; font-family: var(--font-mono), monospace; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .caption {
-  position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 66px; transform: translateX(-50%);
   width: min(46rem, calc(100% - 32px));
   margin: 0; padding: 8px 14px; border-radius: var(--radius);
   background: rgba(13, 12, 18, 0.72);
   color: #ecebf1; font-size: 1rem; line-height: 1.5; text-align: center;
 }
 .caption b { color: #c9c4ef; font-weight: 600; margin-right: 6px; }
-.selfTile {
-  position: absolute; right: 12px; bottom: 12px;
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px; border-radius: var(--radius);
-  border: 1px solid #2c2a35; background: rgba(13, 12, 18, 0.72);
-  font-size: 0.8125rem;
-}
-.selfTile[data-live] { border-color: #9d97c6; }
-.selfTile .sub { color: #85818f; font-size: 0.75rem; }
 .micBars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
 .micBars i { width: 3px; background: #3f3c4b; border-radius: 1px; transition: background var(--motion); }
 .micBars i:nth-child(1) { height: 4px; }
@@ -821,5 +804,76 @@
 .controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 @media (max-width: 640px) {
   .stage { aspect-ratio: 4 / 5; min-height: 360px; }
-  .caption { bottom: 56px; font-size: 0.9375rem; }
+  .caption { bottom: 60px; font-size: 0.9375rem; }
 }
+
+/* Dark theme: the room goes deeper, so it still reads as a room against a dark page. */
+:global(:root[data-theme="dark"]) .stage {
+  background: radial-gradient(120% 90% at 50% 40%, #22203a 0%, #131219 62%, #0d0c12 100%);
+}
+
+/* Status: a dot and a word, not another outlined box. */
+.status { display: inline-flex; align-items: center; gap: 6px; color: #aeaabb; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #5a5766; transition: background var(--motion); }
+.status[data-state="listening"]::before { background: #9d97c6; }
+.status[data-state="speaking"]::before { background: #e9e6ff; }
+.status[data-state="thinking"]::before { background: #c9c4ef; }
+.status[data-state="listening"], .status[data-state="speaking"] { color: #ecebf1; }
+
+/* The lobby: one Join button on the stage, settings behind a gear. */
+.join {
+  position: absolute; left: 0; right: 0; bottom: 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.join p { font-size: 0.8125rem; color: #aeaabb; }
+.settings {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+
+/* In-call controls: one row of round icon buttons along the foot of the stage. */
+.callBar {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.callBarGap { flex: 1; }
+.iconBtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 38px; height: 38px; padding: 0 10px;
+  border-radius: var(--radius-card);
+  border: 1px solid #3f3c4b; background: rgba(13, 12, 18, 0.6); color: #ecebf1;
+  cursor: pointer; transition: background var(--motion), border-color var(--motion);
+}
+.iconBtn:hover { background: rgba(255, 255, 255, 0.08); }
+.iconBtn[data-on] { border-color: #9d97c6; background: rgba(157, 151, 198, 0.18); }
+.iconBtn:disabled { opacity: 0.45; cursor: default; }
+.iconBtn:focus-visible { outline: 2px solid #c9c4ef; outline-offset: 2px; }
+.stageTop .iconBtn { margin-left: auto; min-width: 32px; height: 32px; padding: 0 6px; }
+.stage .callBar .btn { height: 38px; }
+
+/* Question list: a status dot instead of a chip, a quiet score only once practised. */
+.qdot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
+.qdot[data-state="notes"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+.qdot[data-state="practised"] { border-color: var(--accent); background: var(--accent); }
+.qscore { margin-left: auto; flex: none; font-family: var(--font-mono), monospace; font-size: 0.72rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+/* The selected question: title, then guidance folded away. */
+.qhead { display: flex; flex-direction: column; gap: 6px; }
+.reveal > summary {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; list-style: none;
+  font-size: 0.875rem; color: var(--ink-soft);
+}
+.reveal > summary::-webkit-details-marker { display: none; }
+.reveal > summary::after { content: "›"; transition: transform var(--motion); }
+.reveal[open] > summary::after { transform: rotate(90deg); }
+.reveal > summary:hover { color: var(--ink); }
+.reveal[open] > summary { margin-bottom: 10px; }
+.reveal > p { font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
+.qdetail > .reveal { padding-top: 14px; border-top: 1px solid var(--line); }
+.qrow { display: contents; }
+.qcompany { margin: 8px 0 2px 10px; font-size: 0.8125rem; font-weight: 600; color: var(--ink); }
+.qgroup > .qrow:first-of-type .qcompany { margin-top: 0; }
+/* Plain buttons on the stage take the room's colours, in either theme. */
+.stage .btn:not([data-primary]) { background: rgba(13, 12, 18, 0.6); color: #ecebf1; border-color: #3f3c4b; }
+.stage .btn:not([data-primary]):hover { background: rgba(255, 255, 255, 0.08); }

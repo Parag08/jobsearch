@@ -4,11 +4,11 @@ import { getWorkspace } from "@/lib/db";
 import { listProjects } from "@/lib/repos/projects";
 import { getProfile } from "@/lib/repos/profiles";
 import { listAnswers, listAttempts, type Answer, type Attempt } from "@/lib/repos/answers";
-import { DEFAULT_COMPETENCIES } from "@/lib/stories/types";
 import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
-import { FIRMS, firmLabel, questionBank } from "./bank";
+import { listCompanyQuestions, questionBank } from "./bank";
+import { COMPANY_GROUP, type CompanyQuestion } from "@/lib/interview/company-questions";
 import { BehaviouralView } from "./behavioural-view";
 import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
@@ -18,23 +18,23 @@ import ui from "../ui.module.css";
 /**
  * Interview prep (DESIGN.md section 3), as three tabs.
  *
- * Behavioural is the working surface: the questions MBB firms ask, your written answer
- * to each (a blank box or STAR, both kept), and spoken practice that is scored. Casing
- * and technical are derived from your record, so they fill themselves in.
+ * Behavioural is the working surface: generic behavioural questions plus "Why <company>?"
+ * questions built from your own applications, each practised in a mock interview, with
+ * your notes alongside. Technical and casing are derived from your record.
  *
- * Tab, question and firm live in the URL: every question is linkable, and back works.
+ * Tab and question live in the URL: every question is linkable, and back works.
  */
 type Tab = "behavioural" | "casing" | "technical";
 const TABS: { id: Tab; label: string }[] = [
   { id: "behavioural", label: "Behavioural" },
-  { id: "casing", label: "Casing" },
   { id: "technical", label: "Technical" },
+  { id: "casing", label: "Casing" },
 ];
 
 export default async function Interview({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string; firm?: string; case?: string; type?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; case?: string; type?: string }>;
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
@@ -42,21 +42,20 @@ export default async function Interview({
 
   const params = await searchParams;
   const tab: Tab = TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
-  const firm = params.firm === "all" || FIRMS.includes(params.firm ?? "") ? (params.firm as string) : "bain";
 
-  const [projects, profile, answers, attempts, caseSessions] = await Promise.all([
+  const [projects, profile, answers, attempts, caseSessions, companyQs] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     listAnswers(db, userId),
     listAttempts(db, userId),
     tab === "casing" ? listCaseSessions(db, userId) : Promise.resolve([]),
+    tab === "behavioural" ? listCompanyQuestions(db, userId) : Promise.resolve([]),
   ]);
   const bullets = projects.flatMap((p) => p.bullets);
 
-  const href = (next: { tab?: Tab; q?: string; firm?: string }) => {
+  const href = (next: { tab?: Tab; q?: string }) => {
     const sp = new URLSearchParams();
     sp.set("tab", next.tab ?? tab);
-    sp.set("firm", next.firm ?? firm);
     if (next.q) sp.set("q", next.q);
     return `/app/interview?${sp.toString()}`;
   };
@@ -76,7 +75,7 @@ export default async function Interview({
       </nav>
 
       {tab === "behavioural" && (
-        <Behavioural answers={answers} attempts={attempts} bullets={bullets} />
+        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} />
       )}
       {tab === "casing" && (
         <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} />
@@ -90,47 +89,31 @@ export default async function Interview({
 
 /**
  * The server side of the behavioural tab: read everything once, hand it to the client
- * view. Question and firm switching then happen in the browser with no round trip.
+ * view. Question switching then happens in the browser with no round trip.
  */
 function Behavioural({
   answers,
   attempts,
   bullets,
+  companyQuestions,
 }: {
   answers: Answer[];
   attempts: Attempt[];
   bullets: { id: string; text: string; skills: string[] }[];
+  companyQuestions: CompanyQuestion[];
 }) {
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
   for (const b of bullets) for (const h of matchCompetencies(`${b.text} ${b.skills.join(" ")}`)) evidenced.add(h.competency);
-  const firmLabels = Object.fromEntries([...FIRMS, "all"].map((f) => [f, firmLabel(f)]));
 
   return (
-    <>
-      <BehaviouralView
-        bank={questionBank}
-        firms={FIRMS}
-        firmLabels={firmLabels}
-        answers={answers}
-        attempts={attempts}
-        evidenced={[...evidenced]}
-      />
-
-      <details className={ui.panel}>
-        <summary>What your CV already evidences</summary>
-        <div className={ui.chips} style={{ marginTop: 10 }}>
-          {DEFAULT_COMPETENCIES.map((c) => (
-            <span key={c} className={ui.chip} data-tone={evidenced.has(c) ? "hit" : "gap"}>
-              {c.replace(/-/g, " ")}
-            </span>
-          ))}
-        </div>
-        <p className={ui.sub}>
-          Dashed ones have nothing behind them on your CV — those are the answers you most need to write.
-        </p>
-      </details>
-    </>
+    <BehaviouralView
+      groups={[COMPANY_GROUP, ...questionBank.groups]}
+      questions={[...companyQuestions, ...questionBank.questions]}
+      answers={answers}
+      attempts={attempts}
+      evidenced={[...evidenced]}
+    />
   );
 }
 

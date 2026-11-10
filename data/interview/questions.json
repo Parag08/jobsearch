@@ -70,19 +70,6 @@
       "lookFor": "A reason rooted in something you have done, not a generic appeal to learning and variety. Specific beats enthusiastic."
     },
     {
-      "id": "fit-why-firm",
-      "group": "fit",
-      "competency": "fit",
-      "text": "Why this firm, and not the others?",
-      "firms": [
-        "bain",
-        "bcg",
-        "mckinsey"
-      ],
-      "lookFor": "Something true about this firm that is not on its homepage, and ideally a person you have actually spoken to there.",
-      "bain": "Bain's stated values include candour, results over reports, and a team culture it describes as never letting a colleague fail. An answer that names one of these AND connects it to your own experience lands far better than praise."
-    },
-    {
       "id": "fit-why-mba",
       "group": "fit",
       "competency": "fit",
@@ -350,6 +337,29 @@
       ],
       "lookFor": "The client, the difference, and the number.",
       "bain": "Maps directly onto Bain's 'results, not reports'. Lead with the outcome."
+    }
+  ],
+  "companyQuestions": [
+    {
+      "id": "why",
+      "competency": "motivation",
+      "text": "Why {company}?",
+      "lookFor": "Something true about {company} that is not on its homepage - ideally from a person you have actually spoken to there - tied to a moment in your own record that makes the fit believable. Not praise any firm could earn.",
+      "short": "Why {company}?"
+    },
+    {
+      "id": "role",
+      "competency": "motivation",
+      "text": "Why the {role} role at {company}?",
+      "lookFor": "Connects what the {role} role needs to evidence you already have, names the one area you would grow into honestly, and shows you understand what the job is day to day.",
+      "short": "Why this role?"
+    },
+    {
+      "id": "value",
+      "competency": "motivation",
+      "text": "What would you bring to {company} in your first six months?",
+      "lookFor": "Two or three concrete contributions grounded in work you have done before, realistic about ramp-up, and framed around {company}'s needs rather than your wish list.",
+      "short": "Your first six months"
     }
   ]
 }

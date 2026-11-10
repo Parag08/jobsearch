@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
-import { ScoreCard } from "./practice-panel";
+import { ScoreCard } from "./score-card";
 import { AgentAvatar } from "./agent-avatar";
 import {
   LANGS,
@@ -58,9 +58,37 @@ const STATE_LABEL: Record<AgentState, string> = {
 
 type Busy = "start" | "turn" | "feedback" | null;
 
+const SETTINGS_KEY = "jobsearch.mock-interview";
+interface Settings {
+  tone: Tone;
+  maxFollowUps: number;
+  voice: boolean;
+  handsFree: boolean;
+  lang: string;
+}
+
+/** Small line icons for the meeting controls, in currentColor. */
+const ICON: Record<string, React.ReactNode> = {
+  mic: <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0M12 19v2" />,
+  micOff: <path d="M15 9.3V6a3 3 0 0 0-5.7-1.3M9 9v3a3 3 0 0 0 5.1 2.1M19 12a7 7 0 0 1-1.2 3.9M5 12a7 7 0 0 0 11.3 5.5M12 19v2M4 4l16 16" />,
+  keyboard: <path d="M3 7h18v10H3zM7 11h.01M11 11h.01M15 11h.01M7 14h10" />,
+  captions: <path d="M3 6h18v12H3zM10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3" />,
+  transcript: <path d="M5 6h14M5 10h14M5 14h9M5 18h6" />,
+  send: <path d="M4 12h14M13 6l6 6-6 6" />,
+  settings: <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm7.4 3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.5 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z" />,
+};
+
+function Icon({ name }: { name: keyof typeof ICON }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICON[name]}
+    </svg>
+  );
+}
+
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export function MockInterview({ questionId, firm }: { questionId: string; firm: string }) {
+export function MockInterview({ questionId }: { questionId: string }) {
   const [tone, setTone] = useState<Tone>("neutral");
   const [maxFollowUps, setMaxFollowUps] = useState(3);
   const [voice, setVoice] = useState(true);
@@ -83,6 +111,7 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
   const [micLevel, setMicLevel] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [clock, setClock] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -104,8 +133,30 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
   useEffect(() => {
     setCanListen(recognitionCtor() !== null);
     if (LANGS.some((l) => l.id === navigator.language)) setLang(navigator.language);
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null") as Partial<Settings> | null;
+      if (saved) {
+        if (saved.tone && TONES.includes(saved.tone)) setTone(saved.tone);
+        if (typeof saved.maxFollowUps === "number" && saved.maxFollowUps >= MIN_FOLLOW_UPS && saved.maxFollowUps <= MAX_FOLLOW_UPS)
+          setMaxFollowUps(saved.maxFollowUps);
+        if (typeof saved.voice === "boolean") setVoice(saved.voice);
+        if (typeof saved.handsFree === "boolean") setHandsFree(saved.handsFree);
+        if (saved.lang && LANGS.some((l) => l.id === saved.lang)) setLang(saved.lang);
+      }
+    } catch {
+      /* private mode or bad JSON - defaults are fine */
+    }
     return onSpeakingChange(setSpeakingState);
   }, []);
+
+  // Your interview settings are remembered on this device.
+  const remember = (next: Partial<Settings>) => {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ tone, maxFollowUps, voice, handsFree, lang, ...next }));
+    } catch {
+      /* not fatal */
+    }
+  };
 
   // A new question starts clean.
   useEffect(() => {
@@ -263,7 +314,7 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
     setBusy("turn");
     busyRef.current = "turn";
     setError(null);
-    const r = await mockTurnAction({ session: s, answer, firm });
+    const r = await mockTurnAction({ session: s, answer });
     if (r.retryAfter) {
       setError(r.error ?? null);
       setBusy(null);
@@ -293,7 +344,7 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
     busyRef.current = "feedback";
     setError(null);
     const answer = s.status === "running" ? `${draftRef.current} ${interimRef.current}`.trim() : undefined;
-    const r = await mockFeedbackAction({ session: s, answer: answer || undefined, firm });
+    const r = await mockFeedbackAction({ session: s, answer: answer || undefined });
     setBusy(null);
     busyRef.current = null;
     if (r.session) {
@@ -305,73 +356,120 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
     setFeedback(r);
   }
 
+  const settingsPanel = (
+    <div className={ui.settings} id="mock-settings">
+      <label className={ui.toggle}>
+        Interviewer
+        <select
+          className={ui.input}
+          value={tone}
+          onChange={(e) => {
+            setTone(e.target.value as Tone);
+            remember({ tone: e.target.value as Tone });
+          }}
+          aria-label="Interviewer style"
+        >
+          {TONES.map((t) => (
+            <option key={t} value={t}>
+              {TONE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={ui.toggle}>
+        Follow-ups
+        <select
+          className={ui.input}
+          value={maxFollowUps}
+          onChange={(e) => {
+            setMaxFollowUps(Number(e.target.value));
+            remember({ maxFollowUps: Number(e.target.value) });
+          }}
+          aria-label="Most follow-up questions"
+        >
+          {Array.from({ length: MAX_FOLLOW_UPS - MIN_FOLLOW_UPS + 1 }, (_, i) => MIN_FOLLOW_UPS + i).map((n) => (
+            <option key={n} value={n}>
+              {n === 0 ? "none (one answer)" : `up to ${n}`}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={ui.toggle}>
+        Accent
+        <select
+          className={ui.input}
+          value={lang}
+          onChange={(e) => {
+            setLang(e.target.value);
+            remember({ lang: e.target.value });
+          }}
+          aria-label="Accent"
+        >
+          {LANGS.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={ui.toggle}>
+        <input
+          type="checkbox"
+          checked={voice}
+          onChange={(e) => {
+            setVoice(e.target.checked);
+            remember({ voice: e.target.checked });
+          }}
+        />{" "}
+        Interviewer speaks
+      </label>
+      {canListen && (
+        <label className={ui.toggle}>
+          <input
+            type="checkbox"
+            checked={handsFree}
+            onChange={(e) => {
+              setHandsFree(e.target.checked);
+              remember({ handsFree: e.target.checked });
+            }}
+          />{" "}
+          Hands-free
+        </label>
+      )}
+    </div>
+  );
+
   // ---- the lobby ---------------------------------------------------------------------
   if (!session) {
     return (
       <div className={ui.meeting}>
         <div className={ui.stage} data-size="lobby">
-          <AgentAvatar getState={() => (busy === "start" ? "thinking" : "idle")} getLevel={() => 0} label="AI interviewer, waiting" />
+          <AgentAvatar getState={() => "idle"} getLevel={() => 0} label="AI interviewer, waiting" lift={0.55} />
           <div className={ui.stageTop}>
             <span className={ui.agentName}>AI interviewer</span>
-            <span className={ui.statusPill} data-state="idle">
-              Ready when you are
+            <span className={ui.status} data-state="idle">
+              {TONE_LABEL[tone].split(" ")[0]} · {maxFollowUps === 0 ? "no follow-ups" : `up to ${maxFollowUps} follow-ups`}
             </span>
+            <button
+              className={ui.iconBtn}
+              type="button"
+              onClick={() => setSettingsOpen((o) => !o)}
+              aria-expanded={settingsOpen}
+              aria-controls="mock-settings"
+              title="Interview settings"
+              aria-label="Interview settings"
+            >
+              <Icon name="settings" />
+            </button>
+          </div>
+          <div className={ui.join}>
+            <button className={ui.btn} data-primary="" type="button" onClick={start} disabled={busy === "start"}>
+              {busy === "start" ? "Joining…" : "Join interview"}
+            </button>
+            <p>{handsFree && canListen ? "Answer out loud. Pause, and I'll follow up." : "Type or talk, then send. I'll follow up."}</p>
           </div>
         </div>
-
-        <div className={ui.actions}>
-          <label className={ui.toggle}>
-            Interviewer
-            <select className={ui.input} value={tone} onChange={(e) => setTone(e.target.value as Tone)} aria-label="Interviewer style">
-              {TONES.map((t) => (
-                <option key={t} value={t}>
-                  {TONE_LABEL[t]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={ui.toggle}>
-            Follow-ups
-            <select
-              className={ui.input}
-              value={maxFollowUps}
-              onChange={(e) => setMaxFollowUps(Number(e.target.value))}
-              aria-label="Most follow-up questions"
-            >
-              {Array.from({ length: MAX_FOLLOW_UPS - MIN_FOLLOW_UPS + 1 }, (_, i) => MIN_FOLLOW_UPS + i).map((n) => (
-                <option key={n} value={n}>
-                  up to {n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <select className={ui.input} value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Accent">
-            {LANGS.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={ui.actions}>
-          <button className={ui.btn} data-primary="" type="button" onClick={start} disabled={busy === "start"}>
-            {busy === "start" ? "Joining…" : "Join the interview"}
-          </button>
-          <label className={ui.toggle}>
-            <input type="checkbox" checked={voice} onChange={(e) => setVoice(e.target.checked)} /> Interviewer speaks
-          </label>
-          {canListen && (
-            <label className={ui.toggle}>
-              <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} /> Hands-free
-            </label>
-          )}
-        </div>
-        <p className={ui.sub}>
-          {handsFree && canListen
-            ? "Answer out loud, as you would on a call. Pause for a few seconds and the interviewer follows up."
-            : "Type or talk, then send. The interviewer follows up on what you said."}{" "}
-          Feedback comes at the end.
-        </p>
+        {settingsOpen && settingsPanel}
         {error && <p className={ui.warn}>{error}</p>}
       </div>
     );
@@ -383,6 +481,8 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
   const live = agentState({ ended: done && busy !== "feedback", busy: busy !== null, speaking, listening });
   const followUps = session.turns.filter((t) => t.probe).length;
   const bars = [0.15, 0.35, 0.6, 0.85];
+  const hasAnswer = Boolean(`${draft}${interim}`.trim());
+  const showDone = !done && (typing || !handsFree || !canListen) && hasAnswer;
 
   return (
     <div className={ui.meeting}>
@@ -391,11 +491,12 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
 
         <div className={ui.stageTop}>
           <span className={ui.agentName}>AI interviewer</span>
-          <span className={ui.statusPill} data-state={live} aria-live="polite">
+          <span className={ui.status} data-state={live} aria-live="polite">
             {busy === "feedback" ? "Writing your feedback…" : STATE_LABEL[live]}
           </span>
           <span className={ui.stageClock}>
-            {fmt(clock)} · follow-up {Math.min(followUps, session.maxFollowUps)}/{session.maxFollowUps}
+            {fmt(clock)}
+            {session.maxFollowUps > 0 && ` · ${Math.min(followUps, session.maxFollowUps)}/${session.maxFollowUps}`}
           </span>
         </div>
 
@@ -405,71 +506,96 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
           </p>
         )}
 
-        <div className={ui.selfTile} data-live={listening ? "" : undefined}>
-          <span>You</span>
-          <span className={ui.micBars} aria-label={listening ? "Microphone on" : "Microphone off"}>
-            {bars.map((b) => (
-              <i key={b} data-on={listening && micLevel > b ? "" : undefined} />
-            ))}
-          </span>
-          <span className={ui.sub}>{listening ? "mic on" : "mic off"}</span>
-        </div>
-      </div>
-
-      {!done && (
-        <div className={ui.controls}>
-          {canListen && (
+        {!done && (
+          <div className={ui.callBar}>
+            {canListen && (
+              <button
+                className={ui.iconBtn}
+                type="button"
+                data-on={listening ? "" : undefined}
+                onClick={listening ? stopListening : startListening}
+                aria-pressed={listening}
+                disabled={busy !== null}
+                title={listening ? "Mute" : "Unmute"}
+                aria-label={listening ? "Mute microphone" : "Unmute microphone"}
+              >
+                <Icon name={listening ? "mic" : "micOff"} />
+                <span className={ui.micBars} aria-hidden="true">
+                  {bars.map((b) => (
+                    <i key={b} data-on={listening && micLevel > b ? "" : undefined} />
+                  ))}
+                </span>
+              </button>
+            )}
+            <button
+              className={ui.iconBtn}
+              type="button"
+              aria-pressed={typing}
+              data-on={typing ? "" : undefined}
+              onClick={() => setTyping((t) => !t)}
+              title={typing ? "Hide keyboard" : "Type instead"}
+              aria-label={typing ? "Hide keyboard" : "Type instead"}
+            >
+              <Icon name="keyboard" />
+            </button>
+            <button
+              className={ui.iconBtn}
+              type="button"
+              aria-pressed={showCaptions}
+              data-on={showCaptions ? "" : undefined}
+              onClick={() => setShowCaptions((c) => !c)}
+              title={showCaptions ? "Hide captions" : "Show captions"}
+              aria-label={showCaptions ? "Hide captions" : "Show captions"}
+            >
+              <Icon name="captions" />
+            </button>
+            <button
+              className={ui.iconBtn}
+              type="button"
+              aria-pressed={showTranscript}
+              data-on={showTranscript ? "" : undefined}
+              onClick={() => setShowTranscript((t) => !t)}
+              title="Transcript"
+              aria-label="Show transcript"
+            >
+              <Icon name="transcript" />
+            </button>
+            {showDone && (
+              <button className={ui.btn} data-primary="" type="button" onClick={() => void send()} disabled={busy !== null}>
+                {busy === "turn" ? "Waiting…" : "Done answering"}
+              </button>
+            )}
+            <span className={ui.callBarGap} />
             <button
               className={ui.btn}
-              data-primary={listening ? "" : undefined}
               type="button"
-              onClick={listening ? stopListening : startListening}
-              aria-pressed={listening}
-              disabled={busy !== null}
+              onClick={() => void getFeedback()}
+              disabled={busy !== null || (!answered && !hasAnswer)}
             >
-              <span className={ui.recording} data-live={listening ? "" : undefined}>
-                {listening ? "Mute" : "Unmute"}
-              </span>
+              End
             </button>
-          )}
-          <button className={ui.btn} type="button" onClick={() => void send()} disabled={busy !== null || !`${draft}${interim}`.trim()}>
-            {busy === "turn" ? "Waiting…" : "Done answering"}
-          </button>
-          <button className={ui.btn} type="button" aria-pressed={typing} onClick={() => setTyping((t) => !t)}>
-            {typing ? "Hide keyboard" : "Type instead"}
-          </button>
-          <button className={ui.btn} type="button" aria-pressed={showCaptions} onClick={() => setShowCaptions((c) => !c)}>
-            Captions {showCaptions ? "on" : "off"}
-          </button>
-          <button className={ui.btn} type="button" aria-pressed={showTranscript} onClick={() => setShowTranscript((t) => !t)}>
-            Transcript
-          </button>
-          <button className={ui.btn} type="button" onClick={() => void getFeedback()} disabled={busy !== null || (!answered && !draft.trim())}>
-            End and get feedback
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {typing && !done && (
-        <div className={ui.composer}>
-          <textarea
-            className={ui.answerBox}
-            value={interim ? `${draft} ${interim}`.trim() : draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-              clearSilence();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            placeholder="Type your answer. Ctrl+Enter to send."
-            aria-label="Your answer"
-            disabled={busy !== null}
-          />
-        </div>
+        <textarea
+          className={ui.answerBox}
+          value={interim ? `${draft} ${interim}`.trim() : draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            clearSilence();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+          placeholder="Type your answer. Ctrl+Enter to send."
+          aria-label="Your answer"
+          disabled={busy !== null}
+        />
       )}
 
       {error && <p className={ui.warn}>{error}</p>}
@@ -509,7 +635,7 @@ export function MockInterview({ questionId, firm }: { questionId: string; firm: 
           <ScoreCard result={feedback} />
           <div className={ui.actions}>
             <button className={ui.btn} data-primary="" type="button" onClick={start}>
-              Try this question again
+              Try again
             </button>
             <button className={ui.btn} type="button" onClick={() => setShowTranscript((t) => !t)}>
               {showTranscript ? "Hide transcript" : "Read the transcript"}

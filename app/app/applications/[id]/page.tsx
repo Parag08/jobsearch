@@ -31,7 +31,7 @@ const STATUS_TONE: Record<CompetencyStatus, string | undefined> = { story: "hit"
 
 /** Deep link into the behavioural bank, all firms, opened on one question. */
 function questionHref(questionId: string | null): string {
-  const sp = new URLSearchParams({ tab: "behavioural", firm: "all" });
+  const sp = new URLSearchParams({ tab: "behavioural" });
   if (questionId) sp.set("q", questionId);
   return `/app/interview?${sp.toString()}`;
 }

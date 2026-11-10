@@ -760,6 +760,15 @@ Two load-bearing joints:
   Never on content cards, table rows, form fields or the page background.
 - **Separation is a 1px hairline, not a shadow or a fill.** Glass is the only thing that casts.
 - **Logo: Stages** — four rising dots encoding the pipeline, in `currentColor`.
+- **Behavioural questions are generic; company questions come from your pipeline** (2026-11-10,
+  Parag). No firm filter: a good story is a good story anywhere. "Why <company>?", "Why this
+  role?" and "Your first six months" are built per live application from templates in
+  `data/interview/questions.json` (`companyQuestions`), ids `company:<slug>:<template>`. The
+  interviewer's only context about the firm is what the job description said.
+- **The interview page is stage-first and quiet** (2026-11-10): no card around the stage, one Join
+  button on it, settings behind a gear (remembered per device), status as a dot and a word, icon
+  call controls, guidance / notes / attempts folded into disclosures, status dots in the list.
+  "Practise out loud" is gone - the mock interview with "no follow-ups" is the quick mode.
 - **The mock interview is a meeting, and its AI agent is the one animated thing in the app**
   (2026-11-10, Parag's call). A Three.js orb (`agent-avatar.tsx`) on a deep violet-ink stage that
   keeps its colours in both themes, like a video call. It moves with the interviewer's voice and

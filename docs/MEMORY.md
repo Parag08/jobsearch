@@ -13,6 +13,31 @@ when a boundary, entry point or risk decision changes. No code or schema change.
 
 **Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
 
+## 2026-11-10 (night) - Company questions instead of firm filter; quieter interview page
+
+**Parag: behavioural questions should not be firm-specific; company questions should be "Why X?".**
+- `lib/interview/company-questions.ts` (pure, 10 tests): `companyQuestions(apps, templates)` - one
+  set per company with a live (not closed) application, newest activity first, applications to
+  one company merged (newest role wins). Templates are DATA (`companyQuestions` in
+  `data/interview/questions.json`: why / role / value, each with a `short` list label). `context`
+  is only the JD extract's role, top skills, sector, location. `fit-why-firm` was removed from the
+  bank (its advice moved into the "why" template); an old answer to it, if any, is orphaned.
+- `app/app/interview/bank.ts`: `findQuestion(db, userId, id)` resolves bank or company questions;
+  every action uses it (save answer, mock start/turn/feedback). The `firm` parameter is gone from
+  the actions, the page and the application page's links. `scoreAnswerAction` and
+  `practice-panel.tsx` were removed; `ScoreCard` lives in `score-card.tsx`.
+- `MIN_FOLLOW_UPS` is now 0: "none (one answer)" is the quick practice mode.
+- UI, from the review: stage-first (no card), Join on the stage, gear opens a settings strip
+  (localStorage `jobsearch.mock-interview`), status dot, icon call bar along the stage foot with
+  "Done answering" only when typing / not hands-free and there is text, End apart on the right;
+  question list with status dots (empty / half = notes / full = practised), company names as
+  sub-headings; "What good looks like", "Your notes", "Your attempts" are disclosures; the
+  "What your CV already evidences" block became a chip on the guidance line; tabs reordered to
+  Behavioural, Technical, Casing. Light mode gets a softer stage. The orb sits higher (`lift`)
+  and shrinks on short stages (phones).
+- Checked locally with the voice blocked (zero credits): desktop dark + light, phone, settings,
+  join, typing. Real follow-ups still untested locally (no AI key here).
+
 ## 2026-11-10 (evening) - The mock interview becomes a meeting with an AI agent
 
 Parag: the text thread did not feel like an interview; make it a meeting with an animated AI

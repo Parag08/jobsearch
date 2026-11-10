@@ -3,33 +3,42 @@
 import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Answer, Attempt } from "@/lib/repos/answers";
-import { firmNote, groupQuestions, questionsForFirm, type QuestionBank } from "@/lib/interview/questions";
+import type { Question, QuestionGroup } from "@/lib/interview/questions";
 import { AnswerEditor } from "./answer-editor";
-import { PracticePanel } from "./practice-panel";
 import { MockInterview } from "./mock-interview";
 import ui from "../ui.module.css";
 
 /**
- * The behavioural working surface: firm filter, question list, and the selected question.
+ * The behavioural working surface: the question list, and the selected question with the
+ * mock interview front and centre. Behavioural questions are generic; "Why <company>?"
+ * questions come from your own applications and are listed first.
  *
- * Everything it needs arrives once from the server, so picking a question or a firm is
- * instant - it only rewrites the URL (history.pushState, which Next keeps in sync with
- * useSearchParams). No server round trip per click; saves still revalidate the page.
+ * Everything it needs arrives once from the server, so picking a question is instant -
+ * it only rewrites the URL (history.pushState, which Next keeps in sync with
+ * useSearchParams). Saves still revalidate the page.
  */
 const hasText = (a: Answer | undefined) =>
-  Boolean(a && [a.body, a.situation, a.task, a.action, a.result].some((s) => s.trim()));
+  Boolean(
+    a &&
+    [a.body, a.situation, a.task, a.action, a.result].some((s) => s.trim()),
+  );
+
+export interface ViewQuestion extends Question {
+  /** Company questions only: the company, a compact list label, and job-description facts. */
+  company?: string;
+  short?: string;
+  context?: string | null;
+}
 
 export function BehaviouralView({
-  bank,
-  firms,
-  firmLabels,
+  groups,
+  questions,
   answers,
   attempts,
   evidenced,
 }: {
-  bank: QuestionBank;
-  firms: string[];
-  firmLabels: Record<string, string>;
+  groups: QuestionGroup[];
+  questions: ViewQuestion[];
   answers: Answer[];
   attempts: Attempt[];
   evidenced: string[];
@@ -37,125 +46,152 @@ export function BehaviouralView({
   const params = useSearchParams();
   const detailRef = useRef<HTMLElement>(null);
 
-  const firmParam = params.get("firm") ?? "";
-  const firm = firmParam === "all" || firms.includes(firmParam) ? firmParam : "bain";
-  const questions = questionsForFirm(bank, firm);
   const byQuestion = new Map(answers.map((a) => [a.questionId, a]));
   const bestScore = new Map<string, number>();
-  for (const a of attempts) bestScore.set(a.questionId, Math.max(bestScore.get(a.questionId) ?? 0, a.overall));
+  for (const a of attempts)
+    bestScore.set(
+      a.questionId,
+      Math.max(bestScore.get(a.questionId) ?? 0, a.overall),
+    );
 
-  const answered = questions.filter((q) => hasText(byQuestion.get(q.id))).length;
+  const written = questions.filter((q) => hasText(byQuestion.get(q.id))).length;
   const practised = questions.filter((q) => bestScore.has(q.id)).length;
+  const hasCompanies = questions.some((q) => q.group === "company");
 
-  // Open on what you asked for; otherwise on the first question you have not answered.
+  // Open on what you asked for; otherwise on the first question you have not practised.
   const selected =
     questions.find((q) => q.id === params.get("q")) ??
-    questions.find((q) => !hasText(byQuestion.get(q.id))) ??
+    questions.find((q) => !bestScore.has(q.id)) ??
     questions[0];
   const current = selected ? byQuestion.get(selected.id) : undefined;
-  const history = selected ? attempts.filter((a) => a.questionId === selected.id) : [];
-  const note = selected ? firmNote(selected, firm) : null;
-  const label = (f: string) => firmLabels[f] ?? f;
+  const history = selected
+    ? attempts.filter((a) => a.questionId === selected.id)
+    : [];
+  const cvBacked = selected ? evidenced.includes(selected.competency) : false;
 
-  const href = (next: { q?: string; firm?: string }) => {
-    const sp = new URLSearchParams();
-    sp.set("tab", "behavioural");
-    sp.set("firm", next.firm ?? firm);
-    if (next.q) sp.set("q", next.q);
+  const href = (q?: string) => {
+    const sp = new URLSearchParams({ tab: "behavioural" });
+    if (q) sp.set("q", q);
     return `/app/interview?${sp.toString()}`;
   };
 
   // Plain links (so open-in-new-tab and copy-link work), but a normal click stays on the client.
-  const go = (e: React.MouseEvent<HTMLAnchorElement>, url: string, reveal: boolean) => {
+  const go = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     window.history.pushState(null, "", url);
-    // Bring the question into view if you picked it from further down the page.
     const top = detailRef.current?.getBoundingClientRect().top ?? 0;
-    if (reveal && top < 0) detailRef.current?.scrollIntoView({ block: "start" });
+    if (top < 0) detailRef.current?.scrollIntoView({ block: "start" });
   };
 
   return (
     <div className={ui.split}>
       <aside className={ui.qside} aria-label="Questions">
-        <div className={ui.qsideHead}>
-          <nav className={ui.segmented} aria-label="Firm">
-            {[...firms, "all"].map((f) => {
-              const url = href({ firm: f, q: selected?.id });
-              return (
-                <a
-                  key={f}
-                  href={url}
-                  onClick={(e) => go(e, url, false)}
-                  className={ui.pill}
-                  aria-current={f === firm ? "true" : undefined}
-                >
-                  {f === "all" ? "All" : label(f)}
-                </a>
-              );
-            })}
-          </nav>
-          <div className={ui.progress}>
-            <p>
-              <b>{answered}</b>/{questions.length} answered · <b>{practised}</b> practised aloud
-            </p>
-            <div className={ui.meter} aria-label={`${answered} of ${questions.length} answered`}>
-              <i style={{ "--w": `${questions.length ? (answered / questions.length) * 100 : 0}%` } as React.CSSProperties} />
-            </div>
-            {answered < 7 && <p>Seven strong stories cover most interviews. Start with the ones you would dread.</p>}
+        <div className={ui.progress}>
+          <div className={ui.meter} aria-hidden="true">
+            <i
+              style={
+                {
+                  "--w": `${questions.length ? (practised / questions.length) * 100 : 0}%`,
+                } as React.CSSProperties
+              }
+            />
           </div>
+          <p>
+            <b>{practised}</b> of {questions.length} practised · {written} with
+            notes
+          </p>
         </div>
 
         <div className={ui.qlist}>
-          {groupQuestions(bank, questions).map(({ group, questions: qs }) => (
-            <div key={group.id} className={ui.qgroup}>
-              <p className={ui.mono}>{group.label}</p>
-              {qs.map((q) => {
-                const done = hasText(byQuestion.get(q.id));
-                const best = bestScore.get(q.id);
-                const url = href({ q: q.id });
-                return (
-                  <a
-                    key={q.id}
-                    href={url}
-                    onClick={(e) => go(e, url, true)}
-                    className={ui.qitem}
-                    aria-current={q.id === selected?.id ? "true" : undefined}
-                  >
-                    <span className={ui.qtext}>{q.text}</span>
-                    <span className={ui.qstatus}>
-                      {best !== undefined ? (
-                        <span className={ui.chip} data-tone="hit">{best.toFixed(1)}</span>
-                      ) : done ? (
-                        <span className={ui.chip}>draft</span>
-                      ) : null}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-          ))}
+          {!hasCompanies && (
+            <p className={ui.sub}>
+              Add an application to the pipeline and its “Why …?” questions
+              appear here.
+            </p>
+          )}
+          {groups.map((group) => {
+            const qs = questions.filter((q) => q.group === group.id);
+            if (!qs.length) return null;
+            return (
+              <div key={group.id} className={ui.qgroup}>
+                <p className={ui.mono}>{group.label}</p>
+                {qs.map((q, i) => {
+                  const best = bestScore.get(q.id);
+                  const newCompany =
+                    q.company && q.company !== qs[i - 1]?.company;
+                  const state =
+                    best !== undefined
+                      ? "practised"
+                      : hasText(byQuestion.get(q.id))
+                        ? "notes"
+                        : "new";
+                  const url = href(q.id);
+                  return (
+                    <div key={q.id} className={ui.qrow}>
+                      {newCompany && <p className={ui.qcompany}>{q.company}</p>}
+                      <a
+                        href={url}
+                        onClick={(e) => go(e, url)}
+                        className={ui.qitem}
+                        aria-current={
+                          q.id === selected?.id ? "true" : undefined
+                        }
+                      >
+                        <span
+                          className={ui.qdot}
+                          data-state={state}
+                          title={
+                            state === "new"
+                              ? "Not started"
+                              : state === "notes"
+                                ? "Notes written"
+                                : "Practised"
+                          }
+                        />
+                        <span className={ui.qtext}>{q.short ?? q.text}</span>
+                        {best !== undefined && (
+                          <span className={ui.qscore}>{best.toFixed(1)}</span>
+                        )}
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </aside>
 
       {selected && (
         <section className={ui.qdetail} ref={detailRef}>
-          <div className={ui.stack}>
+          <div className={ui.qhead}>
             <h2>{selected.text}</h2>
-            <p className={ui.sub}>
-              <b>A strong answer shows:</b> {selected.lookFor}
-            </p>
-            {note && (
-              <p className={ui.firmNote}>
-                <b>{label(firm)}:</b> {note}
-              </p>
-            )}
-            {evidenced.includes(selected.competency) && (
-              <p className={ui.sub}>Your CV already evidences this — start from the bullet behind it.</p>
-            )}
+            <details className={ui.reveal}>
+              <summary>
+                What good looks like
+                {cvBacked && (
+                  <span className={ui.chip} data-tone="hit">
+                    your CV has evidence
+                  </span>
+                )}
+              </summary>
+              <p>{selected.lookFor}</p>
+              {selected.context && (
+                <p className={ui.sub}>
+                  From the job description: {selected.context}
+                </p>
+              )}
+            </details>
           </div>
 
-          <div className={ui.panel}>
+          <MockInterview questionId={selected.id} />
+
+          <details className={ui.reveal}>
+            <summary>
+              Your notes
+              {hasText(current) && <span className={ui.sub}>saved</span>}
+            </summary>
             <AnswerEditor
               questionId={selected.id}
               questionText={selected.text}
@@ -168,29 +204,27 @@ export function BehaviouralView({
                 result: current?.result ?? "",
               }}
             />
-          </div>
-
-          <div className={ui.panel}>
-            <h3>Mock interview</h3>
-            <p className={ui.sub}>The interviewer pushes back and asks follow-ups on what you say, then gives feedback.</p>
-            <MockInterview questionId={selected.id} firm={firm} />
-          </div>
-
-          <div className={ui.panel}>
-            <h3>Practise out loud</h3>
-            <p className={ui.sub}>Hear the question, answer it aloud, get scored.</p>
-            <PracticePanel questionId={selected.id} questionText={selected.text} firm={firm} />
-          </div>
+          </details>
 
           {history.length > 0 && (
-            <div className={ui.panel}>
-              <h3>Your attempts</h3>
+            <details className={ui.reveal}>
+              <summary>
+                Your attempts <span className={ui.sub}>{history.length}</span>
+              </summary>
               <ul className={ui.rows}>
                 {history.map((a) => (
                   <li key={a.id} className={ui.row}>
                     <div>
-                      <p>{a.transcript.length > 140 ? `${a.transcript.slice(0, 140)}…` : a.transcript}</p>
-                      {a.improvements[0] && <span className={ui.sub}>Next time: {a.improvements[0]}</span>}
+                      <p>
+                        {a.transcript.length > 140
+                          ? `${a.transcript.slice(0, 140)}…`
+                          : a.transcript}
+                      </p>
+                      {a.improvements[0] && (
+                        <span className={ui.sub}>
+                          Next time: {a.improvements[0]}
+                        </span>
+                      )}
                     </div>
                     <span className={ui.mono}>
                       {a.overall.toFixed(1)} · {a.createdAt.slice(0, 10)}
@@ -198,7 +232,7 @@ export function BehaviouralView({
                   </li>
                 ))}
               </ul>
-            </div>
+            </details>
           )}
         </section>
       )}

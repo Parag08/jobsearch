@@ -20,7 +20,8 @@ export type ProbeKind = (typeof PROBE_KINDS)[number];
 export const TONES = ["friendly", "neutral", "tough"] as const;
 export type Tone = (typeof TONES)[number];
 
-export const MIN_FOLLOW_UPS = 1;
+/** 0 = a single answer, scored - the quick practice mode. */
+export const MIN_FOLLOW_UPS = 0;
 export const MAX_FOLLOW_UPS = 4;
 
 /** What each probe is after - the model sees only the ones code offers. */
@@ -156,7 +157,7 @@ export function buildFollowUpPrompt(input: {
     "",
     `Question: ${input.question}`,
     `A strong answer shows: ${input.lookFor}`,
-    input.firmNote ? `Firm context: ${input.firmNote}` : "",
+    input.firmNote ? `Context (from the job description only): ${input.firmNote}` : "",
     "",
     "The conversation so far:",
     ...recent,
@@ -266,7 +267,7 @@ export function buildMockDebriefPrompt(input: {
     "",
     `Question: ${input.question}`,
     `A strong answer shows: ${input.lookFor}`,
-    input.firmNote ? `Firm context: ${input.firmNote}` : "",
+    input.firmNote ? `Context (from the job description only): ${input.firmNote}` : "",
     "",
     "Score the WHOLE conversation on each dimension from 1 (weak) to 5 (excellent):",
     rubric,

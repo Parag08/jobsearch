@@ -42,8 +42,9 @@ describe("startMock", () => {
     });
   });
 
-  it("refuses a follow-up count outside 1-4", () => {
-    expect(() => startMock(question, { tone: "neutral", maxFollowUps: 0 }, NOW)).toThrow();
+  it("refuses a follow-up count outside 0-4", () => {
+    expect(() => startMock(question, { tone: "neutral", maxFollowUps: -1 }, NOW)).toThrow();
+    expect(() => startMock(question, { tone: "neutral", maxFollowUps: 1.5 }, NOW)).toThrow();
     expect(() => startMock(question, { tone: "neutral", maxFollowUps: 5 }, NOW)).toThrow();
   });
 });
@@ -81,6 +82,10 @@ describe("probeCandidates", () => {
 });
 
 describe("nextStep", () => {
+  it("closes straight after the first answer with no follow-ups (quick practice)", () => {
+    expect(nextStep(running({ maxFollowUps: 0 }), vagueWe, "")).toEqual({ kind: "close" });
+  });
+
   it("probes while follow-ups remain and there is something to probe", () => {
     expect(nextStep(running(), vagueWe, "")).toEqual({ kind: "probe", candidates: expect.any(Array) });
   });

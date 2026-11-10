@@ -94,7 +94,18 @@ function cssColor(name: string, fallback: string): string {
   return v || fallback;
 }
 
-export function AgentAvatar({ getState, getLevel, label }: { getState: () => AgentState; getLevel: () => number; label: string }) {
+export function AgentAvatar({
+  getState,
+  getLevel,
+  label,
+  lift = 0.35,
+}: {
+  getState: () => AgentState;
+  getLevel: () => number;
+  label: string;
+  /** Raise the orb (scene units) so the stage's foot - captions, controls - stays clear. */
+  lift?: number;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -123,7 +134,7 @@ export function AgentAvatar({ getState, getLevel, label }: { getState: () => Age
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-        camera.position.set(0, 0, 6);
+        camera.position.set(0, -lift, 6);
 
         const accent = new THREE.Color(cssColor("--accent", "#6f6a96"));
         const light = new THREE.Color("#e9e6ff");
@@ -174,8 +185,8 @@ export function AgentAvatar({ getState, getLevel, label }: { getState: () => Age
           renderer.domElement.style.width = "100%";
           renderer.domElement.style.height = "100%";
           camera.aspect = w / h;
-          // Keep the orb the same size on narrow screens.
-          camera.position.z = w / h < 1 ? 6 / (w / h) : 6;
+          // Keep the orb in proportion on narrow screens and short stages.
+          camera.position.z = (w / h < 1 ? 6 / (w / h) : 6) * Math.max(1, 400 / h);
           camera.updateProjectionMatrix();
         };
         const ro = new ResizeObserver(resize);
