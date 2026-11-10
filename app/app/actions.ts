@@ -17,10 +17,9 @@ import { getProfile, saveProfile } from "@/lib/repos/profiles";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
-import { buildScoringPrompt, deliverySignals, numberDrift, overallScore, parseScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
-import { firmNote } from "@/lib/interview/questions";
+import { deliverySignals, numberDrift, overallScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
 import { parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
-import { questionBank } from "./interview/bank";
+import { findQuestion } from "./interview/bank";
 import { findCase } from "./interview/cases";
 import {
   advance as advanceCase,
@@ -244,7 +243,7 @@ export interface SaveState {
 export async function saveAnswerAction(_prev: SaveState | null, formData: FormData): Promise<SaveState> {
   const { db, userId } = await ws();
   const questionId = String(formData.get("questionId") ?? "");
-  if (!questionBank.questions.some((q) => q.id === questionId)) return { error: "Unknown question." };
+  if (!(await findQuestion(db, userId, questionId))) return { error: "Unknown question." };
 
   const field = (k: string) => String(formData.get(k) ?? "").trim();
   const mode = field("mode") === "free" ? "free" : "star";
@@ -354,76 +353,6 @@ export interface ScoreResult {
   signals?: DeliverySignals;
   saidNotWritten?: string[];
   model?: string;
-}
-
-/**
- * Score a spoken practice answer. The browser transcribes; this scores.
- *
- * What can be measured is measured deterministically first (lib/interview/score.ts):
- * length, pace, "I" versus "we", and numbers said aloud that the written answer does not
- * contain. Only the judgement - structure, specificity, reflection - goes to the model,
- * whose output is validated and clamped rather than trusted. The attempt is saved, so the
- * score history becomes the progress record.
- */
-export async function scoreAnswerAction(input: {
-  questionId: string;
-  transcript: string;
-  durationSeconds: number | null;
-  firm: string;
-}): Promise<ScoreResult> {
-  const { db, userId } = await ws();
-  const question = questionBank.questions.find((q) => q.id === input.questionId);
-  if (!question) return { error: "Unknown question." };
-
-  const transcript = input.transcript.trim();
-  if (transcript.split(/\s+/).length < 20) {
-    return { error: "That is too short to score - give it at least a full sentence or three." };
-  }
-
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
-
-  const signals = deliverySignals(transcript, input.durationSeconds);
-  const answers = await listAnswers(db, userId);
-  const mine = answers.find((a) => a.questionId === question.id);
-  const written = mine ? [mine.body, mine.situation, mine.task, mine.action, mine.result].join(" ") : "";
-  const { saidNotWritten } = numberDrift(transcript, written);
-
-  // Judgement, not extraction - so the premium tier (token rule #5).
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
-  const prompt = buildScoringPrompt({
-    question: question.text,
-    lookFor: question.lookFor,
-    firmNote: firmNote(question, input.firm),
-    transcript,
-  });
-
-  let text = "";
-  let parsed;
-  try {
-    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 600 })) text += d;
-    parsed = parseScore(parseJsonLoose(text));
-  } catch (err) {
-    return { error: err instanceof Error ? `Could not score that: ${err.message}` : "Could not score that." };
-  }
-
-  const overall = overallScore(parsed.scores);
-  await saveAttempt(db, userId, {
-    questionId: question.id,
-    transcript,
-    durationSeconds: signals.durationSeconds,
-    scores: parsed.scores,
-    overall,
-    strengths: parsed.strengths,
-    improvements: parsed.improvements,
-    model,
-  });
-  await logTokens(db, userId, { date: today(), module: "interview-score", model, tokensIn: 0, tokensOut: 0 }).catch(
-    () => undefined,
-  );
-
-  revalidatePath("/app/interview");
-  return { overall, scores: parsed.scores, strengths: parsed.strengths, improvements: parsed.improvements, signals, saidNotWritten, model };
 }
 
 // ---- case interviews ------------------------------------------------------------------------
@@ -574,9 +503,10 @@ async function writtenAnswerFor(questionId: string): Promise<string> {
 
 /** Open a mock interview on one question. The question is asked from the bank - no model call. */
 export async function startMockAction(input: { questionId: string; tone: Tone; maxFollowUps: number }): Promise<MockTurnResult> {
-  await ws();
-  const question = questionBank.questions.find((q) => q.id === input.questionId);
-  if (!question) return { error: "Unknown question." };
+  const { db, userId } = await ws();
+  const found = await findQuestion(db, userId, input.questionId);
+  if (!found) return { error: "Unknown question." };
+  const { question } = found;
   try {
     return { session: startMock(question, { tone: input.tone, maxFollowUps: input.maxFollowUps }, new Date().toISOString()) };
   } catch (err) {
@@ -590,7 +520,7 @@ export async function startMockAction(input: { questionId: string; tone: Tone; m
  * replaced. If the model fails, a safe stock follow-up keeps the interview moving. The
  * session lives in the page until feedback, when the whole conversation is saved.
  */
-export async function mockTurnAction(input: { session: unknown; answer: string; firm: string }): Promise<MockTurnResult> {
+export async function mockTurnAction(input: { session: unknown; answer: string }): Promise<MockTurnResult> {
   const { db, userId } = await ws();
   let s: MockSession;
   try {
@@ -599,8 +529,9 @@ export async function mockTurnAction(input: { session: unknown; answer: string; 
     return { error: "That interview could not be read. Start it again." };
   }
   if (s.status === "done") return { error: "This interview has finished." };
-  const question = questionBank.questions.find((q) => q.id === s.questionId);
-  if (!question) return { error: "Unknown question." };
+  const found = await findQuestion(db, userId, s.questionId);
+  if (!found) return { error: "Unknown question." };
+  const { question, context } = found;
   const answer = input.answer.trim();
   if (!answer) return { error: "Say or type something first." };
 
@@ -617,7 +548,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string; 
   const prompt = buildFollowUpPrompt({
     question: question.text,
     lookFor: question.lookFor,
-    firmNote: firmNote(question, input.firm),
+    firmNote: context,
     session: s,
     latest: answer,
     candidates: step.candidates,
@@ -649,7 +580,6 @@ export interface MockFeedbackResult extends ScoreResult {
 export async function mockFeedbackAction(input: {
   session: unknown;
   answer?: string;
-  firm: string;
 }): Promise<MockFeedbackResult> {
   const { db, userId } = await ws();
   let s: MockSession;
@@ -658,8 +588,9 @@ export async function mockFeedbackAction(input: {
   } catch {
     return { error: "That interview could not be read. Start it again." };
   }
-  const question = questionBank.questions.find((q) => q.id === s.questionId);
-  if (!question) return { error: "Unknown question." };
+  const found = await findQuestion(db, userId, s.questionId);
+  if (!found) return { error: "Unknown question." };
+  const { question, context } = found;
   if (s.status === "running") s = closeMock(s, input.answer ?? null, new Date().toISOString());
 
   const said = s.turns.filter((t) => t.role === "candidate").map((t) => t.text).join(" ");
@@ -675,7 +606,7 @@ export async function mockFeedbackAction(input: {
   const signals = deliverySignals(first, null);
   const { saidNotWritten } = numberDrift(said, await writtenAnswerFor(question.id));
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
-  const prompt = buildMockDebriefPrompt({ question: question.text, lookFor: question.lookFor, firmNote: firmNote(question, input.firm), session: s });
+  const prompt = buildMockDebriefPrompt({ question: question.text, lookFor: question.lookFor, firmNote: context, session: s });
 
   let debrief;
   try {
