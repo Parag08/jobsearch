@@ -85,6 +85,8 @@ phrases live in `data/cvbuilder/archetypes.json` (`titleKeywords` per role famil
 | Technical tab (claims surface from the CV) | Shipped | Rules | `lib/interview/technical.ts` |
 | Prep for this exact application | Shipped (2026-10-29) | Rules | `lib/stories/{prep,prep-view}.ts` (`prepSet`, `competencyPrep`) on `/app/applications/[id]`, links into `/app/interview` |
 | Capture a STAR story in the app | Not started | You | `lib/repos/stories.ts` `draftStory`/`saveStory` exist; no form calls them, so prep shows "CV line only" or "gap" until one does |
+| Behavioural mock interview: pushback, follow-ups, feedback at the end | Built 2026-11-10, branch `feat/elevenlabs-voice`, not deployed | Rules + AI (small per turn, premium debrief) | `lib/interview/mock.ts`, `mock-interview.tsx`, `mockTurnAction`/`mockFeedbackAction` |
+| Interviewer voice via ElevenLabs (browser voice fallback) | Built 2026-11-10, same branch | AI (TTS) | `lib/adapters/elevenlabs.ts`, `/api/tts` |
 | Answers checked against CV bullet numbers | Built, not wired | Rules | `lib/stories/consistency.ts` - answers carry no bullet link |
 
 ### 5. Improve
@@ -199,5 +201,7 @@ Ranked for a search that is live today. Each is a session or two.
 - 2026-09-24 - first version, written against the code at commit `1e51c90`.
 - 2026-09-25 - sourcing filter shipped (profile targets, shared by app and script).
 - 2026-10-29 - application-scoped interview prep shipped on `/app/applications/[id]`.
+- 2026-11-10 - behavioural mock interview with follow-ups and ElevenLabs voice built (branch). Cases
+  are done for Parag: interview work now focuses on behavioural.
 - 2026-11-10 - Parag answered five open questions (networking source, letters corpus, tailoring mode,
   auto-saved applications, in-app brief); negotiation framework still TBD.

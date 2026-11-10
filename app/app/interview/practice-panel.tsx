@@ -238,7 +238,7 @@ export function PracticePanel({ questionId, questionText, firm }: { questionId: 
   );
 }
 
-function ScoreCard({ result }: { result: ScoreResult }) {
+export function ScoreCard({ result }: { result: ScoreResult }) {
   const s = result.signals;
   return (
     <div className={ui.callout}>

@@ -41,6 +41,23 @@ import {
   type CaseSignals,
 } from "@/lib/interview/case-session";
 import { createCaseSession, finishCaseSession, getCaseSession, saveCaseSession } from "@/lib/repos/case-sessions";
+import {
+  FOLLOW_UP_FALLBACK,
+  applyFollowUp,
+  buildFollowUpPrompt,
+  buildMockDebriefPrompt,
+  closeMock,
+  guardFollowUp,
+  mockTranscript,
+  nextStep,
+  parseFollowUp,
+  parseMockDebrief,
+  parseMockSession,
+  startMock,
+  type FollowUpVerdict,
+  type MockSession,
+  type Tone,
+} from "@/lib/interview/mock";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -538,4 +555,159 @@ export async function finishCaseAction(sessionId: string): Promise<CaseDebriefRe
   await logTokens(db, userId, { date: today(), module: "case-debrief", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
   revalidatePath("/app/interview");
   return { overall, scores: debrief.scores, strengths: debrief.strengths, improvements: debrief.improvements, perQuestion: debrief.perQuestion, signals, model };
+}
+
+// ---- behavioural mock interview: follow-ups, then feedback -----------------------------------
+
+export interface MockTurnResult {
+  error?: string;
+  retryAfter?: number;
+  session?: MockSession;
+}
+
+/** The candidate's written answer for a question, so numbers said aloud can be checked against it. */
+async function writtenAnswerFor(questionId: string): Promise<string> {
+  const { db, userId } = await ws();
+  const mine = (await listAnswers(db, userId)).find((a) => a.questionId === questionId);
+  return mine ? [mine.body, mine.situation, mine.task, mine.action, mine.result].join(" ") : "";
+}
+
+/** Open a mock interview on one question. The question is asked from the bank - no model call. */
+export async function startMockAction(input: { questionId: string; tone: Tone; maxFollowUps: number }): Promise<MockTurnResult> {
+  await ws();
+  const question = questionBank.questions.find((q) => q.id === input.questionId);
+  if (!question) return { error: "Unknown question." };
+  try {
+    return { session: startMock(question, { tone: input.tone, maxFollowUps: input.maxFollowUps }, new Date().toISOString()) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not start." };
+  }
+}
+
+/**
+ * One answer in, one follow-up out. Code finds the weaknesses and decides whether to probe
+ * or close; the model only phrases the probe, and a line stating a number nobody said is
+ * replaced. If the model fails, a safe stock follow-up keeps the interview moving. The
+ * session lives in the page until feedback, when the whole conversation is saved.
+ */
+export async function mockTurnAction(input: { session: unknown; answer: string; firm: string }): Promise<MockTurnResult> {
+  const { db, userId } = await ws();
+  let s: MockSession;
+  try {
+    s = parseMockSession(input.session);
+  } catch {
+    return { error: "That interview could not be read. Start it again." };
+  }
+  if (s.status === "done") return { error: "This interview has finished." };
+  const question = questionBank.questions.find((q) => q.id === s.questionId);
+  if (!question) return { error: "Unknown question." };
+  const answer = input.answer.trim();
+  if (!answer) return { error: "Say or type something first." };
+
+  const written = await writtenAnswerFor(question.id);
+  const now = new Date().toISOString();
+  const step = nextStep(s, answer, written);
+  if (step.kind === "close") return { session: closeMock(s, answer, now) };
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+
+  // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
+  const model = process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL;
+  const prompt = buildFollowUpPrompt({
+    question: question.text,
+    lookFor: question.lookFor,
+    firmNote: firmNote(question, input.firm),
+    session: s,
+    latest: answer,
+    candidates: step.candidates,
+  });
+  let reply;
+  try {
+    let out = "";
+    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 200 })) out += d;
+    reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer, written);
+  } catch (err) {
+    const wait = retryAfterSeconds(err);
+    if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+    reply = { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
+  }
+
+  await logTokens(db, userId, { date: today(), module: "interview-follow-up", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  return { session: applyFollowUp(s, answer, reply, now) };
+}
+
+export interface MockFeedbackResult extends ScoreResult {
+  followUps?: FollowUpVerdict[];
+  session?: MockSession;
+}
+
+/**
+ * Close the interview (if it is still open) and score the whole conversation. Judgement, so
+ * the premium tier (token rule #5). Saved as an attempt, so it joins the score history.
+ */
+export async function mockFeedbackAction(input: {
+  session: unknown;
+  answer?: string;
+  firm: string;
+}): Promise<MockFeedbackResult> {
+  const { db, userId } = await ws();
+  let s: MockSession;
+  try {
+    s = parseMockSession(input.session);
+  } catch {
+    return { error: "That interview could not be read. Start it again." };
+  }
+  const question = questionBank.questions.find((q) => q.id === s.questionId);
+  if (!question) return { error: "Unknown question." };
+  if (s.status === "running") s = closeMock(s, input.answer ?? null, new Date().toISOString());
+
+  const said = s.turns.filter((t) => t.role === "candidate").map((t) => t.text).join(" ");
+  if (said.split(/\s+/).filter(Boolean).length < 20) {
+    return { error: "There is not enough to give feedback on yet - answer the question first.", session: s };
+  }
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).", session: s };
+
+  // Length, pace and "I" vs "we" are judged on the main answer - follow-ups are short by design.
+  const first = s.turns.find((t) => t.role === "candidate")?.text ?? "";
+  const signals = deliverySignals(first, null);
+  const { saidNotWritten } = numberDrift(said, await writtenAnswerFor(question.id));
+  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const prompt = buildMockDebriefPrompt({ question: question.text, lookFor: question.lookFor, firmNote: firmNote(question, input.firm), session: s });
+
+  let debrief;
+  try {
+    let out = "";
+    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 900 })) out += d;
+    debrief = parseMockDebrief(parseJsonLoose(out), s);
+  } catch (err) {
+    return { error: err instanceof Error ? `Could not score that: ${err.message}` : "Could not score that.", session: s };
+  }
+
+  const overall = overallScore(debrief.scores);
+  await saveAttempt(db, userId, {
+    questionId: question.id,
+    transcript: mockTranscript(s),
+    durationSeconds: null,
+    scores: debrief.scores,
+    overall,
+    strengths: debrief.strengths,
+    improvements: debrief.improvements,
+    model,
+  });
+  await logTokens(db, userId, { date: today(), module: "interview-mock-debrief", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  revalidatePath("/app/interview");
+  return {
+    overall,
+    scores: debrief.scores,
+    strengths: debrief.strengths,
+    improvements: debrief.improvements,
+    followUps: debrief.followUps,
+    signals,
+    saidNotWritten,
+    model,
+    session: s,
+  };
 }
