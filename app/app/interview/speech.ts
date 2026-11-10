@@ -112,21 +112,42 @@ export function speechActivity(rms: (samples: Uint8Array) => number): SpeechActi
   return { speaking: true, level, progress: browserProgress, text: speakingText };
 }
 
-/** Open the microphone just to measure how loud you are. Audio never leaves the page. */
-export async function openMicLevel(rms: (samples: Uint8Array) => number): Promise<{ level: () => number; close: () => void } | null> {
+export interface MicMeter {
+  /** Loudness 0-1 for the meter. */
+  level: () => number;
+  /** Raw numbers for delivery analysis: RMS (0-1) and pitch in Hz (null when unvoiced). */
+  sample: () => { rms: number; pitch: number | null };
+  close: () => void;
+}
+
+/**
+ * Open the microphone to measure you: loudness for the meter, and loudness + pitch for the
+ * delivery feedback. Audio never leaves the page - only these numbers are kept.
+ */
+export async function openMicLevel(
+  rms: (samples: Uint8Array) => number,
+  pitch: (samples: Float32Array, sampleRate: number) => number | null,
+): Promise<MicMeter | null> {
   const ac = primeAudio();
   if (!ac || !navigator.mediaDevices?.getUserMedia) return null;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const src = ac.createMediaStreamSource(stream);
     const an = ac.createAnalyser();
-    an.fftSize = 512;
+    an.fftSize = 2048; // ~43ms at 48kHz: long enough for a 70Hz voice
     src.connect(an); // not to the speakers - no echo
-    const buf = new Uint8Array(an.fftSize);
+    const bytes = new Uint8Array(an.fftSize);
+    const floats = new Float32Array(an.fftSize);
     return {
       level: () => {
-        an.getByteTimeDomainData(buf);
-        return rms(buf);
+        an.getByteTimeDomainData(bytes);
+        return rms(bytes);
+      },
+      sample: () => {
+        an.getFloatTimeDomainData(floats);
+        let e = 0;
+        for (let i = 0; i < floats.length; i++) e += floats[i] * floats[i];
+        return { rms: Math.sqrt(e / floats.length), pitch: pitch(floats, ac.sampleRate) };
       },
       close: () => {
         src.disconnect();
