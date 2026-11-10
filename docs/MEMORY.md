@@ -13,6 +13,28 @@ when a boundary, entry point or risk decision changes. No code or schema change.
 
 **Next:** the findings are optional hardening (cap prompt text length; validate `next` is a relative path).
 
+## 2026-11-10 (later) - Behavioural mock interview with follow-ups (same branch)
+
+**Parag is done with MBB cases; behavioural is the focus now.** New panel "Mock interview" on
+`/app/interview` (behavioural tab), above "Practise out loud": the interviewer asks, you answer,
+it pushes back with follow-ups, and feedback comes only at the end.
+- `lib/interview/mock.ts` (pure, 30 tests). CODE owns the path: `probeCandidates` finds gaps by
+  rules (number said but not in the written answer > "we" over "I" > no number in anything said >
+  latest answer < 30 words > no reflection words > `depth` as last resort), never repeats a probe,
+  and `nextStep` closes at `maxFollowUps` (1-4, picked in the UI, default 3) or when nothing is left.
+  The model only phrases the probe from the offered list (`parseFollowUp` forces a valid kind);
+  `guardFollowUp` swaps any line stating a number nobody said for `FOLLOW_UP_FALLBACK`.
+  Tone friendly / neutral / tough goes into the prompt.
+- Actions: `startMockAction` (no model), `mockTurnAction` (small tier; model failure -> stock
+  follow-up, rate limit -> retry), `mockFeedbackAction` (premium tier; six dimensions + a
+  held/partial/weak verdict per follow-up; saved via `saveAttempt` so it joins "Your attempts").
+  No schema change: the session lives in the page (zod-validated on every call) until feedback;
+  a refresh mid-interview loses it.
+- Hands-free: `speak()` now resolves when the line ends; the page then listens and sends after
+  2.5s of silence (`SILENCE_MS`). Typing always works.
+- Verified locally only up to the model call (no AI_GATEWAY_API_KEY on the laptop, and Parag
+  asked to keep test credit use low). The follow-up and feedback model calls are untested live.
+
 ## 2026-11-10 - ElevenLabs voice for the interviewer (branch feat/elevenlabs-voice)
 
 Spoken practice ("Ask me the question") and the case room now speak through ElevenLabs when the

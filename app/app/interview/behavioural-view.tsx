@@ -6,6 +6,7 @@ import type { Answer, Attempt } from "@/lib/repos/answers";
 import { firmNote, groupQuestions, questionsForFirm, type QuestionBank } from "@/lib/interview/questions";
 import { AnswerEditor } from "./answer-editor";
 import { PracticePanel } from "./practice-panel";
+import { MockInterview } from "./mock-interview";
 import ui from "../ui.module.css";
 
 /**
@@ -167,6 +168,12 @@ export function BehaviouralView({
                 result: current?.result ?? "",
               }}
             />
+          </div>
+
+          <div className={ui.panel}>
+            <h3>Mock interview</h3>
+            <p className={ui.sub}>The interviewer pushes back and asks follow-ups on what you say, then gives feedback.</p>
+            <MockInterview questionId={selected.id} firm={firm} />
           </div>
 
           <div className={ui.panel}>

@@ -52,6 +52,14 @@ let current: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
 let serverVoice: boolean | null = null;
 let generation = 0;
+/** Resolves the promise of whatever is being said now - called on end, error or stop. */
+let settle: (() => void) | null = null;
+
+function done(): void {
+  const s = settle;
+  settle = null;
+  s?.();
+}
 
 /** Stop whatever is being said, by either voice. */
 export function stopSpeaking(): void {
@@ -65,17 +73,27 @@ export function stopSpeaking(): void {
     currentUrl = null;
   }
   if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  done();
 }
 
-function browserSpeak(text: string, lang: string, rate: number): void {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang;
-  u.rate = rate;
-  window.speechSynthesis.speak(u);
+function browserSpeak(text: string, lang: string, rate: number, mine: number): Promise<void> {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return Promise.resolve();
+  return new Promise((resolve) => {
+    settle = resolve;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = rate;
+    u.onend = u.onerror = () => {
+      if (mine === generation) done();
+    };
+    window.speechSynthesis.speak(u);
+  });
 }
 
-/** Read text aloud, cancelling anything already being spoken. */
+/**
+ * Read text aloud, cancelling anything already being spoken. Resolves when the line has
+ * finished (or was stopped), so a caller can start listening once the interviewer is done.
+ */
 export async function speak(text: string, lang: string, rate = 0.97): Promise<void> {
   if (typeof window === "undefined") return;
   stopSpeaking();
@@ -93,17 +111,21 @@ export async function speak(text: string, lang: string, rate = 0.97): Promise<vo
         const blob = await res.blob();
         if (mine !== generation) return; // stopped or replaced while loading
         currentUrl = URL.createObjectURL(blob);
-        current = new Audio(currentUrl);
-        current.onended = () => {
+        const audio = new Audio(currentUrl);
+        current = audio;
+        const finished = new Promise<void>((resolve) => {
+          settle = resolve;
+        });
+        audio.onended = audio.onerror = () => {
           if (mine === generation) stopSpeaking();
         };
-        await current.play();
-        return;
+        await audio.play();
+        return finished;
       }
     } catch {
       /* network or autoplay failure - use the browser voice */
     }
   }
   if (mine !== generation) return;
-  browserSpeak(text, lang, rate);
+  return browserSpeak(text, lang, rate, mine);
 }
