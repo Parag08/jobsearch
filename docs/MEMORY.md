@@ -2,6 +2,33 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-11 (evening) - live fixes, then the findparagjob rebuild (step 1 of 6)
+
+- **Live fixes, pushed:** sector lookup used a bare JS array in `.eq()` (PostgREST wants a
+  `{...}` literal: `pgArray()` in lib/repos/db.ts; FakeDb now rejects bare arrays). `tailorCv`
+  falls back to the best-fitting master when the JD's free-text role family has none
+  ("account-management"), and shows the reason on the page instead of crashing. `buildDiff` no
+  longer empties the page: a zero-score master bullet goes only to make room for a scoring one.
+  "Re-tailor from the master" button on unsent CVs.
+- **Vercel logs:** MCP works (team `team_nw5LuDhmwAd4Qeue9PzHtdQN`, project `jobsearch`); Hobby
+  keeps ~1h, so use `get_runtime_logs` with `since <= 55m`.
+- **Why the rebuild:** Parag's real CVs come from the findparagjob workspace
+  (`~/Downloads/findparagjob`, read its AGENTS.md + docs/cv-writing.md + docs/cv-tooling.md).
+  JobSearch's output was nowhere close. Plan: (1) sync data - DONE, (2) port its scorer
+  (taxonomy tags, `tools/cv-builder/lib/score.js`) and repetition check (`overlap.js`),
+  (3) port its exact layout/measurement (`render.js`, `metrics.js`: INSEAD one-page, photo),
+  (4) cv-writing.md selection rules (Nutanix <= ~1/3 of lines, one example per competency, XYZ,
+  last line >= 50% full) + honest per-application rewording, (5) cover letter vs the sent letters
+  in `applications/*/cover-letters/`, (6) benchmark: run the AWS TAM JD and compare with
+  `applications/amazon/amazon-senior-tam-enterprise-support-asean.json`.
+- **Step 1 done:** `npm run data:sync` (FINDPARAGJOB_DIR in .env) copies profile/points/taxonomy/
+  archetypes + the already-imported application files verbatim; caps moved to
+  `data/cvbuilder/org-caps.json` (repo-owned). Seed rebuilt: 34 active bullets. Fixed stale facts:
+  phone, Dependant's Pass line, Nutanix dates, Touchnote title. **Live DB still has the old data
+  until `npm run db:seed`** (needs DB creds; may overwrite in-app bullet edits).
+- **Repo is PUBLIC** and data/cvbuilder holds personal data (phone, email, bullets). Parag to decide
+  whether to make it private before the sync commit is pushed.
+
 ## 2026-11-11 (later) - ROADMAP Now #1, #3, #4: auto sourcing, a sendable CV, cover letters
 
 - **Sourcing:** `lib/watchlist/retire.ts` (pure, 7 tests) closes a role missing from a board that
