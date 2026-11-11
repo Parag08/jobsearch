@@ -64,3 +64,18 @@ export async function getApplicationCv(
   );
   return row ? toStoredApplicationCv(row) : null;
 }
+
+/** Where the last export of this CV was stored (application_cvs.file_path). */
+export async function setApplicationCvFilePath(
+  db: DbClient,
+  userId: string,
+  id: string,
+  filePath: string,
+): Promise<StoredApplicationCv> {
+  const row = await one(
+    db.from("application_cvs").update({ file_path: filePath }).eq("user_id", userId).eq("id", id).select().single(),
+    "application_cvs",
+    "setFilePath",
+  );
+  return toStoredApplicationCv(row);
+}

@@ -39,6 +39,8 @@ export interface ProfileRow {
   /** Added by migration 0003; absent on rows read before it ran. */
   target_titles?: string[];
   excluded_titles?: string[];
+  /** Added by migration 0005: org name -> max CV points from that org. */
+  org_caps?: Record<string, number>;
   networks: unknown[];
   visa_context: string | null;
   premium_llm_budget_usd_month: number;
@@ -157,6 +159,8 @@ export interface ApplicationRow {
   saved_at: string;
   applied_at: string | null;
   updated_at: string;
+  /** Added by migration 0007 (lib/repos/cover-letters.ts). */
+  cover_letter?: unknown;
 }
 
 export interface ContactRow {
@@ -197,6 +201,8 @@ export interface SourcedJobRow {
   posted_at: string | null;
   score: number | null;
   status: SourcedJob["status"];
+  /** Consecutive refreshes the posting was missing from a board that answered (migration 0004). */
+  missed_refreshes?: number;
   created_at?: string;
 }
 
@@ -327,6 +333,8 @@ export interface Profile {
   contactLines: string[];
   /** The CV's closing blocks: languages, skills, technologies, interests. */
   cvExtras: unknown[];
+  /** Org name -> max CV points from that org (CLAUDE.md rule 3). DATA, from the corpus. */
+  orgCaps?: Record<string, number>;
 }
 
 export interface Brief {
@@ -490,6 +498,7 @@ export function toProfile(r: ProfileRow): Profile {
     premiumLlmBudgetUsdMonth: r.premium_llm_budget_usd_month,
     contactLines: r.contact_lines,
     cvExtras: r.cv_extras,
+    orgCaps: r.org_caps ?? {},
   };
 }
 
@@ -673,5 +682,6 @@ export function profileRow(p: Profile): ProfileRow {
     premium_llm_budget_usd_month: p.premiumLlmBudgetUsdMonth,
     contact_lines: p.contactLines,
     cv_extras: p.cvExtras,
+    org_caps: p.orgCaps ?? {},
   };
 }

@@ -8,6 +8,10 @@ import { STAGES, type ClosedReason, type Stage } from "@/lib/types";
 import { getApplication, updateApplication } from "@/lib/repos/applications";
 import { markApplied } from "@/lib/services/mark-applied";
 import { tailorCv } from "@/lib/services/tailor-cv";
+import { cvPageSettingsFromEnv } from "@/lib/cv-page-settings";
+import { draftCoverLetter, editCoverLetter } from "@/lib/services/cover-letter";
+import { parseLetterBank } from "@/lib/cover-letter";
+import letterBank from "@/data/cvbuilder/letter-bank.json";
 import { refreshWatchlist } from "@/lib/services/refresh-watchlist";
 import { addWatchlistEntry, removeWatchlistEntry, setWatchlistActive } from "@/lib/repos/watchlist";
 import { newWatchlistEntry } from "@/lib/watchlist/types";
@@ -100,7 +104,62 @@ export async function setNextAction(applicationId: string, formData: FormData): 
 
 export async function tailorCvAction(applicationId: string): Promise<void> {
   const { db, userId } = await ws();
-  await tailorCv({ db }, userId, applicationId, today());
+  await tailorCv({ db, page: cvPageSettingsFromEnv(process.env) }, userId, applicationId, today());
+  revalidatePath(`/app/applications/${applicationId}`);
+}
+
+/** Where the letter form sends errors back: the application page, with a readable message. */
+function letterError(applicationId: string, message: string): never {
+  redirect(`/app/applications/${applicationId}?letterError=${encodeURIComponent(message)}#cover-letter`);
+}
+
+/**
+ * Draft the cover letter (ROADMAP Now #4). Writing the user reads, so the premium tier
+ * (token rule #5). Without the firm detail the service asks instead of calling the model.
+ */
+export async function draftCoverLetterAction(applicationId: string, formData: FormData): Promise<void> {
+  const { db, userId } = await ws();
+  const inputs = {
+    firmDetail: String(formData.get("firmDetail") ?? ""),
+    recipient: String(formData.get("recipient") ?? ""),
+    teamName: String(formData.get("teamName") ?? ""),
+  };
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) letterError(applicationId, "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).");
+  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const write = async (prompt: string) => {
+    let out = "";
+    for await (const d of streamGatewayText({ apiKey: apiKey as string, model, prompt, json: false, maxOutputTokens: 1200 })) out += d;
+    return out;
+  };
+
+  let message: string | null = null;
+  try {
+    const result = await draftCoverLetter(
+      { db, write, bank: parseLetterBank(letterBank), model },
+      userId,
+      applicationId,
+      inputs,
+      today(),
+    );
+    if ("needs" in result) message = "Add one specific thing about the firm first - the letter will not invent one.";
+    else await logTokens(db, userId, { date: today(), module: "cover-letter", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  } catch (err) {
+    const wait = retryAfterSeconds(err);
+    message = wait !== null ? `The writer is busy - try again in ${wait}s.` : err instanceof Error ? err.message : "Drafting failed.";
+  }
+  if (message) letterError(applicationId, message);
+  revalidatePath(`/app/applications/${applicationId}`);
+}
+
+/** Save the user's edit of the letter body and re-run the voice checks. */
+export async function editCoverLetterAction(applicationId: string, formData: FormData): Promise<void> {
+  const { db, userId } = await ws();
+  try {
+    await editCoverLetter({ db, bank: parseLetterBank(letterBank) }, userId, applicationId, String(formData.get("body") ?? ""));
+  } catch (err) {
+    letterError(applicationId, err instanceof Error ? err.message : "Saving failed.");
+  }
   revalidatePath(`/app/applications/${applicationId}`);
 }
 

@@ -1,4 +1,5 @@
 import type { SourcedJob } from "../types";
+import type { RetirementUpdate, TrackedJob } from "../watchlist/retire";
 import { many, one, type DbClient } from "./db";
 import { sourcedJobRow, toSourcedJob } from "./rows";
 
@@ -46,4 +47,34 @@ export async function setSourcedJobStatus(
     "setStatus",
   );
   return toSourcedJob(row);
+}
+
+/** Every row with the fields retirement needs (lib/watchlist/retire.ts). */
+export async function listTrackedJobs(db: DbClient, userId: string): Promise<TrackedJob[]> {
+  const rows = await many(db.from("sourced_jobs").select().eq("user_id", userId), "sourced_jobs", "listTracked");
+  return rows.map((r) => ({
+    id: r.id,
+    source: r.source,
+    externalId: r.external_id,
+    company: r.company,
+    status: r.status,
+    missedRefreshes: r.missed_refreshes ?? 0,
+  }));
+}
+
+/** Write planRetirement's updates: miss counts and any status change. */
+export async function applyRetirement(db: DbClient, userId: string, updates: RetirementUpdate[]): Promise<void> {
+  for (const u of updates) {
+    await one(
+      db
+        .from("sourced_jobs")
+        .update({ missed_refreshes: u.missedRefreshes, status: u.status })
+        .eq("user_id", userId)
+        .eq("id", u.id)
+        .select()
+        .single(),
+      "sourced_jobs",
+      "retire",
+    );
+  }
 }

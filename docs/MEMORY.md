@@ -2,6 +2,34 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-11 (later) - ROADMAP Now #1, #3, #4: auto sourcing, a sendable CV, cover letters
+
+- **Sourcing:** `lib/watchlist/retire.ts` (pure, 7 tests) closes a role missing from a board that
+  answered on 2 refreshes running; failed boards never count. `refreshWatchlist` now also keeps the
+  user's status (a re-run used to reset dismissed rows to new) and reports `retired`. New status
+  `closed` + `missed_refreshes` (migration 0004). Daily cron `.github/workflows/sourcing.yml`
+  -> `npm run watchlist:refresh`. **Needs repo secrets SUPABASE_URL + SUPABASE_SECRET_KEY.**
+- **CV:** `tailorCv` now runs the editorial layer: per-org caps from profile `org_caps` (migration
+  0005; data = `maxPoints` on Valeo and EverHaus in `data/cvbuilder/profile.json`, seed regenerated),
+  then `fitToPage` when CV_PAGE_SIZE/CV_SCALE/CV_OVERHEAD_LINES are set (21 = calibrated so every
+  CV in `data/cvbuilder/applications` fits). Decisions/actions/fit stored on `diff.editorial` and
+  summarised on the application page. **Live caps apply only after `npm run db:seed`.**
+- **Export:** `lib/export/{resolve-cv,docx,pdf,letter}.ts` - one ResolvedCv for both formats,
+  frozen text once sent. `/api/export/<id>?format=pdf|docx[&doc=letter]`. Live mode keeps a copy in
+  private bucket `cv-exports` (migration 0006, per-user folder policies; env CV_EXPORT_BUCKET) and
+  writes `application_cvs.file_path`. Checked on all 5 real demo CVs.
+- **Cover letter:** `lib/cover-letter` (brief, prompt, voice checks, assembly) +
+  `lib/services/cover-letter.ts`; stored on `applications.cover_letter` (0007). Code owns date,
+  salutation, the ¶3 opener, logistics, close and the triad variant (`data/cvbuilder/letter-bank.json`);
+  the model (premium tier, gateway) writes three paragraphs. No firm detail -> asks, never invents.
+  Checks: contractions, enthusiasm words, numbers not supplied, 3 paragraphs, word range. Editable;
+  frozen once sent. The private letters corpus is NOT used yet.
+- Tests 665 -> 714. Login work (Get started straight to Google, One Tap, G logo) was done in a
+  separate session on branch `feat/google-one-tap` (a356a87), not merged here.
+
+**Next:** collision audit into tailorCv; letters corpus from a private bucket; show "Why this
+bullet" from `diff.editorial.decisions`; merge `feat/google-one-tap` once reviewed.
+
 ## 2026-11-11 - Sage Studio re-theme + Google Tag Manager
 
 Parag found Heather "too plain". After comparing nine theme mock-ups (inspired by WTTJ, Teal,

@@ -36,8 +36,8 @@ One record (bullet bank, stories, applications) feeds every stage; Improve write
 | Pull every open role from company boards | Shipped (manual button) | Rules | `lib/services/refresh-watchlist.ts`, `lib/watchlist/{fetcher,mappers,identity}.ts` |
 | Filter to city + line of work | Shipped (2026-09-25) | Rules | `lib/watchlist/targets.ts`, profile `target_geos`/`target_titles`/`excluded_titles` (migration 0003), edited on `/app/watchlist`; used by the in-app Refresh and the script |
 | Fit score (sector, skills, network, location, target boost) | Shipped | Rules | `lib/scoring.ts`, `lib/watchlist/scoring.ts` |
-| Scheduled refresh | Not started | Rules | DESIGN §4 "Scheduling" picks GitHub Actions cron; only `keepalive.yml` exists |
-| Retire roles that close | Not started | Rules | - |
+| Scheduled refresh | Shipped 2026-11-11 (needs repo secrets) | Rules | `.github/workflows/sourcing.yml` daily 07:07 SGT -> `npm run watchlist:refresh` (`scripts/refresh-watchlist.ts`), every profile |
+| Retire roles that close | Shipped 2026-11-11 | Rules | `lib/watchlist/retire.ts`: missing from an answered board 2 refreshes running -> `closed` (migration 0004); a refresh now keeps your shortlisted/dismissed status |
 | "Why this role fits you" (two lines) | Not started | AI | - |
 | Broad aggregator feed (Adzuna) | Built, not wired | Rules | `lib/adapters/adzuna.ts` |
 
@@ -65,11 +65,11 @@ phrases live in `data/cvbuilder/archetypes.json` (`titleKeywords` per role famil
 | Sector graph learns from each JD | Shipped (invisible) | Rules | `lib/sector-graph.ts` via `process-jd` |
 | Evidence vs gap chips per JD skill | Shipped | Rules | `lib/editorial/gaps.ts` on `/app/applications/[id]` |
 | Tailor CV as a diff from the master | Shipped | Rules | `lib/services/tailor-cv.ts`, `lib/cv-diff.ts`, `lib/bullet-matcher.ts` |
-| Per-org cap, short-variant-before-cut, page fit, collision audits | **Built, not wired** | Rules | `lib/editorial/{select,fit,page-fit,audits}.ts` - `tailorCv` does not call them |
+| Per-org cap, short-variant-before-cut, page fit | Shipped 2026-11-11 | Rules | `tailorCv` runs `composeSelection` (caps = profile `org_caps`, from `profile.json` `maxPoints`, migration 0005) then `fitToPage` (CV_PAGE_SIZE/CV_SCALE/CV_OVERHEAD_LINES env); decisions stored on `diff.editorial`. Collision audit still not wired |
 | Mark applied -> freeze the sent CV | Shipped | You | `lib/services/mark-applied.ts`, `lib/freeze.ts` |
 | Stale (14 days) and follow-up flags | Shipped | Rules | `lib/pipeline.ts`, `app/app/page.tsx` |
-| Cover letter from the honest gaps | Not started | AI | design only: DESIGN §2 "The cover letter" |
-| DOCX / PDF export | Not started | Rules | DESIGN §2 "Export - decided"; `application_cvs.file_path` never written |
+| Cover letter from the honest gaps | Shipped 2026-11-11 | AI (premium) | `lib/cover-letter`, `lib/services/cover-letter.ts`, `data/cvbuilder/letter-bank.json`, `applications.cover_letter` (0007); asks for the firm detail rather than inventing one; voice/number checks; editable until sent. Private letters corpus not used yet |
+| DOCX / PDF export | Shipped 2026-11-11 | Rules | `lib/export/*`, `/api/export/<id>?format=pdf|docx[&doc=letter]`; copy kept in private bucket `cv-exports` (0006, CV_EXPORT_BUCKET), path on `application_cvs.file_path` |
 | CV / LinkedIn upload at onboarding | Built, not wired (merge only) | AI | `lib/onboarding/skeleton.ts` `mergeSkeletons`, `intake-guard.ts` |
 | Bank readiness + nudges | Shipped | Rules | `lib/onboarding/{readiness,nudges}.ts` on `/app/bank` |
 
@@ -120,19 +120,19 @@ phrases live in `data/cvbuilder/archetypes.json` (`titleKeywords` per role famil
 
 Ranked for a search that is live today. Each is a session or two.
 
-1. **Make sourcing automatic** (S-M). ~~Move the filter into `refreshWatchlist` as profile data~~
+1. ~~**Make sourcing automatic**~~ (shipped 2026-11-11: retire + daily cron). ~~Move the filter into `refreshWatchlist` as profile data~~
    (shipped 2026-09-25). Left: retire postings absent from a board on two refreshes, and run the
    refresh daily from a GitHub Actions cron. *Why now:* the in-app Refresh button floods the table
    today, and a list that goes stale or fills with dead roles stops being read. Deps: none.
 2. ~~**Application-scoped prep on the application page**~~ (shipped 2026-10-29). Follow-on: a
    story capture form (`draftStory`/`saveStory`), so a "gap" or "CV line only" row can become a
    story from the same page.
-3. **A CV you can actually send** (M). Wire the editorial layer into `tailorCv` (per-org cap: Valeo and
+3. ~~**A CV you can actually send**~~ (shipped 2026-11-11; collision audit still unwired). Wire the editorial layer into `tailorCv` (per-org cap: Valeo and
    EverHaus at most two; short variant before a cut; page fit; collision audit), then export DOCX and
    PDF from the resolved CV into a per-user storage bucket. *Why now:* the tailored CV currently
    breaks Parag's standing cap rule and ends on screen, so real applications still go through
    CVbuilder by hand. Deps: confirm Supabase storage free-tier allowance.
-4. **Cover letter from the honest gaps** (M). Premium-tier draft built on `applicationGaps`: the gaps
+4. ~~**Cover letter from the honest gaps**~~ (shipped 2026-11-11; next: learn from the private letters corpus). Premium-tier draft built on `applicationGaps`: the gaps
    the CV cannot claim become the letter's argument, only evidenced facts named, frozen with the CV
    on send. *Why now:* the honesty rule makes the letter necessary, and it is the most visible
    `coming` step in Applying. Deps: item 3's resolved-CV structure for shared export; the

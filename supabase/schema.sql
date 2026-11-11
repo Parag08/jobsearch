@@ -51,7 +51,7 @@ create type warmth_level as enum ('cold','warm','hot');
 create type contact_status as enum
   ('not-contacted','awaiting-reply','in-conversation','met','dormant');
 create type interaction_channel as enum ('linkedin','whatsapp','email','coffee','call');
-create type sourced_status as enum ('new','shortlisted','tracked','dismissed');
+create type sourced_status as enum ('new','shortlisted','tracked','dismissed','closed');
 create type ats_kind as enum ('greenhouse','lever','ashby','smartrecruiters','unknown');
 
 -- ---- profiles: one row per user (workspace root) ----------------------------
@@ -67,6 +67,7 @@ create table profiles (
   premium_llm_budget_usd_month numeric not null default 0,
   contact_lines text[] not null default '{}',        -- CV header: linkedin, emails, phones
   cv_extras jsonb not null default '[]',             -- CV closing blocks: [{id,label,text,locked,tailorable}]
+  org_caps jsonb not null default '{}',              -- org name -> max CV points (0005)
   created_at timestamptz not null default now()
 );
 
@@ -163,6 +164,7 @@ create table applications (
   saved_at date not null default current_date,
   applied_at date,
   updated_at timestamptz not null default now(),
+  cover_letter jsonb,                                -- the drafted letter (0007)
   constraint closed_needs_reason check (stage <> 'closed' or closed_reason is not null)
 );
 
@@ -210,6 +212,7 @@ create table sourced_jobs (
   posted_at date,
   score int,
   status sourced_status not null default 'new',
+  missed_refreshes int not null default 0,             -- migration 0004
   created_at timestamptz not null default now(),
   unique (user_id, source, external_id)
 );
