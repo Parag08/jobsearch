@@ -20,7 +20,7 @@
     ],
     "fingerprint": "855ef7e5"
   },
-  "notes": "GENERATED from archetype \"project-management\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 seed(s) only; 100% of it is still Claude's prior rather than a real posting. \nThe $500K budget / 11+ engineers bullet is the spine here. Everything else is evidence of driving something across teams to completion. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "notes": "GENERATED from archetype \"project-management\" — edit profile/archetypes.json and rebuild, not this file. Demand profile: 1 seed(s) only; 100% of it is still Claude's prior rather than a real posting. \nThe $500K budget / 11+ engineers bullet is the spine here. Everything else is evidence of driving something across teams to completion. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
   "selection": {
     "points": [
       {

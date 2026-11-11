@@ -170,6 +170,13 @@ describe("detectTags", () => {
   });
 });
 
+describe("importCvbuilder org caps", () => {
+  it("takes per-org caps from the separate org-caps file, which wins over maxPoints in the profile", () => {
+    const ws = importCvbuilder({ ...src, orgCaps: { Acme: 1, Other: 3 } }, opts);
+    expect(ws.profile.orgCaps).toEqual({ Acme: 1, Other: 3 });
+  });
+});
+
 describe("importCvbuilder", () => {
   const ws = importCvbuilder(src, opts);
   const bulletId = (prefix: string) =>

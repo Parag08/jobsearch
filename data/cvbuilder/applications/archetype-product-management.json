@@ -5,32 +5,52 @@
   "reference": "",
   "jd": "",
   "createdAt": "2026-08-29T05:53:21.959Z",
-  "updatedAt": "2026-08-29T05:58:32.588Z",
+  "updatedAt": "2026-10-26T04:05:53.093Z",
   "pageSize": "original",
   "scale": 1,
   "generatedFrom": {
     "archetype": "product-management",
-    "at": "2026-08-29T05:58:32.588Z",
+    "at": "2026-10-26T04:05:53.093Z",
     "evidence": [
       {
         "id": "seed-product-management",
         "kind": "seed",
-        "weight": 1
+        "weight": 0.25
       },
       {
         "id": "tiktok-live-governance",
         "kind": "jd",
         "weight": 0.75
+      },
+      {
+        "id": "hud-platform-pm",
+        "kind": "jd",
+        "weight": 1
+      },
+      {
+        "id": "govtech-citizen-platform-pm",
+        "kind": "jd",
+        "weight": 1
+      },
+      {
+        "id": "tech-in-asia-senior-pm",
+        "kind": "jd",
+        "weight": 1
+      },
+      {
+        "id": "duolingo-growth-pm",
+        "kind": "jd",
+        "weight": 1
       }
     ],
-    "fingerprint": "b84110ad"
+    "fingerprint": "5470a17b"
   },
-  "notes": "GENERATED from archetype \"product-management\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 57% of it is still Claude's prior rather than a real posting. \nNeeds the full arc: discovery, roadmap, launch, and a number that moved. Valeo route app and Touchnote checkout carry the funnel/adoption end of it. Pinned eleven01-mvp against the ranking: the scorer prefers eleven01-ico on lexical echo (\"launch\", \"features\"), but the 0-to-1 roadmap story is the PM signal and the ICO is a delivery story. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "notes": "GENERATED from archetype \"product-management\" — edit profile/archetypes.json and rebuild, not this file. Demand profile: 5 real document(s) + 1 seed(s); 5% of it is still Claude's prior rather than a real posting. \n2026-10-26: Rebuilt as Parag's general Product Management master CV, using the approved INSEAD layout at original size and scale 1. Four saved full-PM job descriptions were appended to the existing corpus and seed weight reduced to 0.25; these are archived requirements, not claims that the openings remain live. The pinned selection is an editorial baseline rather than an automatic ranking: two distinct achievements each at Valeo, EverHaus and Touchnote; four Nutanix bullets in total; and one each at Eleven01, Amantya and Cognizant. Nutanix covers customer-led prioritisation and new-business ACV, delivery bottlenecks and release frequency, then a new capability, enterprise onboarding and code quality under Member of Technical Staff. Valeo shows discovery, AI-assisted build, adoption and business impact. Its 30% cost saving uses the 2026-10-25 delivered-outcome clarification; overlap with route-app savings remains unspecified, so the savings are not added. EverHaus shows roadmap definition and research translated into requirements; 15 features were built and founder-reviewed, not personally coded or customer-validated by inference. Touchnote retains both checkout improvement and a new monthly revenue stream. Eleven01's MVP, Amantya's confirmed Swift/customer-offer work and Cognizant's Kubernetes/Helm automation preserve distinct product and implementation evidence across the career. Scorer overrides: choose the delivered Valeo outcome over the 18% problem baseline; requirements work over the less precise operating-model baseline; Nutanix release execution over additional security, banking and management stories; Touchnote checkout over a second engineering-only point; and Eleven01 MVP over the ICO. Exclusions apply to this general master only; specialised applications can select differently. No A/B-test ownership, named analytics stack, retention uplift, production LLM deployment, regulatory approval or new currency interpretation is claimed. Keep customer-held 10+ PB distinct from data actually migrated, recurring revenue distinct from ACV, and shared commercial attribution as enabled. The follow-up on 2026-10-26 removes Strategic Gaming from the canonical Interests line and adds the established 20% code-bug reduction to MTS at the user's request. SQL ownership remains a draft. No change to career facts, point-bank evidence or the protected original master application. Each experience bullet and both skills lines must be measured for at least 50% final-line fill and the PDF visually checked before delivery. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
   "selection": {
     "points": [
       {
         "pointId": "insead-honors",
-        "variant": null,
+        "variant": "leadership-forward",
         "overrideText": null
       },
       {
@@ -40,63 +60,73 @@
       },
       {
         "pointId": "valeo-route-app",
-        "variant": "short",
-        "overrideText": null
-      },
-      {
-        "pointId": "valeo-cost-diagnosis",
-        "variant": "short",
-        "overrideText": null
+        "variant": "ai-forward",
+        "overrideText": "Saved 20,000 km and AED 12,200 monthly by specifying and building a route-optimisation app with AI alongside the operations team, translating their needs into a working prototype that reached 100% adoption within one week"
       },
       {
         "pointId": "valeo-cost-strategy",
         "variant": "short",
-        "overrideText": null
+        "overrideText": "Reduced operations costs 30% by analysing ten months of UAE appointment data to optimise staffing capacity, schedules and locations"
       },
       {
         "pointId": "everhaus-roadmap",
         "variant": "ai-forward",
-        "overrideText": null
+        "overrideText": "Defined a 20+ feature roadmap through AI-driven research; 15 were built and validated through founder review"
       },
       {
-        "pointId": "everhaus-operating-model",
-        "variant": "short",
-        "overrideText": null
+        "pointId": "everhaus-compliance",
+        "variant": "ops-forward",
+        "overrideText": "Translated MAS compliance research into requirements for data residency, data models, investment limits and onboarding documents"
       },
       {
         "pointId": "nutanix-sales-acv",
-        "variant": "customer-forward",
-        "overrideText": null
+        "variant": "xfn-forward",
+        "overrideText": "Enabled $40–50M in new-business Annual Contract Value by prioritising customer-led features with Sales, Product and Engineering"
+      },
+      {
+        "pointId": "nutanix-release-cadence",
+        "variant": "delivery-forward",
+        "overrideText": "Increased major releases from 2 to 3 annually, plus interim releases, by securing compute and staff to resolve testing bottlenecks"
       },
       {
         "pointId": "nutanix-files-migration",
-        "variant": "customer-forward",
+        "variant": "grammar-fixed",
+        "overrideText": "Generated $1M+ in recurring revenue by leading file-migration development and onboarding customers holding 10+ petabytes of data"
+      },
+      {
+        "pointId": "nutanix-code-standards",
+        "variant": "quality-forward",
         "overrideText": null
       },
       {
         "pointId": "touchnote-new-revenue",
-        "variant": null,
+        "variant": "short",
+        "overrideText": "Opened a $25K+/month revenue stream across the UK by identifying and launching an e-commerce feature with Product"
+      },
+      {
+        "pointId": "touchnote-checkout",
+        "variant": "short",
         "overrideText": null
       },
       {
         "pointId": "eleven01-mvp",
         "variant": "zero-to-one",
-        "overrideText": null
+        "overrideText": "Built a blockchain platform from zero to MVP by defining its architecture, product direction and operating standards"
       },
       {
         "pointId": "amantya-ios-retail",
-        "variant": null,
-        "overrideText": null
+        "variant": "swift-forward",
+        "overrideText": "Increased retailer footfall and sales 10% by building a Swift iOS app delivering personalised local offers to shoppers in a mall"
       },
       {
         "pointId": "cognizant-deploy-automation",
-        "variant": null,
+        "variant": "short",
         "overrideText": null
       }
     ],
     "additionalOverrides": {
-      "add-skills": "Product Management | Roadmapping and Prioritisation | Customer Discovery | Cross-Functional Leadership | Data-Driven Decision Making | Project Management",
-      "add-tech": "AI | JIRA and Linear | Kubernetes | Containerisation | Automation and Scripting | MCP"
+      "add-skills": "Product Strategy | Roadmaps and Prioritisation | User Discovery | Cross-Functional Delivery | Data Analysis",
+      "add-tech": "SQL | AI Tools (Claude, Cursor) | Jira | Linear | Notion | Kubernetes | Helm | Automation | Blockchain"
     }
   }
 }

@@ -20,7 +20,7 @@
     ],
     "fingerprint": "995cf0a4"
   },
-  "notes": "GENERATED from archetype \"engineering-manager\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 seed(s) only; 100% of it is still Claude's prior rather than a real posting. \nThe only archetype where the engineering bullets lead. Nutanix team+budget, files migration, code standards and the Cognizant automation are the core four. Pinned nutanix-ai-workflow against the ranking: the EM corpus explicitly asks for process improvement that raised the team throughput, and this is the only bullet that measures one (50% fewer meetings, 20% faster cycles). \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "notes": "GENERATED from archetype \"engineering-manager\" — edit profile/archetypes.json and rebuild, not this file. Demand profile: 1 seed(s) only; 100% of it is still Claude's prior rather than a real posting. \nThe only archetype where the engineering bullets lead. Nutanix team+budget, files migration, code standards and the Cognizant automation are the core four. Pinned nutanix-ai-workflow against the ranking: the EM corpus explicitly asks for process improvement that raised the team throughput, and this is the only bullet that measures one (50% fewer meetings, 20% faster cycles). \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
   "selection": {
     "points": [
       {

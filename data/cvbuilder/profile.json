@@ -1,13 +1,14 @@
 {
   "name": {
     "first": "Parag",
+    "middle": "Mahendra",
     "last": "RAHANGDALE"
   },
-  "photo": "assets/photo.png",
+  "photo": "profile/assets/photo.png",
   "contactLines": [
     "https://www.linkedin.com/in/paragr",
     "parag.rahangdale@insead.edu / parag.m.rahangdale@gmail.com",
-    "+65 89869790 / +91 8197475525"
+    "+65 89550138 / +91 8197475525"
   ],
   "education": [
     {
@@ -32,6 +33,7 @@
         {
           "id": "iitj-btech",
           "title": "Bachelor of Technology in System Science",
+          "minor": "Computer Science",
           "dates": "2012 - 2016"
         }
       ]
@@ -47,10 +49,10 @@
         {
           "id": "valeo-intern",
           "title": "Management Intern",
-          "dates": "Jul - Aug 2026"
+          "dates": "Jul - Aug 2026",
+          "formDates": { "start": "2026-07", "end": "2026-08" }
         }
-      ],
-      "maxPoints": 2
+      ]
     },
     {
       "id": "everhaus",
@@ -61,10 +63,10 @@
         {
           "id": "everhaus-psm",
           "title": "Product Strategy Manager",
-          "dates": "Jan - May 2026"
+          "dates": "Jan - May 2026",
+          "formDates": { "start": "2026-01", "end": "2026-05" }
         }
-      ],
-      "maxPoints": 2
+      ]
     },
     {
       "id": "nutanix",
@@ -75,12 +77,14 @@
         {
           "id": "nutanix-tl",
           "title": "Team Lead, Engineering",
-          "dates": "2024 - 2026"
+          "dates": "2024 - 2025",
+          "formDates": { "start": "2024-07", "end": "2025-12" }
         },
         {
           "id": "nutanix-mts",
           "title": "Member of Technical Staff",
-          "dates": "2022 - 2024"
+          "dates": "2022 - 2024",
+          "formDates": { "start": "2022-07", "end": "2024-07" }
         }
       ]
     },
@@ -92,8 +96,9 @@
       "roles": [
         {
           "id": "touchnote-be",
-          "title": "Backend Developer",
-          "dates": "2020 - 2022"
+          "title": "Senior Backend Developer",
+          "dates": "2020 - 2022",
+          "formDates": { "start": "2020-03", "end": "2022-06" }
         }
       ]
     },
@@ -106,7 +111,8 @@
         {
           "id": "eleven01-dev",
           "title": "Founding Member and Blockchain Developer",
-          "dates": "2019 - 2020"
+          "dates": "2019 - 2020",
+          "formDates": { "start": "2019-01", "end": "2020-02" }
         }
       ]
     },
@@ -119,7 +125,8 @@
         {
           "id": "amantya-swe",
           "title": "Software Engineer",
-          "dates": "2018"
+          "dates": "2018",
+          "formDates": { "start": "2018-05", "end": "2018-12" }
         }
       ]
     },
@@ -132,7 +139,8 @@
         {
           "id": "cognizant-assoc",
           "title": "Associate",
-          "dates": "2016 - 2018"
+          "dates": "2016 - 2018",
+          "formDates": { "start": "2016-08", "end": "2018-04" }
         }
       ]
     }
@@ -141,7 +149,7 @@
     {
       "id": "add-auth",
       "label": "Nationality/Authorisation",
-      "text": "Indian; currently holding a Singapore Student Visa (valid until Jan 2027)",
+      "text": "Indian; Singapore Dependant's Pass holder",
       "locked": true
     },
     {
@@ -167,7 +175,7 @@
     {
       "id": "add-interests",
       "label": "Interests",
-      "text": "Mentorship/Coaching | Exploring Emerging Tech | High-Altitude Trekking | Strategic Gaming | Japanese Media & Art",
+      "text": "Mentorship/Coaching | Exploring Emerging Tech | High-Altitude Trekking | Japanese Media & Art",
       "locked": false,
       "tailorable": true
     }
