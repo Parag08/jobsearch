@@ -112,6 +112,21 @@ describe("tailorCv", () => {
     expect(cv.masterCvId).not.toBe(other.id);
   });
 
+  it("scores by the JD's tag demand through the user's taxonomy, so a bullet that says it differently still wins", async () => {
+    const { db, master, bullets } = await fixtures();
+    await saveProfile(db, { ...profileWith({}), taxonomy: { tags: { "product-management": ["roadmap", "product strategy"] } } });
+    // the extract names "product strategy"; only the taxonomy links it to the bullet's tag
+    const ext: JdExtract = { ...jd, skills: [], keywords: [] };
+    const app = await insertApplication(db, "u1", { ...baseApp, jdExtract: ext }, "We need someone to own product strategy.");
+    const tagged = bullets[1]!; // "Ran llm evals" - not in the master; tag it product-management
+    await db.from("bullets").update({ skills: ["product-management"] }).eq("id", tagged.id);
+    const { cv, application } = await tailorCv({ db }, "u1", app.id, NOW);
+    expect(cv.bulletIds).toContain(tagged.id);
+    // signals computed once from the stored posting and kept on the extract
+    expect(application.jdExtract?.signals?.demand["product-management"]).toBeDefined();
+    void master;
+  });
+
   it("applies the per-org cap from profile data: no org outweighs its cap, best-scoring kept", async () => {
     const { db, app, bullets } = await fixtures();
     await saveProfile(db, profileWith({ AI71: 1 }));

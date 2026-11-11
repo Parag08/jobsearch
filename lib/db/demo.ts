@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FakeDb } from "../repos/fake-db";
 import { importCvbuilder } from "../import/cvbuilder";
@@ -30,6 +30,7 @@ export function getDemoDb(root = process.cwd()): FakeDb {
       taxonomy: readJson("taxonomy.json"),
       archetypes: readJson("archetypes.json"),
       applications,
+      orgCaps: existsSync(join(dataDir, "org-caps.json")) ? readJson("org-caps.json") : undefined,
     },
     { userId: DEMO_USER_ID },
   );

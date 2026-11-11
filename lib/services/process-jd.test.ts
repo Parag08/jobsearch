@@ -4,6 +4,7 @@ import type { JdExtract } from "../types";
 import { FakeDb } from "../repos/fake-db";
 import { listApplications } from "../repos/applications";
 import { listSectors } from "../repos/sectors";
+import { saveProfile } from "../repos/profiles";
 import { processJd } from "./process-jd";
 
 const jd: JdExtract = {
@@ -28,6 +29,25 @@ function fixtures() {
 }
 
 describe("processJd", () => {
+  it("stores the JD's scoring signals on the extract, read through the user's taxonomy - no extra model call", async () => {
+    const { db, llm } = fixtures();
+    await saveProfile(db, {
+      userId: "u1", displayName: "", targetGeos: [], roleFamilies: [], targetTitles: [], excludedTitles: [],
+      networks: [], visaContext: null, premiumLlmBudgetUsdMonth: 0, contactLines: [], cvExtras: [],
+      taxonomy: { tags: { "customer-facing": ["customer"] } },
+    });
+    const { application } = await processJd({ db, llm }, "u1", "Help customers migrate workloads", NOW);
+    expect(application.jdExtract?.signals?.demand["customer-facing"]?.demand).toBe(1);
+    expect(application.jdExtract?.signals?.tokens).toContain("workloads");
+    expect(llm.calls).toHaveLength(1);
+  });
+
+  it("without a taxonomy it still keeps the JD's words, so echo scoring works", async () => {
+    const { db, llm } = fixtures();
+    const { application } = await processJd({ db, llm }, "u1", "Help customers migrate workloads", NOW);
+    expect(application.jdExtract?.signals).toEqual({ demand: {}, tokens: ["customers", "migrate", "workloads"] });
+  });
+
   it("extracts once, merges the sector, and creates a saved application", async () => {
     const { db, llm } = fixtures();
     const { application, sector } = await processJd({ db, llm }, "u1", "raw JD text", NOW);
@@ -38,7 +58,7 @@ describe("processJd", () => {
     expect(application.stage).toBe("saved");
     expect(application.company).toBe("Grab");
     expect(application.sectorId).toBe(sector.id);
-    expect(application.jdExtract).toEqual(jd);
+    expect(application.jdExtract).toMatchObject(jd);
     expect(application.savedAt).toBe("2026-08-29");
     expect(db.rows("applications")[0]?.jd_raw).toBe("raw JD text"); // audit copy, DB only
   });

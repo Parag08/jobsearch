@@ -80,6 +80,8 @@ export const CvbPointsSchema = z.object({
 export const CvbTaxonomySchema = z.object({
   families: z.record(z.string(), z.array(z.string())).default({}),
   tags: z.record(z.string(), z.array(z.string())),
+  /** level -> phrases ("senior": ["senior", "lead"]); optional in the files. */
+  seniorityHints: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const CvbArchetypesSchema = z.object({
@@ -377,6 +379,10 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
       ...z.record(z.string(), z.number().int().positive()).parse(src.orgCaps ?? {}),
     },
     cvExtras: profileSrc.additional,
+    taxonomy: {
+      tags: taxonomy.tags,
+      ...(taxonomy.seniorityHints ? { seniorityHints: taxonomy.seniorityHints } : {}),
+    },
   };
 
   // -- master CVs: one per archetype base CV, plus master/generic as "general" ---------

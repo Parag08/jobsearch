@@ -68,6 +68,7 @@ create table profiles (
   contact_lines text[] not null default '{}',        -- CV header: linkedin, emails, phones
   cv_extras jsonb not null default '[]',             -- CV closing blocks: [{id,label,text,locked,tailorable}]
   org_caps jsonb not null default '{}',              -- org name -> max CV points (0005)
+  taxonomy jsonb not null default '{}',              -- {tags: {tag: [jd phrases]}, seniorityHints} for the CV scorer (0008)
   created_at timestamptz not null default now()
 );
 

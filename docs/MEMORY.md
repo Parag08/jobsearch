@@ -26,8 +26,22 @@ Keep this file updated at the end of every working session: what was done, decis
   `data/cvbuilder/org-caps.json` (repo-owned). Seed rebuilt: 34 active bullets. Fixed stale facts:
   phone, Dependant's Pass line, Nutanix dates, Touchnote title. **Live DB still has the old data
   until `npm run db:seed`** (needs DB creds; may overwrite in-app bullet edits).
-- **Repo is PUBLIC** and data/cvbuilder holds personal data (phone, email, bullets). Parag to decide
-  whether to make it private before the sync commit is pushed.
+- **Step 2 done (scorer):** `lib/editorial/score.ts` ports findparagjob `score.js` - tag demand
+  through the user's taxonomy + word echo, nudged by strength and recency (from role dates).
+  Two fixes over the original: single words match plurals, tokens drop edge punctuation (it
+  missed every sentence-final word). `withExtractDemand` lets the extract's skills count for
+  same-named bullet tags. Taxonomy lives on `profiles.taxonomy` (migration 0008, seeded).
+  `JdExtract.signals` computed by code at intake (`processJd`); `tailorCv` backfills it once
+  from `jd_raw` for older applications, scores with it, and passes relevance to `buildDiff`.
+  **Live taxonomy is empty until `npm run db:seed`**; until then live scoring = extract + echo.
+- **Benchmark (AWS AAIS TAM JD, real data, demo DB):** 6/12 of the hand-made AWS TAM CV's
+  experience bullets match. Gaps are selection, not scoring - 6 Nutanix bullets (rule: <= ~1/3),
+  no Amantya (master-diff never adds a missing role; findparagjob keeps >= 1 per role), no
+  overrides. So step 4 should replace "diff from master" with findparagjob's whole-pool
+  `autoSelect` (role floor, maxPerRole, budget) + the cv-writing.md balance rules, keeping pins
+  and the honesty rule. Run script kept out of repo; recreate from this note.
+- **Repo is PUBLIC** and data/cvbuilder holds personal data (phone, email, bullets). Parag said that is fine
+  (2026-11-11); moving the corpus out of the repo is an optional follow-up.
 
 ## 2026-11-11 (later) - ROADMAP Now #1, #3, #4: auto sourcing, a sendable CV, cover letters
 
