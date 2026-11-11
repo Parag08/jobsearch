@@ -178,7 +178,13 @@ export default async function ApplicationPage({
               <div className={ui.actions}>
                 <a className={ui.btn} data-primary="" href={`/api/export/${app.id}?format=pdf`}>Download PDF</a>
                 <a className={ui.btn} href={`/api/export/${app.id}?format=docx`}>Download DOCX</a>
+                {!cv.sentSnapshot && app.jdExtract && (
+                  <form action={tailorCvAction.bind(null, app.id)}>
+                    <button className={ui.btn} type="submit">Re-tailor from the master</button>
+                  </form>
+                )}
               </div>
+              {cvError && <p className={ui.chip} data-tone="gap">{cvError}</p>}
               {cv.sentSnapshot ? (
                 <div className={ui.snapshot}>
                   <span className={ui.badge} data-tone="frozen">sent {cv.sentAt?.slice(0, 10)} · frozen</span>

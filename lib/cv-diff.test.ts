@@ -42,6 +42,15 @@ describe("buildDiff", () => {
     expect(diff.removeBulletIds).not.toContain("b1"); // payments: JD skill
   });
 
+  it("drops a zero-relevance master bullet only to make room for a better one, so a JD the bank barely matches never empties the page", () => {
+    const offTopic: JdExtract = { ...jd, skills: ["distributed applications"], keywords: ["cxo"] };
+    expect(buildDiff(master, [], bank, offTopic, "").removeBulletIds).toEqual([]);
+    // one addition frees one slot: the last zero-score bullet in master order goes
+    const one = buildDiff(master, [bank.b9], bank, { ...offTopic, skills: ["llm products"] }, "");
+    expect(one.addBulletIds).toEqual(["b9"]);
+    expect(one.removeBulletIds).toEqual(["b3"]);
+  });
+
   it("only mirrors keywords that are evidenced in the bullet bank (honesty rule)", () => {
     const diff = buildDiff(master, [bank.b9], bank, jd, "");
     // "genai" appears in no bullet skill/text; "quantum teleportation" neither

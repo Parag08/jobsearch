@@ -48,10 +48,13 @@ export function buildDiff(
 
   const addBulletIds = candidates.map((b) => b.id).filter((id) => !inMaster.has(id));
 
-  const removeBulletIds = master.bulletIds.filter((id) => {
+  // A zero-relevance master bullet is still true and still the user's chosen page;
+  // it goes only to make room for a bullet that scores. Last in master order goes first.
+  const zeroScore = master.bulletIds.filter((id) => {
     const b = bank[id];
     return b ? scoreBullet(b, jd) === 0 : false;
   });
+  const removeBulletIds = addBulletIds.length ? zeroScore.slice(-addBulletIds.length) : [];
 
   const evidence = new Set<string>();
   for (const b of Object.values(bank)) {
