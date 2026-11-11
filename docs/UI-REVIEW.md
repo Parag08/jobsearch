@@ -30,6 +30,16 @@ does both — so the burden is entirely on copy, and the copy did not carry it.
 **Fix:** nav CTA becomes **Get started**; `/signin` is titled **Get started** with a subtitle stating
 that continuing creates an account if you do not have one, and a secondary line for returning users.
 
+**Follow-up (2026-11-11), no detour page:** *"why does get started need to go to another page?"*
+With Supabase configured, the landing's **Get started** / **Sign in** (nav) and the hero's
+official **Continue with Google** button post straight to the `signInWith("google")` server action,
+so one click lands on Google. `/signin` stays as the fallback (demo mode links there; OAuth errors
+land there). **Google One Tap** (`app/_components/google-one-tap.tsx`) shows "Continue as <name>"
+to a signed-out visitor whose browser is signed in to Google; the ID token goes to
+`signInWithIdToken` with a hashed nonce (`lib/auth/google-one-tap.ts`). It needs
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID`; unset = nothing renders. Google buttons follow Google's branding
+(white / #747775 / multicolour G; #131314 / #8E918F in dark) - `app/_components/google-button.tsx`.
+
 ### B3 · LinkedIn was offered but cannot work — **fixed**
 
 `linkedin_oidc` is `false` in Supabase's own auth settings, so the button started an OAuth leg that
