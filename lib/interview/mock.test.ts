@@ -4,6 +4,7 @@ import {
   applyFollowUp,
   buildFollowUpPrompt,
   buildMockDebriefPrompt,
+  canScore,
   closeMock,
   followUpsAsked,
   guardFollowUp,
@@ -193,6 +194,17 @@ describe("applyFollowUp and closeMock", () => {
     const done = closeMock(running(), strongI, NOW);
     expect(() => applyFollowUp(done, "more", { probe: "depth", say: "?" }, NOW)).toThrow(/finished/);
     expect(() => closeMock(done, "more", NOW)).toThrow(/finished/);
+  });
+});
+
+describe("canScore", () => {
+  it("needs at least 20 words across the answers and anything still being typed", () => {
+    expect(canScore(running())).toBe(false);
+    expect(canScore(running(), "Too short to score.")).toBe(false);
+    expect(canScore(running(), vagueWe)).toBe(true);
+    const answered = applyFollowUp(running(), "I ran the pricing workshop myself.", { probe: "result", say: "What changed?" }, NOW);
+    expect(canScore(answered)).toBe(false);
+    expect(canScore(answered, "Overtime fell by thirty percent in two months once the phased rota was live across both wards.")).toBe(true);
   });
 });
 
