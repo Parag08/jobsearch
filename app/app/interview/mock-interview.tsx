@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
-import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
+import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
 import { combineVoice, deliveryNotes, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
 import { ScoreCard } from "./score-card";
@@ -116,6 +116,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [clock, setClock] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  /** Ended before there was enough to score: say so, offer a retry - no error loop. */
+  const [endedEarly, setEndedEarly] = useState(false);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -130,6 +132,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
   const voiceFrames = useRef<VoiceFrame[]>([]);
   const voiceClock = useRef<{ start: number; timer: ReturnType<typeof setInterval> | null }>({ start: 0, timer: null });
   const spoken = useRef<VoiceSummary[]>([]);
+  /** Set the moment you press End, so a reply already on its way cannot reopen the call. */
+  const endedRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   draftRef.current = draft;
@@ -189,7 +193,7 @@ export function MockInterview({ questionId }: { questionId: string }) {
         setCaption(last ? { who: "Interviewer", text: last.text } : null);
       }
       setMicLevel(mic.current ? mic.current.level() : 0);
-      if (startedAt) setClock((Date.now() - startedAt) / 1000);
+      if (startedAt && sessionRef.current?.status === "running") setClock((Date.now() - startedAt) / 1000);
     }, 100);
     return () => clearInterval(id);
   }, [session, startedAt]);
@@ -217,6 +221,8 @@ export function MockInterview({ questionId }: { questionId: string }) {
     stopSpeaking();
     voiceFrames.current = [];
     spoken.current = [];
+    endedRef.current = false;
+    setEndedEarly(false);
     setSession(null);
     setDraft("");
     setInterim("");
@@ -340,11 +346,14 @@ export function MockInterview({ questionId }: { questionId: string }) {
     busyRef.current = "turn";
     setError(null);
     const r = await mockTurnAction({ session: s, answer });
+    if (endedRef.current) return; // you left the call while it was thinking
     if (r.retryAfter) {
       setError(r.error ?? null);
       setBusy(null);
       busyRef.current = null;
-      setTimeout(() => void send(), r.retryAfter * 1000);
+      setTimeout(() => {
+        if (!endedRef.current) void send();
+      }, r.retryAfter * 1000);
       return;
     }
     setBusy(null);
@@ -367,6 +376,7 @@ export function MockInterview({ questionId }: { questionId: string }) {
   async function getFeedback(s = sessionRef.current) {
     if (!s) return;
     stopListening();
+    stopSpeaking();
     setBusy("feedback");
     busyRef.current = "feedback";
     setError(null);
@@ -385,6 +395,34 @@ export function MockInterview({ questionId }: { questionId: string }) {
     if (v) spoken.current.push(v);
     voiceFrames.current = [];
     setFeedback(r);
+  }
+
+  /**
+   * Leave the call. Always works: the voice and mic stop at once and the call closes. With
+   * enough said you get feedback; with too little, the page says so instead of erroring.
+   */
+  function end() {
+    const s = sessionRef.current;
+    if (!s || busyRef.current === "feedback") return;
+    endedRef.current = true;
+    stopListening();
+    stopSpeaking();
+    clearSilence();
+    const pending = `${draftRef.current} ${interimRef.current}`.trim();
+    if (canScore(s, pending)) {
+      setBusy(null);
+      busyRef.current = null;
+      void getFeedback(s);
+      return;
+    }
+    const closed = s.status === "running" ? closeMock(s, pending || null, new Date().toISOString()) : s;
+    setSession(closed);
+    sessionRef.current = closed;
+    setDraft("");
+    setInterim("");
+    setBusy(null);
+    busyRef.current = null;
+    setEndedEarly(true);
   }
 
   const settingsPanel = (
@@ -508,7 +546,6 @@ export function MockInterview({ questionId }: { questionId: string }) {
 
   // ---- the room ----------------------------------------------------------------------
   const done = session.status === "done";
-  const answered = session.turns.some((t) => t.role === "candidate");
   const live = agentState({ ended: done && busy !== "feedback", busy: busy !== null, speaking, listening });
   const followUps = session.turns.filter((t) => t.probe).length;
   const bars = [0.15, 0.35, 0.6, 0.85];
@@ -600,8 +637,9 @@ export function MockInterview({ questionId }: { questionId: string }) {
             <button
               className={ui.btn}
               type="button"
-              onClick={() => void getFeedback()}
-              disabled={busy !== null || (!answered && !hasAnswer)}
+              onClick={end}
+              disabled={busy === "feedback"}
+              title="End the interview"
             >
               End
             </button>
@@ -693,12 +731,24 @@ export function MockInterview({ questionId }: { questionId: string }) {
             </button>
           </div>
         </>
+      ) : endedEarly ? (
+        <div className={ui.callout}>
+          <p>Interview ended. There wasn't enough said to give feedback - a few full sentences is enough next time.</p>
+          <div className={ui.actions}>
+            <button className={ui.btn} data-primary="" type="button" onClick={start}>
+              Try again
+            </button>
+          </div>
+        </div>
       ) : (
         done &&
         busy !== "feedback" && (
           <div className={ui.actions}>
             <button className={ui.btn} data-primary="" type="button" onClick={() => void getFeedback()}>
-              Get my feedback
+              {error ? "Try feedback again" : "Get my feedback"}
+            </button>
+            <button className={ui.btn} type="button" onClick={start}>
+              Start over
             </button>
           </div>
         )

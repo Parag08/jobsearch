@@ -45,6 +45,7 @@ import {
   applyFollowUp,
   buildFollowUpPrompt,
   buildMockDebriefPrompt,
+  canScore,
   closeMock,
   guardFollowUp,
   mockTranscript,
@@ -600,7 +601,7 @@ export async function mockFeedbackAction(input: {
   if (s.status === "running") s = closeMock(s, input.answer ?? null, new Date().toISOString());
 
   const said = s.turns.filter((t) => t.role === "candidate").map((t) => t.text).join(" ");
-  if (said.split(/\s+/).filter(Boolean).length < 20) {
+  if (!canScore(s)) {
     return { error: "There is not enough to give feedback on yet - answer the question first.", session: s };
   }
 

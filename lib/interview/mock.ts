@@ -231,6 +231,15 @@ export function closeMock(s: MockSession, answer: string | null, now: string): M
   };
 }
 
+/** Below this many words in all your answers there is nothing honest to score. */
+export const MIN_FEEDBACK_WORDS = 20;
+
+/** Is there enough said (plus anything still in the answer box) to give feedback on? */
+export function canScore(s: MockSession, pending = ""): boolean {
+  const said = [...s.turns.filter((t) => t.role === "candidate").map((t) => t.text), pending].join(" ");
+  return said.split(/\s+/).filter(Boolean).length >= MIN_FEEDBACK_WORDS;
+}
+
 export function mockTranscript(s: MockSession): string {
   return s.turns.map((t) => `${t.role === "interviewer" ? "Interviewer" : "You"}: ${t.text}`).join("\n");
 }
