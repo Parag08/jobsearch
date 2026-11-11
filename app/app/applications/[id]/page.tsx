@@ -165,10 +165,14 @@ export default async function ApplicationPage({
                 const ed = cv.diff.editorial;
                 if (!ed) return null;
                 const capped = ed.decisions.filter((d) => d.kind === "capped").length;
+                const shareOrgs = [...new Set(ed.decisions.filter((d) => d.kind === "share").map((d) => d.orgId))];
+                const sameStory = ed.decisions.filter((d) => d.kind === "collision").length;
                 const shortened = ed.actions.filter((a) => a.kind === "short-variant").length;
                 const dropped = ed.actions.filter((a) => a.kind === "drop").length;
                 const notes = [
                   capped ? `${capped} over a per-org cap` : "",
+                  shareOrgs.length ? `${shareOrgs.join(", ")} kept to its share of the page` : "",
+                  sameStory ? `${sameStory} held back as the same story` : "",
                   shortened ? `${shortened} shortened to fit the page` : "",
                   dropped ? `${dropped} cut for space` : "",
                 ].filter(Boolean);

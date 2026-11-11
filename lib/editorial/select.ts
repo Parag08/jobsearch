@@ -36,7 +36,10 @@ export interface ComposeSelectionInput {
   excludes?: string[];
 }
 
-export type DecisionKind = "pinned" | "excluded" | "capped" | "scored" | "unknown";
+export type DecisionKind =
+  | "pinned" | "excluded" | "capped" | "scored" | "unknown"
+  // whole-pool selection (auto-select.ts)
+  | "floor" | "budget" | "role-limit" | "share" | "collision";
 
 export interface SelectionDecision {
   bulletId: string;

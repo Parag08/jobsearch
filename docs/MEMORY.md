@@ -40,6 +40,20 @@ Keep this file updated at the end of every working session: what was done, decis
   overrides. So step 4 should replace "diff from master" with findparagjob's whole-pool
   `autoSelect` (role floor, maxPerRole, budget) + the cv-writing.md balance rules, keeping pins
   and the honesty rule. Run script kept out of repo; recreate from this note.
+- **Step 4a done (selection):** `lib/editorial/auto-select.ts` picks from the whole bank when the
+  CV_MAX_BULLETS / CV_MAX_PER_ROLE / CV_MIN_PER_ROLE / CV_MAX_ORG_SHARE / CV_COLLISION_OVERLAP env
+  settings are set (`cvSelectionSettingsFromEnv`; unset = old master-diff path). Rules: pins, every
+  role keeps its best bullet, fill by score, per-role and per-org caps, one story per competency
+  (rarity-weighted tag overlap, deferred not rejected), org share judged on the finished page
+  (trim the org's weakest, refill). JD-echoing variant applied (`suggestedVariant`). Values: 16 /
+  4 / 1 / 0.34 / 0.35. **Set the same five in Vercel.**
+- **AWS benchmark now 7/12** of the hand CV's stories. Remaining gaps: (a) findparagjob
+  `points.json` tags `nutanix-government-migration-recovery` only engineering + team-leadership, so
+  it scores 6.0 - a data fix there (cloud-infra / ops-execution / customer tags); (b) close calls
+  (Valeo route app vs ops cost, Touchnote API vs Trendsetter); (c) no per-application rewording yet.
+  **Next: step 4b** - honest rewording (overrideText) via the premium model, constrained to the
+  bullet's own facts (findparagjob docs/cv-writing.md §3-5: XYZ, numbers unchanged, last line
+  >= 50% full), checked by code before it is kept.
 - **Repo is PUBLIC** and data/cvbuilder holds personal data (phone, email, bullets). Parag said that is fine
   (2026-11-11); moving the corpus out of the repo is an optional follow-up.
 

@@ -127,6 +127,26 @@ describe("tailorCv", () => {
     void master;
   });
 
+  it("with selection settings, picks from the whole bank: every role kept, best wording for the JD", async () => {
+    const { db, master, bullets } = await fixtures();
+    const other = await insertProject(db, "u1", {
+      name: "Ops", org: "Globex", dates: "2016 - 2018", role: "Analyst", narrative: "", outcomes: [], skills: [], sectorTags: [],
+    });
+    const [old] = await insertBullets(db, "u1", other.id, [
+      { roleFamily: "general", text: "Kept a warehouse running", skills: ["logistics"],
+        variants: [{ label: "ai-forward", text: "Kept a genai roadmap warehouse running" }] },
+    ]);
+    const app = await insertApplication(db, "u1", baseApp);
+    const select = { maxBullets: 3, maxPerRole: 2, minPerRole: 1, maxOrgShare: 1, collisionOverlap: 1 };
+    const { cv, diff } = await tailorCv({ db, select }, "u1", app.id, NOW);
+    expect(cv.bulletIds).toContain(old!.id); // Globex is not in the master, but its role keeps a bullet
+    expect(cv.bulletIds).toHaveLength(3);
+    expect(diff.variants?.[old!.id]).toBe("ai-forward"); // the variant that echoes the JD
+    expect(diff.editorial?.decisions.find((d) => d.bulletId === old!.id)?.kind).toBe("floor");
+    expect(cv.masterCvId).toBe(master.id);
+    void bullets;
+  });
+
   it("applies the per-org cap from profile data: no org outweighs its cap, best-scoring kept", async () => {
     const { db, app, bullets } = await fixtures();
     await saveProfile(db, profileWith({ AI71: 1 }));
