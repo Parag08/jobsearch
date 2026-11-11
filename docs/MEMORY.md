@@ -28,7 +28,18 @@ Keep this file updated at the end of every working session: what was done, decis
   separate session on branch `feat/google-one-tap` (a356a87), not merged here.
 
 **Next:** collision audit into tailorCv; letters corpus from a private bucket; show "Why this
-bullet" from `diff.editorial.decisions`; merge `feat/google-one-tap` once reviewed.
+bullet" from `diff.editorial.decisions`. (`feat/google-one-tap` merged into main the same day.)
+
+## 2026-11-11 - One-click Google sign-in + One Tap (merged from feat/google-one-tap)
+
+- Landing CTAs post directly to `signInWith("google")` (no `/signin` detour) when Supabase is
+  configured; demo mode still links to `/signin`. Hero CTA is now the official Google button.
+- Google One Tap on `/` (FedCM, hashed nonce, `signInWithIdToken`), only with
+  `NEXT_PUBLIC_GOOGLE_CLIENT_ID` + Supabase set and no session. Pure helpers + tests in `lib/auth/`.
+- `GoogleButton` / `GoogleMark` components follow Google branding (light + dark); `/signin` uses them.
+- **Setup still needed for One Tap in prod:** Google Cloud OAuth client -> Authorized JavaScript
+  origins (prod domain + `http://localhost:3000`); Supabase -> Auth -> Google provider -> add the
+  same Web client ID to "Client IDs"; Vercel env `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. See UI-REVIEW B2.
 
 ## 2026-11-11 - Sage Studio re-theme + Google Tag Manager
 

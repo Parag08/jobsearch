@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Logo } from "../_components/logo";
 import { isSupabaseConfigured } from "@/lib/db";
+import { GoogleButton } from "../_components/google-button";
 import { signInWith } from "./actions";
 import styles from "./page.module.css";
 
@@ -41,9 +42,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
         </div>
 
         <form action={signInWith.bind(null, "google")}>
-          <button type="submit" className={styles.provider} disabled={!live}>
-            Continue with Google
-          </button>
+          <GoogleButton label="Continue with Google" disabled={!live} wide />
         </form>
 
         {!live && (

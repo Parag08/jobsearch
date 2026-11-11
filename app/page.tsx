@@ -5,7 +5,11 @@ import { ThemeToggle } from "./_components/theme-toggle";
 import { HeroDemo } from "./_components/hero-demo";
 import { ProcessMap } from "./_components/process-map";
 import { Reveal } from "./_components/reveal";
-import { isSupabaseConfigured } from "@/lib/db";
+import { GoogleButton } from "./_components/google-button";
+import { GoogleOneTap } from "./_components/google-one-tap";
+import { signInWith } from "./signin/actions";
+import { readSupabaseEnv } from "@/lib/db/supabase";
+import { readGoogleClientId, shouldOfferOneTap } from "@/lib/auth/google-one-tap";
 import styles from "./page.module.css";
 
 // The journey, end to end. Every line here must describe something the app does today -
@@ -49,7 +53,13 @@ export default function Home() {
   // The demo workspace only exists when Supabase is unconfigured (lib/db). With it
   // configured, /app redirects a signed-out visitor to /signin - so offering "Demo"
   // in production would be two prominent links that lead nowhere.
-  const demoAvailable = !isSupabaseConfigured();
+  const supabase = readSupabaseEnv();
+  const live = supabase !== null;
+  const demoAvailable = !live;
+  // Get started goes straight to Google (the same server action /signin uses) - no detour
+  // page. Without Supabase the action could only bounce to /signin, so link there directly.
+  const startWithGoogle = signInWith.bind(null, "google");
+  const clientId = readGoogleClientId();
 
   return (
     <>
@@ -69,13 +79,30 @@ export default function Home() {
             Demo
           </Link>
         )}
-        <Link href="/signin" className={styles.navLink}>
-          Sign in
-        </Link>
-        <Link href="/signin" className={styles.navCta}>
-          Get started
-        </Link>
+        {live ? (
+          <>
+            <form action={startWithGoogle} className={styles.navForm}>
+              <button type="submit" className={styles.navLink}>Sign in</button>
+            </form>
+            <form action={startWithGoogle} className={styles.navForm}>
+              <button type="submit" className={styles.navCta}>Get started</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <Link href="/signin" className={styles.navLink}>
+              Sign in
+            </Link>
+            <Link href="/signin" className={styles.navCta}>
+              Get started
+            </Link>
+          </>
+        )}
       </GlassNav>
+
+      {supabase && clientId && shouldOfferOneTap({ clientId, supabaseConfigured: live }) && (
+        <GoogleOneTap clientId={clientId} supabaseUrl={supabase.url} supabaseKey={supabase.publishableKey} />
+      )}
 
       <main className={styles.page}>
         <section className={styles.hero}>
@@ -96,16 +123,22 @@ export default function Home() {
             </Reveal>
             <Reveal delay={240}>
               <div className={styles.ctas}>
-                <Link href="/signin" className={styles.cta}>
-                  Get started
-                </Link>
+                {live ? (
+                  <form action={startWithGoogle}>
+                    <GoogleButton label="Continue with Google" />
+                  </form>
+                ) : (
+                  <Link href="/signin" className={styles.cta}>
+                    Get started
+                  </Link>
+                )}
                 {demoAvailable && (
                   <Link href="/app" className={styles.ctaQuiet}>
                     See it with sample data
                   </Link>
                 )}
               </div>
-              <p className={styles.ctaNote}>Free to start. Continue with Google — no password to make.</p>
+              <p className={styles.ctaNote}>Free to start. One click creates your account or signs you in — no password to make.</p>
             </Reveal>
           </div>
           <Reveal delay={200} className={styles.heroDemo}>
