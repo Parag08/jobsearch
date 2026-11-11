@@ -1,3 +1,4 @@
+import { pgArray } from "./db";
 import type { DbClient, DbResult, DbTable } from "./db";
 import type { RowOf, TableName } from "./rows";
 
@@ -66,6 +67,7 @@ class FakeTable {
 
 class FakeQuery {
   private filters: { col: string; values: unknown[] }[] = [];
+  private filterError: string | null = null;
   private orderBy: { col: string; ascending: boolean } | null = null;
   private limitN: number | null = null;
   private returning: boolean;
@@ -82,6 +84,8 @@ class FakeQuery {
   }
 
   eq(col: string, value: unknown): this {
+    // PostgREST serialises a JS array as "a,b" and Postgres rejects it; callers must use pgArray().
+    if (Array.isArray(value)) this.filterError = `malformed array literal: "${value.join(",")}"`;
     this.filters.push({ col, values: [value] });
     return this;
   }
@@ -122,6 +126,7 @@ class FakeQuery {
   }
 
   private run(): DbResult<unknown> {
+    if (this.filterError) return { data: null, error: { message: this.filterError } };
     let affected: Row[];
     switch (this.op) {
       case "select":
@@ -201,5 +206,6 @@ function asArray(v: Row | Row[]): Row[] {
 
 /** Structural equality, matching postgres =: arrays/jsonb compare by value. */
 function same(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && typeof b === "string") return pgArray(a.map(String)) === b;
   return a === b || JSON.stringify(a) === JSON.stringify(b);
 }

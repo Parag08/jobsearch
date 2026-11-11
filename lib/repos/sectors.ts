@@ -1,5 +1,5 @@
 import type { SectorNode } from "../types";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, one, oneOrNull, pgArray, type DbClient } from "./db";
 import { sectorRow, toSectorNode } from "./rows";
 
 /**
@@ -22,7 +22,7 @@ export async function getSectorByPath(
   path: string[],
 ): Promise<SectorNode | null> {
   const row = await oneOrNull(
-    db.from("sectors").select().eq("user_id", userId).eq("path", path).maybeSingle(),
+    db.from("sectors").select().eq("user_id", userId).eq("path", pgArray(path)).maybeSingle(),
     "sectors",
     "getByPath",
   );

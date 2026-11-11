@@ -87,3 +87,12 @@ export async function oneOrNull<T>(
   if (error) throw new RepoError(table, op, error.message);
   return data;
 }
+
+/**
+ * A Postgres array literal for filtering an array column with eq().
+ * supabase-js sends a JS array as "a,b,c" (no braces), which Postgres rejects
+ * as a malformed array literal - so array filters must go through this.
+ */
+export function pgArray(values: readonly string[]): string {
+  return `{${values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")}}`;
+}
