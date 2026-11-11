@@ -1,4 +1,7 @@
 import { scoreBullet } from "./bullet-matcher";
+import type { FitAction } from "./editorial/fit";
+import type { PageFit } from "./editorial/page-fit";
+import type { SelectionDecision } from "./editorial/select";
 import { norm, type Bullet, type JdExtract, type MasterCv } from "./types";
 
 /**
@@ -14,6 +17,13 @@ export interface CvDiff {
   variants?: Record<string, string>;
   /** bulletId -> one-off wording used for this application only. */
   overrides?: Record<string, string>;
+  /** Why the page looks the way it does (lib/editorial): a decision per bullet, fitting actions, the fit. */
+  editorial?: {
+    decisions: SelectionDecision[];
+    actions: FitAction[];
+    /** null when no page settings were configured, so nothing was fitted. */
+    fit: PageFit | null;
+  };
 }
 
 export interface ApplicationCv {

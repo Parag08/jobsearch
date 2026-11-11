@@ -138,7 +138,8 @@ export const SourcedJobSchema = z.object({
   url: z.string().nullable(),
   postedAt: z.string().nullable(),
   score: z.number().nullable(),
-  status: z.enum(["new", "shortlisted", "tracked", "dismissed"]),
+  // closed: retired by a refresh after vanishing from its board (lib/watchlist/retire.ts)
+  status: z.enum(["new", "shortlisted", "tracked", "dismissed", "closed"]),
 });
 export type SourcedJob = z.infer<typeof SourcedJobSchema>;
 

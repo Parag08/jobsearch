@@ -4,6 +4,8 @@ import { FakeDb } from "../repos/fake-db";
 import { getApplication, insertApplication, type NewApplication } from "../repos/applications";
 import { insertMasterCv } from "../repos/cvs";
 import { insertBullets, insertProject } from "../repos/projects";
+import { saveProfile } from "../repos/profiles";
+import type { Profile } from "../repos/rows";
 import { tailorCv } from "./tailor-cv";
 
 const jd: JdExtract = {
@@ -89,4 +91,73 @@ describe("tailorCv", () => {
     await expect(tailorCv({ db: dbEmpty }, "u1", orphan.id, NOW)).rejects.toThrow(/master/i);
     void app;
   });
+
+  it("applies the per-org cap from profile data: no org outweighs its cap, best-scoring kept", async () => {
+    const { db, app, bullets } = await fixtures();
+    await saveProfile(db, profileWith({ AI71: 1 }));
+    const { cv, diff } = await tailorCv({ db }, "u1", app.id, NOW);
+    const ai71 = cv.bulletIds.filter((id) => bullets.slice(0, 2).some((b) => b.id === id));
+    expect(ai71).toHaveLength(1);
+    expect(ai71[0]).toBe(bullets[0]!.id); // the higher-scoring one survives the cap
+    const capped = diff.editorial?.decisions.find((d) => d.kind === "capped");
+    expect(capped?.reason).toMatch(/AI71 cap of 1/);
+  });
+
+  it("with no caps in the profile, nothing is capped", async () => {
+    const { db, app, bullets } = await fixtures();
+    const { cv } = await tailorCv({ db }, "u1", app.id, NOW);
+    expect(cv.bulletIds).toEqual(expect.arrayContaining([bullets[0]!.id, bullets[1]!.id]));
+  });
+
+  it("when the page runs long it takes a short variant before cutting a bullet, and records why", async () => {
+    const { db, app } = await longFixtures();
+    // 56-line budget: 53 overhead + 1 summary leaves 2 lines; the long bullet needs 2 on its own.
+    const page = { pageSize: "A4" as const, scale: 1, overheadLines: 53 };
+    const { cv, diff } = await tailorCv({ db, page }, "u1", app.id, NOW);
+    expect(diff.editorial?.actions.some((a) => a.kind === "short-variant")).toBe(true);
+    expect(diff.editorial?.actions.some((a) => a.kind === "drop")).toBe(false);
+    expect(cv.bulletIds).toHaveLength(2);
+    expect(Object.values(diff.variants ?? {})).toContain("short");
+    expect(diff.editorial?.fit?.overflow).toBe(0);
+  });
+
+  it("without page settings it records no fit and drops nothing for space", async () => {
+    const { db, app } = await longFixtures();
+    const { diff } = await tailorCv({ db }, "u1", app.id, NOW);
+    expect(diff.editorial?.fit).toBeNull();
+    expect(diff.editorial?.actions).toEqual([]);
+  });
 });
+
+function profileWith(orgCaps: Record<string, number>): Profile {
+  return {
+    userId: "u1",
+    displayName: "P",
+    targetGeos: [],
+    roleFamilies: [],
+    targetTitles: [],
+    excludedTitles: [],
+    networks: [],
+    visaContext: null,
+    premiumLlmBudgetUsdMonth: 0,
+    contactLines: [],
+    cvExtras: [],
+    orgCaps,
+  };
+}
+
+/** Two relevant bullets, one long (two lines at A4/1) with a one-line short variant. */
+async function longFixtures() {
+  const db = new FakeDb();
+  const project = await insertProject(db, "u1", {
+    name: "GenAI Platform", org: "AI71", dates: "2025", role: "PM", narrative: "", outcomes: [], skills: [], sectorTags: [],
+  });
+  const long = "Owned the genai roadmap end to end across four product lines, aligning engineering, design and go-to-market teams on one plan";
+  const bullets = await insertBullets(db, "u1", project.id, [
+    { roleFamily: "product-management", text: long, skills: ["roadmap", "genai"], variants: [{ label: "short", text: "Owned the genai roadmap end to end" }] },
+    { roleFamily: "product-management", text: "Ran llm evals for launch quality", skills: ["llm evals"] },
+  ]);
+  await insertMasterCv(db, "u1", { roleFamily: "product-management", summaryLine: "PM.", bulletIds: [], version: 1 });
+  const app = await insertApplication(db, "u1", baseApp);
+  return { db, app, bullets };
+}

@@ -1,0 +1,14 @@
+{
+  "_readme": "Paragraph-scale variant bank for cover letters (docs/DESIGN.md section 2, 'The format'). Fixed moves are stored and selected, never regenerated. Taken from the four letters actually sent; the letters themselves stay private and out of this repo.",
+  "signOff": "Yours sincerely,",
+  "spineAnchor": "I am completing my MBA at INSEAD.",
+  "usefulOpener": "It is also where I think I would be useful to you.",
+  "logistics": "I graduate in December and am available from Spring 2027.",
+  "close": "I would welcome the chance to talk, and thank you for your time and consideration.",
+  "implementationTriads": [
+    "the roadmap nobody sequenced, the process that quietly assumed a team twice the size, the change that was announced rather than adopted",
+    "the process that quietly assumed a team twice the size, the tool nobody adopted because nobody asked the people who would use it",
+    "the model whose assumptions nobody revisited, the process that quietly assumed a larger team, the tool nobody adopted"
+  ],
+  "wordRange": [330, 450]
+}

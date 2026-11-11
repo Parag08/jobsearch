@@ -17,6 +17,7 @@ const ws: ImportedWorkspace = {
     premiumLlmBudgetUsdMonth: 0,
     contactLines: ["ada@example.com"],
     cvExtras: [{ id: "add-skills", label: "Skills", text: "Leadership" }],
+    orgCaps: { Acme: 2 },
   },
   projects: [
     {
@@ -105,6 +106,12 @@ describe("toSeedSql", () => {
     expect(sql.trimEnd().endsWith("$seed$;")).toBe(true);
     expect(sql).toContain("select id into uid from auth.users where lower(email) = lower('ada@example.com')");
     expect(sql).toContain("raise exception");
+  });
+
+  it("writes the profile's per-org CV caps", () => {
+    const sql = toSeedSql(ws, { email: "a@b.c", generatedAt: "2026-09-02" });
+    expect(sql).toContain("org_caps");
+    expect(sql).toContain(`'{"Acme":2}'::jsonb`);
   });
 
   it("escapes quotes in data rather than breaking out of the literal", () => {

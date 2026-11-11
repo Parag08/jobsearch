@@ -5,7 +5,7 @@ import { insertContact } from "../repos/contacts";
 import { saveProfile } from "../repos/profiles";
 import { insertBullets, insertProject } from "../repos/projects";
 import { saveSector } from "../repos/sectors";
-import { listSourcedJobs, upsertSourcedJobs } from "../repos/sourced-jobs";
+import { listSourcedJobs, setSourcedJobStatus, upsertSourcedJobs } from "../repos/sourced-jobs";
 import { addWatchlistEntry } from "../repos/watchlist";
 import { FakeBoardFetcher } from "../watchlist/fetcher";
 import { newWatchlistEntry } from "../watchlist/types";
@@ -96,6 +96,50 @@ describe("refreshWatchlist", () => {
     const again = await refreshWatchlist({ db, fetcher }, "u1", TODAY);
     expect(again.upserted).toBe(2);
     expect(await listSourcedJobs(db, "u1")).toHaveLength(2);
+  });
+
+  it("re-running keeps the user's decisions: dismissed stays dismissed, shortlisted stays shortlisted", async () => {
+    const db = new FakeDb();
+    const { acme } = await seed(db);
+    const fetcher = new FakeBoardFetcher({ [acme.id]: acmeBoard });
+    await refreshWatchlist({ db, fetcher }, "u1", TODAY);
+    const [a, b] = await listSourcedJobs(db, "u1");
+    await setSourcedJobStatus(db, "u1", a!.id, "dismissed");
+    await setSourcedJobStatus(db, "u1", b!.id, "shortlisted");
+    await refreshWatchlist({ db, fetcher }, "u1", TODAY);
+    const byId = Object.fromEntries((await listSourcedJobs(db, "u1")).map((j) => [j.id, j.status]));
+    expect(byId[a!.id]).toBe("dismissed");
+    expect(byId[b!.id]).toBe("shortlisted");
+  });
+
+  it("retires a role missing from its board on two refreshes, and brings it back if it reappears", async () => {
+    const db = new FakeDb();
+    const { acme } = await seed(db);
+    await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard }) }, "u1", TODAY);
+    const withoutJob1 = { jobs: acmeBoard.jobs.filter((j) => j.id !== 1) };
+    const gone = new FakeBoardFetcher({ [acme.id]: withoutJob1 });
+
+    const first = await refreshWatchlist({ db, fetcher: gone }, "u1", TODAY);
+    expect(first.retired).toBe(0);
+    const second = await refreshWatchlist({ db, fetcher: gone }, "u1", TODAY);
+    expect(second.retired).toBe(1);
+    const status = async () =>
+      (await listSourcedJobs(db, "u1")).find((j) => j.title === "Senior Product Manager, Platform")!.status;
+    expect(await status()).toBe("closed");
+
+    await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard }) }, "u1", TODAY);
+    expect(await status()).toBe("new");
+  });
+
+  it("a board that fails retires nothing from that board", async () => {
+    const db = new FakeDb();
+    const { acme } = await seed(db);
+    await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard }) }, "u1", TODAY);
+    const failing = new FakeBoardFetcher({}, { [acme.id]: "HTTP 503" });
+    await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
+    const last = await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
+    expect(last.retired).toBe(0);
+    expect((await listSourcedJobs(db, "u1")).every((j) => j.status === "new")).toBe(true);
   });
 
   it("boosts with the network signal too, and works with no sector node (neutral node)", async () => {

@@ -48,6 +48,8 @@ const CvbOrgSchema = z.object({
   location: z.string().nullish(),
   blurb: z.string().nullish(),
   roles: z.array(CvbRoleSchema).default([]),
+  /** Most CV points this org may take on one page (CLAUDE.md rule 3). Absent = no cap. */
+  maxPoints: z.number().int().positive().optional(),
 });
 export const CvbProfileSchema = z.object({
   name: z.object({ first: z.string(), last: z.string() }),
@@ -363,6 +365,9 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     visaContext: authLine?.text ?? null,
     premiumLlmBudgetUsdMonth: 0,
     contactLines: profileSrc.contactLines,
+    orgCaps: Object.fromEntries(
+      profileSrc.experience.filter((o) => o.maxPoints !== undefined).map((o) => [o.org, o.maxPoints as number]),
+    ),
     cvExtras: profileSrc.additional,
   };
 

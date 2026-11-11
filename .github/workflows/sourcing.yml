@@ -1,0 +1,37 @@
+# Daily sourcing (ROADMAP Now #1): refresh every watchlist board for every profile and
+# retire roles that have vanished from their board (lib/watchlist/retire.ts).
+#
+# 23:07 UTC = 07:07 Singapore, so the morning list is fresh. Off the hour because the top
+# of the hour is congested and GitHub's schedule is best-effort.
+#
+# Needs two REPOSITORY secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_URL         https://<ref>.supabase.co (the API URL, not the pooler string)
+#   SUPABASE_SECRET_KEY  the sb_secret_... key (bypasses RLS - CI only, never the browser)
+name: sourcing
+
+on:
+  schedule:
+    - cron: "7 23 * * *"
+  workflow_dispatch: # manual run button in the Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Refresh watchlist boards
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::error::Add SUPABASE_URL and SUPABASE_SECRET_KEY as repository secrets (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+          npm run watchlist:refresh

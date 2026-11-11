@@ -10,7 +10,8 @@ import { applicationGaps } from "@/lib/editorial";
 import { scoreBullet } from "@/lib/bullet-matcher";
 import { canTransition } from "@/lib/pipeline";
 import { STAGES, type Bullet, type Stage } from "@/lib/types";
-import { moveStage, setNextAction, tailorCvAction } from "../../actions";
+import { draftCoverLetterAction, editCoverLetterAction, moveStage, setNextAction, tailorCvAction } from "../../actions";
+import { getCoverLetter } from "@/lib/repos/cover-letters";
 import { questionBank } from "../../interview/bank";
 import ui from "../../ui.module.css";
 
@@ -35,19 +36,28 @@ function questionHref(questionId: string | null): string {
   if (questionId) sp.set("q", questionId);
   return `/app/interview?${sp.toString()}`;
 }
-export default async function ApplicationPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ApplicationPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ letterError?: string }>;
+}) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const { id } = await params;
+  const { letterError } = await searchParams;
 
   const app = await getApplication(db, userId, id);
   if (!app) notFound();
-  const [cv, projects, stories] = await Promise.all([
+  const [cv, projects, stories, letter] = await Promise.all([
     app.cvVersionId ? getApplicationCv(db, userId, app.cvVersionId) : null,
     listProjects(db, userId),
     listStories(db, userId),
+    getCoverLetter(db, userId, id),
   ]);
+  const letterFrozen = app.appliedAt !== null;
   const bullets = projects.flatMap((p) => p.bullets);
   const bank: Record<string, Bullet> = Object.fromEntries(bullets.map((b) => [b.id, b]));
   const gaps = app.jdExtract ? applicationGaps(app.jdExtract, bullets) : null;
@@ -151,6 +161,24 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                   );
                 })}
               </ul>
+              {(() => {
+                const ed = cv.diff.editorial;
+                if (!ed) return null;
+                const capped = ed.decisions.filter((d) => d.kind === "capped").length;
+                const shortened = ed.actions.filter((a) => a.kind === "short-variant").length;
+                const dropped = ed.actions.filter((a) => a.kind === "drop").length;
+                const notes = [
+                  capped ? `${capped} over a per-org cap` : "",
+                  shortened ? `${shortened} shortened to fit the page` : "",
+                  dropped ? `${dropped} cut for space` : "",
+                ].filter(Boolean);
+                const fit = ed.fit ? `${ed.fit.linesUsed}/${ed.fit.lineBudget} lines` : "page fit off";
+                return <p className={ui.sub}>{[fit, ...notes].join(" · ")}</p>;
+              })()}
+              <div className={ui.actions}>
+                <a className={ui.btn} data-primary="" href={`/api/export/${app.id}?format=pdf`}>Download PDF</a>
+                <a className={ui.btn} href={`/api/export/${app.id}?format=docx`}>Download DOCX</a>
+              </div>
               {cv.sentSnapshot ? (
                 <div className={ui.snapshot}>
                   <span className={ui.badge} data-tone="frozen">sent {cv.sentAt?.slice(0, 10)} · frozen</span>
@@ -172,6 +200,79 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
           )}
         </section>
       </div>
+
+      <section className={ui.panel} id="cover-letter">
+        <h2>Cover letter</h2>
+        <p className={ui.sub}>
+          Three paragraphs: your career spine, why this firm, where you would be useful. The CV states only what
+          your bank evidences; the letter is where the honest gaps
+          {gaps && gaps.gaps.length ? ` (${gaps.gaps.map((g) => g.term).join(", ")})` : ""} get addressed.
+        </p>
+        {letterError && <p className={ui.chip} data-tone="gap">{letterError}</p>}
+        {letter ? (
+          <>
+            <p className={ui.mono}>
+              {letter.date} · Dear {letter.recipient || letter.teamName}
+              {letter.edited ? " · edited by you" : letter.model ? ` · drafted by ${letter.model}` : ""}
+              {letterFrozen ? " · sent, frozen" : ""}
+            </p>
+            {letter.issues.length > 0 && (
+              <ul className={ui.rows}>
+                {letter.issues.map((i) => (
+                  <li key={i.kind + i.detail} className={ui.row}>
+                    <span className={ui.chip} data-tone="gap">{i.kind.replace("-", " ")}</span>
+                    <p className={ui.sub}>{i.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {letterFrozen ? (
+              <div className={ui.stack}>
+                {letter.paragraphs.map((p, n) => <p key={n}>{p}</p>)}
+              </div>
+            ) : (
+              <form action={editCoverLetterAction.bind(null, app.id)} className={ui.stack}>
+                <textarea
+                  name="body"
+                  className={ui.answerBox}
+                  rows={16}
+                  defaultValue={letter.paragraphs.join("\n\n")}
+                  aria-label="Letter body: three paragraphs separated by a blank line"
+                />
+                <div className={ui.actions}>
+                  <button className={ui.btn} type="submit">Save edits</button>
+                </div>
+              </form>
+            )}
+            <div className={ui.actions}>
+              <a className={ui.btn} data-primary="" href={`/api/export/${app.id}?format=pdf&doc=letter`}>Download PDF</a>
+              <a className={ui.btn} href={`/api/export/${app.id}?format=docx&doc=letter`}>Download DOCX</a>
+            </div>
+          </>
+        ) : null}
+        {!letterFrozen && app.jdExtract && (
+          <details className={ui.reveal} open={!letter}>
+            <summary>{letter ? "Redraft" : "Draft the letter"}</summary>
+            <form action={draftCoverLetterAction.bind(null, app.id)} className={ui.stack}>
+              <label className={ui.stack}>
+                <span>
+                  One specific thing about {app.company} that is not marketing copy - what you found that made you look
+                  twice. The letter uses only this; it will not invent a fact about the firm.
+                </span>
+                <textarea name="firmDetail" className={ui.answerBox} rows={4} required defaultValue={letter?.firmDetail ?? ""} />
+              </label>
+              <div className={ui.form}>
+                <input className={ui.input} name="recipient" placeholder="Named person, if known" defaultValue={letter?.recipient ?? ""} />
+                <input className={ui.input} name="teamName" placeholder={`${app.company} Recruitment Team`} defaultValue={letter?.teamName ?? ""} />
+              </div>
+              <div className={ui.actions}>
+                <button className={ui.btn} data-primary="" type="submit">{letter ? "Redraft the letter" : "Draft the letter"}</button>
+              </div>
+            </form>
+          </details>
+        )}
+        {!app.jdExtract && <p className={ui.empty}>The letter needs the JD extract - paste the posting first.</p>}
+      </section>
 
       <section className={ui.panel}>
         <div className={ui.head}>
