@@ -92,6 +92,26 @@ describe("tailorCv", () => {
     void app;
   });
 
+  it("with no master for the JD's role family, tailors from the master that best fits the JD instead of failing", async () => {
+    const { db, bullets } = await fixtures();
+    const other = await insertMasterCv(db, "u1", {
+      roleFamily: "consulting",
+      summaryLine: "Consultant.",
+      bulletIds: [bullets[2]!.id], // scores zero against the JD
+      version: 1,
+    });
+    const best = await insertMasterCv(db, "u1", {
+      roleFamily: "general",
+      summaryLine: "Builder.",
+      bulletIds: [bullets[0]!.id, bullets[1]!.id],
+      version: 1,
+    });
+    const app = await insertApplication(db, "u1", { ...baseApp, jdExtract: { ...jd, roleFamily: "account-management" } });
+    const { cv } = await tailorCv({ db }, "u1", app.id, NOW);
+    expect(cv.masterCvId).toBe(best.id);
+    expect(cv.masterCvId).not.toBe(other.id);
+  });
+
   it("applies the per-org cap from profile data: no org outweighs its cap, best-scoring kept", async () => {
     const { db, app, bullets } = await fixtures();
     await saveProfile(db, profileWith({ AI71: 1 }));
