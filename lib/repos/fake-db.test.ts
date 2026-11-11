@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
+import { pgArray } from "./db";
 
 /** The fake must mirror supabase-js semantics - repos are tested against it. */
 describe("FakeDb", () => {
@@ -26,23 +27,19 @@ describe("FakeDb", () => {
     expect(data?.[0]?.user_id).toBe("u1");
   });
 
-  it("eq() matches array values structurally (postgres array equality)", async () => {
+  it("eq() on an array column takes a postgres array literal, and rejects a bare JS array like PostgREST does", async () => {
     const db = new FakeDb();
     await db.from("sectors").insert({
-      user_id: "u1",
-      path: ["IT", "AI", "Singapore"],
-      skills: {},
-      companies: [],
-      titles: [],
-      jd_count: 0,
-      summary: "",
+      user_id: "u1", path: ["IT", "Cloud Computing", "Singapore"], skills: {}, companies: [], titles: [], jd_count: 0, summary: "",
     });
-    const { data } = await db
-      .from("sectors")
-      .select()
-      .eq("user_id", "u1")
-      .eq("path", ["IT", "AI", "Singapore"]);
-    expect(data).toHaveLength(1);
+    const ok = await db.from("sectors").select().eq("user_id", "u1").eq("path", pgArray(["IT", "Cloud Computing", "Singapore"]));
+    expect(ok.data).toHaveLength(1);
+    const bad = await db.from("sectors").select().eq("path", ["IT", "Cloud Computing", "Singapore"]);
+    expect(bad.error?.message).toMatch(/malformed array literal/);
+  });
+
+  it("pgArray quotes and escapes every element", () => {
+    expect(pgArray(["IT", "Cloud Computing", 'a "b"', "c\\d", "x,y"])).toBe('{"IT","Cloud Computing","a \\"b\\"","c\\\\d","x,y"}');
   });
 
   it("order() and limit() shape the result", async () => {
