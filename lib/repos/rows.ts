@@ -1,3 +1,4 @@
+import type { Taxonomy } from "../editorial/score";
 import {
   ApplicationSchema,
   BulletSchema,
@@ -41,6 +42,8 @@ export interface ProfileRow {
   excluded_titles?: string[];
   /** Added by migration 0005: org name -> max CV points from that org. */
   org_caps?: Record<string, number>;
+  /** Added by migration 0008: the user's tag vocabulary ({tags, seniorityHints}). */
+  taxonomy?: Taxonomy | Record<string, never>;
   networks: unknown[];
   visa_context: string | null;
   premium_llm_budget_usd_month: number;
@@ -335,6 +338,8 @@ export interface Profile {
   cvExtras: unknown[];
   /** Org name -> max CV points from that org (CLAUDE.md rule 3). DATA, from the corpus. */
   orgCaps?: Record<string, number>;
+  /** The user's tag vocabulary: JD phrases -> tags, read by the CV scorer. DATA, from the corpus. */
+  taxonomy?: Taxonomy;
 }
 
 export interface Brief {
@@ -499,6 +504,7 @@ export function toProfile(r: ProfileRow): Profile {
     contactLines: r.contact_lines,
     cvExtras: r.cv_extras,
     orgCaps: r.org_caps ?? {},
+    ...(r.taxonomy && "tags" in r.taxonomy ? { taxonomy: r.taxonomy as Taxonomy } : {}),
   };
 }
 
@@ -683,5 +689,6 @@ export function profileRow(p: Profile): ProfileRow {
     contact_lines: p.contactLines,
     cv_extras: p.cvExtras,
     org_caps: p.orgCaps ?? {},
+    taxonomy: p.taxonomy ?? {},
   };
 }

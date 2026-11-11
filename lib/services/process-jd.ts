@@ -4,6 +4,8 @@ import type { Application, SectorNode } from "../types";
 import type { DbClient } from "../repos/db";
 import { insertApplication } from "../repos/applications";
 import { getSectorByPath, saveSector } from "../repos/sectors";
+import { getProfile } from "../repos/profiles";
+import { jdSignals } from "../editorial/score";
 
 export interface ProcessJdDeps {
   db: DbClient;
@@ -26,7 +28,9 @@ export async function processJd(
   jdRaw: string,
   now: string,
 ): Promise<ProcessJdResult> {
-  const jd = await llm.extractJd(jdRaw);
+  const [extracted, profile] = await Promise.all([llm.extractJd(jdRaw), getProfile(db, userId)]);
+  // Code, not the model, reads the JD's tag demand through the user's own taxonomy.
+  const jd = { ...extracted, signals: jdSignals(jdRaw, profile?.taxonomy ?? { tags: {} }) };
 
   const node = (await getSectorByPath(db, userId, jd.sectorPath)) ?? findOrCreateNode([], jd.sectorPath);
   mergeJdExtract(node, jd);

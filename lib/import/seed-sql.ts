@@ -52,8 +52,8 @@ function buildBody(ws: ImportedWorkspace, opts: SeedOptions): string {
   out.push(
     upsert(
       "profiles",
-      ["user_id", "display_name", "target_geos", "role_families", "target_titles", "excluded_titles", "networks", "visa_context", "premium_llm_budget_usd_month", "contact_lines", "cv_extras", "org_caps"],
-      ["uid", lit(p.displayName), textArray(p.targetGeos), textArray(p.roleFamilies), textArray(p.targetTitles), textArray(p.excludedTitles), json(p.networks), nullableText(p.visaContext), String(p.premiumLlmBudgetUsdMonth), textArray(p.contactLines), json(p.cvExtras), json(p.orgCaps ?? {})],
+      ["user_id", "display_name", "target_geos", "role_families", "target_titles", "excluded_titles", "networks", "visa_context", "premium_llm_budget_usd_month", "contact_lines", "cv_extras", "org_caps", "taxonomy"],
+      ["uid", lit(p.displayName), textArray(p.targetGeos), textArray(p.roleFamilies), textArray(p.targetTitles), textArray(p.excludedTitles), json(p.networks), nullableText(p.visaContext), String(p.premiumLlmBudgetUsdMonth), textArray(p.contactLines), json(p.cvExtras), json(p.orgCaps ?? {}), json(p.taxonomy ?? {})],
       "user_id",
     ),
   );

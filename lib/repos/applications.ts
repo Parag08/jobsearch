@@ -60,3 +60,16 @@ export async function updateApplication(
   );
   return toApplication(row);
 }
+
+/**
+ * The audit copy of the posting. Read only by code that computes deterministic signals
+ * from it (tailorCv backfilling JdExtract.signals) - never sent to a model (token rule #1).
+ */
+export async function getJdRaw(db: DbClient, userId: string, id: string): Promise<string | null> {
+  const row = await oneOrNull(
+    db.from("applications").select().eq("user_id", userId).eq("id", id).maybeSingle(),
+    "applications",
+    "getJdRaw",
+  );
+  return row?.jd_raw ?? null;
+}

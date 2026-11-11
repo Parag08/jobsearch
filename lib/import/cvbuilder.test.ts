@@ -195,6 +195,8 @@ describe("importCvbuilder", () => {
     expect(ws.profile.excludedTitles).toEqual(["designer", "intern"]);
     // per-org CV caps (CLAUDE.md rule 3) come from the corpus, keyed by org name
     expect(ws.profile.orgCaps).toEqual({ Acme: 2 });
+    // the taxonomy travels with the profile so the app can score JDs without the files
+    expect(ws.profile.taxonomy).toEqual({ tags: taxonomy.tags });
     expect(ws.profile.contactLines).toEqual(["ada@example.com", "+65 10000000"]);
     expect(ws.profile.cvExtras).toEqual(profile.additional);
     expect(ws.profile.networks).toContainEqual({

@@ -31,6 +31,17 @@ export const JdExtractSchema = z.object({
   seniority: z.string().nullable(),
   visaNote: z.string().nullable(), // e.g. "EP sponsorship stated"
   location: z.string().nullable(),
+  /**
+   * Scoring signals (lib/editorial/score.ts jdSignals), computed by code from the raw JD at
+   * intake - never by the model - so tailoring reads the extract only (token rule #1).
+   * Absent on applications saved before it existed; tailorCv fills it in once.
+   */
+  signals: z
+    .object({
+      demand: z.record(z.string(), z.object({ demand: z.number(), phrases: z.array(z.string()) })),
+      tokens: z.array(z.string()),
+    })
+    .optional(),
 });
 export type JdExtract = z.infer<typeof JdExtractSchema>;
 

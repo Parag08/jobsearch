@@ -18,6 +18,7 @@ const ws: ImportedWorkspace = {
     contactLines: ["ada@example.com"],
     cvExtras: [{ id: "add-skills", label: "Skills", text: "Leadership" }],
     orgCaps: { Acme: 2 },
+    taxonomy: { tags: { backend: ["api"] } },
   },
   projects: [
     {
@@ -112,6 +113,11 @@ describe("toSeedSql", () => {
     const sql = toSeedSql(ws, { email: "a@b.c", generatedAt: "2026-09-02" });
     expect(sql).toContain("org_caps");
     expect(sql).toContain(`'{"Acme":2}'::jsonb`);
+  });
+
+  it("writes the profile's taxonomy, the vocabulary the CV scorer reads JD demand through", () => {
+    expect(sql).toContain("taxonomy");
+    expect(sql).toContain(`'{"tags":{"backend":["api"]}}'::jsonb`);
   });
 
   it("escapes quotes in data rather than breaking out of the literal", () => {

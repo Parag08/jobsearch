@@ -43,6 +43,8 @@ export function buildDiff(
   bank: Record<string, Bullet>,
   jd: JdExtract,
   sectorSummary: string,
+  /** Relevance per bullet (tags + echo, lib/editorial/score.ts); defaults to the lexical scoreBullet. */
+  relevanceOf: (b: Bullet) => number = (b) => scoreBullet(b, jd),
 ): CvDiff {
   const inMaster = new Set(master.bulletIds);
 
@@ -52,7 +54,7 @@ export function buildDiff(
   // it goes only to make room for a bullet that scores. Last in master order goes first.
   const zeroScore = master.bulletIds.filter((id) => {
     const b = bank[id];
-    return b ? scoreBullet(b, jd) === 0 : false;
+    return b ? relevanceOf(b) === 0 : false;
   });
   const removeBulletIds = addBulletIds.length ? zeroScore.slice(-addBulletIds.length) : [];
 
