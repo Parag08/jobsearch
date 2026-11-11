@@ -9,24 +9,29 @@
   "selection": {
     "points": [
       {
-        "pointId": "valeo-cost-diagnosis",
+        "pointId": "insead-honors",
         "variant": null,
         "overrideText": null
       },
       {
-        "pointId": "valeo-cost-strategy",
-        "variant": "short",
+        "pointId": "iitj-mentoring",
+        "variant": "people-forward",
         "overrideText": null
       },
       {
-        "pointId": "valeo-route-app",
-        "variant": "ai-forward",
+        "pointId": "iitj-ignus",
+        "variant": "ops-forward",
         "overrideText": null
       },
       {
-        "pointId": "everhaus-roadmap",
-        "variant": "ai-forward",
+        "pointId": "valeo-cost-diagnosis",
+        "variant": "cursor-forward",
         "overrideText": null
+      },
+      {
+        "pointId": "valeo-cost-buyin",
+        "variant": null,
+        "overrideText": "Won CEO and operations-leadership approval for two strategies to cut fleet cost by up to 30%, making the case on the KPIs they move today and the returns that compound with scale"
       },
       {
         "pointId": "everhaus-compliance",
@@ -35,17 +40,12 @@
       },
       {
         "pointId": "everhaus-operating-model",
-        "variant": "investor-forward",
+        "variant": "short",
         "overrideText": null
       },
       {
         "pointId": "nutanix-sales-acv",
-        "variant": "xfn-forward",
-        "overrideText": null
-      },
-      {
-        "pointId": "nutanix-ai-workflow",
-        "variant": null,
+        "variant": "customer-forward",
         "overrideText": null
       },
       {
@@ -54,40 +54,46 @@
         "overrideText": null
       },
       {
+        "pointId": "nutanix-ai-workflow",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "nutanix-move-diligence",
+        "variant": null,
+        "overrideText": null
+      },
+      {
         "pointId": "nutanix-files-migration",
         "variant": "customer-forward",
         "overrideText": null
       },
       {
-        "pointId": "touchnote-new-revenue",
+        "pointId": "touchnote-checkout",
         "variant": "short",
         "overrideText": null
       },
       {
         "pointId": "eleven01-mvp",
-        "variant": null,
+        "variant": "zero-to-one",
+        "overrideText": null
+      },
+      {
+        "pointId": "eleven01-ico",
+        "variant": "launch-forward",
         "overrideText": null
       },
       {
         "pointId": "cognizant-deploy-automation",
         "variant": "short",
         "overrideText": null
-      },
-      {
-        "pointId": "insead-honors",
-        "variant": null,
-        "overrideText": null
-      },
-      {
-        "pointId": "iitj-ignus",
-        "variant": null,
-        "overrideText": null
       }
     ],
     "additionalOverrides": {
-      "add-skills": "Leadership | Project Management | Budget and Resource Management | People Management | Product Management",
-      "add-tech": "AI | Automation and Scripting | MCP | Blockchain | Kubernetes | Containerisation | Quantum Computing"
+      "add-skills": "Hypothesis-Led Problem Solving | Quantitative & Qualitative Analysis | Digital Transformation | Executive Stakeholder Management | Generative AI Tools (Claude, Cursor) | People Management",
+      "add-tech": "Claude | Cursor | MCP | Enterprise, Infrastructure & Cloud Software | Kubernetes | Blockchain | Automation"
     }
   },
-  "updatedAt": "2026-08-26T15:20:53.315Z"
+  "updatedAt": "2026-09-07T04:11:58.166Z",
+  "notes": "Rebuilt 2026-09-04. The version before this dated from 08-26 and had three problems independent of content: it put three points each under Valeo and EverHaus, breaking the standing cap that an internship and a part-time role must not outweigh the full-time ones; it predated valeo-cost-buyin, nutanix-move-diligence and nutanix-vp-roadmap, so the CEO-approval beat and the technical due diligence were simply absent; and its Skills line was the profile default reordered (\"Leadership | Project Management | Budget and Resource Management...\") with Quantum Computing still sitting in Technologies, which is noise to a consulting reader. It also carried a repeated-phrase finding (\"product roadmap\" across everhaus-roadmap and eleven01-mvp).\n\nThe scorer is effectively blind on this JD - it is BCG eligibility text plus firm boilerplate, so only strategy-consulting fires (3.25) and everything else lands between 0 and 3. Ranking discarded; this is judgement, recorded here to be argued with.\n\nWhat BCG asks for that Bain did not: \"blend digital and human capabilities\", \"technology and design, corporate and digital ventures\", \"driving bottom-line impact\". Parag technical depth is worth more here than on the Bain generalist CV, so the digital signal is carried four times over (valeo-cost-diagnosis on cursor-forward, everhaus-operating-model AI-first, nutanix-ai-workflow, and Claude/Cursor/MCP leading Technologies) rather than being left to the Skills line.\n\nValeo is diagnosis plus the merged buy-in override, the same pair and the same overrideText as both Bain CVs: capping Valeo at two forces a choice between the 30% recommendation and the CEO approval, and the override carries both facts with valeo-cost-strategy off the page so nothing is double-counted. valeo-route-app is the loss worth naming - \"built it end-to-end with AI, 100% adoption in one week\" is the single best bullet for BCG \"blend digital and human capabilities\" phrase, but the cap allows two and dropping valeo-cost-diagnosis would leave the CV with no data-analysis coverage at all.\n\nEverHaus is compliance plus operating-model rather than compliance plus roadmap: the operating-model bullet is the venture-flavoured one (AI-first operating model, demo product, investor conversations) and dropping everhaus-roadmap also clears the \"product roadmap\" collision with eleven01-mvp, so eleven01-mvp can run on zero-to-one without an override here.\n\nnutanix-sales-acv is on customer-forward, not xfn-forward. xfn-forward reads better for BCG \"uniquely collaborative model\" and was what the old CV used, but it wraps to two lines and that line is worth more spent on nutanix-move-diligence. touchnote-checkout replaces touchnote-new-revenue: the CV is already dense with revenue figures, and Conversion Rate / Average Order Value / Cart Abandonment is the one place Parag shows customer-metric fluency and the only consumer-facing story on an otherwise B2B page.\n\nNo em-dashes render on this page (checked)."
 }

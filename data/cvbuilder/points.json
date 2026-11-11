@@ -7,12 +7,28 @@
     "  text        the default wording",
     "  variants    same underlying fact, re-angled for a different audience.",
     "              NEVER put a new claim in a variant - only a rewording.",
-    "  tags        from data/taxonomy.json - this drives JD matching",
+    "  tags        from profile/taxonomy.json - this drives JD matching",
     "  strength    1-5, your own view of how impressive it is. Ties break on this.",
     "  status      active | draft | retired",
     "  inMaster    true if it appears on the 2026 master CV",
     "",
-    "Keep every number here defensible in an interview."
+    "Keep every number here defensible in an interview.",
+    "2026-10-30 date correction from Parag: Nutanix Member of Technical Staff began July 2022; the move to Team Lead was July 2024; Nutanix employment ended December 2025. The Team Lead period is July 2024-December 2025, superseding older notes here and in xyz-review.json that say 2024-2026. See profile/profile.json formDates for portal month values.",
+    "2026-10-27 behavioural interview evidence: Parag confirmed the government-customer VM migration escalation occurred during his Nutanix Team Lead role and that the customer's failure rate fell from 10% to around 1%. This supersedes his initial 4-5% baseline recollection. Captured as nutanix-government-migration-recovery, separate from the banking migration. Migration volume remains uncertain; use thousands of VMs per weekend. See profile/xyz-review.json profileClarifications for actions and evidence limits.",
+    "2026-10-27 HUD interview preparation: At Nutanix, product managers supplied priorities and Parag worked with programme managers to execute them. He particularly enjoyed delivery: working with different stakeholders, determining what needed to happen and when, and following the work through to delivery. This confirms his motivation for Technical Program Manager over Product Manager; no formal programme-manager title, specific programme outcome or additional delivery metric is established. See profile/xyz-review.json profileClarifications.",
+    "2026-10-25 HUD follow-up: Parag is working on course-specific MBA agents, each with the context of a course's shared material and teaching, so he can apply frameworks to real situations (example: negotiation preparation using Horacio Falcao's teaching). Completion, tools, demonstrability and measured results are unspecified. This is a personal learning project, not an employment achievement. He also confirmed 30% delivered operations cost savings at Valeo from insights based on mapping ten months of UAE appointment data and analysing staffing capacity, schedules and locations; this supersedes the prior forecast-only wording of valeo-cost-strategy. Savings baseline, measurement period and overlap with route-app savings remain unspecified.",
+    "2026-10-25 conversation evidence, HUD email: Parag's personal daily-life assistant project includes MediaBot, CookBot (help deciding what to cook), ShoppingBot (help shopping for things) and TravelBot (help deciding travel plans). He is also working on automating the end-to-end job-search pipeline while aiming to minimise token consumption. These are personal projects in progress; no completed end-to-end deployment, specific implementation tools, measured token savings or reliability results were confirmed. See profile/xyz-review.json profileClarifications; do not invent an employment role or achievement metric.",
+    "2026-10-19 conversation evidence: Parag's supplied Maxify application email describes an in-progress personal life-automation ecosystem, including MediaBot and CookBot, with asynchronous tasks, decision logic and persistent state management. Employer, completion, deployment, users and measured impact are not established; do not assign it to an employment role or claim shipped production agents. The source wording is currently architecting, not a completed delivery achievement. See profile/xyz-review.json profileClarifications.",
+    "Mobility confirmed 2026-10-19 for the Sheffield Management Associate application: Parag is willing to relocate internationally after the programme. This is a preference, not an achievement or confirmation of work authorisation.",
+    "CV layout preference confirmed 2026-10-15: aim for at least 50% width on each experience bullet's final line. Shorten orphan endings or expand them with useful supported detail; measure actual wrapping with tools/cv-builder/lib/metrics.js.",
+    "XYZ review, 2026-10-15: profile/xyz-review.json records the assessment and missing evidence for every point.",
+    "Pre-review recovery copy: archive/data-backups/points.before-xyz-2026-10-15.json. IDs and variant labels were preserved.",
+    "New confirmations: 20% fewer bugs (replaces 30% code quality); one year to Eleven01 ICO; Valeo saves 20,000 km and AED 12,200 monthly.",
+    "Release cadence and promotions are separate points: testing resources enabled the release increase; feedback, clear goals and leadership visibility supported promotions.",
+    "2026-10-28 portfolio summary: added amantya-verizon-tower-analytics (stated by Parag in chat) and cognizant-mesh-library, cognizant-trendsetter, touchnote-api-performance, eleven01-spokesperson (from his LinkedIn PDF). No existing point changed. Open conflicts NOT applied, awaiting Parag: amantya-ios-retail (bank: footfall and sales +10%; chat 2026-10-28: revenue +about 30%); iitj-ignus (bank: $10K; LinkedIn: INR 1M); role dates/titles in profile.json vs LinkedIn (EverHaus Jan-May vs Feb-Jun 2026; Eleven01 2019 vs Sep 2018 start; Touchnote 'Backend Developer' vs 'Senior Backend developer'). LinkedIn's 'code quality 30%' is superseded by nutanix-code-standards (20% fewer bugs) and LinkedIn places the custodian-bank migration under MTS although the bank records Team Lead (confirmed 2026-10-22).",
+    "2026-10-28 conflicts resolved by Parag: amantya-ios-retail now 'revenue about 20%'; iitj-ignus $10K = INR 1M (same figure); Touchnote title changed to 'Senior Backend Developer' in profile.json. Still open: EverHaus and Eleven01 dates vs LinkedIn.",
+    "2026-10-28 LinkedIn vs CV, decided by Parag: the EverHaus and Eleven01 date differences are accepted (LinkedIn keeps Feb-Jun 2026 and Sep 2018-Feb 2020; CV and profile.json unchanged). The Valeo CEO agreed to the LinkedIn title 'Product Manager Intern'; the CV and profile.json keep 'Management Intern'. These are no longer open conflicts.",
+    "2026-11-06: Parag gave the levels for the three Nutanix promotions and 0% attrition; added to nutanix-engineer-promotions notes and a retention-forward variant. Attrition period and team size still unconfirmed."
   ],
   "points": [
     {
@@ -22,7 +38,7 @@
       "variants": [
         {
           "label": "leadership-forward",
-          "text": "President, Fintech & Blockchain Club (largest student club by membership) | GMAT Focus: 695"
+          "text": "President, Fintech & Blockchain Club | GMAT Focus: 695"
         },
         {
           "label": "academics-forward",
@@ -38,16 +54,16 @@
       "status": "active",
       "inMaster": true,
       "pinned": true,
-      "notes": "Effectively always included - it is the only INSEAD bullet."
+      "notes": "Effectively always included - it is the only INSEAD bullet. User instruction, 2026-10-06: never add or imply 'largest student club by membership' in any CV or application material."
     },
     {
       "id": "iitj-mentoring",
       "roleId": "iitj-btech",
-      "text": "Mentored junior students, directly achieving a 10% rise in average GPA through individualised academic support and mentorship",
+      "text": "Raised junior students' average GPA 10% through individual academic coaching and mentorship",
       "variants": [
         {
           "label": "people-forward",
-          "text": "Coached junior students one-to-one, lifting their average GPA 10% through individualised academic support"
+          "text": "Raised junior students' average GPA 10% through one-to-one academic coaching"
         },
         {
           "label": "short",
@@ -67,7 +83,7 @@
     {
       "id": "iitj-ignus",
       "roleId": "iitj-btech",
-      "text": "Served as Workshop Head for the annual college festival Ignus, generating $10K in revenue through strategic partnerships and sales",
+      "text": "Generated $10K in revenue as Workshop Head for Ignus by securing partnerships and driving sales",
       "variants": [
         {
           "label": "commercial-forward",
@@ -75,7 +91,7 @@
         },
         {
           "label": "ops-forward",
-          "text": "As Workshop Head for the annual college festival Ignus, delivered $10K in revenue by securing partnerships and driving sales"
+          "text": "Delivered $10K in revenue for Ignus by securing partnerships and driving sales as Workshop Head"
         }
       ],
       "tags": [
@@ -87,20 +103,21 @@
       "strength": 3,
       "status": "active",
       "inMaster": true,
-      "notes": ""
+      "notes": "2026-10-28: Parag confirmed $10K is the same figure as the INR 1M shown on LinkedIn.",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "everhaus-roadmap",
       "roleId": "everhaus-psm",
-      "text": "Developed the product roadmap for a bootstrapped renovation-investment platform, defining 20+ core features using AI-driven research",
+      "text": "Defined 20+ features through AI-driven research for a bootstrapped investment-platform roadmap, with 15 subsequently built and validated through founder review",
       "variants": [
         {
           "label": "ai-forward",
-          "text": "Used AI-driven research to define 20+ core features and build the product roadmap for a bootstrapped renovation-investment platform"
+          "text": "Defined a 20+ feature roadmap through AI-driven research for a renovation-investment platform; 15 features were built and validated through founder review"
         },
         {
           "label": "zero-to-one",
-          "text": "Built the product roadmap for a bootstrapped renovation-investment platform from a blank page, defining 20+ core features through AI-driven market and user research"
+          "text": "Built an investment-platform roadmap from scratch through AI-driven market and user research, defining 20+ features of which 15 were built and validated through founder review"
         }
       ],
       "tags": [
@@ -115,20 +132,20 @@
       "strength": 4,
       "status": "active",
       "inMaster": true,
-      "notes": "Strongest 'I do product' signal on the CV. Lead with it for PM roles."
+      "notes": "2026-10-15: Parag confirmed 15 of the 20+ features were built and validated through founder review. His established contribution is research, definition and roadmap ownership; do not claim he personally coded all 15 or that founder review means customer validation, public launch or paying adoption. Remaining context: which features, timeframe and subsequent adoption or business effect. Do not convert 15 of 20+ to an exact delivery percentage."
     },
     {
       "id": "everhaus-compliance",
       "roleId": "everhaus-psm",
-      "text": "Owned compliance research and product strategy for a lean founding team, shaping a platform targeting up to 16% annual returns",
+      "text": "Shaped data modelling, data residency, investment limits and customer-onboarding documents by translating MAS compliance research into requirements for an investment platform targeting up to 16% annual returns",
       "variants": [
         {
           "label": "ops-forward",
-          "text": "Owned regulatory and compliance research end-to-end for a lean founding team, translating findings into product requirements for a platform targeting up to 16% annual returns"
+          "text": "Defined data models, data-residency requirements, investment limits and onboarding-document requirements through MAS compliance research"
         },
         {
           "label": "ambiguity-forward",
-          "text": "Operated with no playbook on a lean founding team, owning compliance research and product strategy for a platform targeting up to 16% annual returns"
+          "text": "Shaped a founding team's investment platform targeting up to 16% annual returns through MAS compliance research covering data residency, data models, investment limits and onboarding documents"
         }
       ],
       "tags": [
@@ -142,16 +159,16 @@
       "strength": 4,
       "status": "active",
       "inMaster": true,
-      "notes": "Best bullet for regulated industries - fintech, banking, insurance, marketplaces."
+      "notes": "2026-10-15: Parag confirmed compliance research informed the data model, where data resides due to MAS compliance, investment limits and required onboarding documents. These are researched product requirements, not a claim of regulatory approval, licensing or legally verified compliance. No specific law, storage jurisdiction or numeric investment limit is claimed. Up to 16% annual returns remains a product target, not a delivered investment return. Ask which design decisions were implemented and whether this reduced rework or enabled a launch milestone."
     },
     {
       "id": "nutanix-ai-workflow",
       "roleId": "nutanix-tl",
-      "text": "Optimised development workflow with AI tooling and JIRA, delivering 50% fewer meetings and 20% faster product cycles",
+      "text": "Shortened product cycles 20% and cut meetings 50% by redesigning the team's development workflow around AI tooling and JIRA",
       "variants": [
         {
           "label": "product-ops",
-          "text": "Redesigned the team's development workflow around AI tooling and JIRA, cutting meetings 50% and shortening product cycles 20%"
+          "text": "Cut meetings 50% and shortened product cycles 20% by redesigning development workflows with AI tooling and JIRA"
         },
         {
           "label": "process-forward",
@@ -174,15 +191,15 @@
     {
       "id": "nutanix-sales-acv",
       "roleId": "nutanix-tl",
-      "text": "Drove product strategy with Sales to prioritise customer-driven features, enabling $40–50M in Annual Contract Value",
+      "text": "Enabled $40–50M in new-business Annual Contract Value by partnering with Sales to prioritise customer-driven product features",
       "variants": [
         {
           "label": "customer-forward",
-          "text": "Partnered with Sales to translate customer needs into a prioritised feature set, enabling $40–50M in Annual Contract Value"
+          "text": "Enabled $40–50M in new-business Annual Contract Value by translating customer needs into a prioritised feature set with Sales"
         },
         {
           "label": "xfn-forward",
-          "text": "Aligned Sales, Product and Engineering on a single prioritised roadmap driven by customer input, enabling $40–50M in Annual Contract Value"
+          "text": "Enabled $40–50M in new-business Annual Contract Value by aligning Sales, Product and Engineering on a customer-driven feature roadmap"
         }
       ],
       "tags": [
@@ -198,16 +215,16 @@
       "strength": 5,
       "status": "active",
       "inMaster": true,
-      "notes": "Biggest number on the CV. Almost always include."
+      "notes": "2026-10-15: Parag clarified the $40–50M ACV was new business that came through the door, rather than retained business or pipeline. Preserve enabled to reflect shared Sales/Product/Engineering attribution; do not recast as personally closed sales or recognised revenue. Ask for the measurement period and illustrative features."
     },
     {
       "id": "nutanix-team-budget",
       "roleId": "nutanix-tl",
-      "text": "Managed a team of 11+ developers and a $500K budget to deliver best-in-class migration software recognised by Gartner",
+      "text": "Delivered migration software recognised by Gartner as best-in-class by leading 11+ developers and managing a $500K budget",
       "variants": [
         {
           "label": "people-forward",
-          "text": "Led and developed a team of 11+ engineers against a $500K budget, shipping migration software recognised by Gartner as best-in-class"
+          "text": "Delivered Gartner-recognised migration software by leading and developing 11+ engineers and managing a $500K budget"
         },
         {
           "label": "delivery-forward",
@@ -215,7 +232,7 @@
         },
         {
           "label": "budget-forward",
-          "text": "Ran a $500K budget and an 11+ person team to deliver migration software Gartner rated best-in-class"
+          "text": "Delivered Gartner-recognised migration software by managing a $500K budget and an 11+ person engineering team"
         }
       ],
       "tags": [
@@ -229,48 +246,67 @@
       "strength": 5,
       "status": "active",
       "inMaster": true,
-      "notes": "The people-management proof point. Include for anything with reports or budget."
+      "notes": "The people-management proof point. Include for anything with reports or budget. 2026-10-21: User confirmed participating in hiring for senior-developer roles at Nutanix. The phrase \"3 racks\" remains ambiguous; do not claim three filled positions, three hires or a hiring count. Two performance-review cycles and three promotions are recorded under nutanix-engineer-promotions. Exact management dates beyond the existing role dates are unconfirmed."
     },
     {
       "id": "nutanix-files-migration",
       "roleId": "nutanix-mts",
-      "text": "Spearheaded the creation of a files migration feature, led cross-organisational collaboration to onboard customers with 10+ petabytes of data, resulting in $1M+ in recurring revenue",
+      "text": "Took ownership of a files migration feature stalled for 2 years; defined its architecture and the Move/Files team boundary, and shipped on time with 100% QA sign-off, migrating 10+ PB of data and adding $1M+ in recurring revenue within a year of launch",
       "variants": [
         {
+          "label": "product-forward",
+          "text": "Unblocked a files migration product stalled for 2 years by deciding architecture, team ownership and UX with design; launched in 10 months, with customers migrating 10+ PB and generating $1M+ in recurring revenue in year one"
+        },
+        {
+          "label": "delivery-forward",
+          "text": "Split a cross-team release into 6 phases with predictable timelines across the Move, Files and UX teams; delivered on schedule and resolved ~300 QA stability bugs in 6 weeks to reach 100% QA sign-off"
+        },
+        {
+          "label": "technical",
+          "text": "Designed the orchestration layer (Go) for SMB/NFS file migration (full initial copy, then incremental delta syncs to cutover), driving Nutanix Files data-path APIs; 10+ PB migrated in the first year"
+        },
+        {
+          "label": "ic-leadership",
+          "text": "As IC project lead, led a 5-person team (2 backend, 1 UI, 1 UX, 1 QA) and coordinated the Nutanix Files team to ship a 2-year-stalled feature on time"
+        },
+        {
           "label": "grammar-fixed",
-          "text": "Spearheaded a new files migration capability and led cross-organisational collaboration to onboard customers with 10+ petabytes of data, generating $1M+ in recurring revenue"
+          "text": "Generated $1M+ in recurring revenue by leading development of a file-migration capability that customers used to migrate 10+ petabytes of data within a year of launch"
         },
         {
           "label": "customer-forward",
-          "text": "Onboarded enterprise customers holding 10+ petabytes of data onto a new files migration capability, unlocking $1M+ in recurring revenue"
+          "text": "Unlocked $1M+ in recurring revenue by launching a file-migration capability that enterprise customers used to migrate 10+ petabytes of data in its first year"
         }
       ],
       "tags": [
         "zero-to-one",
+        "ambiguity",
         "cross-functional",
-        "customer-facing",
-        "revenue",
+        "project-management",
         "data-migration",
         "engineering",
-        "launch"
+        "backend",
+        "quality",
+        "launch",
+        "revenue"
       ],
       "strength": 5,
       "status": "active",
       "inMaster": true,
-      "notes": "Corrected in place (was 'lead'/'resulting $1M+'). The 'grammar-fixed' variant is retained as an alias."
+      "notes": "Updated 2026-11-03 from Parag: Dec 2022 - Sep 2023, IC project lead. Stalled 2 years (no owner/architecture). Move = orchestration/plan/UI/control; Files = data path. 6 phases; team 2 BE, 1 UI, 1 UX, 1 QA. ~300 QA bugs cleared in 6 weeks; 100% QA sign-off; on time. 10+ PB migrated within 1 year of launch (confirmed 10+, not 50); $1M+ is RECURRING revenue (confirmed 2026-11-03) - say 'recurring revenue', not ACV or one-off. Go, SMB, NFS, full copy + incremental delta sync to cutover. Replaces the earlier 'customers holding 10+ PB' wording: 10+ PB is data actually migrated. 'grammar-fixed' and 'customer-forward' labels kept (rewritten to the confirmed facts) because existing applications reference them."
     },
     {
       "id": "nutanix-code-standards",
       "roleId": "nutanix-mts",
-      "text": "Introduced initiatives to establish coding standards, resulting in a 30% improvement in code quality and fewer customer defects",
+      "text": "Reduced bugs found in code 20% by establishing team-wide coding standards and review practices",
       "variants": [
         {
           "label": "process-forward",
-          "text": "Established team-wide coding standards and review practices, improving code quality 30% and reducing customer-reported defects"
+          "text": "Reduced bugs found in code 20% by introducing team-wide coding standards and code review practices"
         },
         {
           "label": "quality-forward",
-          "text": "Drove a 30% improvement in code quality and a drop in customer-reported defects by introducing team-wide coding standards"
+          "text": "Cut bugs found in code 20% through coding standards and review practices across the engineering team"
         }
       ],
       "tags": [
@@ -282,16 +318,16 @@
       "strength": 3,
       "status": "active",
       "inMaster": true,
-      "notes": "Weakest Nutanix bullet - first to cut when space is tight."
+      "notes": "2026-10-15: Parag clarified the metric as a 20% reduction in bugs found in code. This supersedes the previous vague 30% improvement in code quality across the default and all variants. Do not translate this into customer-reported defects, coverage or another metric. Measurement period, bug-detection stage, baseline counts and normalisation for code volume remain unconfirmed."
     },
     {
       "id": "touchnote-checkout",
       "roleId": "touchnote-be",
-      "text": "Revamped the checkout process, saving customers 30 seconds per checkout; optimisation led to an improved Customer Conversion Rate, reduced Cart Abandonment, and increased Average Order Value for a global customer base",
+      "text": "Saved customers 30 seconds per checkout by rebuilding the flow, improving conversion and average order value while reducing cart abandonment across a global customer base",
       "variants": [
         {
           "label": "short",
-          "text": "Revamped the checkout flow to save 30 seconds per purchase, lifting Conversion Rate and Average Order Value while reducing Cart Abandonment across a global customer base"
+          "text": "Saved 30 seconds per purchase by rebuilding checkout, improving conversion and average order value while reducing cart abandonment"
         },
         {
           "label": "metrics-forward",
@@ -319,11 +355,11 @@
     {
       "id": "touchnote-new-revenue",
       "roleId": "touchnote-be",
-      "text": "Drove business expansion by collaborating with the Product team to identify and launch a new e-commerce platform feature, establishing a new revenue stream of $25K+/month, rolled out across United Kingdom",
+      "text": "Established a $25K+/month revenue stream by partnering with Product to identify and launch a new e-commerce feature across the United Kingdom",
       "variants": [
         {
           "label": "short",
-          "text": "Identified and launched a new e-commerce feature with the Product team, opening a $25K+/month revenue stream across the United Kingdom"
+          "text": "Opened a $25K+/month revenue stream across the United Kingdom by launching a new e-commerce feature with Product"
         },
         {
           "label": "revenue-forward",
@@ -346,15 +382,15 @@
     {
       "id": "eleven01-mvp",
       "roleId": "eleven01-dev",
-      "text": "Architected the foundational blockchain MVP and strategic product roadmap as a founding member, while establishing the core cultural values and operational standards required to scale the technical organisation",
+      "text": "Built a blockchain platform from zero to MVP as a founding member by defining its architecture, product roadmap and operating standards",
       "variants": [
         {
           "label": "short",
-          "text": "Architected the foundational blockchain MVP and product roadmap as a founding member, setting the cultural values and operational standards used to scale the technical organisation"
+          "text": "Built a blockchain MVP as a founding member by defining its architecture, product roadmap and operating standards"
         },
         {
           "label": "zero-to-one",
-          "text": "Took a blockchain platform from zero to MVP as a founding member, owning the technical architecture, product roadmap, and the operating standards the organisation scaled on"
+          "text": "Delivered a blockchain platform from zero to MVP by owning architecture, product planning and operating standards as a founding member"
         }
       ],
       "tags": [
@@ -376,19 +412,19 @@
     {
       "id": "eleven01-ico",
       "roleId": "eleven01-dev",
-      "text": "Led a 10+ member team to develop multiple differentiating features for the Eleven01 blockchain, culminating in an Initial Coin Offering",
+      "text": "Delivered blockchain features culminating in an Initial Coin Offering within one year by leading a 10+ member development team",
       "variants": [
         {
           "label": "grammar-fixed",
-          "text": "Led a 10+ member team to build the differentiating features of the Eleven01 blockchain, culminating in an Initial Coin Offering"
+          "text": "Delivered differentiating blockchain features leading to an Initial Coin Offering within one year by leading a team of 10+"
         },
         {
           "label": "people-forward",
-          "text": "Led a 10+ member team through the build of the Eleven01 blockchain's differentiating features, culminating in an Initial Coin Offering"
+          "text": "Reached an Initial Coin Offering within one year by leading a 10+ member team to deliver Eleven01's differentiating blockchain features"
         },
         {
           "label": "launch-forward",
-          "text": "Shipped the differentiating features of the Eleven01 blockchain with a 10+ member team, culminating in an Initial Coin Offering"
+          "text": "Delivered Eleven01's differentiating features with a 10+ member team, culminating in an Initial Coin Offering within one year"
         }
       ],
       "tags": [
@@ -401,20 +437,28 @@
       "strength": 4,
       "status": "active",
       "inMaster": true,
-      "notes": "Corrected in place (was 'a Initial'). The 'grammar-fixed' variant is retained as an alias."
+      "notes": "2026-10-15: Parag confirmed one year to the ICO and explicitly clarified ICO, not IPO. This timing belongs to the ICO milestone, not automatically to MVP delivery. Starting event for the one-year interval, funds raised, users and performance metrics remain unspecified. Existing variant labels are retained for application compatibility. 2026-10-21: User confirmed directly managing engineers at Eleven01 for one year. This is management duration; it does not establish the starting event for the ICO interval or five years of combined engineering management."
     },
     {
       "id": "amantya-ios-retail",
       "roleId": "amantya-swe",
-      "text": "Boosted footfall and sales for brick-and-mortar retailers by 10% by developing an iOS app; sending hyper-local and personalised offers to users within a shopping mall",
+      "text": "Increased retailer revenue about 20% by developing an iOS app delivering local, personalised offers to shoppers inside a mall",
       "variants": [
         {
           "label": "short",
-          "text": "Lifted footfall and sales 10% for brick-and-mortar retailers by building an iOS app that pushed hyper-local, personalised offers to shoppers inside a mall"
+          "text": "Lifted revenue about 20% for brick-and-mortar retailers by building an iOS app that pushed hyper-local, personalised offers to shoppers inside a mall"
         },
         {
           "label": "growth-forward",
-          "text": "Drove a 10% lift in footfall and sales for brick-and-mortar retailers with an iOS app delivering hyper-local, personalised offers to shoppers in-mall"
+          "text": "Drove a revenue lift of about 20% for brick-and-mortar retailers with an iOS app delivering hyper-local, personalised offers to shoppers in-mall"
+        },
+        {
+          "label": "swift-forward",
+          "text": "Increased retailer revenue about 20% by building a Swift iOS app delivering personalised local offers to shoppers in a mall"
+        },
+        {
+          "label": "promotion-forward",
+          "text": "Increased retailer revenue about 20% by building a Swift iOS app that triggered personalised offers as shoppers viewed products in a mall, using their location and preferences to determine which offers to display"
         }
       ],
       "tags": [
@@ -427,20 +471,21 @@
       "strength": 3,
       "status": "active",
       "inMaster": true,
-      "notes": "Note: this bullet sits under Amantya (a 5G/IoT telecom firm) while the IoT-deployment bullet sits under Cognizant. Worth double-checking they are not swapped."
+      "notes": "Note: this bullet sits under Amantya (a 5G/IoT telecom firm) while the IoT-deployment bullet sits under Cognizant. Worth double-checking they are not swapped. 2026-10-21: User confirmed Amantya was the employer and Swift was the language. User explicitly describes limited iOS experience. Employer attribution is resolved; do not infer Android experience, broad mobile expertise, App Store ownership or recent native-mobile delivery. 2026-10-22, Monee Smart Promotion CV: user confirmed that offers were triggered when the shopper was looking at a product, based on location and shopper preferences. This explains the existing personalised-offers achievement; it is not a separate outcome. Added promotion-forward wording while preserving existing text/variant labels and historical application selections. No eye tracking, camera recognition, gaze detection, beacon/GPS implementation, recommender model, ML decisioning or attribution method is established. Prior personal Swift iOS app development remains confirmed; ownership of any specific targeting subsystem is not established. 2026-10-28: Parag confirmed the result as about 20% (revenue), superseding the earlier 'footfall and sales 10%' and his same-day chat figure of about 30%. Applied to the default text and every variant. Historical application overrides may still carry 10%.",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "cognizant-deploy-automation",
       "roleId": "cognizant-assoc",
-      "text": "Built automation to bring down platform deployment time of complex IoT solution from 5–6 days to 1 hour by leading a cross-team initiative to build a deployment platform",
+      "text": "Cut complex IoT platform deployment time from 5–6 days to 1 hour by leading cross-team deployment automation using Kubernetes and Helm",
       "variants": [
         {
           "label": "short",
-          "text": "Cut deployment time for a complex IoT solution from 5–6 days to 1 hour by leading a cross-team initiative to build a deployment automation platform"
+          "text": "Cut IoT deployment time from 5–6 days to 1 hour by leading cross-team automation with Kubernetes and Helm"
         },
         {
           "label": "ops-forward",
-          "text": "Led a cross-team initiative that automated platform deployment for a complex IoT solution, collapsing a 5-6 day manual process into 1 hour"
+          "text": "Cut a complex IoT platform’s manual deployment process from 5–6 days to 1 hour by leading cross-team automation with Kubernetes and Helm"
         }
       ],
       "tags": [
@@ -454,24 +499,25 @@
       "strength": 4,
       "status": "active",
       "inMaster": true,
-      "notes": "Strong efficiency/automation number. Great for ops roles. 'IOT' corrected to 'IoT'."
+      "notes": "Strong efficiency/automation number. Great for ops roles. 'IOT' corrected to 'IoT'. 2026-10-22, Cohere North CV: Parag confirmed that the deployment reduction at Cognizant was achieved using Kubernetes and Helm. This establishes hands-on tool usage within the existing cross-team deployment-automation achievement. No production-cluster administration, named cloud provider, Helm chart authorship, CI/CD pipeline ownership, incident response or reliability result is established.",
+      "updatedAt": "2026-10-22T00:00:00.000Z"
     },
     {
       "id": "everhaus-operating-model",
       "roleId": "everhaus-psm",
-      "text": "Defined the AI-first operating model for a founding team, up and running in 2 months instead of 6 and reaching a demo product and investor conversations far sooner",
+      "text": "Cut operating-model setup from 6 months to 2 by designing workflows around Notion, Linear and AI coding agents, accelerating a founding team's demo and investor conversations",
       "variants": [
         {
           "label": "short",
-          "text": "Stood up an AI-first operating model in 2 months instead of 6, reaching a demo product and investor conversations far sooner"
+          "text": "Cut setup from 6 months to 2 by designing an AI-first operating model for a founding team"
         },
         {
           "label": "ops-forward",
-          "text": "Built the operating model that lets non-technical founders run engineering — progress tracked in Notion, requests raised in Linear, delivery by AI coding agents — cutting setup from 6 months to 2"
+          "text": "Cut engineering setup from 6 months to 2 for non-technical founders through workflows using Notion, Linear and AI coding agents"
         },
         {
           "label": "investor-forward",
-          "text": "Cut the team's path to a demo product and investor conversations from 6 months to 2 by designing an AI-first operating model around Notion, Linear and AI coding agents"
+          "text": "Accelerated a founding team's demo and investor conversations by cutting operating setup from 6 months to 2 with Notion, Linear and AI coding agents"
         }
       ],
       "tags": [
@@ -493,19 +539,19 @@
     {
       "id": "valeo-cost-diagnosis",
       "roleId": "valeo-intern",
-      "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers, building the financial analysis that framed the cost problem",
+      "text": "Identified drivers of an 18% rise in fleet operating cost against flat revenue by analysing the financial data",
       "variants": [
         {
           "label": "short",
-          "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers"
+          "text": "Identified why fleet costs rose 18% while revenue stayed flat through financial analysis"
         },
         {
           "label": "analysis-forward",
-          "text": "Ran the financial analysis isolating why fleet operating cost rose 18% while revenue stayed flat, naming each underlying driver"
+          "text": "Isolated the drivers of an 18% fleet-cost increase against flat revenue through financial analysis"
         },
         {
           "label": "cursor-forward",
-          "text": "Traced an 18% rise in fleet operating cost against 0% revenue growth to its underlying drivers, building the financial analysis in Cursor"
+          "text": "Identified drivers of an 18% fleet-cost increase against flat revenue by building financial analysis in Cursor"
         }
       ],
       "tags": [
@@ -525,19 +571,19 @@
     {
       "id": "valeo-cost-strategy",
       "roleId": "valeo-intern",
-      "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order",
+      "text": "Reduced operations costs 30% by analysing ten months of UAE appointment data to optimise staffing capacity, schedules and locations",
       "variants": [
         {
           "label": "short",
-          "text": "Developed two strategies to cut fleet cost by up to 30%, including a three-hub network that shortens distance driven per order"
+          "text": "Cut operations costs 30% through appointment-data analysis of staffing capacity, schedules and locations"
         },
         {
           "label": "consulting-forward",
-          "text": "Sized two levers to cut fleet cost by up to 30% — merging the two verticals and moving to a three-hub network — against the measured cost drivers"
+          "text": "Delivered a 30% operations cost reduction by translating ten months of mapped UAE appointment data into staffing and scheduling insights"
         },
         {
           "label": "cursor-forward",
-          "text": "Developed two strategies to cut fleet cost by up to 30%: consolidating the two verticals and building a three-hub network that shortens the distance driven per order, sizing the saving from each in Cursor with Claude"
+          "text": "Reduced operations costs 30% through analysis in Cursor with Claude, using ten months of UAE appointment data to assess staffing capacity, schedules and locations"
         }
       ],
       "tags": [
@@ -551,29 +597,29 @@
       "strength": 5,
       "status": "active",
       "inMaster": false,
-      "notes": "Pairs naturally with valeo-cost-diagnosis (diagnosis then recommendation). Phrased as proposed, not delivered - keep it that way unless the saving has actually landed. 'cursor-forward' is the base text verbatim plus the sizing method: Parag confirmed on 2026-09-02 that the saving from each strategy was sized in Cursor. Still 2 lines, still phrased as proposed rather than delivered. 2026-09-03: Parag confirmed Cursor was running Claude specifically for this work, so 'cursor-forward' now names Claude too, same reasoning as valeo-cost-diagnosis.",
+      "notes": "Pairs naturally with valeo-cost-diagnosis (diagnosis then recommendation). Originally recorded as proposed. On 2026-10-25 Parag confirmed 30% delivered operations cost savings based on insights from mapping ten months of UAE appointments and analysing staffing capacity, schedules and locations. Default and every variant now reflect that confirmation; cost baseline, savings period and overlap with route-app savings remain unspecified. The earlier consolidation and three-hub proposals remain historical context, not confirmed implementation mechanisms for the delivered 30%. 'cursor-forward' is the base text verbatim plus the sizing method: Parag confirmed on 2026-09-02 that the saving from each strategy was sized in Cursor. The original variant described proposed savings; this historical wording is superseded by the 2026-10-25 confirmation. 2026-09-03: Parag confirmed Cursor was running Claude specifically for this work, so 'cursor-forward' now names Claude too, same reasoning as valeo-cost-diagnosis. 2026-10-19: Parag confirmed while tailoring the Applied Materials NCG CV that he did not personally negotiate supplier prices in the Valeo fleet-cost work. Do not describe the cost analysis or network strategies as personal supplier-price negotiation; supplier contract negotiation is not established either.",
       "createdAt": "2026-08-07T13:32:38.522Z"
     },
     {
       "id": "valeo-route-app",
       "roleId": "valeo-intern",
-      "text": "Learned how the operation ran from the people running it, then specified and prototyped the route-optimisation app they needed — 100% adoption in one week",
+      "text": "Cut field-visit distance per order 25% (60 to 45 km), about 23,000 km and AED 12,400 a month, after launching a dispatch and routing tool built with AI alongside operations",
       "variants": [
         {
           "label": "ai-forward",
-          "text": "Specified and prototyped the route-optimisation app the operations team needed, building it end-to-end with AI, reaching 100% adoption in one week"
+          "text": "Cut distance per field visit 25% (about 23,000 km and AED 12,400 a month) after launching a dispatch and routing tool built with AI"
         },
         {
           "label": "short",
-          "text": "Prototyped a route-optimisation app with the operations team and drove it to 100% adoption in one week"
+          "text": "Cut distance per field visit 25% (about 23,000 km and AED 12,400 a month) after launching a dispatch and routing tool"
         },
         {
           "label": "adoption-forward",
-          "text": "Drove a route-optimisation app to 100% adoption by the operations team within one week of putting the prototype in their hands"
+          "text": "Moved operations fully onto a new dispatch and routing tool within a week by running daily catch-ups with ops for 14 days after launch"
         },
         {
           "label": "digitisation-forward",
-          "text": "Digitised fleet operations with a route-optimisation app specified alongside the operations team, reaching 100% adoption within one week"
+          "text": "Replaced Excel-based dispatch with a routing tool built alongside operations, cutting distance per field visit 25%, about AED 12,400 a month"
         }
       ],
       "tags": [
@@ -589,22 +635,51 @@
       "strength": 5,
       "status": "active",
       "inMaster": false,
-      "notes": "The discovery -> spec -> prototype -> adoption story, and the only point proving a tool actually landed with users. Overlaps everhaus-roadmap and touchnote-new-revenue on product tags but shares no wording with either - different stories, safe to run together. Naming the ops team size (\"all N dispatchers\") would make the 100% land harder. 'ai-forward' names the AI build method — use where AI fluency is being signalled.",
+      "notes": "2026-11-01: superseded the 2026-10-15 figures (20,000 km, AED 12,200, '100% adoption') with Parag's own verified account in his public repo Parag08/valeo-routing docs/CONTEXT.md (dated 2026-10-30), read at his request. Verified: SC/IV distance per order 60 -> 45.3 km (-24.6%) over 16 Aug-16 Sep 2026 on 29 clean days (42.6 km in September); ~23,000 km a month at that month's volume; ~AED 12,400 a month at the marginal cost per km, accepted by the company. Tool (Logistics Valeo) built on Lovable, live 1 Aug 2026, ops fully on it within a week, daily ops catch-ups for 14 days. CAVEATS: daily order volume rose in the same period, so do not attribute the drop to hubs alone; say 'km per order fell 25% after launch'. Do NOT claim '100% adoption', absolute fleet spend, or the modelled ~21% programme saving. Order-capture result is a separate point (valeo-order-capture). Earlier notes: separate from valeo-cost-strategy (30%); do not add savings together. 2026-10-25 HUD email context about a route-optimisation model remains unverified.",
       "createdAt": "2026-08-07T13:32:38.531Z",
-      "updatedAt": "2026-08-07T13:55:37.741Z"
+      "updatedAt": "2026-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "valeo-order-capture",
+      "roleId": "valeo-intern",
+      "text": "Raised orders captured from a partner booking platform from 60–70% to 80–90% by building an acceptance engine that auto-claims every order the fleet can serve",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Raised booking-platform order capture from 60–70% to 80–90% with an automated order-acceptance engine"
+        },
+        {
+          "label": "product-forward",
+          "text": "Lifted order capture from 60–70% to 80–90% by replacing manual Excel claiming with an acceptance engine that checks fleet capacity and logs every decision"
+        }
+      ],
+      "tags": [
+        "automation",
+        "product-management",
+        "zero-to-one",
+        "launch",
+        "ops-execution",
+        "cross-functional"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-11-01: from Parag's own account in Parag08/valeo-routing docs/CONTEXT.md (2026-10-30). Measured, validated by the Valeo ops lead. Before: ops claimed orders by hand in Excel. Engine auto-accepts orders when the fleet has capacity; lead-time rule moved from 3 h to 24 h and became configurable after ops pushback; decision log kept. Whether 'has capacity' was a full feasibility check or a slot count is unconfirmed (open question 2) - do not claim route-feasibility checking. v2 swap-out was designed but not shipped.",
+      "createdAt": "2026-11-01T00:00:00.000Z",
+      "updatedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "valeo-cost-buyin",
       "roleId": "valeo-intern",
-      "text": "Won CEO and operations-leadership approval for the strategies by showing the KPIs they move today and the returns that compound with scale",
+      "text": "Secured CEO and operations-leadership approval for fleet-cost strategies by presenting their expected KPI impact and returns at scale",
       "variants": [
         {
           "label": "short",
-          "text": "Won CEO approval for the cost strategies by showing the KPIs they move today and the returns that compound with scale"
+          "text": "Secured CEO approval for fleet-cost strategies by presenting expected KPI improvements and returns at scale"
         },
         {
           "label": "exec-forward",
-          "text": "Made the case to the CEO and operations leadership and secured approval, framing the strategies on the KPIs they move today and the returns that compound with scale"
+          "text": "Secured CEO and operations-leadership approval for fleet-cost strategies through a business case covering expected KPI impact and returns at scale"
         }
       ],
       "tags": [
@@ -617,21 +692,21 @@
       "strength": 4,
       "status": "active",
       "inMaster": false,
-      "notes": "Added 2026-09-04 from Parag: he presented the fleet-cost strategies to Valeo’s CEO and operations leadership and got them approved, arguing near-term KPI movement plus improving returns at scale. This is the third beat of the consulting arc — valeo-cost-diagnosis (diagnose) → valeo-cost-strategy (recommend) → this (sell it) — and the only point on the CV proving he has presented a recommendation at C-level. Deliberately says APPROVAL, not delivery: valeo-cost-strategy is still phrased as proposed, and the 30% saving has not been confirmed as landed. Do not merge into valeo-cost-strategy as a variant — the audience and the approval are new claims, not a re-angling.",
+      "notes": "Added 2026-09-04 from Parag: he presented the fleet-cost strategies to Valeo’s CEO and operations leadership and got them approved, arguing near-term KPI movement plus improving returns at scale. This is the third beat of the consulting arc — valeo-cost-diagnosis (diagnose) → valeo-cost-strategy (recommend) → this (sell it) — and the only point on the CV proving he has presented a recommendation at C-level. This point records the approval milestone. The earlier forecast-only status of valeo-cost-strategy was superseded on 2026-10-25 when Parag confirmed 30% delivered operations cost savings; no extra implementation or approval outcome is inferred here. Do not merge into valeo-cost-strategy as a variant — the audience and the approval are new claims, not a re-angling.",
       "createdAt": "2026-09-04T00:00:00.000Z"
     },
     {
       "id": "nutanix-move-diligence",
       "roleId": "nutanix-tl",
-      "text": "Owned the technical due diligence on Nutanix Move and worked with Legal and Compliance to take 400+ critical security risks down to 20 and 500+ licensing risks to zero",
+      "text": "Reduced 400+ critical security risks to 20 and 500+ licensing risks to zero on Nutanix Move through technical diligence and remediation with Legal and Compliance",
       "variants": [
         {
           "label": "short",
-          "text": "Owned the technical due diligence on Nutanix Move, cutting 400+ security and 500+ licensing risks to 20 and zero"
+          "text": "Reduced 400+ critical security risks to 20 and 500+ licensing risks to zero through technical diligence on Nutanix Move"
         },
         {
           "label": "risk-forward",
-          "text": "Took 400+ critical security risks to 20 and 500+ licensing risks to zero on Nutanix Move, owning the technical due diligence and the remediation with Legal and Compliance"
+          "text": "Reduced Nutanix Move's critical security risks from 400+ to 20 and licensing risks from 500+ to zero by owning diligence and remediation with Legal and Compliance"
         }
       ],
       "tags": [
@@ -645,21 +720,58 @@
       "strength": 5,
       "status": "active",
       "inMaster": false,
-      "notes": "Added 2026-09-04 from Parag. The single most valuable point in the pool for technology-diligence roles — it is a real technical due diligence with quantified findings and a remediation outcome, carrying the “research” tag whose taxonomy keywords include “due diligence”. Supersedes nutanix-code-standards on the engineering-quality axis; do not run both unless the page is roomy. ROLE UNCONFIRMED: filed under nutanix-tl because a security and licence review run with Legal and Compliance reads as lead-level, and nutanix-team-budget (also TL) already owns the Move/migration product — ask Parag to confirm it was not the MTS period. Numbers are his: 400+ critical security risks and 500+ licence risks, reduced to 20 and 0 respectively. 2026-09-04, wording chosen by Parag: default is now the \"Owned ... worked with Legal and Compliance\" phrasing, which pairs each risk count with its own outcome (400+ -> 20, 500+ -> 0) instead of collapsing them into \"20 and zero\". Names the product as Nutanix Move rather than \"the Move migration product\". The short variant is the 1-line fallback and knowingly drops the word \"critical\" and the Legal/Compliance partnership - use it only when the page is genuinely tight, because 400 CRITICAL findings is a materially stronger claim than 400 findings. Deliberately no percentage framing: 95%/100% would be derived from figures that are themselves approximate (400+, 500+).",
-      "createdAt": "2026-09-04T00:00:00.000Z"
+      "notes": "Added 2026-09-04 from Parag. The single most valuable point in the pool for technology-diligence roles — it is a real technical due diligence with quantified findings and a remediation outcome, carrying the “research” tag whose taxonomy keywords include “due diligence”. Supersedes nutanix-code-standards on the engineering-quality axis; do not run both unless the page is roomy. ROLE CONFIRMED 2026-10-22: Parag confirmed this was during the Team Lead period (2024-2026). Numbers are his: 400+ critical security risks and 500+ licence risks, reduced to 20 and 0 respectively. 2026-09-04, wording chosen by Parag: default is now the \"Owned ... worked with Legal and Compliance\" phrasing, which pairs each risk count with its own outcome (400+ -> 20, 500+ -> 0) instead of collapsing them into \"20 and zero\". Names the product as Nutanix Move rather than \"the Move migration product\". The short variant is the 1-line fallback and knowingly drops the word \"critical\" and the Legal/Compliance partnership - use it only when the page is genuinely tight, because 400 CRITICAL findings is a materially stronger claim than 400 findings. Deliberately no percentage framing: 95%/100% would be derived from figures that are themselves approximate (400+, 500+).",
+      "createdAt": "2026-09-04T00:00:00.000Z",
+      "updatedAt": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-move-inplace-migration",
+      "roleId": "nutanix-tl",
+      "text": "Moved about 1,000 of 2,000 churn-risk enterprise customers from VMware to Nutanix by owning live in-place migration across four teams",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Moved about 1,000 of 2,000 churn-risk customers off VMware onto Nutanix by owning live in-place migration from discovery to launch"
+        },
+        {
+          "label": "ownership-forward",
+          "text": "Delivered live VMware-to-Nutanix in-place migration in nine months across four teams, owning discovery, architecture and delivery"
+        },
+        {
+          "label": "reliability-forward",
+          "text": "Moved about 1,000 churn-risk customers off VMware with a live in-place migration designed to stop and recover safely on failure"
+        }
+      ],
+      "tags": [
+        "data-migration",
+        "product-management",
+        "discovery",
+        "cross-functional",
+        "launch",
+        "engineering",
+        "quality",
+        "team-leadership",
+        "cloud-infra"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Added 2026-11-01 from Parag (Seez form answer). Nutanix Move feature that moves workloads from VMware to Nutanix by changing the underlying hypervisor of the hardware while workloads are live in production. Parag owned discovery, requirements, architecture decisions, the team and final delivery. Four teams built it (his plus three others); coordinating them was a main challenge. Technical crux: any issue must stop the process and recover gracefully - no bad recovery. Started December 2024, shipped September 2025 (about nine months; Parag first said 'one year'). Base: about 2,000 customers running VMware on Nutanix (mixed stack), at risk of churn; about 1,000 enterprise customers moved to the Nutanix platform using it (confirmed 2026-11-01). Do NOT say 'retained' or 'prevented churn': whether they would otherwise have left is not established. UNCONFIRMED: period over which the ~1,000 was counted, exact feature name in the product, whether the 20,000-workload banking migration used it (keep nutanix-banking-migration separate). 'Moved ... customers' means customers migrated using the feature. Collides with nutanix-team-budget (same team) - fine together, but avoid also running nutanix-files-migration's 'leading development' framing as a second ownership story.",
+      "createdAt": "2026-11-01T00:00:00.000Z",
+      "updatedAt": "2026-11-01T00:00:00.000Z"
     },
     {
       "id": "nutanix-vp-roadmap",
       "roleId": "nutanix-tl",
-      "text": "Built and presented the six-month roadmap alongside the VP, making the case for the customer growth and Annual Contract Value it would unlock",
+      "text": "Built the customer-growth and Annual Contract Value case for a six-month roadmap by developing and presenting it alongside the VP",
       "variants": [
         {
           "label": "exec-forward",
-          "text": "Presented the six-month roadmap with the VP, making the case for the customer growth and Annual Contract Value it would unlock"
+          "text": "Built the growth and Annual Contract Value case for a six-month roadmap by presenting it alongside the VP"
         },
         {
           "label": "growth-forward",
-          "text": "Made the growth case for the six-month roadmap alongside the VP, framing it on the customers it would win and the Annual Contract Value it would unlock"
+          "text": "Defined the customer-growth and Annual Contract Value case for a six-month roadmap through joint development and presentation with the VP"
         }
       ],
       "tags": [
@@ -675,6 +787,221 @@
       "inMaster": false,
       "notes": "Added 2026-09-04 from Parag: worked with a Nutanix VP to present the six-month roadmap and the growth/ACV case behind it. COLLIDES with nutanix-sales-acv — both are roadmap-to-ACV stories, so running them together repeats the argument; nutanix-sales-acv carries the $40–50M figure and this one deliberately does not, to avoid double-counting the same ACV. Prefer this one where executive communication is the ask and nutanix-sales-acv where the number is. Avoid the phrase “product roadmap” here — everhaus-roadmap owns it.",
       "createdAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-sql-ownership",
+      "roleId": "nutanix-mts",
+      "text": "Managed the SQL databases behind the product as a developer",
+      "variants": [],
+      "tags": [
+        "backend",
+        "engineering"
+      ],
+      "strength": 2,
+      "status": "draft",
+      "inMaster": false,
+      "notes": "Captured 2026-09-11 from Parag: he managed SQL databases as a developer at Nutanix (the MTS period, 2022-2024). DRAFT ON PURPOSE - as written this is a responsibility, not an achievement, and it would be the weakest bullet on any page. To promote it to active it needs an outcome and ideally a number: what scale of data, what broke before and what stopped breaking after, or what got faster. Ask before using. Its real job right now is to be the evidence behind SQL on the Skills and Technologies lines, which is where the keyword actually earns its place. Pairs with [[touchnote-sql-ownership]].",
+      "createdAt": "2026-09-11T00:00:00.000Z"
+    },
+    {
+      "id": "touchnote-sql-ownership",
+      "roleId": "touchnote-be",
+      "text": "Worked with SQL databases as a backend developer on the e-commerce platform",
+      "variants": [],
+      "tags": [
+        "backend",
+        "engineering"
+      ],
+      "strength": 2,
+      "status": "draft",
+      "inMaster": false,
+      "notes": "Captured 2026-09-11 from Parag: same SQL work at Touchnote as at Nutanix. DRAFT ON PURPOSE, same reasoning as nutanix-sql-ownership - no outcome, no number, so it is not yet a CV bullet. Note Parag named SQL specifically at both roles; he asked for Python on the Skills line too but did not describe where Python was used, so no point claims Python and none should until he says so.",
+      "createdAt": "2026-09-11T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-banking-migration",
+      "roleId": "nutanix-tl",
+      "text": "Helped banking customers migrate from public cloud back to on-premises infrastructure, including a global custodian bank moving 20,000 workloads",
+      "variants": [
+        {
+          "label": "scale-forward",
+          "text": "Helped migrate 20,000 workloads from public cloud to on-premises for a global custodian bank, one of several banking migrations supported"
+        },
+        {
+          "label": "named-client",
+          "text": "Helped banking customers migrate from public cloud back to on-premises, including State Street and its 20,000 workloads"
+        }
+      ],
+      "tags": [
+        "data-migration",
+        "cloud-infra",
+        "customer-facing",
+        "engineering",
+        "ops-execution"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Added 2026-09-11 from Parag: at Nutanix he helped banking customers migrate from public cloud back to on-premises, State Street being the notable one at 20,000 workloads. This is the ONLY banking-domain point in the pool and it closes what had been a stated gap on the N26 and Allianz applications. Cloud-to-on-prem is worth keeping in the wording: repatriation is the counterintuitive direction and it is what a financial-services reader will notice.\n\nDEFAULT IS DELIBERATELY ANONYMISED. No public Nutanix case study naming State Street could be found, and enterprise vendors normally require customer consent before an account is named publicly. A CV and cover letter are distributable documents. The named-client variant exists and is one line rather than two, but use it ONLY if Parag confirms State Street is a public Nutanix reference. Naming the client verbally in an interview is a different matter and is fine.\n\nROLE CONFIRMED 2026-10-22: Team Lead period (2024-2026); moved from provisional nutanix-mts to nutanix-tl. OWNERSHIP: he said \"helping\", so the default says helped. If he led or owned these engagements the wording should be strengthened, but do not upgrade it without him saying so. The scale-forward variant leads with the number for cases where the 20,000 matters more than the verb.",
+      "createdAt": "2026-09-11T00:00:00.000Z",
+      "updatedAt": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-release-cadence",
+      "roleId": "nutanix-tl",
+      "text": "Increased major releases from 2 to 3 annually, with additional interim releases, by identifying testing bottlenecks and securing more compute capacity and people for testing",
+      "variants": [
+        {
+          "label": "delivery-forward",
+          "text": "Expanded delivery from 2 to 3 major releases per year plus interim releases by addressing long testing cycles with additional compute and staffing"
+        }
+      ],
+      "tags": [
+        "engineering",
+        "launch",
+        "project-management",
+        "team-leadership"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-15: Parag confirmed the bottleneck was long testing cycles and that he secured additional computing and people to address it. This establishes Z for the move from 2 to 3 major releases a year plus interim releases. Keep separate from nutanix-ai-workflow: no claim that AI tooling caused the release-frequency change. Still missing before/after years, testing duration, resource increments, interim-release count and quality/reliability effects. Do not describe higher release frequency as proportionally faster engineering or shorter lead time.",
+      "createdAt": "2026-10-15T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-engineer-promotions",
+      "roleId": "nutanix-tl",
+      "text": "Supported three engineer promotions across two performance-review cycles through regular feedback, clear goals and success measures, and opportunities to showcase work to senior leadership",
+      "variants": [
+        {
+          "label": "people-forward",
+          "text": "Helped three engineers earn promotions by providing regular feedback, defining goals and success measures, and creating visibility with senior leadership"
+        },
+        {
+          "label": "retention-forward",
+          "text": "Supported three engineer promotions across MTS levels with 0% team attrition through regular feedback, clear goals and visibility with senior leadership"
+        }
+      ],
+      "tags": [
+        "people-management",
+        "team-leadership",
+        "mentorship"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-21: Parag confirmed that the hiring, two performance-review cycles and three promotions were all at Nutanix. Three promotions supersedes the previous two-promotion count in the default and every variant. Previously confirmed actions remain regular feedback, clear goals and success measures, and opportunities for engineers to showcase their own work to senior leadership. 2026-11-06 from Parag: the promotions were Vijay (MTS-1 to MTS-2), Saumitra (MTS-2 to MTS-3) and Manigeeth (MTS-3 to MTS-4), with 0% attrition. Keep engineer names off CVs and out of messages. The period and team size behind 0% attrition are unconfirmed. Do not imply sole promotion decision authority or invent review dates or total management tenure.",
+      "createdAt": "2026-10-15T00:00:00.000Z"
+    },
+    {
+      "id": "nutanix-government-migration-recovery",
+      "roleId": "nutanix-tl",
+      "text": "Helped reduce a government customer's VM migration failure rate from 10% to around 1% by grouping boot failures by cause, prioritising the largest categories and coordinating fixes with the team",
+      "variants": [],
+      "tags": [
+        "data-migration",
+        "engineering",
+        "quality",
+        "customer-facing",
+        "team-leadership",
+        "stakeholder-management"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": false,
+      "notes": "Confirmed by Parag on 2026-10-27 during behavioural interview preparation. Employer and role confirmed as Nutanix Team Lead. Customer migrated thousands of VMs per weekend; initial recollection of 2,000 was revised uncertainly to 3,000 or 4,000, so retain approximate wording. Latest confirmed baseline of 10% supersedes the initial 4-5% estimate; final failure rate was around 1%. Do not convert approximate figures into a precise relative improvement or infer absolute VM counts. The problem had persisted for about a month before reaching the team late in the cycle. Parag grouped failures by cause (including script timeouts and VM configuration differences) and prioritised the largest categories. The team's first release did not resolve the reported issue; another fix followed. The overall outcome is confirmed, but the exact release responsible and measurement period are not. Parag personally handled some tense customer calls without teammates present, kept a calm tone, and returned to the team to discuss next steps so engineers could focus on investigation. Do not infer sole coding ownership, full migration completion, customer satisfaction, or a demonstrated change in delegation or openness to alternatives. Keep the government customer anonymous and separate from nutanix-banking-migration.",
+      "createdAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "amantya-verizon-tower-analytics",
+      "roleId": "amantya-swe",
+      "text": "Identified mobile tower connection problems 3x faster and improved tower coverage 20% by developing an application for Verizon that analyses tower connection data",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Diagnosed tower connection problems 3x faster and improved coverage 20% with a Verizon tower-data analysis application"
+        }
+      ],
+      "tags": [
+        "data-analysis",
+        "engineering",
+        "customer-facing",
+        "metrics-kpi"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-28: stated by Parag in chat (portfolio summary). Verizon named by Parag. Baseline, measurement period, his exact ownership versus the team's, the tech stack and how coverage was measured are not established. Check whether naming Verizon is acceptable before using it on public or distributed material.",
+      "createdAt": "2026-10-28T00:00:00.000Z",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "cognizant-mesh-library",
+      "roleId": "cognizant-assoc",
+      "text": "Achieved 50% faster execution and improved system reliability by leading development of a new mesh network library based on an analysis of team requirements",
+      "variants": [],
+      "tags": [
+        "engineering",
+        "quality",
+        "backend"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-28: taken from Parag's own LinkedIn experience section (PDF he supplied). What was measured as 'execution', the baseline and how reliability was measured are not established.",
+      "createdAt": "2026-10-28T00:00:00.000Z",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "cognizant-trendsetter",
+      "roleId": "cognizant-assoc",
+      "text": "Received Cognizant's Trendsetter title for bringing new technologies into the project",
+      "variants": [],
+      "tags": [
+        "engineering",
+        "influence"
+      ],
+      "strength": 2,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-28: from Parag's LinkedIn. Recognition, not an XYZ outcome. Which technologies, who awarded it and when are not recorded.",
+      "createdAt": "2026-10-28T00:00:00.000Z",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "touchnote-api-performance",
+      "roleId": "touchnote-be",
+      "text": "Improved API response times 20% by resolving production performance issues",
+      "variants": [],
+      "tags": [
+        "backend",
+        "engineering",
+        "quality"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-28: from Parag's LinkedIn, where it was combined with automating tax collection and filing. The two are kept apart here; do not attribute the 20% to the tax automation. Which APIs, the baseline and the measurement period are not established.",
+      "createdAt": "2026-10-28T00:00:00.000Z",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "eleven01-spokesperson",
+      "roleId": "eleven01-dev",
+      "text": "Shaped the product roadmap by representing Eleven01 at 10 events across India and bringing back customer insights",
+      "variants": [],
+      "tags": [
+        "customer-facing",
+        "discovery",
+        "roadmap",
+        "influence"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false,
+      "notes": "2026-10-28: from Parag's LinkedIn ('company spokesperson at 10 events across India'). Which roadmap changes resulted is not established. Public record (HYSEA newsletter) shows him co-presenting 'How to Build a dApp on Eleven01'.",
+      "createdAt": "2026-10-28T00:00:00.000Z",
+      "updatedAt": "2026-10-28T00:00:00.000Z"
     }
   ]
 }

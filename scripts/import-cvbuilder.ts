@@ -33,6 +33,7 @@ const source = {
   taxonomy: readJson("taxonomy.json"),
   archetypes: readJson("archetypes.json"),
   applications,
+  orgCaps: existsSync(join(dataDir, "org-caps.json")) ? readJson("org-caps.json") : undefined,
 };
 
 const today = new Date().toISOString().slice(0, 10);

@@ -24,6 +24,7 @@ const source = {
   taxonomy: readJson("taxonomy.json"),
   archetypes: readJson("archetypes.json"),
   applications: applicationFiles.map((f) => readJson("applications", f)),
+  orgCaps: readJson("org-caps.json"),
 };
 
 // No `today`: the import must be reproducible, or the committed-seed guard
@@ -43,7 +44,9 @@ describe("the real CVbuilder workspace", () => {
   it("keeps the profile facts the CV is built from", () => {
     expect(ws.profile.displayName).toBe("Parag Rahangdale");
     expect(ws.profile.targetGeos).toEqual(["Singapore"]);
-    expect(ws.profile.visaContext).toMatch(/Singapore Student Visa/);
+    expect(ws.profile.visaContext).toMatch(/Dependant's Pass/);
+    // the per-org caps (CLAUDE.md rule 3) survive a sync because this repo owns org-caps.json
+    expect(ws.profile.orgCaps).toEqual({ "Valeo Health": 2, "EverHaus Group": 2 });
     expect(ws.profile.contactLines.length).toBeGreaterThan(0);
     expect(ws.profile.cvExtras.length).toBe(source.profile.additional.length);
     expect(ws.profile.roleFamilies).toEqual(
@@ -102,7 +105,8 @@ describe("the real CVbuilder workspace", () => {
       "bain-tig-consultant",
       "microsoft-regional-partner-development-manager",
     ]);
-    expect(ws.warnings.filter((w) => !/role family guessed/.test(w))).toEqual([]);
+    // drafts are captured but not CV-ready (findparagjob docs/cv-tooling.md), so they are skipped by design
+    expect(ws.warnings.filter((w) => !/role family guessed|status is "draft"/.test(w))).toEqual([]);
   });
 
   it("opens a sector per role family and geography, with a cached summary", () => {

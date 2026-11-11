@@ -25,7 +25,7 @@
     ],
     "fingerprint": "29b64903"
   },
-  "notes": "GENERATED from archetype \"product-strategy\" — edit data/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 67% of it is still Claude's prior rather than a real posting. \nClosest to his actual EverHaus title. The pitch is: he sets direction and can also build the thing - rare, and worth leading with. Pinned nutanix-team-budget against the ranking: a strategy role at manager level still gets read for whether he has run people and money, and it is the only bullet proving either. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
+  "notes": "GENERATED from archetype \"product-strategy\" — edit profile/archetypes.json and rebuild, not this file. Demand profile: 1 real document(s) + 1 seed(s); 67% of it is still Claude's prior rather than a real posting. \nClosest to his actual EverHaus title. The pitch is: he sets direction and can also build the thing - rare, and worth leading with. Pinned nutanix-team-budget against the ranking: a strategy role at manager level still gets read for whether he has run people and money, and it is the only bullet proving either. Forced nutanix-sales-acv to customer-forward: the default wording repeats \"product strategy\", which everhaus-compliance already owns on this page. \nThis is a starting point, not a submission. Tailor it to a specific job by saving it under a new id first.",
   "selection": {
     "points": [
       {

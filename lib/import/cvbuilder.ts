@@ -141,6 +141,11 @@ export interface CvbSource {
   taxonomy: unknown;
   archetypes: unknown;
   applications: unknown[];
+  /**
+   * data/cvbuilder/org-caps.json: { "<org name>": maxPoints }. Owned by this repo, so a
+   * sync from the CVbuilder workspace never wipes it; wins over any maxPoints in profile.json.
+   */
+  orgCaps?: unknown;
 }
 
 // ---- what the import produces --------------------------------------------------
@@ -365,9 +370,12 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     visaContext: authLine?.text ?? null,
     premiumLlmBudgetUsdMonth: 0,
     contactLines: profileSrc.contactLines,
-    orgCaps: Object.fromEntries(
-      profileSrc.experience.filter((o) => o.maxPoints !== undefined).map((o) => [o.org, o.maxPoints as number]),
-    ),
+    orgCaps: {
+      ...Object.fromEntries(
+        profileSrc.experience.filter((o) => o.maxPoints !== undefined).map((o) => [o.org, o.maxPoints as number]),
+      ),
+      ...z.record(z.string(), z.number().int().positive()).parse(src.orgCaps ?? {}),
+    },
     cvExtras: profileSrc.additional,
   };
 
