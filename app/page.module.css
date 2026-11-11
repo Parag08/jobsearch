@@ -69,6 +69,22 @@
   color: var(--ink-soft);
 }
 
+/* the nav's Google actions are <form>s with a submit button: lay them out like the links */
+.navForm {
+  display: contents;
+}
+
+.navForm button {
+  border: 0;
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.navForm .navLink {
+  background: transparent;
+}
+
 .navLink:hover {
   color: var(--ink);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
