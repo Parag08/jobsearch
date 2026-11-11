@@ -48,28 +48,6 @@
   line-height: 1.15;
 }
 
-.providers {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.provider {
-  padding: 11px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  text-align: left;
-}
-
-.provider:disabled {
-  color: var(--ink-faint);
-}
-
 .note {
   font-size: 0.8125rem;
   line-height: 1.55;
