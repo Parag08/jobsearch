@@ -448,6 +448,14 @@ boards systematically cover the wrong half of the market.
 Reference studied: the Mintlify system (`styles.refero.design/style/80d7ef36-…`).
 Original palette proposal: `https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`
 
+> **Re-themed 2026-11-11: Sage Studio replaces Heather.** Heather (one muted violet on pure white)
+> read as plain. Every colour in that palette was a shade of the same hue, so progress, scores and
+> stages could not stand out. Sage Studio keeps the structure of this system (hairlines, radius
+> encodes elevation, glass only for floating elements, nothing shouts) and changes the material:
+> a warm oat canvas, sage for actions, and **one fenced warm colour, terracotta, for progress**.
+> The aim is a calmer job search: a stressful activity gets a palette that lowers the temperature.
+> The tokens in `app/globals.css` are the source of truth. The tables below were updated to match.
+
 ### The conflict, and how it resolves
 
 The reference and the brief pull in opposite directions, and pretending otherwise would produce
@@ -457,7 +465,7 @@ mush. Stated plainly:
 | --- | --- | --- |
 | Depth | flat and forensic — **no glassmorphism, no gradients** | keep Apple liquid glass |
 | Radius | 4 / 16 / 24px, **no pill buttons** | glass wants capsules |
-| Accent | one chromatic spark, never on large surfaces | Heather is the identity |
+| Accent | one chromatic spark, never on large surfaces | Sage (formerly Heather) is the identity |
 | Canvas | pure white, **no off-white backgrounds** | lighter, yes |
 
 **The resolution: radius and material encode elevation.** Everything that sits *in* the page is flat
@@ -480,7 +488,7 @@ follows the viewer's *local clock*, meaning the browser's own time and timezone:
 An inline script sets `<html data-theme>` before first paint so there is no white flash, and the
 toggle re-checks at the next switch and when the tab returns. Logic and tests: `lib/theme.ts`.
 
-The dark twin in `globals.css` keeps every role and rule. The canvas is a violet-cast ink, not black.
+The dark twin in `globals.css` keeps every role and rule. The canvas is a forest ink, not black.
 The stage scale inverts, so progress still reads as "more accent" by brightening instead of
 deepening. The glass edge highlight is a token (`--glass-edge`) so it dims in dark.
 
@@ -495,43 +503,51 @@ into an accusation and makes the most common outcome the loudest thing on screen
 
 ### Colour
 
-Canvas is pure white; separation comes from **hairlines, not fills** (the reference's strongest
-lesson). Neutrals carry a slight violet cast so they read as chosen rather than inherited — that
-remains our departure from the reference's pure greys.
+The canvas is warm oat, and cards sit one step lighter on it (`--card`). Separation still comes
+from **hairlines, not shadows** (the reference's strongest lesson). Neutrals carry a green-olive
+cast so they read as chosen rather than inherited.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--paper` | `#FFFFFF` | canvas and card surfaces — the same white, separated by border |
-| `--wash` | `#F5F4F8` | hover washes, recessed rows, subtle fills |
-| `--line` | `#E4E2EA` | hairlines, input borders — the default separator |
-| `--line-strong` | `#CFCBD9` | dividers that must carry weight |
-| `--ink` | `#17161C` | body text, icon strokes |
-| `--ink-soft` | `#5A5766` | supporting text |
-| `--ink-faint` | `#8B8797` | captions, meta, timestamps |
-| `--accent` | `#6F6A96` | Heather — fills, marks, indicators |
-| `--accent-text` | `#55507A` | accent-coloured **text and links** |
-| `--accent-wash` | `#EFEDF5` | accent tint fills |
+| `--paper` | `#F4F1EA` | oat canvas |
+| `--card` | `#FBF9F4` | card and panel surfaces (`--surface` aliases it) |
+| `--wash` | `#ECE8DD` | hover washes, recessed rows, subtle fills |
+| `--line` | `#DFDACD` | hairlines, input borders — the default separator |
+| `--line-strong` | `#C9C2B0` | dividers that must carry weight |
+| `--ink` | `#22301F` | body text, icon strokes |
+| `--ink-soft` | `#4F5A4A` | supporting text |
+| `--ink-faint` | `#737B6C` | captions, meta, timestamps |
+| `--accent` | `#4F6F52` | Sage — actions, fills, marks, focus |
+| `--accent-text` | `#3D5A40` | accent-coloured **text and links** |
+| `--accent-wash` | `#E2E8D8` | accent tint fills |
+| `--warm` | `#C96A3F` | Terracotta — progress marks only |
+| `--warm-text` | `#9C4620` | warm **text** |
+| `--warm-wash` | `#F7E0D2` | warm tint fills |
 
-Two accent tokens exist for one reason: `#6F6A96` on white lands near the 4.5:1 AA floor for body
-text. Fills and marks use it; anything set as small text uses `--accent-text`. *(Verify both with a
+Two tokens per colour exist for one reason: the fill shade is too light for small text. Fills and
+marks use `--accent` / `--warm`; anything set as small text uses the `-text` token. *(Verify with a
 contrast checker before shipping.)*
 
-**Never** introduce a second chromatic accent. The reference's discipline is the point.
+**Exactly one second colour, and it is fenced.** Sage is for *doing*: buttons, links, focus,
+selection. Terracotta is for *progress*: late pipeline stages, practised questions, streaks, wins,
+the warm ambient wash on the landing page. Terracotta never marks a rejection and is never a
+primary action. A third chromatic colour is still forbidden.
 
 ### Stage scale
 
-The accent deepens as an application advances; terminal states step **sideways into neutral**.
+Sage deepens as an application advances and **turns warm at offer**, the moment worth celebrating.
+Terminal states step **sideways into neutral**.
 
 | Stage | Colour |
 | --- | --- |
-| `saved` | `#F0EFF4` |
-| `applied` | `#E3E0EC` |
-| `screening` | `#D5D1E3` |
-| `interview` | `#B3ADCB` |
-| `case` | `#8F89B0` |
-| `offer` | `#6F6A96` |
-| `negotiation` | `#595478` |
-| `closed` | `#96939F` — neutral **whatever the reason**; the reason is a word, not a colour |
+| `saved` | `#ECE8DD` |
+| `applied` | `#DDE3D0` |
+| `screening` | `#C3D0B0` |
+| `interview` | `#587852` |
+| `case` | `#4A6A48` |
+| `offer` | `#B0582F` |
+| `negotiation` | `#8F4524` |
+| `closed` | `#A39F93` — neutral **whatever the reason**; the reason is a word, not a colour |
 
 ### Semantic colour
 
@@ -539,7 +555,7 @@ Two states earn colour outside the scale, because a decision depends on each:
 
 | Meaning | Fill | Text | Trigger |
 | --- | --- | --- | --- |
-| Stale | `#B5904F` | `#8A6B2E` | past `STALE_AFTER_DAYS = 14`, no response |
+| Stale | `#B8893A` | `#7D5D1D` | past `STALE_AFTER_DAYS = 14`, no response |
 | Due today | `--accent` | `--accent-text` | a follow-up is due |
 
 **Red exists but is fenced**: `#A8342E` on `#F7EAE9`, for genuinely destructive confirmations only —
@@ -553,8 +569,8 @@ discipline**: a real modular scale, negative tracking at display sizes, and a 16
 
 | Role | Face | Weights |
 | --- | --- | --- |
-| Display | **Newsreader** | 400 |
-| Body / UI | **IBM Plex Sans** | 400 / 500 / 600 |
+| Display | **Fraunces** | 400 |
+| Body / UI | **DM Sans** | 400 / 500 / 600 |
 | Data | **IBM Plex Mono** | 400 / 500 |
 
 Scale (1.2 ratio from a 16px base):
@@ -579,9 +595,9 @@ The single most load-bearing rule in this system.
 
 | Radius | Applies to | Why |
 | --- | --- | --- |
-| `4px` | inputs, tags, small buttons | the reference's square commitment |
-| `12px` | cards, panels | in-page content |
-| `20px` | large containers, sheets | in-page, but structural |
+| `6px` | inputs, tags, small buttons | committed, slightly softened for Sage |
+| `16px` | cards, panels | in-page content |
+| `24px` | large containers, sheets | in-page, but structural |
 | `999px` | **floating glass only** — sticky nav, popovers, toasts, floating actions | a capsule means "this hovers" |
 
 A pill on a static in-page element is a bug, not a style choice.
@@ -594,8 +610,8 @@ reference, and it was already our rule.
 Only glass casts anything, because a floating thing must read as floating:
 
 ```
---shadow-glass: 0 1px 2px rgba(23, 22, 28, 0.04),
-                0 8px 24px rgba(23, 22, 28, 0.06);
+--shadow-glass: 0 1px 2px rgba(34, 48, 31, 0.05),
+                0 8px 24px rgba(34, 48, 31, 0.07);
 ```
 
 No other shadow token exists. No coloured shadows, no gradients on content surfaces.
@@ -664,14 +680,14 @@ teach each other. Final dot larger, giving the sequence a destination. Drawn in 
 
 | From the reference | Verdict |
 | --- | --- |
-| White canvas, no off-white | **Taken** — replaces `#FBFAFC` |
+| White canvas, no off-white | **Taken, then dropped 2026-11-11** — Sage uses a warm oat canvas |
 | Separation by 1px border, not fill or shadow | **Taken** — already our instinct |
-| One chromatic accent, never on large surfaces | **Taken** |
+| One chromatic accent, never on large surfaces | **Amended 2026-11-11** — one accent plus one fenced progress colour |
 | Committed radius scale, no arbitrary values | **Taken**, extended so radius signals elevation |
 | 16px body floor, tightening tracking, modular scale | **Taken** |
 | Shadows at 0.03–0.05 or none | **Taken** for content; glass is the sole exception |
-| Inter as a single universal family | **Rejected** — Newsreader is the anti-CRM signal |
-| Pure grey neutrals | **Rejected** — ours keep a violet cast |
+| Inter as a single universal family | **Rejected** — the serif (now Fraunces) is the anti-CRM signal |
+| Pure grey neutrals | **Rejected** — ours keep a green-olive cast |
 | No glassmorphism at all | **Rejected**, but confined to floating elements only |
 | 1200px shell | **Rejected** — 1440px; we are an app, not only a doc site |
 
@@ -751,7 +767,7 @@ Two load-bearing joints:
 - **Editorial layer: system proposes, you edit** (2026-11-10).
 - **High-scoring sourced jobs auto-create `saved` applications** (2026-11-10).
 - **Contacts are added by name or pasted LinkedIn URL**, stored as a link, never fetched (2026-11-10).
-- **Palette: Heather** — muted periwinkle `#6F6A96`, now on a **pure white** canvas (§5).
+- **Palette: Sage Studio** (2026-11-11, replacing Heather) — sage `#4F6F52` on a warm oat canvas, terracotta `#C96A3F` fenced to progress (§5).
 - **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
   both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
 - **Radius encodes elevation.** 4 / 12 / 20px for anything in the page; `999px` capsules reserved for
@@ -770,7 +786,7 @@ Two load-bearing joints:
   call controls, guidance / notes / attempts folded into disclosures, status dots in the list.
   "Practise out loud" is gone - the mock interview with "no follow-ups" is the quick mode.
 - **The mock interview is a meeting, and its AI agent is the one animated thing in the app**
-  (2026-11-10, Parag's call). A Three.js orb (`agent-avatar.tsx`) on a deep violet-ink stage that
+  (2026-11-10, Parag's call). A Three.js orb (`agent-avatar.tsx`) on a deep forest stage (was violet-ink before Sage) that
   keeps its colours in both themes, like a video call. It moves with the interviewer's voice and
   yours; everything around it still follows the 120ms in-app rule. `prefers-reduced-motion` keeps
   it nearly still. Deliberately abstract, not a face. Captions replace the chat log; the
