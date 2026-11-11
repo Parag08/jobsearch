@@ -104,7 +104,14 @@ export async function setNextAction(applicationId: string, formData: FormData): 
 
 export async function tailorCvAction(applicationId: string): Promise<void> {
   const { db, userId } = await ws();
-  await tailorCv({ db, page: cvPageSettingsFromEnv(process.env) }, userId, applicationId, today());
+  let failure: string | null = null;
+  try {
+    await tailorCv({ db, page: cvPageSettingsFromEnv(process.env) }, userId, applicationId, today());
+  } catch (e) {
+    console.error("tailorCvAction", e);
+    failure = e instanceof Error ? e.message.replace(/^tailorCv:\s*/, "") : "Tailoring failed.";
+  }
+  if (failure) redirect(`/app/applications/${applicationId}?cvError=${encodeURIComponent(failure)}#cv`);
   revalidatePath(`/app/applications/${applicationId}`);
 }
 

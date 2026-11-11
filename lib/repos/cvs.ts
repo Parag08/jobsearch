@@ -39,6 +39,17 @@ export async function getLatestMasterCv(
   return rows[0] ? toMasterCv(rows[0]) : null;
 }
 
+/** The latest version of every master CV the user has, one per role family. */
+export async function listLatestMasterCvs(db: DbClient, userId: string): Promise<MasterCv[]> {
+  const rows = await many(
+    db.from("master_cvs").select().eq("user_id", userId).order("version", { ascending: false }),
+    "master_cvs",
+    "listLatest",
+  );
+  const seen = new Set<string>();
+  return rows.map(toMasterCv).filter((m) => !seen.has(m.roleFamily) && seen.add(m.roleFamily));
+}
+
 export async function insertApplicationCv(
   db: DbClient,
   userId: string,

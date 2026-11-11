@@ -41,13 +41,13 @@ export default async function ApplicationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ letterError?: string }>;
+  searchParams: Promise<{ letterError?: string; cvError?: string }>;
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const { id } = await params;
-  const { letterError } = await searchParams;
+  const { letterError, cvError } = await searchParams;
 
   const app = await getApplication(db, userId, id);
   if (!app) notFound();
@@ -144,7 +144,7 @@ export default async function ApplicationPage({
           )}
         </section>
 
-        <section className={ui.panel}>
+        <section className={ui.panel} id="cv">
           <h2>CV</h2>
           {cv ? (
             <>
@@ -191,6 +191,7 @@ export default async function ApplicationPage({
           ) : (
             <>
               <p className={ui.empty}>No tailored CV yet.</p>
+              {cvError && <p className={ui.chip} data-tone="gap">{cvError}</p>}
               {app.jdExtract && (
                 <form action={tailorCvAction.bind(null, app.id)}>
                   <button className={ui.btn} data-primary="" type="submit">Tailor from the master</button>

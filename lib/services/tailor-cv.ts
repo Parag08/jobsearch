@@ -1,10 +1,10 @@
 import { scoreBullet, selectBullets } from "../bullet-matcher";
 import { applyDiff, buildDiff, type CvDiff } from "../cv-diff";
 import { composeSelection, fitToPage, type EditorialBullet, type FitAction, type PageFit, type PageSize } from "../editorial";
-import type { Application } from "../types";
+import type { Application, JdExtract, MasterCv, Project } from "../types";
 import type { DbClient } from "../repos/db";
 import { getApplication, updateApplication } from "../repos/applications";
-import { getLatestMasterCv, insertApplicationCv } from "../repos/cvs";
+import { getLatestMasterCv, insertApplicationCv, listLatestMasterCvs } from "../repos/cvs";
 import { getProfile } from "../repos/profiles";
 import { listProjects } from "../repos/projects";
 import { getSectorByPath } from "../repos/sectors";
@@ -52,14 +52,16 @@ export async function tailorCv(
   const jd = app.jdExtract;
   if (!jd) throw new Error(`tailorCv: application ${applicationId} has no JD extract`);
 
-  const master = await getLatestMasterCv(db, userId, jd.roleFamily);
-  if (!master) throw new Error(`tailorCv: no master CV for role family "${jd.roleFamily}"`);
-
-  const [projects, profile, sector] = await Promise.all([
+  const [projects, profile, sector, exact] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     getSectorByPath(db, userId, jd.sectorPath),
+    getLatestMasterCv(db, userId, jd.roleFamily),
   ]);
+  // Role families are free text from extraction, so a JD can name one the user has no
+  // master for ("account-management"). Start from the master that already fits it best.
+  const master = exact ?? bestFittingMaster(await listLatestMasterCvs(db, userId), projects, jd);
+  if (!master) throw new Error("tailorCv: no master CV yet - add one before tailoring");
   const candidates = selectBullets(projects, jd, CANDIDATE_BULLETS);
   const bank: Record<string, EditorialBullet> = Object.fromEntries(
     projects.flatMap((p) => p.bullets.map((b) => [b.id, { ...b, orgId: p.org }] as const)),
@@ -114,4 +116,18 @@ export async function tailorCv(
   });
 
   return { application, cv, diff };
+}
+
+/** The master whose bullets score highest against the JD; ties keep list order. */
+function bestFittingMaster(masters: MasterCv[], projects: Project[], jd: JdExtract): MasterCv | null {
+  const bullets = new Map(projects.flatMap((p) => p.bullets.map((b) => [b.id, b] as const)));
+  const fit = (m: MasterCv) =>
+    m.bulletIds.reduce((sum, id) => sum + (bullets.has(id) ? scoreBullet(bullets.get(id)!, jd) : 0), 0);
+  let best: MasterCv | null = null;
+  let bestScore = -1;
+  for (const m of masters) {
+    const score = fit(m);
+    if (score > bestScore) [best, bestScore] = [m, score];
+  }
+  return best;
 }
