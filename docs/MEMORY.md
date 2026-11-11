@@ -2,6 +2,27 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-11 - Sage Studio re-theme + Google Tag Manager
+
+Parag found Heather "too plain". After comparing nine theme mock-ups (inspired by WTTJ, Teal,
+LeetCode, FT, Linear and others), Parag picked **Sage Studio**.
+- `app/globals.css`: new tokens. Oat canvas `--paper #F4F1EA`, cards `--card #FBF9F4` (`--surface`
+  aliases it), sage `--accent #4F6F52`, plus a NEW fenced second colour `--warm` (terracotta
+  `#C96A3F`, with `-text`/`-wash`) used only for progress. Stage scale is sage and turns warm at
+  offer. Radius is now 6/16/24. Forest-ink dark twin. New `--room-*` tokens for the interview
+  stage, which replace every hardcoded violet in `app/app/ui.module.css`.
+- Warm is applied to: offer/negotiation stages, practised question dots, the speaking status dot,
+  the landing page's second ambient glow, and the favicon's final dot. More "progress" places can adopt it.
+- Fonts: Fraunces (display) + DM Sans (UI) replace Newsreader + IBM Plex Sans. Plex Mono stays.
+- DESIGN.md §5 is rewritten to match, including the amended "one accent" rule (one accent plus
+  one fenced progress colour). Stage chip contrast checked: lowest is 4.6:1.
+- GTM: `app/layout.tsx` loads the standard GTM snippet + noscript iframe via `next/script`, only
+  when `NEXT_PUBLIC_GTM_ID` is set (now in `.env` and `.env.example`). **Must also be set in Vercel**
+  for production. Verified locally: the `gtm.js` event fires.
+
+**Next:** engagement ideas not yet built: practice streak/heatmap, score ring in the interview
+room, week-over-week deltas on the stat cards, a "Today" card, and collapsing empty pipeline columns.
+
 ## 2026-11-09 - Security scan + threat model (Devin)
 
 Added `SECURITY_MODEL.md` at the repo root: trust boundaries, named components, entry points, assets,

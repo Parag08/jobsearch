@@ -29,7 +29,7 @@
 .ambient::after {
   bottom: -35vmax;
   left: -25vmax;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--warm) 18%, transparent), transparent 65%);
   animation: drift 46s ease-in-out infinite alternate-reverse;
 }
 

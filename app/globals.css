@@ -1,64 +1,86 @@
 /* JobSearch design system - see docs/DESIGN.md section 5.
-   Palette: Heather on a pure white canvas, with a Heather-on-ink dark twin. There is
-   deliberately no prefers-color-scheme block: <html data-theme> is set by the user's
-   choice or, on auto, by their local clock (lib/theme.ts).
+   Palette: Sage Studio. Sage on a warm oat canvas, with terracotta as the one warm
+   colour, and a forest-ink dark twin. There is deliberately no prefers-color-scheme
+   block: <html data-theme> is set by the user's choice or, on auto, by their local
+   clock (lib/theme.ts).
    Separation is a 1px hairline. Only floating glass casts a shadow.
-   Red is fenced to destructive confirmations and appears on no other surface. */
+   Sage is for doing (actions, links, focus). Terracotta is for progress (late stages,
+   practised, wins) and nothing else. Red is fenced to destructive confirmations. */
 
 :root {
   /* ---- canvas and ink ---------------------------------------------------------------
-     Card surfaces are the same white as the page; they are separated by border, never
-     by fill. Neutrals carry a slight violet cast so they read as chosen, not inherited. */
-  --paper: #ffffff;
-  --wash: #f5f4f8;
-  --line: #e4e2ea;
-  --line-strong: #cfcbd9;
-  --ink: #17161c;
-  --ink-soft: #5a5766;
-  --ink-faint: #8b8797;
+     The page is warm oat; cards sit one step lighter on it, still separated by a
+     hairline rather than a shadow. Neutrals carry a green-olive cast so they read as
+     chosen, not inherited. */
+  --paper: #f4f1ea;
+  --card: #fbf9f4;
+  --wash: #ece8dd;
+  --line: #dfdacd;
+  --line-strong: #c9c2b0;
+  --ink: #22301f;
+  --ink-soft: #4f5a4a;
+  --ink-faint: #737b6c;
 
-  /* ---- accent -----------------------------------------------------------------------
-     Two tokens on purpose: --accent sits near the 4.5:1 AA floor on white, so anything
-     set as small TEXT uses --accent-text instead. Fills and marks use --accent. */
-  --accent: #6f6a96;
-  --accent-text: #55507a;
-  --accent-wash: #efedf5;
+  /* ---- accent: sage -----------------------------------------------------------------
+     Two tokens on purpose: anything set as small TEXT uses --accent-text (≈7:1 on oat).
+     Fills and marks use --accent. */
+  --accent: #4f6f52;
+  --accent-text: #3d5a40;
+  --accent-wash: #e2e8d8;
+
+  /* ---- warm: terracotta -------------------------------------------------------------
+     The second colour, fenced to progress: late stages, practised, streaks, wins.
+     Never on a rejection, never on a primary action. */
+  --warm: #c96a3f;
+  --warm-text: #9c4620;
+  --warm-wash: #f7e0d2;
 
   /* ---- semantic ---------------------------------------------------------------------
-     Only two states earn colour outside the stage scale, because a decision depends on
-     each. --danger is for destructive confirmation only: never for a rejection. */
-  --stale: #b5904f;
-  --stale-text: #8a6b2e;
+     --danger is for destructive confirmation only: never for a rejection. */
+  --stale: #b8893a;
+  --stale-text: #7d5d1d;
   --danger: #a8342e;
-  --danger-wash: #f7eae9;
+  --danger-wash: #f7e6e3;
 
   /* ---- stage scale ------------------------------------------------------------------
-     The accent deepens with progress; closed steps sideways into neutral, never red. */
-  --stage-saved: #f0eff4;
-  --stage-applied: #e3e0ec;
-  --stage-screening: #d5d1e3;
-  --stage-interview: #b3adcb;
-  --stage-case: #8f89b0;
-  --stage-offer: #6f6a96;
-  --stage-negotiation: #595478;
-  --stage-closed: #96939f;
+     Sage deepens with progress, then turns warm at offer; closed steps sideways into
+     neutral, never red. Deep stages (interview onward) carry light text. */
+  --stage-saved: #ece8dd;
+  --stage-applied: #dde3d0;
+  --stage-screening: #c3d0b0;
+  --stage-interview: #587852;
+  --stage-case: #4a6a48;
+  --stage-offer: #b0582f;
+  --stage-negotiation: #8f4524;
+  --stage-closed: #a39f93;
+
+  /* ---- the interview room -----------------------------------------------------------
+     A deep forest room in both themes, like a video call. */
+  --room-bg: radial-gradient(120% 90% at 50% 40%, #3b4b38 0%, #263224 60%, #1c251a 100%);
+  --room-line: #34402f;
+  --room-ink: #eef1e6;
+  --room-soft: #b4bdaa;
+  --room-faint: #8a9481;
+  --room-mute: #3f4a3a;
+  --room-active: #a9c7a6;
+  --room-highlight: #d6e2c8;
+  --room-glow: #f6efe0;
+  --room-glass: rgba(14, 18, 13, 0.66);
 
   /* ---- radius encodes elevation -----------------------------------------------------
-     4 / 12 / 20 for anything sitting IN the page; the capsule is reserved for floating
+     6 / 16 / 24 for anything sitting IN the page; the capsule is reserved for floating
      glass and the controls clustered inside it. A pill on a static element is a bug. */
-  --radius: 4px;
-  --radius-card: 12px;
-  --radius-panel: 20px;
+  --radius: 6px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
   --radius-float: 999px;
 
   /* ---- elevation --------------------------------------------------------------------
      The only shadow in the system. In-page surfaces use a 1px --line border instead. */
   --shadow-glass:
-    0 1px 2px rgba(23, 22, 28, 0.04),
-    0 8px 24px rgba(23, 22, 28, 0.06);
-  /* the lens edge on floating glass */
+    0 1px 2px rgba(34, 48, 31, 0.05),
+    0 8px 24px rgba(34, 48, 31, 0.07);
   --glass-edge: rgba(255, 255, 255, 0.6);
-  /* specular light on hero glass: white in light, a faint white in dark */
   --glass-light: #ffffff;
 
   /* ---- layout ---- */
@@ -67,60 +89,64 @@
 
   /* ---- motion ---- */
   --motion: 120ms ease-out;
-  /* marketing-surface allowance (landing only): iPhone-like springs, fast out and soft
-     landing; -over adds a hint of overshoot for objects that travel. */
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --spring-over: cubic-bezier(0.34, 1.25, 0.64, 1);
 
   /* ---- compatibility aliases --------------------------------------------------------
-     Earlier names kept so the module stylesheets keep resolving. Prefer the names above
-     in new code. */
+     --surface is the card fill (and the light text on deep fills). */
   --ground: var(--paper);
-  --surface: var(--paper);
+  --surface: var(--card);
   --accent-soft: var(--accent-wash);
   --accent-ink: var(--accent-text);
-  --line-soft: #f0eff4;
+  --line-soft: #e8e4d9;
 }
 
 /* ---- dark twin ----------------------------------------------------------------------
-   Same roles, same rules. The canvas is a violet-cast ink, not black; the stage scale
-   inverts so progress still reads as "more accent" - it brightens instead of deepening,
-   and the deep stages' --surface text becomes dark on a light fill. */
+   Same roles, same rules. The canvas is a forest ink, not black; the stage scale
+   brightens with progress, and the deep stages' --surface text becomes dark on a
+   light fill. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --paper: #141318;
-  --wash: #1c1b22;
-  --line: #2c2a35;
-  --line-strong: #3f3c4b;
-  --ink: #ecebf1;
-  --ink-soft: #aeaabb;
-  --ink-faint: #85818f;
+  --paper: #151a14;
+  --card: #1b2119;
+  --wash: #20271e;
+  --line: #2d3529;
+  --line-strong: #3f4a3a;
+  --ink: #e9ede3;
+  --ink-soft: #b0b8a8;
+  --ink-faint: #868e7e;
 
-  --accent: #9d97c6;
-  --accent-text: #bab5de;
-  --accent-wash: #25233a;
+  --accent: #8fb08f;
+  --accent-text: #a9c7a6;
+  --accent-wash: #233023;
+
+  --warm: #e8936a;
+  --warm-text: #f0a983;
+  --warm-wash: #3a2419;
 
   --stale: #c9a468;
   --stale-text: #d6b57e;
   --danger: #e0706a;
   --danger-wash: #3a1f1e;
 
-  --stage-saved: #25242c;
-  --stage-applied: #2e2c3b;
-  --stage-screening: #3a374d;
-  --stage-interview: #8d87b3;
-  --stage-case: #a39dc6;
-  --stage-offer: #b7b1d8;
-  --stage-negotiation: #cbc6e6;
-  --stage-closed: #6a6773;
+  --stage-saved: #232a21;
+  --stage-applied: #2b3529;
+  --stage-screening: #364434;
+  --stage-interview: #8fb08f;
+  --stage-case: #a9c7a6;
+  --stage-offer: #e8936a;
+  --stage-negotiation: #f0b08f;
+  --stage-closed: #6b7066;
+
+  --room-bg: radial-gradient(120% 90% at 50% 40%, #263224 0%, #161c15 62%, #0f130e 100%);
 
   --shadow-glass:
     0 1px 2px rgba(0, 0, 0, 0.3),
     0 8px 24px rgba(0, 0, 0, 0.35);
   --glass-edge: rgba(255, 255, 255, 0.07);
   --glass-light: rgba(255, 255, 255, 0.1);
-  --line-soft: #211f28;
+  --line-soft: #212820;
 }
 
 /* scroll-reveal primitive (app/_components/reveal.tsx) */
