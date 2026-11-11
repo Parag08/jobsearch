@@ -1,5 +1,7 @@
 import { applyDiff, buildDiff, type CvDiff } from "../cv-diff";
-import { composeSelection, fitToPage, type EditorialBullet, type FitAction, type PageFit, type PageSize } from "../editorial";
+import { charsPerLine, composeSelection, estimateLines, fitToPage, type EditorialBullet, type FitAction, type PageFit, type PageSize } from "../editorial";
+import { autoSelect, type AutoSelectLimits } from "../editorial/auto-select";
+import { resolveText } from "../editorial/fit";
 import type { Application, JdExtract, MasterCv } from "../types";
 import type { DbClient } from "../repos/db";
 import { getApplication, getJdRaw, updateApplication } from "../repos/applications";
@@ -22,6 +24,12 @@ export interface TailorCvDeps {
   db: DbClient;
   /** When absent the page is not fitted (and nothing is cut for space). */
   page?: CvPageSettings;
+  /**
+   * Whole-pool selection limits (lib/cv-page-settings.ts cvSelectionSettingsFromEnv). When set,
+   * bullets are chosen from the whole bank (every role kept, per-role/org/share limits, one
+   * story per competency); when absent, the role-family master is edited as before.
+   */
+  select?: AutoSelectLimits;
 }
 
 export interface TailorCvResult {
@@ -42,7 +50,7 @@ const CANDIDATE_BULLETS = 6;
  * No LLM here - polish is a later, separate premium-tier step.
  */
 export async function tailorCv(
-  { db, page }: TailorCvDeps,
+  { db, page, select }: TailorCvDeps,
   userId: string,
   applicationId: string,
   now: string,
@@ -92,7 +100,29 @@ export async function tailorCv(
 
   // Editorial layer: the zero-score master bullets buildDiff removes become excludes,
   // so every bullet still gets a recorded decision.
-  const selection = composeSelection({
+  // The wording that echoes the JD hardest, per bullet (score.js suggestedVariant).
+  const suggested: Record<string, string> = Object.fromEntries(
+    scored.filter((s) => s.suggestedVariant).map((s) => [s.bulletId, s.suggestedVariant!]),
+  );
+
+  const selection = select
+    ? autoSelect(
+        scored.filter((s) => bank[s.bulletId]).map((s) => {
+          const b = bank[s.bulletId]!;
+          const text = resolveText(b, { variant: suggested[b.id] });
+          return {
+            id: b.id,
+            projectId: b.projectId,
+            orgId: b.orgId,
+            score: s.score,
+            skills: b.skills,
+            lines: page ? estimateLines(text, charsPerLine(page.pageSize, page.scale)) : 1,
+          };
+        }),
+        select,
+        { orgCaps: profile?.orgCaps ?? {} },
+      )
+    : composeSelection({
     masterBulletIds: master.bulletIds,
     candidates: [...master.bulletIds, ...candidates.map((b) => b.id)]
       .filter((id) => bank[id])
@@ -103,11 +133,13 @@ export async function tailorCv(
   });
 
   let bulletIds = selection.bulletIds;
-  let variants: Record<string, string> = {};
+  let variants: Record<string, string> = select
+    ? Object.fromEntries(selection.bulletIds.filter((id) => suggested[id]).map((id) => [id, suggested[id]!]))
+    : {};
   let actions: FitAction[] = [];
   let fit: PageFit | null = null;
   if (page) {
-    const fitted = fitToPage(selection, bank, { ...page, summaryLine: draft.summaryLine });
+    const fitted = fitToPage(selection, bank, { ...page, summaryLine: draft.summaryLine, variants });
     ({ bulletIds, variants, actions, fit } = fitted);
   }
 

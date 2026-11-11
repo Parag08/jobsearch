@@ -8,7 +8,7 @@ import { STAGES, type ClosedReason, type Stage } from "@/lib/types";
 import { getApplication, updateApplication } from "@/lib/repos/applications";
 import { markApplied } from "@/lib/services/mark-applied";
 import { tailorCv } from "@/lib/services/tailor-cv";
-import { cvPageSettingsFromEnv } from "@/lib/cv-page-settings";
+import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "@/lib/cv-page-settings";
 import { draftCoverLetter, editCoverLetter } from "@/lib/services/cover-letter";
 import { parseLetterBank } from "@/lib/cover-letter";
 import letterBank from "@/data/cvbuilder/letter-bank.json";
@@ -106,7 +106,12 @@ export async function tailorCvAction(applicationId: string): Promise<void> {
   const { db, userId } = await ws();
   let failure: string | null = null;
   try {
-    await tailorCv({ db, page: cvPageSettingsFromEnv(process.env) }, userId, applicationId, today());
+    await tailorCv(
+      { db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) },
+      userId,
+      applicationId,
+      today(),
+    );
   } catch (e) {
     console.error("tailorCvAction", e);
     failure = e instanceof Error ? e.message.replace(/^tailorCv:\s*/, "") : "Tailoring failed.";
