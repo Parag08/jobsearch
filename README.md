@@ -23,6 +23,20 @@ npm run dev     # http://localhost:3000
 ```
 Copy `.env.example` to `.env.local` and fill in keys (Supabase, LLM providers, job feeds).
 
+## What exists today
+The UI is no longer a shell - signed-in surfaces are live under `/app`:
+
+| Route | Surface |
+|---|---|
+| `/signin` | Supabase auth entry point (Google One Tap + email) |
+| `/app` | Dashboard |
+| `/app/applications/[id]` | Single application record - JD, CV sent, pipeline state |
+| `/app/bank` | Story/answer bank |
+| `/app/interview` | Case and interview drills |
+| `/app/watchlist` | Watched companies and ATS checks |
+
+Auth is Supabase SSR throughout; routing rules live in `lib/auth/`.
+
 ## Database
 The canonical data model is **`supabase/schema.sql`** - a single drop-and-recreate file while the project has no live data. Run it in the Supabase SQL editor to (re)build the schema. See CLAUDE.md for the migration policy.
 
@@ -36,12 +50,34 @@ npm run db:seed      # seed.sql   (the owner must have signed in once)
 ```
 Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=you@example.com npm run seed:build` seeds a different owner.
 
+## Scripts
+
+| Script | Purpose |
+|---|---|
+| `dev` / `build` / `start` | Next.js dev server, production build, serve |
+| `test` / `test:watch` / `typecheck` | Vitest suite, watch mode, `tsc --noEmit` |
+| `db:apply` / `db:migrate` / `db:seed` | Apply schema, run migrations, load seed data |
+| `seed:build` | Regenerate `supabase/seed.sql` from `data/cvbuilder/` |
+| `data:sync` | Sync corpus data into the database |
+| `watchlist:refresh` | Refresh watched companies via ATS adapters |
+| `case:drill` | Run a case-interview drill from the CLI |
+| `ai:stream` | Exercise the LLM streaming path |
+| `companies:sync` / `boards:probe` / `source:sg` | Company graph sync, job-board probing, Singapore sourcing |
+
 ## Repo guide
 - `lib/` - pure, fully-tested domain layer (start here)
 - `lib/import/` - CVbuilder -> JobSearch transform and the seed-SQL generator
-- `lib/adapters/` - provider boundaries: LLM routing (small vs premium tier), job-feed mappers
-- `app/` - Next.js shell (UI lands after Supabase wiring)
-- `docs/SPEC.md` - full product spec · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
+- `lib/adapters/` - provider boundaries: LLM routing (small vs premium tier), job-feed mappers, ATS
+- `lib/auth/` - Supabase SSR wiring, Google One Tap, route protection
+- `lib/export/` - CV export (`docx`), file naming and storage
+- `lib/interview/` - case method, session state, interview agent
+- `lib/cover-letter/`, `lib/editorial/` - cover-letter generation, editorial audits and auto-select
+- `lib/stories/`, `lib/repos/`, `lib/watchlist/`, `lib/onboarding/`, `lib/db/`, `lib/services/`, `lib/companies/` - the rest of the domain layer, one concern per folder
+- `app/` - Next.js App Router surfaces (see the route table above)
+- `docs/SPEC.md` - full product spec · `docs/DESIGN.md`, `docs/ROADMAP.md`, `docs/ONBOARDING.md`, `docs/UI-REVIEW.md` · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
+
+## CI
+GitHub Actions in `.github/workflows/`: `ci.yml` (typecheck + tests), `db.yml` (schema/seed checks), `keepalive.yml` (Supabase free-tier keepalive), `sourcing.yml` (scheduled sourcing).
 
 ## Development discipline
 TDD (red -> green -> refactor), typecheck clean, and the token-economy rules in CLAUDE.md apply to every feature.
