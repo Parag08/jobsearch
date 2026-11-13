@@ -73,3 +73,43 @@ export async function getJdRaw(db: DbClient, userId: string, id: string): Promis
   );
   return row?.jd_raw ?? null;
 }
+
+/** The agent-sync columns (migration 0009). Kept off applicationPatch so ordinary updates never touch them. */
+export interface ApplicationSyncFields {
+  externalRef?: string | null;
+  applyUrl?: string | null;
+  statusNote?: string | null;
+  jdRaw?: string | null;
+}
+
+export async function setSyncFields(
+  db: DbClient,
+  userId: string,
+  id: string,
+  f: ApplicationSyncFields,
+): Promise<Application> {
+  const patch: Record<string, string | null> = {};
+  if (f.externalRef !== undefined) patch.external_ref = f.externalRef;
+  if (f.applyUrl !== undefined) patch.apply_url = f.applyUrl;
+  if (f.statusNote !== undefined) patch.status_note = f.statusNote;
+  if (f.jdRaw !== undefined) patch.jd_raw = f.jdRaw;
+  const row = await one(
+    db.from("applications").update(patch).eq("user_id", userId).eq("id", id).select().single(),
+    "applications",
+    "setSyncFields",
+  );
+  return toApplication(row);
+}
+
+export async function findApplicationByExternalRef(
+  db: DbClient,
+  userId: string,
+  externalRef: string,
+): Promise<Application | null> {
+  const rows = await many(
+    db.from("applications").select().eq("user_id", userId).eq("external_ref", externalRef).limit(1),
+    "applications",
+    "findByExternalRef",
+  );
+  return rows[0] ? toApplication(rows[0]) : null;
+}

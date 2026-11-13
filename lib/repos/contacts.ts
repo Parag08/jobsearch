@@ -71,3 +71,29 @@ export async function listInteractions(
   );
   return rows.map(toInteraction);
 }
+
+export async function findContactByExternalRef(
+  db: DbClient,
+  userId: string,
+  externalRef: string,
+): Promise<Contact | null> {
+  const rows = await many(
+    db.from("contacts").select().eq("user_id", userId).eq("external_ref", externalRef).limit(1),
+    "contacts",
+    "findByExternalRef",
+  );
+  return rows[0] ? toContact(rows[0], await listInteractions(db, userId, rows[0].id)) : null;
+}
+
+export async function setContactExternalRef(
+  db: DbClient,
+  userId: string,
+  id: string,
+  externalRef: string,
+): Promise<void> {
+  await one(
+    db.from("contacts").update({ external_ref: externalRef }).eq("user_id", userId).eq("id", id).select().single(),
+    "contacts",
+    "setExternalRef",
+  );
+}
