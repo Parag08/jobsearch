@@ -17,6 +17,7 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists api_tokens cascade;
 drop table if exists token_ledger cascade;
 drop table if exists case_sessions cascade;
 drop table if exists interview_attempts cascade;
@@ -166,6 +167,9 @@ create table applications (
   applied_at date,
   updated_at timestamptz not null default now(),
   cover_letter jsonb,                                -- the drafted letter (0007)
+  external_ref text,                                 -- id in the system it was imported from (0009)
+  apply_url text,                                    -- where to apply (0009)
+  status_note text,                                  -- evidence behind the current stage (0009)
   constraint closed_needs_reason check (stage <> 'closed' or closed_reason is not null)
 );
 
@@ -183,8 +187,12 @@ create table contacts (
   interests text[] not null default '{}',
   next_followup date,
   rolling_summary text not null default '',          -- token rule: short summary in prompts, raw log below
+  external_ref text,                                 -- id in the system it was imported from (0009)
   created_at timestamptz not null default now()
 );
+create unique index contacts_user_external_ref on contacts (user_id, external_ref) where external_ref is not null;
+
+create unique index applications_user_external_ref on applications (user_id, external_ref) where external_ref is not null;
 
 alter table applications
   add constraint applications_referral_fk
@@ -336,6 +344,18 @@ create table case_sessions (
 );
 create index case_sessions_user_case on case_sessions (user_id, case_id, created_at desc);
 
+-- ---- agent access: personal tokens for the MCP endpoint /api/mcp (0009) -------------
+-- Only the SHA-256 hash is stored; the token is shown once, on creation.
+create table api_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  name text not null,
+  token_hash text not null unique,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz
+);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -353,6 +373,7 @@ alter table stories enable row level security;
 alter table interview_answers enable row level security;
 alter table interview_attempts enable row level security;
 alter table case_sessions enable row level security;
+alter table api_tokens enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -373,7 +394,7 @@ begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
-                           'interview_answers','interview_attempts','case_sessions']
+                           'interview_answers','interview_attempts','case_sessions','api_tokens']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);

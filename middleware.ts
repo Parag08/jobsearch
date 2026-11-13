@@ -39,6 +39,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except static assets and images.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)"],
+  // Everything except static assets and images, and the MCP endpoint (token auth, no session to refresh).
+  matcher: ["/((?!api/mcp|_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)"],
 };

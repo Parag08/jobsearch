@@ -111,6 +111,10 @@ export const ApplicationSchema = z.object({
   savedAt: z.string(), // ISO date
   appliedAt: z.string().nullable(),
   updatedAt: z.string(),
+  /** Agent-sync fields (migration 0009). Read-only on the domain object: written through setSyncFields. */
+  externalRef: z.string().nullable().optional(),
+  applyUrl: z.string().nullable().optional(),
+  statusNote: z.string().nullable().optional(),
 });
 export type Application = z.infer<typeof ApplicationSchema>;
 
@@ -136,6 +140,8 @@ export const ContactSchema = z.object({
   interests: z.array(z.string()),
   interactions: z.array(InteractionSchema), // newest first
   nextFollowup: z.string().nullable(),
+  /** Id in the system the contact was imported from (migration 0009). */
+  externalRef: z.string().nullable().optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

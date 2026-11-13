@@ -164,6 +164,10 @@ export interface ApplicationRow {
   updated_at: string;
   /** Added by migration 0007 (lib/repos/cover-letters.ts). */
   cover_letter?: unknown;
+  /** Added by migration 0009 (agent sync): written only by lib/repos/applications.ts setSyncFields. */
+  external_ref?: string | null;
+  apply_url?: string | null;
+  status_note?: string | null;
 }
 
 export interface ContactRow {
@@ -179,7 +183,20 @@ export interface ContactRow {
   interests: string[];
   next_followup: string | null;
   rolling_summary: string;
+  /** Added by migration 0009 (agent sync). */
+  external_ref?: string | null;
   created_at?: string;
+}
+
+/** A personal agent token (migration 0009). Only the hash is stored. */
+export interface ApiTokenRow {
+  id: string;
+  user_id: string;
+  name: string;
+  token_hash: string;
+  created_at?: string;
+  last_used_at?: string | null;
+  revoked_at?: string | null;
 }
 
 export interface InteractionRow {
@@ -268,6 +285,7 @@ export interface RowMap {
   interview_answers: InterviewAnswerRow;
   interview_attempts: InterviewAttemptRow;
   case_sessions: CaseSessionRow;
+  api_tokens: ApiTokenRow;
 }
 
 /** One attempt at a case interview; `session` is the whole CaseSession, saved every turn. */
@@ -388,6 +406,9 @@ export function toApplication(r: ApplicationRow): Application {
     savedAt: r.saved_at,
     appliedAt: r.applied_at,
     updatedAt: r.updated_at,
+    externalRef: r.external_ref ?? null,
+    applyUrl: r.apply_url ?? null,
+    statusNote: r.status_note ?? null,
   });
 }
 
@@ -458,6 +479,7 @@ export function toContact(r: ContactRow, interactions: Interaction[] = []): Cont
     interests: r.interests,
     interactions,
     nextFollowup: r.next_followup,
+    externalRef: r.external_ref ?? null,
   });
 }
 

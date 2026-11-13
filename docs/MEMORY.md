@@ -2,6 +2,20 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-13 - MCP server + findparagjob sync
+
+- **Shipped:** `/api/mcp` (stateless MCP over JSON-RPC, `lib/mcp/`), nine tools (pipeline_summary,
+  list/get/upsert_application, set_stage, list/get/upsert_contact, log_interaction), token auth
+  (`/app/agent`, `api_tokens`, migration 0009 which also adds `applications.external_ref`,
+  `apply_url`, `status_note` and `contacts.external_ref`). Rules in `lib/services/agent-sync.ts`.
+- **Decided:** stage and contacts are owned by this app; the CV corpus stays owned by findparagjob.
+  findparagjob has the client: `tools/portal-sync/` (`npm run portal:push` / `portal:pull`), token in
+  its `config/settings.local.json`.
+- **Not done:** imported applications have `jd_raw` but no `jd_extract` (extraction costs an LLM
+  call each; the detail page says "paste the posting first"). A "Extract from stored JD" button is
+  the natural next step. No contacts page yet - contacts are visible only over MCP. Live DB still
+  needs `npm run db:seed` for the 11 Nov corpus (unchanged from the entry below).
+
 ## 2026-11-11 (evening) - live fixes, then the findparagjob rebuild (step 1 of 6)
 
 - **Live fixes, pushed:** sector lookup used a bare JS array in `.eq()` (PostgREST wants a

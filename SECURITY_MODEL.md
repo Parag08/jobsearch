@@ -28,6 +28,7 @@ A personal job-search app: Next.js 15 App Router on Vercel (`sin1`), Supabase (P
 ## Entry points and who reaches them
 - `/api/jd` (POST), `/api/cv-diff` (POST), `/api/brief` (GET): any signed-in user; 401 otherwise. `/api/jd` spends LLM tokens.
 - Server actions in `app/app/actions.ts` (stage moves, watchlist add/refresh, JD intake, interview scoring, case interviewer turns): any signed-in user; take IDs from the client.
+- `/api/mcp` (POST, added 2026-11-13): anyone holding a personal agent token (`Authorization: Bearer jsk_…`, made on `/app/agent`). 401 otherwise. **Runs with `SUPABASE_SECRET_KEY`, so RLS is bypassed**: isolation is the userId resolved from the token hash (`lib/db/agent.ts`) plus the `user_id` filter in every repo the tools call (`lib/mcp/tools.ts` → `lib/services/agent-sync.ts`). A tool that queried without a userId would be a cross-tenant hole. Tokens are stored as SHA-256 hashes, shown once, revocable; `api_tokens` has own-rows RLS for the owner's UI. No LLM calls on this path. Body capped at 512 KB.
 - `/auth/callback?code=&next=`: anonymous; `next` is used in a redirect.
 - `/signin` server action builds the OAuth `redirectTo` from `Origin`/`Host` headers.
 - Landing page and demo mode: anonymous.
