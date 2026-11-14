@@ -42,6 +42,16 @@ export function staleApplications(apps: Application[], today: string): Applicati
   );
 }
 
+/**
+ * Applications with any activity in the last `days` days: applied to, moved, or saved.
+ * The board shows these by default so a long history does not bury this week's work.
+ * `days` comes from config (lib/pipeline-settings.ts), never a constant here.
+ */
+export function recentApplications(apps: Application[], today: string, days: number): Application[] {
+  const within = (date: string | null) => date !== null && daysBetween(date.slice(0, 10), today) <= days;
+  return apps.filter((a) => within(a.appliedAt) || within(a.updatedAt) || within(a.savedAt));
+}
+
 export interface FunnelStats {
   byStage: Record<Stage, number>;
   applied: number;

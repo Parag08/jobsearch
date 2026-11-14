@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
 import { listContacts } from "@/lib/repos/contacts";
-import { funnelStats, staleApplications } from "@/lib/pipeline";
+import { funnelStats, recentApplications, staleApplications } from "@/lib/pipeline";
+import { pipelineRecentDaysFromEnv } from "@/lib/pipeline-settings";
 import { followupsDue } from "@/lib/outreach";
 import { STAGES, type Application, type Stage } from "@/lib/types";
 import { JdForm } from "./jd-form";
@@ -11,8 +12,13 @@ import ui from "./ui.module.css";
 
 const DEEP: Stage[] = ["interview", "case", "offer", "negotiation"];
 
-/** Pipeline board (M5). Closed is neutral whatever the reason; only stale and due earn colour. */
-export default async function Pipeline() {
+/**
+ * Pipeline board (M5). Closed is neutral whatever the reason; only stale and due earn colour.
+ * With PIPELINE_RECENT_DAYS set the board shows that window of activity, and ?show=all the
+ * whole history; the stats always count everything.
+ */
+export default async function Pipeline({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
+  const { show } = await searchParams;
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
@@ -25,7 +31,10 @@ export default async function Pipeline() {
   const active = apps.filter((a) => a.stage !== "closed").length;
 
   const byStage = Object.fromEntries(STAGES.map((s) => [s, [] as Application[]])) as Record<Stage, Application[]>;
-  for (const a of apps) byStage[a.stage].push(a);
+  const recentDays = pipelineRecentDaysFromEnv(process.env);
+  const showAll = recentDays === undefined || show === "all";
+  const shown = showAll ? apps : recentApplications(apps, today, recentDays);
+  for (const a of shown) byStage[a.stage].push(a);
 
   return (
     <>
@@ -50,6 +59,15 @@ export default async function Pipeline() {
         </p>
         <JdForm />
       </section>
+
+      {recentDays !== undefined && (
+        <p className={ui.sub}>
+          {showAll
+            ? `All ${apps.length} applications. `
+            : `${shown.length} of ${apps.length} applications: active in the last ${recentDays} days. `}
+          <Link href={showAll ? "/app" : "/app?show=all"}>{showAll ? `Show the last ${recentDays} days` : "Show all"}</Link>
+        </p>
+      )}
 
       <div className={ui.board}>
         {STAGES.map((stage) => (

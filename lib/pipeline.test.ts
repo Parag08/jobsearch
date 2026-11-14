@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { advance, canTransition, staleApplications, funnelStats } from "./pipeline";
+import { advance, canTransition, staleApplications, funnelStats, recentApplications } from "./pipeline";
 import type { Application } from "./types";
 
 function app(over: Partial<Application> = {}): Application {
@@ -79,5 +79,23 @@ describe("funnelStats", () => {
     expect(s.byStage.saved).toBe(1);
     expect(s.applied).toBe(3); // reached applied at some point
     expect(s.responseRate).toBeCloseTo(2 / 3);
+  });
+});
+
+describe("recentApplications", () => {
+  const today = "2026-11-14";
+  const old = { savedAt: "2026-09-01", updatedAt: "2026-09-01" };
+
+  it("keeps an application applied to within the window, and drops one that is older", () => {
+    const inside = app({ id: "in", ...old, stage: "applied", appliedAt: "2026-11-07" });
+    const outside = app({ id: "out", ...old, stage: "applied", appliedAt: "2026-11-06" });
+    expect(recentApplications([inside, outside], today, 7).map((a) => a.id)).toEqual(["in"]);
+  });
+
+  it("keeps an old application that moved or was saved inside the window", () => {
+    const moved = app({ id: "moved", savedAt: "2026-09-01", appliedAt: "2026-09-02", updatedAt: "2026-11-12T09:30:00+00:00", stage: "interview" });
+    const saved = app({ id: "saved", savedAt: "2026-11-13", updatedAt: "2026-11-13" });
+    const quiet = app({ id: "quiet", ...old });
+    expect(recentApplications([moved, saved, quiet], today, 7).map((a) => a.id)).toEqual(["moved", "saved"]);
   });
 });

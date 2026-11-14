@@ -2,6 +2,12 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-14 - Pipeline board shows the last week by default
+
+- `/app` board lists only applications with activity (applied, moved or saved) in the last `PIPELINE_RECENT_DAYS` days; a line above the board says "N of M" with a "Show all" link (`/app?show=all`). Stats still count everything.
+- `lib/pipeline.ts` `recentApplications`, `lib/pipeline-settings.ts` `pipelineRecentDaysFromEnv` (unset = show everything, no toggle). Both tested.
+- **Not done:** not committed; `PIPELINE_RECENT_DAYS=7` is in `.env` and `.env.example` but not yet on Vercel, so production shows everything until it is added.
+
 ## 2026-11-13 - MCP server + findparagjob sync
 
 - **Shipped:** `/api/mcp` (stateless MCP over JSON-RPC, `lib/mcp/`), nine tools (pipeline_summary,
