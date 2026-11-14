@@ -13,7 +13,8 @@ Goal (Parag): after 2-3 weeks of an agent pushing roles, see what PM and forward
 - **MCP tool `role_insights`** (no args = families + unread count; family/title = requirements + stored plan).
 - Settings: `ROLE_READ_BATCH=5`, `ROLE_PLAN_MAX_GAPS=8` (`lib/insights/settings.ts`; unset = that button is off).
 - Built with Sonnet subagents for the plumbing (storage, page, MCP tool); design and review on the main model.
-- **Not done / not verified:** not committed. Migration 0010 not applied to the live DB (db.yml applies it on push to main). The two env vars are not on Vercel. The page was checked on demo data only, which has tag demand but no gaps, so the Gaps/Unstated lists and both buttons have not run against real roles or a real model.
+- **Shipped 2026-11-14:** commit 736b921 on main; migration 0010 applied by db.yml; `ROLE_READ_BATCH` and `ROLE_PLAN_MAX_GAPS` set on Vercel; production deploy READY. **Not verified:** the page was checked on demo data only (tag demand, no gaps), so the Gaps/Unstated lists and both buttons have not run against real roles or a real model.
+- **Noticed:** the daily `sourcing` workflow fails every run: repo secrets `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are missing, so the watchlist is not refreshing on schedule.
 - **Known limit:** the role family is the extractor's free label, so "forward-deployed-engineering" may arrive as "engineering" or "solutions-engineering"; the title filter covers that for now. Next: give the extractor the user's own family list.
 
 ## 2026-11-14 - Pipeline board shows the last week by default
