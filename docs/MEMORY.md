@@ -6,7 +6,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 - `/app` board lists only applications with activity (applied, moved or saved) in the last `PIPELINE_RECENT_DAYS` days; a line above the board says "N of M" with a "Show all" link (`/app?show=all`). Stats still count everything.
 - `lib/pipeline.ts` `recentApplications`, `lib/pipeline-settings.ts` `pipelineRecentDaysFromEnv` (unset = show everything, no toggle). Both tested.
-- **Not done:** not committed; `PIPELINE_RECENT_DAYS=7` is in `.env` and `.env.example` but not yet on Vercel, so production shows everything until it is added.
+- Shipped: commit 9068011 on main; `PIPELINE_RECENT_DAYS=7` is set on Vercel (all environments) and production was redeployed after it. Not yet looked at signed in on the live site.
 
 ## 2026-11-13 - MCP server + findparagjob sync
 
