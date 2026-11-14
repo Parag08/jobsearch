@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
+import { FakeLlm } from "../adapters/llm";
+import type { JdExtract } from "../types";
 import { handleBody, handleMessage, PROTOCOL_VERSIONS } from "./server";
 import { TOOLS, type ToolContext } from "./tools";
 
@@ -104,5 +106,86 @@ describe("MCP tools", () => {
     const got = await call(ctx, "get_contact", { externalRef: "li:jane" });
     expect(got.data.interactions).toHaveLength(1);
     expect((await call(ctx, "list_contacts", { company: "grab" })).data.count).toBe(1);
+  });
+});
+
+const extract = (over: Partial<JdExtract> = {}): JdExtract => ({
+  company: "Acme",
+  role: "Forward Deployed Engineer",
+  roleFamily: "forward-deployed-engineering",
+  sectorPath: ["IT", "AI"],
+  skills: ["python", "sql"],
+  keywords: [],
+  seniority: null,
+  visaNote: null,
+  location: null,
+  ...over,
+});
+const JD = "We are hiring a forward deployed engineer to work with customers on python and sql pipelines.";
+
+describe("MCP role reading and role_insights", () => {
+  it("reads the posting into skills when a reader is configured", async () => {
+    const llm = new FakeLlm();
+    llm.stubJdExtract(extract());
+    const ctx = { ...ctxFor(new FakeDb()), llm };
+    const made = await call(ctx, "upsert_application", { externalRef: "acme-fde", company: "Acme", role: "FDE", jdRaw: JD });
+    expect(made.data.skillsRead).toBe(true);
+    expect(made.data.readError).toBeUndefined();
+    const full = await call(ctx, "get_application", { externalRef: "acme-fde" });
+    expect(full.data.jdExtract.skills).toEqual(["python", "sql"]);
+  });
+
+  it("saves the role with skillsRead false when no reader is configured", async () => {
+    const ctx = ctxFor(new FakeDb());
+    const made = await call(ctx, "upsert_application", { externalRef: "acme-fde", company: "Acme", role: "FDE", jdRaw: JD });
+    expect(made.isError).toBe(false);
+    expect(made.data.skillsRead).toBe(false);
+    expect((await call(ctx, "list_applications")).data.count).toBe(1);
+  });
+
+  it("reports readError when the read fails, and still saves", async () => {
+    const ctx = { ...ctxFor(new FakeDb()), llm: new FakeLlm() }; // nothing stubbed: extractJd throws
+    const made = await call(ctx, "upsert_application", { externalRef: "acme-fde", company: "Acme", role: "FDE", jdRaw: JD });
+    expect(made.data.skillsRead).toBe(false);
+    expect(typeof made.data.readError).toBe("string");
+    expect((await call(ctx, "list_applications")).data.count).toBe(1);
+  });
+
+  it("role_insights with no arguments lists families and the unread count", async () => {
+    const db = new FakeDb();
+    const llm = new FakeLlm();
+    llm.stubJdExtract(extract());
+    const ctx = { ...ctxFor(db), llm };
+    await call(ctx, "upsert_application", { externalRef: "a", company: "Acme", role: "FDE", jdRaw: JD });
+    await call(ctx, "upsert_application", { externalRef: "b", company: "Beta", role: "FDE", jdRaw: JD });
+    await call(ctxFor(db), "upsert_application", { externalRef: "c", company: "Gamma", role: "PM" });
+    const out = await call(ctx, "role_insights");
+    expect(out.data).toEqual({ families: [{ family: "forward-deployed-engineering", roles: 2 }], unread: 1 });
+  });
+
+  it("role_insights with a family returns requirements and never another user's roles", async () => {
+    const db = new FakeDb();
+    const llm = new FakeLlm();
+    llm.stubJdExtract(extract());
+    const mine = { ...ctxFor(db, "user-1"), llm };
+    await call(mine, "upsert_application", { externalRef: "a", company: "Acme", role: "FDE", jdRaw: JD });
+    llm.stubJdExtract(extract({ skills: ["rust"] }));
+    await call({ ...ctxFor(db, "user-2"), llm }, "upsert_application", { externalRef: "z", company: "Other", role: "FDE", jdRaw: JD });
+
+    const out = await call(mine, "role_insights", { family: "Forward Deployed Engineering" });
+    expect(out.data.selection).toEqual({ family: "Forward Deployed Engineering" });
+    expect(out.data.roles).toBe(1);
+    expect(out.data.plan).toBeNull();
+    const terms = out.data.requirements.map((r: { term: string }) => r.term);
+    expect(terms).toContain("python");
+    expect(terms).not.toContain("rust");
+    expect(out.data.requirements[0]).toMatchObject({ askedBy: 1, share: 100, status: "gap" });
+    expect(Array.isArray(out.data.requirements[0].phrases)).toBe(true);
+  });
+
+  it("lists role_insights among the tools", async () => {
+    const res = await handleMessage(rpc("tools/list"), ctxFor(new FakeDb()));
+    const names = (res!.result as { tools: { name: string }[] }).tools.map((t) => t.name);
+    expect(names).toContain("role_insights");
   });
 });

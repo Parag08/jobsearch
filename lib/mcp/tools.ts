@@ -4,6 +4,12 @@ import { ClosedReasonSchema, InteractionSchema, StageSchema, WarmthSchema, Conta
 import type { DbClient } from "../repos/db";
 import { getJdRaw, listApplications } from "../repos/applications";
 import { listContacts } from "../repos/contacts";
+import { listProjects } from "../repos/projects";
+import { getProfile } from "../repos/profiles";
+import { getRolePlan } from "../repos/role-plans";
+import type { LlmProvider } from "../adapters/llm";
+import { roleFamilies, roleInsights, selectRoles, type RoleSelector } from "../insights/role-insights";
+import { planKey } from "../services/role-plan";
 import {
   findApplication,
   findContact,
@@ -18,6 +24,8 @@ export interface ToolContext {
   db: DbClient;
   userId: string;
   nowIso: string;
+  /** The small-tier reader, present when an AI provider is configured. */
+  llm?: LlmProvider;
 }
 
 export interface Tool {
@@ -147,9 +155,50 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    name: "role_insights",
+    description:
+      "What the roles the user has collected for one line of work ask for, ranked by how many roles ask, with each requirement marked evidenced (a CV bullet backs it), unstated (the user's history mentions it but no bullet says it) or gap (nothing on record backs it). Call with no arguments to list the role families seen and how many roles each has, plus how many saved roles are still unread. Give family and/or title words (all must appear in the role title) to get one line of work, with its stored gap plan if one exists.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        family: { type: "string", description: "A role family from the no-argument call, e.g. forward-deployed-engineering" },
+        title: { type: "string", description: "Words that must all appear in the role title" },
+      },
+      additionalProperties: false,
+    },
+    async run({ db, userId }, args) {
+      const f = z.object({ family: z.string().optional(), title: z.string().optional() }).parse(args ?? {});
+      const [apps, projects, profile] = await Promise.all([
+        listApplications(db, userId),
+        listProjects(db, userId),
+        getProfile(db, userId),
+      ]);
+      if (!f.family && !f.title) {
+        return { families: roleFamilies(apps), unread: apps.filter((a) => !a.jdExtract).length };
+      }
+      const by: RoleSelector = {};
+      if (f.family) by.family = f.family;
+      if (f.title) by.title = f.title;
+      const insights = roleInsights(selectRoles(apps, by), projects, profile?.taxonomy ?? { tags: {} });
+      const stored = await getRolePlan(db, userId, planKey(by));
+      return {
+        selection: by,
+        roles: insights.roles,
+        requirements: insights.requirements.map((r) => ({
+          term: r.term,
+          askedBy: r.roles,
+          share: Math.round(r.share * 100),
+          status: r.status,
+          phrases: r.phrases.slice(0, 3),
+        })),
+        plan: stored ? { text: stored.text, generatedAt: stored.generatedAt, rolesSeen: stored.rolesSeen } : null,
+      };
+    },
+  },
+  {
     name: "upsert_application",
     description:
-      "Create or update an application record. Idempotent on externalRef; a record made by hand for the same company and role is adopted, not duplicated. New records start in 'saved'. This NEVER changes the stage - a prepared CV is not a submitted application; use set_stage for that.",
+      "Create or update an application record. Idempotent on externalRef; a record made by hand for the same company and role is adopted, not duplicated. New records start in 'saved'. When jdRaw is given, the posting is read once into role family and skills for the role insights: send the full posting text for every role you find, applied to or not. This NEVER changes the stage - a prepared CV is not a submitted application; use set_stage for that.",
     inputSchema: {
       type: "object",
       properties: {
@@ -164,9 +213,15 @@ export const TOOLS: Tool[] = [
       required: ["company", "role"],
       additionalProperties: false,
     },
-    async run({ db, userId, nowIso }, args) {
-      const r = await upsertApplication({ db }, userId, UpsertApplicationSchema.parse(args), nowIso.slice(0, 10));
-      return { created: r.created, application: brief(r.record) };
+    async run({ db, userId, nowIso, llm }, args) {
+      const r = await upsertApplication({ db, llm }, userId, UpsertApplicationSchema.parse(args), nowIso.slice(0, 10));
+      const skillsRead = r.read?.ok === true || !!r.record.jdExtract;
+      return {
+        created: r.created,
+        application: brief(r.record),
+        skillsRead,
+        ...(r.read && !r.read.ok ? { readError: r.read.error } : {}),
+      };
     },
   },
   {

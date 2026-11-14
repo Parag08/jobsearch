@@ -1,3 +1,4 @@
+import type { LlmProvider } from "../adapters/llm";
 import { advance } from "../pipeline";
 import { norm, type Application, type ClosedReason, type Contact, type Interaction, type Stage, type Warmth } from "../types";
 import type { DbClient } from "../repos/db";
@@ -20,6 +21,7 @@ import {
   updateContact,
 } from "../repos/contacts";
 import { markApplied } from "./mark-applied";
+import { readRole } from "./read-role";
 
 /**
  * What an agent may do to a user's pipeline and contacts (the MCP tools in lib/mcp call
@@ -34,6 +36,8 @@ import { markApplied } from "./mark-applied";
 
 export interface AgentDeps {
   db: DbClient;
+  /** When given, a role that arrives with posting text is read into skills (read-role.ts). */
+  llm?: LlmProvider;
 }
 
 export interface ApplicationInput {
@@ -50,9 +54,33 @@ export interface ApplicationInput {
 export interface UpsertResult<T> {
   record: T;
   created: boolean;
+  /** Set when a read of the posting was attempted: the record is saved either way. */
+  read?: { ok: true } | { ok: false; error: string };
 }
 
+/**
+ * Save the role, then read its posting into skills when there is text, a reader, and no
+ * extract yet - once per role. A failed read never loses the record: it stays unread and
+ * the Role insights page can retry it.
+ */
 export async function upsertApplication(
+  deps: AgentDeps,
+  userId: string,
+  input: ApplicationInput,
+  today: string,
+): Promise<UpsertResult<Application>> {
+  const saved = await saveApplication(deps, userId, input, today);
+  const { llm, db } = deps;
+  if (!llm || !input.jdRaw?.trim() || saved.record.jdExtract) return saved;
+  try {
+    const read = await readRole({ db, llm }, userId, saved.record.id);
+    return read ? { ...saved, record: read, read: { ok: true } } : saved;
+  } catch (err) {
+    return { ...saved, read: { ok: false, error: err instanceof Error ? err.message : "could not read the posting" } };
+  }
+}
+
+async function saveApplication(
   { db }: AgentDeps,
   userId: string,
   input: ApplicationInput,

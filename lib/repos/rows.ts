@@ -199,6 +199,15 @@ export interface ApiTokenRow {
   revoked_at?: string | null;
 }
 
+/** A generated gap plan, one per (user, role family) (migration 0010). `plan` is a StoredRolePlan. */
+export interface RolePlanRow {
+  id: string;
+  user_id: string;
+  role_family: string;
+  plan: unknown;
+  generated_at: string;
+}
+
 export interface InteractionRow {
   id: string;
   user_id: string;
@@ -286,6 +295,7 @@ export interface RowMap {
   interview_attempts: InterviewAttemptRow;
   case_sessions: CaseSessionRow;
   api_tokens: ApiTokenRow;
+  role_plans: RolePlanRow;
 }
 
 /** One attempt at a case interview; `session` is the whole CaseSession, saved every turn. */

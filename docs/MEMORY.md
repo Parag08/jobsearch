@@ -2,6 +2,20 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-14 (later) - Role knowledge base: read agent-added roles, Role insights, gap plan
+
+Goal (Parag): after 2-3 weeks of an agent pushing roles, see what PM and forward-deployed-engineering roles ask for and plan how to close the gap.
+
+- **Roles pushed over MCP are now read.** `lib/services/read-role.ts` (`extractRole`, `readRole`, `readUnreadRoles`) is the one place a posting becomes a JdExtract; `processJd` and `agent-sync.upsertApplication` (when given `llm`) both use it. A failed read still saves the role. `upsert_application` returns `skillsRead` / `readError`.
+- **`lib/insights/role-insights.ts`** (pure, rules only): `roleFamilies`, `selectRoles({family?, title?})`, `roleInsights` -> requirements ranked by roles asking, grouped through the profile taxonomy, each `evidenced` (a bullet), `unstated` (project narrative/outcomes/skills mention it, no bullet) or `gap`. `topGaps` feeds the plan.
+- **Gap plan:** `lib/insights/plan.ts` (brief + prompt: terms, shares, role names only; never claim a gap as experience), `lib/services/role-plan.ts` (`draftRolePlan`, one premium call), stored in `role_plans` (migration 0010, `lib/repos/role-plans.ts`), keyed by `planKey(selection)`.
+- **Page `/app/insights`** (nav "Insights"; `app/app/insights/`): family chips + title filter, stats, Gaps / Unstated / Backed lists, "Read them" for unread roles, "Draft a plan".
+- **MCP tool `role_insights`** (no args = families + unread count; family/title = requirements + stored plan).
+- Settings: `ROLE_READ_BATCH=5`, `ROLE_PLAN_MAX_GAPS=8` (`lib/insights/settings.ts`; unset = that button is off).
+- Built with Sonnet subagents for the plumbing (storage, page, MCP tool); design and review on the main model.
+- **Not done / not verified:** not committed. Migration 0010 not applied to the live DB (db.yml applies it on push to main). The two env vars are not on Vercel. The page was checked on demo data only, which has tag demand but no gaps, so the Gaps/Unstated lists and both buttons have not run against real roles or a real model.
+- **Known limit:** the role family is the extractor's free label, so "forward-deployed-engineering" may arrive as "engineering" or "solutions-engineering"; the title filter covers that for now. Next: give the extractor the user's own family list.
+
 ## 2026-11-14 - Pipeline board shows the last week by default
 
 - `/app` board lists only applications with activity (applied, moved or saved) in the last `PIPELINE_RECENT_DAYS` days; a line above the board says "N of M" with a "Show all" link (`/app?show=all`). Stats still count everything.

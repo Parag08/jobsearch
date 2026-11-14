@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAgentWorkspace } from "@/lib/db/agent";
 import { handleBody } from "@/lib/mcp/server";
+import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
+import { logTokens } from "@/lib/repos/token-ledger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +37,18 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const reply = await handleBody(body, { ...auth.workspace, nowIso });
+    // The small-tier reader for postings; absent (undefined) when no provider is configured.
+    const base = createLlm(process.env);
+    const { db, userId } = auth.workspace;
+    const date = nowIso.slice(0, 10);
+    const llm = base
+      ? withLedger(base, async (e) => {
+          await logTokens(db, userId, { date, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(
+            () => undefined,
+          );
+        })
+      : undefined;
+    const reply = await handleBody(body, { ...auth.workspace, nowIso, llm });
     return reply === null ? new Response(null, { status: 202 }) : NextResponse.json(reply);
   } catch {
     return rpcError(500, -32603, "Internal error");

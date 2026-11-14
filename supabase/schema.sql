@@ -17,6 +17,7 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists role_plans cascade;
 drop table if exists api_tokens cascade;
 drop table if exists token_ledger cascade;
 drop table if exists case_sessions cascade;
@@ -356,6 +357,16 @@ create table api_tokens (
   revoked_at timestamptz
 );
 
+-- ---- role insights: one generated gap plan per role family (0010) -------------------
+create table role_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  role_family text not null,
+  plan jsonb not null,
+  generated_at timestamptz not null default now(),
+  unique (user_id, role_family)
+);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -374,6 +385,7 @@ alter table interview_answers enable row level security;
 alter table interview_attempts enable row level security;
 alter table case_sessions enable row level security;
 alter table api_tokens enable row level security;
+alter table role_plans enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -394,7 +406,7 @@ begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
-                           'interview_answers','interview_attempts','case_sessions','api_tokens']
+                           'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
