@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-15 - Compact pipeline board
+
+The 7-day window did not shorten the board (the agent had pushed every role within the week), so the layout changed instead:
+- Only stages with cards get a column, sharing the full width; empty stages are named in one line under the board.
+- Cards flow side by side inside a column (`.colCards`, auto-fill grid), newest activity first (`byRecentActivity`), with one-line company, two-line role, one-line next action.
+- `PIPELINE_COLUMN_MAX` (set to 9): a column shows that many cards, the rest fold under "Show N more" (`<details>`). Unset = all cards.
+- Git author for this repo is now set (Parag's Gmail); earlier commits from this Mac used a made-up `.local` address and do not count on the GitHub profile.
+- Shipped to main with `PIPELINE_COLUMN_MAX=9` on Vercel. Checked on demo data (5 cards) only, not against the real list.
+
 ## 2026-11-14 (later) - Role knowledge base: read agent-added roles, Role insights, gap plan
 
 Goal (Parag): after 2-3 weeks of an agent pushing roles, see what PM and forward-deployed-engineering roles ask for and plan how to close the gap.

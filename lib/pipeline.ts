@@ -52,6 +52,16 @@ export function recentApplications(apps: Application[], today: string, days: num
   return apps.filter((a) => within(a.appliedAt) || within(a.updatedAt) || within(a.savedAt));
 }
 
+/** The day of an application's latest activity: applied, moved or saved. */
+function lastActivity(a: Application): string {
+  return [a.appliedAt, a.updatedAt, a.savedAt].map((d) => (d ?? "").slice(0, 10)).sort().at(-1) ?? "";
+}
+
+/** Newest activity first (a copy), so the top of a column is what moved last. */
+export function byRecentActivity(apps: Application[]): Application[] {
+  return [...apps].sort((x, y) => lastActivity(y).localeCompare(lastActivity(x)) || x.company.localeCompare(y.company));
+}
+
 export interface FunnelStats {
   byStage: Record<Stage, number>;
   applied: number;

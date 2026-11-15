@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
 import { listContacts } from "@/lib/repos/contacts";
-import { funnelStats, recentApplications, staleApplications } from "@/lib/pipeline";
-import { pipelineRecentDaysFromEnv } from "@/lib/pipeline-settings";
+import { byRecentActivity, funnelStats, recentApplications, staleApplications } from "@/lib/pipeline";
+import { pipelineColumnMaxFromEnv, pipelineRecentDaysFromEnv } from "@/lib/pipeline-settings";
 import { followupsDue } from "@/lib/outreach";
 import { STAGES, type Application, type Stage } from "@/lib/types";
 import { JdForm } from "./jd-form";
@@ -34,7 +34,21 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const recentDays = pipelineRecentDaysFromEnv(process.env);
   const showAll = recentDays === undefined || show === "all";
   const shown = showAll ? apps : recentApplications(apps, today, recentDays);
-  for (const a of shown) byStage[a.stage].push(a);
+  for (const a of byRecentActivity(shown)) byStage[a.stage].push(a);
+  const columnMax = pipelineColumnMaxFromEnv(process.env);
+  // Only stages with cards get a column, so they share the full width; empty ones are named in a line below.
+  const busy = STAGES.filter((s) => byStage[s].length > 0);
+  const empty = STAGES.filter((s) => byStage[s].length === 0);
+
+  const card = (a: Application) => (
+    <Link key={a.id} href={`/app/applications/${a.id}`} className={ui.card} data-stale={stale.has(a.id) ? "" : undefined}>
+      <b>{a.company}</b>
+      <span className={ui.role}>{a.role}</span>
+      {a.nextAction && <span className={ui.next}>{a.nextAction}</span>}
+      {stale.has(a.id) && <span className={ui.badge} data-tone="stale">no response · follow up</span>}
+      {a.stage === "closed" && a.closedReason && <span className={ui.badge}>{a.closedReason}</span>}
+    </Link>
+  );
 
   return (
     <>
@@ -69,29 +83,33 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         </p>
       )}
 
-      <div className={ui.board}>
-        {STAGES.map((stage) => (
-          <section key={stage} className={ui.col} aria-label={stage}>
-            <div
-              className={ui.colHead}
-              data-deep={DEEP.includes(stage) ? "" : undefined}
-              style={{ "--stage-bg": `var(--stage-${stage})` } as React.CSSProperties}
-            >
-              <span>{stage}</span>
-              <span>{byStage[stage].length}</span>
-            </div>
-            {byStage[stage].map((a) => (
-              <Link key={a.id} href={`/app/applications/${a.id}`} className={ui.card} data-stale={stale.has(a.id) ? "" : undefined}>
-                <b>{a.company}</b>
-                <span className={ui.role}>{a.role}</span>
-                {a.nextAction && <span className={ui.next}>{a.nextAction}</span>}
-                {stale.has(a.id) && <span className={ui.badge} data-tone="stale">no response · follow up</span>}
-                {a.stage === "closed" && a.closedReason && <span className={ui.badge}>{a.closedReason}</span>}
-              </Link>
-            ))}
-          </section>
-        ))}
+      <div className={ui.board} style={{ gridTemplateColumns: `repeat(${Math.max(busy.length, 1)}, minmax(200px, 1fr))` }}>
+        {busy.map((stage) => {
+          const cards = byStage[stage];
+          const top = columnMax === undefined ? cards : cards.slice(0, columnMax);
+          const rest = cards.slice(top.length);
+          return (
+            <section key={stage} className={ui.col} aria-label={stage}>
+              <div
+                className={ui.colHead}
+                data-deep={DEEP.includes(stage) ? "" : undefined}
+                style={{ "--stage-bg": `var(--stage-${stage})` } as React.CSSProperties}
+              >
+                <span>{stage}</span>
+                <span>{cards.length}</span>
+              </div>
+              <div className={ui.colCards}>{top.map(card)}</div>
+              {rest.length > 0 && (
+                <details className={ui.more}>
+                  <summary>Show {rest.length} more</summary>
+                  <div className={ui.colCards}>{rest.map(card)}</div>
+                </details>
+              )}
+            </section>
+          );
+        })}
       </div>
+      {empty.length > 0 && <p className={ui.mono}>Nothing in: {empty.join(" · ")}</p>}
 
       {due.length > 0 && (
         <section className={ui.panel}>

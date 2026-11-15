@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { advance, canTransition, staleApplications, funnelStats, recentApplications } from "./pipeline";
+import { advance, canTransition, staleApplications, funnelStats, recentApplications, byRecentActivity } from "./pipeline";
 import type { Application } from "./types";
 
 function app(over: Partial<Application> = {}): Application {
@@ -97,5 +97,20 @@ describe("recentApplications", () => {
     const saved = app({ id: "saved", savedAt: "2026-11-13", updatedAt: "2026-11-13" });
     const quiet = app({ id: "quiet", ...old });
     expect(recentApplications([moved, saved, quiet], today, 7).map((a) => a.id)).toEqual(["moved", "saved"]);
+  });
+});
+
+describe("byRecentActivity", () => {
+  it("orders newest activity first: the latest of applied, moved or saved", () => {
+    const a = app({ id: "a", savedAt: "2026-11-01", updatedAt: "2026-11-01", appliedAt: null });
+    const b = app({ id: "b", savedAt: "2026-10-01", updatedAt: "2026-11-12T08:00:00+00:00", appliedAt: "2026-10-02" });
+    const c = app({ id: "c", savedAt: "2026-11-05", updatedAt: "2026-11-05", appliedAt: "2026-11-10" });
+    expect(byRecentActivity([a, b, c]).map((x) => x.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("does not reorder the list it was given", () => {
+    const list = [app({ id: "old", savedAt: "2026-01-01", updatedAt: "2026-01-01" }), app({ id: "new", savedAt: "2026-11-01", updatedAt: "2026-11-01" })];
+    byRecentActivity(list);
+    expect(list.map((x) => x.id)).toEqual(["old", "new"]);
   });
 });

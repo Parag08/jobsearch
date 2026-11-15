@@ -71,9 +71,9 @@
 
 .board {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(168px, 1fr);
+  /* One column per stage that has cards (set by the page), sharing the full width. */
   gap: 10px;
+  align-items: start;
   overflow-x: auto;
   padding-bottom: 6px;
 }
@@ -83,6 +83,27 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+
+/* Cards flow side by side inside a wide column, so a long stage is short on the page. */
+.colCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.more summary {
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  padding: 4px 8px;
+}
+
+.more[open] summary {
+  margin-bottom: 8px;
 }
 
 .colHead {
@@ -105,7 +126,7 @@
 
 .card {
   display: block;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -124,17 +145,29 @@
   display: block;
 }
 
+.card b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .card .role {
   color: var(--ink-soft);
   font-size: 0.8rem;
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .card .next {
-  margin-top: 6px;
-  font-size: 0.78rem;
+  margin-top: 4px;
+  font-size: 0.76rem;
   color: var(--ink-soft);
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card[data-stale] {
