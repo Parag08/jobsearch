@@ -2,6 +2,18 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-16 (later) - Interview: generic questions first, company on demand, ask your own
+
+Parag: company questions crowded out the questions he practises daily; he also wants to type any question and be scored on it.
+
+- **Chooser above the question list: General / My own / Company** (`app/app/interview/behavioural-view.tsx`). The tab opens on the generic bank with the first unpractised generic question selected; Company shows a select with one entry per live application's company and only that company's three questions; the mock interview runs on whatever is selected, so it follows the same default. View rules are pure and tested in `lib/interview/scope.ts` (URL: `company=<slug>`, `scope=mine`, `q=`; an old `q=company:...` link still opens that company).
+- **Bank data:** added `fit-about-yourself` (now first), `fit-strengths`, `fit-aspirations` to `data/interview/questions.json`; weakness and why-MBA were already there. New `customQuestion` entry = the rubric every typed question is scored against.
+- **My own questions:** `lib/interview/custom-questions.ts` (ids `custom:<row id>`, `cleanQuestionText` = one line, no control characters, refused over the limit), `lib/repos/custom-questions.ts`, table `interview_custom_questions` (**migration 0011**, mirrored in `schema.sql`). `findQuestion` (`interview/bank.ts`) resolves custom ids, so notes, mock interview and scoring are the existing path (`mockFeedbackAction`; there is no `scoreAnswerAction` any more). The two mock prompts get one extra rule line for typed questions (`questionFromCandidate`). Removing a question deletes only its row; its notes and attempts stay in the DB, unseen.
+- **Setting:** `INTERVIEW_CUSTOM_QUESTION_MAX_CHARS=300` (`.env.example`, local `.env`). Unset = the add box is not offered.
+- **Demo mode fix:** `lib/db/demo.ts` now caches the FakeDb on `globalThis`; pages and server actions were separate module instances, so nothing saved in the demo ever showed.
+- **Checked in the browser (demo, dark, desktop width):** default list, company chooser, add a question, join the mock on it, save notes, remove. **Not checked:** a scored attempt on a typed question (no model key locally), mobile width, the live DB.
+- **Shipped 2026-11-16:** pushed to main (db.yml applies migration 0011); `INTERVIEW_CUSTOM_QUESTION_MAX_CHARS=300` set on Vercel (production + preview).
+
 ## 2026-11-16 - Roadmap rewrite, architecture doc, 3D architecture page
 
 - **`docs/ROADMAP.md` rewritten.** Items now have stable ids by track (S, N, A, I, V, O, X, G, P, Q, U); horizons H0-H4 each with an exit test; measures; risks; idea backlog; a maintenance checklist in section 0. Status tables corrected (mock interview and voice are shipped; sourcing cron marked failing). Old item numbers are mapped in its log.

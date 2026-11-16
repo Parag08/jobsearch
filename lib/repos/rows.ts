@@ -296,6 +296,15 @@ export interface RowMap {
   case_sessions: CaseSessionRow;
   api_tokens: ApiTokenRow;
   role_plans: RolePlanRow;
+  interview_custom_questions: InterviewCustomQuestionRow;
+}
+
+/** A question the user typed for themselves (migration 0011); its question id is `custom:<id>`. */
+export interface InterviewCustomQuestionRow {
+  id: string;
+  user_id: string;
+  text: string;
+  created_at: string;
 }
 
 /** One attempt at a case interview; `session` is the whole CaseSession, saved every turn. */

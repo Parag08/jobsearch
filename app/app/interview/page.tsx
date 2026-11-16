@@ -7,8 +7,10 @@ import { listAnswers, listAttempts, type Answer, type Attempt } from "@/lib/repo
 import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
-import { listCompanyQuestions, questionBank } from "./bank";
-import { COMPANY_GROUP, type CompanyQuestion } from "@/lib/interview/company-questions";
+import { listCompanyQuestions, listCustomQuestions, questionBank } from "./bank";
+import type { CompanyQuestion } from "@/lib/interview/company-questions";
+import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
+import type { Question } from "@/lib/interview/questions";
 import { BehaviouralView } from "./behavioural-view";
 import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
@@ -18,9 +20,10 @@ import ui from "../ui.module.css";
 /**
  * Interview prep (DESIGN.md section 3), as three tabs.
  *
- * Behavioural is the working surface: generic behavioural questions plus "Why <company>?"
- * questions built from your own applications, each practised in a mock interview, with
- * your notes alongside. Technical and casing are derived from your record.
+ * Behavioural is the working surface: the generic bank first, with "Why <company>?" questions
+ * (built from your own applications) and questions you typed yourself one click away, each
+ * practised in a mock interview with your notes alongside. Technical and casing are derived
+ * from your record.
  *
  * Tab and question live in the URL: every question is linkable, and back works.
  */
@@ -43,13 +46,14 @@ export default async function Interview({
   const params = await searchParams;
   const tab: Tab = TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
 
-  const [projects, profile, answers, attempts, caseSessions, companyQs] = await Promise.all([
+  const [projects, profile, answers, attempts, caseSessions, companyQs, customQs] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     listAnswers(db, userId),
     listAttempts(db, userId),
     tab === "casing" ? listCaseSessions(db, userId) : Promise.resolve([]),
     tab === "behavioural" ? listCompanyQuestions(db, userId) : Promise.resolve([]),
+    tab === "behavioural" ? listCustomQuestions(db, userId) : Promise.resolve([]),
   ]);
   const bullets = projects.flatMap((p) => p.bullets);
 
@@ -75,7 +79,7 @@ export default async function Interview({
       </nav>
 
       {tab === "behavioural" && (
-        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} />
+        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} customQuestions={customQs} />
       )}
       {tab === "casing" && (
         <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} />
@@ -96,11 +100,13 @@ function Behavioural({
   attempts,
   bullets,
   companyQuestions,
+  customQuestions,
 }: {
   answers: Answer[];
   attempts: Attempt[];
   bullets: { id: string; text: string; skills: string[] }[];
   companyQuestions: CompanyQuestion[];
+  customQuestions: Question[];
 }) {
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
@@ -108,8 +114,11 @@ function Behavioural({
 
   return (
     <BehaviouralView
-      groups={[COMPANY_GROUP, ...questionBank.groups]}
-      questions={[...companyQuestions, ...questionBank.questions]}
+      groups={questionBank.groups}
+      generic={questionBank.questions}
+      company={companyQuestions}
+      custom={customQuestions}
+      customMaxChars={customQuestionMaxCharsFromEnv(process.env)}
       answers={answers}
       attempts={attempts}
       evidenced={[...evidenced]}

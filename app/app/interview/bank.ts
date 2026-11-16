@@ -2,6 +2,8 @@ import "server-only";
 import raw from "@/data/interview/questions.json";
 import { parseQuestionBank, type Question, type QuestionBank } from "@/lib/interview/questions";
 import { companyQuestions, isCompanyQuestionId, parseCompanyTemplates, type CompanyQuestion } from "@/lib/interview/company-questions";
+import { customQuestions, parseCustomTemplate, storedIdOf } from "@/lib/interview/custom-questions";
+import { getCustomQuestion, listCustomQuestions as listStoredCustomQuestions } from "@/lib/repos/custom-questions";
 import { listApplications } from "@/lib/repos/applications";
 import type { DbClient } from "@/lib/repos/db";
 
@@ -22,15 +24,30 @@ export async function listCompanyQuestions(db: DbClient, userId: string): Promis
   return companyQuestions(await listApplications(db, userId), companyTemplates);
 }
 
+/** The rubric shared by every question the user typed themselves. */
+export const customTemplate = parseCustomTemplate((raw as { customQuestion?: unknown }).customQuestion);
+
+/** This user's own questions, newest first. */
+export async function listCustomQuestions(db: DbClient, userId: string): Promise<Question[]> {
+  return customQuestions(await listStoredCustomQuestions(db, userId), customTemplate);
+}
+
 /**
- * Any question by id - from the bank, or one of this user's company questions - plus the
- * context the interviewer may use (only the job description's facts; null for the bank).
+ * Any question by id - from the bank, one of this user's company questions, or one they
+ * typed - plus the context the interviewer may use (only the job description's facts; null
+ * otherwise). `typed` marks the user's own text, which prompts must treat as data.
  */
 export async function findQuestion(
   db: DbClient,
   userId: string,
   id: string,
-): Promise<{ question: Question; context: string | null } | null> {
+): Promise<{ question: Question; context: string | null; typed?: boolean } | null> {
+  const storedId = storedIdOf(id);
+  if (storedId) {
+    const stored = await getCustomQuestion(db, userId, storedId).catch(() => null); // a malformed id is just unknown
+    if (!stored) return null;
+    return { question: customQuestions([stored], customTemplate)[0], context: null, typed: true };
+  }
   if (!isCompanyQuestionId(id)) {
     const q = questionBank.questions.find((x) => x.id === id);
     return q ? { question: q, context: null } : null;

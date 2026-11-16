@@ -45,6 +45,22 @@
   ],
   "questions": [
     {
+      "id": "fit-about-yourself",
+      "group": "fit",
+      "competency": "fit",
+      "text": "Tell me about yourself.",
+      "firms": [],
+      "lookFor": "Ninety seconds to two minutes with a through-line: where you started, the two or three moves that matter and why you made each, and why that leads here. Present, past, then what you want next - not your CV read aloud."
+    },
+    {
+      "id": "fit-strengths",
+      "group": "fit",
+      "competency": "fit",
+      "text": "What are your strengths?",
+      "firms": [],
+      "lookFor": "Two or three strengths, each with one short piece of evidence - a result, or what a manager or client actually said - and chosen because the role needs them. Not a list of adjectives."
+    },
+    {
       "id": "fit-cv-walk",
       "group": "fit",
       "competency": "fit",
@@ -104,6 +120,14 @@
         "mckinsey"
       ],
       "lookFor": "A real weakness, evidence you have noticed it in action, and what you are concretely doing about it. Disguised strengths are spotted instantly."
+    },
+    {
+      "id": "fit-aspirations",
+      "group": "fit",
+      "competency": "motivation",
+      "text": "What are your career aspirations?",
+      "firms": [],
+      "lookFor": "A direction you can explain rather than a job title: what you want to be doing and be good at in five years, why your record makes that believable, and how this role is a real step towards it. Honest about what you do not know yet."
     },
     {
       "id": "team-led-team",
@@ -361,5 +385,9 @@
       "lookFor": "Two or three concrete contributions grounded in work you have done before, realistic about ramp-up, and framed around {company}'s needs rather than your wish list.",
       "short": "Your first six months"
     }
-  ]
+  ],
+  "customQuestion": {
+    "competency": "your-question",
+    "lookFor": "Answers the question that was asked, in the first sentence. Backs each claim with a specific moment from your own record - what you did and what changed, with the number - and, where the question asks about motivation, gives a reason that is true of you and of this employer rather than one any candidate could give anyone."
+  }
 }

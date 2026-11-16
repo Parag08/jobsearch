@@ -781,6 +781,14 @@ Two load-bearing joints:
   role?" and "Your first six months" are built per live application from templates in
   `data/interview/questions.json` (`companyQuestions`), ids `company:<slug>:<template>`. The
   interviewer's only context about the firm is what the job description said.
+- **The behavioural tab opens on the generic bank; company questions and your own are one click
+  away** (2026-11-16, Parag: the company questions were crowding out the questions he practises
+  daily). A chooser - General / My own / Company - sits above the list; Company shows one entry
+  per live application's company. The view is the URL (`company=<slug>`, `scope=mine`, `q=`), and a
+  linked question decides it (`lib/interview/scope.ts`). **My own** takes any typed question
+  (`interview_custom_questions`, ids `custom:<row id>`), stored as one bounded line, scored on the
+  shared rubric in `questions.json` (`customQuestion`) through the same mock interview as every
+  other question, and marked in the prompt as the candidate's text, not instructions.
 - **The interview page is stage-first and quiet** (2026-11-10): no card around the stage, one Join
   button on it, settings behind a gear (remembered per device), status as a dot and a word, icon
   call controls, guidance / notes / attempts folded into disclosures, status dots in the list.

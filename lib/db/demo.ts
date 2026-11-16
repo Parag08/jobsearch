@@ -12,10 +12,15 @@ export const DEMO_USER_ID = "00000000-0000-0000-0000-000000000d3e";
  * FakeDb loaded from data/cvbuilder/ - the same corpus supabase/seed.sql is
  * generated from. Cached per server process, so edits made in the demo persist
  * until the next deploy or restart, and nothing ever leaves the box.
+ *
+ * The cache hangs off globalThis, not this module: Next loads a page and its server
+ * actions as separate module instances, and a module-level cache gave each its own copy,
+ * so something saved by an action never showed on the page.
  */
-let cached: FakeDb | null = null;
+const holder = globalThis as { __jobsearchDemoDb?: FakeDb | null };
 
 export function getDemoDb(root = process.cwd()): FakeDb {
+  const cached = holder.__jobsearchDemoDb;
   if (cached) return cached;
   const dataDir = join(root, "data", "cvbuilder");
   const readJson = (...p: string[]) => JSON.parse(readFileSync(join(dataDir, ...p), "utf8"));
@@ -36,11 +41,11 @@ export function getDemoDb(root = process.cwd()): FakeDb {
   );
   const db = new FakeDb();
   seedFakeDb(db, ws);
-  cached = db;
+  holder.__jobsearchDemoDb = db;
   return db;
 }
 
 /** Test hook. */
 export function resetDemoDb(): void {
-  cached = null;
+  holder.__jobsearchDemoDb = null;
 }

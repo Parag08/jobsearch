@@ -90,6 +90,15 @@ describe("the shipped question bank", () => {
     expect(competencies.has("conflict")).toBe(true);
   });
 
+  it("has the everyday basics any interviewer opens with", () => {
+    const ids = new Set(shipped.questions.map((q) => q.id));
+    for (const id of ["fit-about-yourself", "fit-strengths", "fit-weakness", "fit-why-mba", "fit-aspirations"]) {
+      expect(ids.has(id), id).toBe(true);
+    }
+    // The opener comes first: it is the question the tab opens on.
+    expect(shipped.questions[0].id).toBe("fit-about-yourself");
+  });
+
   it("has Bain questions, since that is the firm being prepared for", () => {
     expect(questionsForFirm(shipped, "bain").length).toBeGreaterThan(15);
   });

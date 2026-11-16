@@ -24,6 +24,8 @@ import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { deliverySignals, numberDrift, overallScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
 import { parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
 import { findQuestion } from "./interview/bank";
+import { cleanQuestionText, customQuestionId, customQuestionMaxCharsFromEnv, storedIdOf } from "@/lib/interview/custom-questions";
+import { addCustomQuestion, removeCustomQuestion } from "@/lib/repos/custom-questions";
 import { findCase } from "./interview/cases";
 import {
   advance as advanceCase,
@@ -337,6 +339,45 @@ export async function saveAnswerAction(_prev: SaveState | null, formData: FormDa
   return { saved: true };
 }
 
+export interface AddQuestionState {
+  /** The new question's id (`custom:<id>`), for the page to open it. */
+  id?: string;
+  error?: string;
+}
+
+/**
+ * Add a question of your own. It is stored as one bounded line (cleanQuestionText) and from
+ * then on behaves like a bank question: same notes, same mock interview, same scoring.
+ */
+export async function addCustomQuestionAction(_prev: AddQuestionState | null, formData: FormData): Promise<AddQuestionState> {
+  const { db, userId } = await ws();
+  const maxChars = customQuestionMaxCharsFromEnv(process.env);
+  if (!maxChars) return { error: "Adding your own questions is switched off (INTERVIEW_CUSTOM_QUESTION_MAX_CHARS is not set)." };
+  const cleaned = cleanQuestionText(String(formData.get("text") ?? ""), maxChars);
+  if ("error" in cleaned) return { error: cleaned.error };
+  try {
+    const saved = await addCustomQuestion(db, userId, cleaned.text);
+    revalidatePath("/app/interview");
+    return { id: customQuestionId(saved.id) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save that question." };
+  }
+}
+
+/** Remove one of your own questions. Its notes and attempts stay in the database. */
+export async function removeCustomQuestionAction(questionId: string): Promise<{ error?: string }> {
+  const { db, userId } = await ws();
+  const storedId = storedIdOf(questionId);
+  if (!storedId) return { error: "Only your own questions can be removed." };
+  try {
+    await removeCustomQuestion(db, userId, storedId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not remove that question." };
+  }
+  revalidatePath("/app/interview");
+  return {};
+}
+
 /**
  * AI assist for a story draft - and note what it deliberately does NOT do.
  *
@@ -625,6 +666,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
     session: s,
     latest: answer,
     candidates: step.candidates,
+    questionFromCandidate: found.typed,
   });
   let reply;
   try {
@@ -692,6 +734,7 @@ export async function mockFeedbackAction(input: {
     firmNote: context,
     session: s,
     delivery: voicePromptLine(voice, hedges),
+    questionFromCandidate: found.typed,
   });
 
   let debrief;

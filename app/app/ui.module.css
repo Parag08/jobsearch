@@ -550,6 +550,25 @@
 .pill:hover { color: var(--ink); background: var(--wash); }
 .pill[aria-current="true"] { color: var(--accent-text); background: var(--accent-wash); font-weight: 500; }
 
+.pill[aria-disabled="true"] { color: var(--ink-faint, var(--ink-soft)); opacity: 0.55; cursor: default; }
+.pill[aria-disabled="true"]:hover { background: none; color: var(--ink-soft); }
+
+/* Ask your own question: a quiet box in the sidebar, under the chooser. */
+.askOwn { display: flex; flex-direction: column; gap: 8px; }
+.askOwn textarea { width: 100%; resize: vertical; field-sizing: content; min-height: 4.5rem; line-height: 1.45; }
+.askOwnFoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.linkBtn {
+  font: inherit;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.linkBtn:hover { color: var(--ink); }
+
 /* The selected question first, then the list, on narrow screens; side by side when wide. */
 .split {
   display: grid;
@@ -903,8 +922,6 @@
 .reveal > p { font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
 .qdetail > .reveal { padding-top: 14px; border-top: 1px solid var(--line); }
 .qrow { display: contents; }
-.qcompany { margin: 8px 0 2px 10px; font-size: 0.8125rem; font-weight: 600; color: var(--ink); }
-.qgroup > .qrow:first-of-type .qcompany { margin-top: 0; }
 /* Plain buttons on the stage take the room's colours, in either theme. */
 .stage .btn:not([data-primary]) { background: var(--room-glass); color: var(--room-ink); border-color: var(--room-mute); }
 .stage .btn:not([data-primary]):hover { background: rgba(255, 255, 255, 0.08); }
