@@ -1,0 +1,601 @@
+/* /architecture - the system drawn in 3D. Tokens from globals.css (DESIGN.md section 5):
+   hairlines not shadows, radius 4 / 12, sage for doing, terracotta for what is coming. */
+
+.page {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 96px 20px 80px;
+}
+
+.wordmark {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.navLink {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.navLink:hover {
+  color: var(--ink);
+}
+
+.head {
+  max-width: 44rem;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 12px;
+}
+.head h1 {
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.head p {
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ---- picker: one diagram per flow ------------------------------------------------------ */
+
+.scene {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.picker button,
+.segment button,
+.player button,
+.steps button,
+.viewButtons button,
+.part,
+.clear {
+  font: inherit;
+  cursor: pointer;
+}
+.flow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink-soft);
+  padding: 9px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.flow:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.flow[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+.flow[data-planned] {
+  border-style: dashed;
+  border-color: var(--warm);
+}
+.flow[data-planned][aria-pressed="true"] {
+  border-style: solid;
+  background: var(--warm-wash);
+  color: var(--warm-text);
+}
+.flow[data-whole] {
+  margin-left: auto;
+}
+.plannedTag {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warm-text);
+}
+
+.segment {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--card);
+}
+.segment button {
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  padding: 6px 14px;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+.segment button + button {
+  border-left: 1px solid var(--line-strong);
+}
+.segment button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* ---- stage --------------------------------------------------------------------------- */
+
+.stageWrap {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  overflow: hidden;
+}
+.stage {
+  position: relative;
+  height: min(74vh, 760px);
+  min-height: 460px;
+}
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.canvas:active {
+  cursor: grabbing;
+}
+/* CSS2DRenderer's layer: above the canvas, never in the pointer's way. */
+.labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.nodeLabel {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 2px 6px;
+  transition: opacity 120ms linear;
+}
+.nodeLabel[data-status="planned"] {
+  border-style: dashed;
+  border-color: var(--warm);
+  color: var(--warm-text);
+}
+.nodeLabel[data-status="partial"] {
+  border-color: var(--stale);
+  color: var(--stale-text);
+}
+.nodeLabel[data-active] {
+  background: var(--ink);
+  border-color: var(--ink);
+  border-style: solid;
+  color: var(--paper);
+}
+/* A flow has a dozen parts at most, so its labels can be read from across the room. */
+.stage[data-flow] .nodeLabel {
+  font-size: 13px;
+  padding: 3px 8px;
+}
+.stage[data-flow] .layerLabel {
+  font-size: 11px;
+}
+.layerLabel {
+  transition: opacity 120ms linear;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-faint);
+}
+
+.viewButtons {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--card);
+}
+.viewButtons button {
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  min-width: 34px;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+}
+.viewButtons button + button {
+  border-left: 1px solid var(--line-strong);
+}
+.viewButtons button:hover {
+  color: var(--ink);
+  background: var(--wash);
+}
+
+.topLeft {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  max-width: calc(100% - 28px);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend li::before {
+  content: "";
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  border: 1px solid var(--accent-text);
+}
+.legend li[data-status="partial"]::before {
+  background: var(--stale);
+  border-color: var(--stale-text);
+}
+.legend li[data-status="planned"]::before {
+  background: var(--warm-wash);
+  border: 1px dashed var(--warm);
+}
+
+/* ---- detail panel -------------------------------------------------------------------- */
+
+.detail {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: min(21rem, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  padding: 16px 18px 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.detail h2 {
+  font-size: 1.2rem;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.detail p {
+  margin: 0 0 10px;
+}
+.detail h3,
+.outline h3 {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 6px;
+}
+.detailMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+.status {
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-weight: 600;
+  background: var(--accent-wash);
+  color: var(--accent-text);
+}
+.status[data-status="partial"] {
+  background: var(--wash);
+  color: var(--stale-text);
+}
+.status[data-status="planned"] {
+  background: var(--warm-wash);
+  color: var(--warm-text);
+}
+.where,
+.roadmap {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
+.roadmap {
+  color: var(--warm-text);
+}
+.hint {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+.links {
+  margin-top: 12px;
+}
+.links > div,
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.player {
+  display: inline-flex;
+  margin: 2px 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--card);
+}
+.player button {
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  min-width: 62px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+.player button + button {
+  border-left: 1px solid var(--line-strong);
+}
+.player button:hover {
+  color: var(--ink);
+  background: var(--wash);
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li + li {
+  border-top: 1px solid var(--line);
+}
+.steps button {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 7px 4px;
+  text-align: left;
+  color: var(--ink-faint);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+.steps button:hover {
+  color: var(--ink);
+}
+.stepNo {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  line-height: 1.65;
+  color: var(--ink-faint);
+}
+.stepPath {
+  display: block;
+}
+.steps li[data-done] button {
+  color: var(--ink-soft);
+}
+.steps li[data-current] button {
+  color: var(--ink);
+  background: var(--warm-wash);
+  border-radius: 4px;
+}
+.steps li[data-current] .stepNo {
+  color: var(--warm-text);
+  font-weight: 500;
+}
+.steps li[data-current] .stepPath {
+  font-weight: 600;
+}
+.stepSay {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-soft);
+}
+
+.part {
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 4px 9px;
+  font-size: 0.8rem;
+}
+.part:hover {
+  border-color: var(--accent);
+}
+.part[data-status="partial"] {
+  border-color: var(--stale);
+}
+.part[data-status="planned"] {
+  border-style: dashed;
+  border-color: var(--warm);
+  color: var(--warm-text);
+}
+.part[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  border-style: solid;
+  color: var(--paper);
+}
+.clear {
+  margin-top: 14px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- the same content as a list -------------------------------------------------------- */
+
+.outline {
+  margin-top: 28px;
+}
+.outline h2 {
+  font-size: 1.35rem;
+  margin: 0 0 6px;
+}
+.outlineRow {
+  display: grid;
+  grid-template-columns: 17rem 1fr;
+  gap: 8px 28px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.outlineRow p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+.outlineRow .parts {
+  align-content: flex-start;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 32px;
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.notes h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+.notes p {
+  margin: 0 0 16px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding-top: 84px;
+  }
+  .stage {
+    height: 46vh;
+    min-height: 320px;
+  }
+  .nodeLabel {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+  .stage[data-flow] .nodeLabel {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+  /* No room for the layer names beside a narrow stage; the list underneath has them. */
+  .layerLabel {
+    display: none;
+  }
+  /* One row of choices that scrolls sideways, so the diagram stays near the top. */
+  .picker {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px 6px;
+    scrollbar-width: none;
+  }
+  .picker .flow {
+    flex: none;
+  }
+  /* The stage no longer ends at the wrap's bottom edge, so the buttons move to its top. */
+  .viewButtons {
+    top: 12px;
+    right: 12px;
+    bottom: auto;
+    left: auto;
+  }
+  .topLeft {
+    max-width: calc(100% - 150px);
+  }
+  .flow[data-whole] {
+    margin-left: 0;
+  }
+  /* The panel leaves the stage and sits under it. */
+  .detail {
+    position: static;
+    width: auto;
+    max-height: none;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: none;
+  }
+  .outlineRow,
+  .notes {
+    grid-template-columns: 1fr;
+  }
+}

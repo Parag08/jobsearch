@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-16 - Roadmap rewrite, architecture doc, 3D architecture page
+
+- **`docs/ROADMAP.md` rewritten.** Items now have stable ids by track (S, N, A, I, V, O, X, G, P, Q, U); horizons H0-H4 each with an exit test; measures; risks; idea backlog; a maintenance checklist in section 0. Status tables corrected (mock interview and voice are shipped; sourcing cron marked failing). Old item numbers are mapped in its log.
+- **`docs/ARCHITECTURE.md` added:** today's seven layers, twelve weak points (W1-W12) each tied to a roadmap item, the planned additions with a "make it when" trigger, what must not change, and a decision table.
+- **`lib/architecture/graph.ts`** (pure, 21 tests): 49 nodes (35 today, 14 planned), edges, eight flows (six today, two planned; each step has a plain-language `say`), `layoutGraph` for the whole system (today's nodes centred, planned ones on an extension to the right) and `layoutFlow` for one flow. Single source for the diagram.
+- **`/architecture`** (`app/architecture/`, public, client-only Three.js with OrbitControls + CSS2DRenderer). **Parag found the first version (all 49 parts at once) too complicated, so it is now one small diagram per flow:** a picker of flows, only that flow's parts on the stage, a step list that auto-plays (Back / Pause / Next) with a packet travelling the current step. "Whole system" is the last choice and holds the Today / Future switch. Select a block for detail. Sways gently until touched; `prefers-reduced-motion` stops sway, dots and auto-play; the loop pauses off screen. Parag confirmed the page stays public.
+- **Checked in the browser (dev, light theme):** flows (read, tailor, mock interview, overnight), auto-play and step selection, and the whole system in Future, at desktop width; a flow at 375px. `next build` passes (`/architecture` is static, 16.9 kB). **Not checked:** dark theme, reduced motion, touch dragging. Committed and pushed to main 2026-11-16.
+- **Next:** ROADMAP Now starts with S1 (sourcing secrets), A9 (reseed live), Q1 (verify on real data), P5 (backups).
+
 ## 2026-11-15 - Compact pipeline board
 
 The 7-day window did not shorten the board (the agent had pushed every role within the week), so the layout changed instead:
