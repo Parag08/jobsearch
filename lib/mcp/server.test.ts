@@ -223,3 +223,17 @@ describe("MCP role interviews", () => {
     expect(names).toEqual(expect.arrayContaining(["upsert_interview_questions", "list_interview_questions", "remove_interview_questions"]));
   });
 });
+
+describe("MCP interview practice", () => {
+  it("reads practice for an application and refuses bad input", async () => {
+    const db = new FakeDb();
+    const ctx = ctxFor(db);
+    await call(ctx, "upsert_application", { externalRef: "cog", company: "Cognition", role: "DE" });
+    await call(ctx, "upsert_interview_questions", { externalRef: "cog", questions: [{ externalRef: "cog:bg", competency: "Fit", text: "Background?", lookFor: "x" }] });
+    const r = await call(ctx, "list_interview_practice", { externalRef: "cog" });
+    expect(r.isError).toBe(false);
+    expect(r.data.questions).toHaveLength(1);
+    expect(r.data.questions[0]).toMatchObject({ text: "Background?", attemptCount: 0 });
+    expect((await call(ctx, "list_interview_practice", { attemptsPerQuestion: 99 })).isError).toBe(true);
+  });
+});
