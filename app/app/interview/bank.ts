@@ -4,6 +4,8 @@ import { parseQuestionBank, type Question, type QuestionBank } from "@/lib/inter
 import { companyQuestions, isCompanyQuestionId, parseCompanyTemplates, type CompanyQuestion } from "@/lib/interview/company-questions";
 import { customQuestions, parseCustomTemplate, storedIdOf } from "@/lib/interview/custom-questions";
 import { getCustomQuestion, listCustomQuestions as listStoredCustomQuestions } from "@/lib/repos/custom-questions";
+import { roleQuestions, storedRoleIdOf, type RoleQuestion } from "@/lib/interview/role-questions";
+import { getRoleQuestion, listRoleQuestions } from "@/lib/repos/role-questions";
 import { listApplications } from "@/lib/repos/applications";
 import type { DbClient } from "@/lib/repos/db";
 
@@ -19,9 +21,13 @@ export const questionBank: QuestionBank = parseQuestionBank(raw);
 
 export const companyTemplates = parseCompanyTemplates((raw as { companyQuestions?: unknown }).companyQuestions ?? []);
 
-/** This user's company questions, from their live applications. */
-export async function listCompanyQuestions(db: DbClient, userId: string): Promise<CompanyQuestion[]> {
-  return companyQuestions(await listApplications(db, userId), companyTemplates);
+/**
+ * This user's company questions, from their live applications: a role interview prepared
+ * for an application (role:...) first, then the "why us?" templates (company:...).
+ */
+export async function listCompanyQuestions(db: DbClient, userId: string): Promise<(CompanyQuestion | RoleQuestion)[]> {
+  const [apps, stored] = await Promise.all([listApplications(db, userId), listRoleQuestions(db, userId).catch(() => [])]);
+  return [...roleQuestions(stored, apps), ...companyQuestions(apps, companyTemplates)];
 }
 
 /** The rubric shared by every question the user typed themselves. */
@@ -41,7 +47,21 @@ export async function findQuestion(
   db: DbClient,
   userId: string,
   id: string,
-): Promise<{ question: Question; context: string | null; typed?: boolean } | null> {
+): Promise<{
+  question: Question;
+  context: string | null;
+  typed?: boolean;
+  /** Role interviews: who asks, and how the context is labelled in prompts. */
+  interviewer?: string | null;
+  contextLabel?: string;
+} | null> {
+  const roleId = storedRoleIdOf(id);
+  if (roleId) {
+    const stored = await getRoleQuestion(db, userId, roleId).catch(() => null);
+    if (!stored) return null;
+    const [q] = roleQuestions([stored], await listApplications(db, userId));
+    return q ? { question: q, context: q.context, interviewer: q.interviewer, contextLabel: q.contextLabel } : null;
+  }
   const storedId = storedIdOf(id);
   if (storedId) {
     const stored = await getCustomQuestion(db, userId, storedId).catch(() => null); // a malformed id is just unknown

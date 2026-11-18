@@ -297,6 +297,7 @@ export interface RowMap {
   api_tokens: ApiTokenRow;
   role_plans: RolePlanRow;
   interview_custom_questions: InterviewCustomQuestionRow;
+  interview_role_questions: InterviewRoleQuestionRow;
 }
 
 /** A question the user typed for themselves (migration 0011); its question id is `custom:<id>`. */
@@ -305,6 +306,25 @@ export interface InterviewCustomQuestionRow {
   user_id: string;
   text: string;
   created_at: string;
+}
+
+/** A question prepared for one application's interview (migration 0012); its question id is `role:<id>`. */
+export interface InterviewRoleQuestionRow {
+  id: string;
+  user_id: string;
+  application_id: string;
+  external_ref: string;
+  round: string | null;
+  interviewer: string | null;
+  position: number;
+  competency: string;
+  text: string;
+  short: string | null;
+  look_for: string;
+  context: string | null;
+  source: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** One attempt at a case interview; `session` is the whole CaseSession, saved every turn. */

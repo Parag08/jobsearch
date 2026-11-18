@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-18 - Role interviews over MCP
+
+Parag: build the interview for a real round (Cognition Deployed Engineer, technical interview 24 Nov) on the Interview tab, and let the agent do this regularly.
+
+- **New:** `interview_role_questions` (**migration 0012**, mirrored in `schema.sql`), `lib/interview/role-questions.ts` (ids `role:<row id>`, input schema with limits: 40 per set, text 500, lookFor 1000, context 1500), `lib/repos/role-questions.ts`, `lib/services/role-interview.ts`, MCP tools `upsert_interview_questions` / `list_interview_questions` / `remove_interview_questions`.
+- **Interview tab:** role questions come first under Company for that application's company, with "Round:" and "Interview brief:" in What good looks like. Mock follow-up and debrief prompts take optional `interviewer` and `contextLabel` (role questions set them; everything else unchanged).
+- **Checked in the browser (demo, temporary uncommitted seed of the Cognition set):** list under Company (12 role + 3 template), rubric/round/brief shown, mock starts on a role question. **Not checked:** follow-ups and debrief with a model (no key locally), live DB, mobile width.
+- **Ship:** merge, db.yml applies 0012; then findparagjob pushes sets with `npm run portal -- interview <file.json>`.
+
 ## 2026-11-16 (later) - Interview: generic questions first, company on demand, ask your own
 
 Parag: company questions crowded out the questions he practises daily; he also wants to type any question and be scored on it.
