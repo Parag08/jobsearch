@@ -193,7 +193,7 @@ describe("MCP role reading and role_insights", () => {
 describe("MCP role interviews", () => {
   const questions = [
     { externalRef: "cog:background", competency: "Fit", text: "Walk me through your background.", lookFor: "Ends on why DE." },
-    { externalRef: "cog:agents", competency: "Agent fluency", text: "Where do coding agents fail for you?", lookFor: "A real failure and how it was caught.", context: "Reported by candidates.", source: "Aced report" },
+    { externalRef: "cog:agents", competency: "Agent fluency", text: "Where do coding agents fail for you?", lookFor: "A real failure and how it was caught.", context: "Reported by candidates.", source: "Aced report", modelAnswer: "One time an agent..." },
   ];
 
   it("prepares, lists and removes questions for an application", async () => {
@@ -205,6 +205,7 @@ describe("MCP role interviews", () => {
 
     const listed = await call(ctx, "list_interview_questions", { externalRef: "cog-de" });
     expect(listed.data.questions.map((q: { externalRef: string }) => q.externalRef)).toEqual(["cog:background", "cog:agents"]);
+    expect(listed.data.questions.map((q: { hasModelAnswer: boolean }) => q.hasModelAnswer)).toEqual([false, true]);
 
     const removed = await call(ctx, "remove_interview_questions", { externalRefs: ["cog:agents"] });
     expect(removed.data).toEqual({ removed: 1 });

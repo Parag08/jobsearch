@@ -34,6 +34,7 @@ const stored = (over: Partial<StoredRoleQuestion> = {}): StoredRoleQuestion => (
   lookFor: "Business problem first, then the design choice, trade-off and result.",
   context: "Reported by candidates in 2026.",
   source: "Aced candidate report",
+  modelAnswer: "I took over a stalled feature and shipped it.",
   updatedAt: "2026-11-18T00:00:00Z",
   ...over,
 });
@@ -67,6 +68,7 @@ describe("roleQuestions", () => {
       firms: [],
     });
     expect(qs[0].context).toBe("Reported by candidates in 2026.");
+    expect(qs[0].modelAnswer).toBe("I took over a stalled feature and shipped it.");
   });
 
   it("falls back to the question text for the list label", () => {

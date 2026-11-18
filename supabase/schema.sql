@@ -393,6 +393,8 @@ create table interview_role_questions (
   look_for text not null check (char_length(look_for) between 1 and 4000),
   context text check (context is null or char_length(context) <= 4000),
   source text,
+  -- 0013: a model answer built from the user's evidence, compared against in the mock debrief
+  model_answer text check (model_answer is null or char_length(model_answer) <= 8000),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, external_ref)

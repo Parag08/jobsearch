@@ -46,7 +46,7 @@ export function ScoreCard({ result }: { result: ScoreResult }) {
 
       {result.saidNotWritten && result.saidNotWritten.length > 0 && (
         <p className={ui.warn}>
-          You said {result.saidNotWritten.join(", ")} — your written answer does not contain{" "}
+          You said {result.saidNotWritten.join(", ")} — neither your written answer nor the model answer contains{" "}
           {result.saidNotWritten.length === 1 ? "that number" : "those numbers"}. Say the same number every
           time; an interviewer who hears two versions stops trusting both.
         </p>

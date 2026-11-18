@@ -134,6 +134,10 @@ const roleQuestionProps = {
   lookFor: textProp(ROLE_QUESTION_LIMITS.lookFor, "What a strong answer shows - the rubric the mock interviewer scores against"),
   context: textProp(ROLE_QUESTION_LIMITS.context, "What the interviewer should know: where the question comes from, what to probe. Facts only from your sources."),
   source: textProp(ROLE_QUESTION_LIMITS.source, "Where the question comes from (a candidate report, the recruiter's email)"),
+  modelAnswer: textProp(
+    ROLE_QUESTION_LIMITS.modelAnswer,
+    "A strong spoken answer (about 90 seconds) built ONLY from the user's own confirmed evidence - never an invented fact or number. Shown to the user before they answer and compared against in the mock debrief.",
+  ),
 } as const;
 
 export const TOOLS: Tool[] = [

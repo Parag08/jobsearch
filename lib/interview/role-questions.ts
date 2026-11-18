@@ -33,6 +33,7 @@ export const ROLE_QUESTION_LIMITS = {
   round: 120,
   interviewer: 160,
   source: 300,
+  modelAnswer: 3000,
   perSet: 40,
 } as const;
 
@@ -47,6 +48,8 @@ export const RoleQuestionInputSchema = z.object({
   lookFor: z.string().trim().min(1).max(L.lookFor),
   context: opt(L.context),
   source: opt(L.source),
+  /** A strong answer built only from the user's own evidence: read before answering, compared in the debrief. */
+  modelAnswer: opt(L.modelAnswer),
 });
 export type RoleQuestionInput = z.infer<typeof RoleQuestionInputSchema>;
 
@@ -83,6 +86,7 @@ export interface StoredRoleQuestion {
   lookFor: string;
   context: string | null;
   source: string | null;
+  modelAnswer: string | null;
   updatedAt: string;
 }
 
@@ -90,6 +94,7 @@ export interface RoleQuestion extends CompanyQuestion {
   round: string | null;
   interviewer: string | null;
   source: string | null;
+  modelAnswer: string | null;
   /** How the UI and prompts name `context`. */
   contextLabel: string;
 }
@@ -118,6 +123,7 @@ export function roleQuestions(stored: StoredRoleQuestion[], apps: Application[])
       round: s.round,
       interviewer: s.interviewer,
       source: s.source,
+      modelAnswer: s.modelAnswer,
       contextLabel: ROLE_CONTEXT_LABEL,
     }));
 }

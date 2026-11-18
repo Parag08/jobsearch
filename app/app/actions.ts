@@ -61,10 +61,11 @@ import {
   parseMockSession,
   startMock,
   type FollowUpVerdict,
+  type ModelComparison,
   type MockSession,
   type Tone,
 } from "@/lib/interview/mock";
-import { hedgeCounts, parseVoiceSummary, voicePromptLine, type VoiceSummary } from "@/lib/interview/voice";
+import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -690,6 +691,10 @@ export interface MockFeedbackResult extends ScoreResult {
   /** Measured in the page while you spoke; null for typed answers. */
   voice?: VoiceSummary | null;
   hedges?: Record<string, number>;
+  /** Fillers counted on everything the candidate said. */
+  fillers?: FillerReport;
+  /** Against the question's model answer (role interviews), when it has one. */
+  comparison?: ModelComparison | null;
   session?: MockSession;
 }
 
@@ -726,7 +731,9 @@ export async function mockFeedbackAction(input: {
   // Length, pace and "I" vs "we" are judged on the main answer - follow-ups are short by design.
   const first = s.turns.find((t) => t.role === "candidate")?.text ?? "";
   const signals = deliverySignals(first, null);
-  const { saidNotWritten } = numberDrift(said, await writtenAnswerFor(question.id));
+  // Numbers said aloud are checked against the written answer and the model answer together.
+  const { saidNotWritten } = numberDrift(said, [await writtenAnswerFor(question.id), found.modelAnswer ?? ""].join(" "));
+  const fillers = fillerReport(said);
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const voice = parseVoiceSummary(input.voice);
   const hedges = hedgeCounts(said);
@@ -739,6 +746,8 @@ export async function mockFeedbackAction(input: {
     session: s,
     delivery: voicePromptLine(voice, hedges),
     questionFromCandidate: found.typed,
+    modelAnswer: found.modelAnswer,
+    fillers: fillerLine(fillers),
   });
 
   let debrief;
@@ -769,6 +778,8 @@ export async function mockFeedbackAction(input: {
     strengths: debrief.strengths,
     improvements: debrief.improvements,
     followUps: debrief.followUps,
+    comparison: debrief.comparison,
+    fillers,
     voice,
     hedges,
     signals,

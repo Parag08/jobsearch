@@ -54,13 +54,15 @@ export async function findQuestion(
   /** Role interviews: who asks, and how the context is labelled in prompts. */
   interviewer?: string | null;
   contextLabel?: string;
+  /** Role interviews: a reference answer from the user's evidence, for the debrief to compare against. */
+  modelAnswer?: string | null;
 } | null> {
   const roleId = storedRoleIdOf(id);
   if (roleId) {
     const stored = await getRoleQuestion(db, userId, roleId).catch(() => null);
     if (!stored) return null;
     const [q] = roleQuestions([stored], await listApplications(db, userId));
-    return q ? { question: q, context: q.context, interviewer: q.interviewer, contextLabel: q.contextLabel } : null;
+    return q ? { question: q, context: q.context, interviewer: q.interviewer, contextLabel: q.contextLabel, modelAnswer: q.modelAnswer } : null;
   }
   const storedId = storedIdOf(id);
   if (storedId) {

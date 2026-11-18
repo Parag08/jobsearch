@@ -20,6 +20,7 @@ export interface RoleQuestionWrite {
   lookFor: string;
   context: string | null;
   source: string | null;
+  modelAnswer: string | null;
 }
 
 const toStored = (r: InterviewRoleQuestionRow): StoredRoleQuestion => ({
@@ -35,6 +36,7 @@ const toStored = (r: InterviewRoleQuestionRow): StoredRoleQuestion => ({
   lookFor: r.look_for,
   context: r.context,
   source: r.source,
+  modelAnswer: r.model_answer ?? null,
   updatedAt: r.updated_at ?? "",
 });
 
@@ -75,6 +77,7 @@ export async function upsertRoleQuestions(
     look_for: q.lookFor,
     context: q.context,
     source: q.source,
+    model_answer: q.modelAnswer,
     updated_at: nowIso,
   }));
   const { error } = await db.from(TABLE).upsert(rows, { onConflict: "user_id,external_ref" });

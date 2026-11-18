@@ -175,6 +175,66 @@ export function hedgeCounts(text: string): Record<string, number> {
   return out;
 }
 
+/** "like" is a filler unless a word around it makes it a real word ("would like to", "looks like"). */
+const LIKE_REAL_BEFORE = new Set(["would", "i'd", "you'd", "we'd", "they'd", "he'd", "she'd", "look", "looks", "looked", "looking", "feel", "feels", "felt", "seem", "seems", "seemed", "sound", "sounds", "sounded", "things", "something", "anything", "nothing", "more", "much", "just"]);
+const LIKE_REAL_AFTER = new Set(["to", "that", "this", "it", "them", "him", "her"]);
+/** Short connecting words a transcriber often doubles; a doubled one is not worth flagging. */
+const REPEAT_IGNORE = new Set(["that", "this", "with", "have", "then", "from", "they", "were", "what"]);
+const FILLER_WORDS = ["um", "uh", "erm", "basically", "actually", "literally"];
+const FILLER_PHRASES = ["you know", "i mean", "sort of", "kind of"];
+
+export interface FillerReport {
+  /** Filler -> times said; only the ones used. */
+  counts: Record<string, number>;
+  /** Words said twice in a row ("business business"), in order, once each. */
+  repeats: string[];
+  /** Fillers plus repeats. */
+  total: number;
+  words: number;
+  /** total per 100 words, one decimal; 0 for no words. */
+  per100: number;
+}
+
+/**
+ * Fillers in what the candidate said, measured on the transcript (speech-to-text keeps
+ * most "um"/"uh"). Rules only, the same every time. Per 100 words, so a long answer and a
+ * short one compare fairly.
+ */
+export function fillerReport(text: string): FillerReport {
+  const tokens = text.toLowerCase().match(/[a-z']+/g) ?? [];
+  const counts: Record<string, number> = {};
+  const bump = (k: string) => (counts[k] = (counts[k] ?? 0) + 1);
+  tokens.forEach((t, i) => {
+    if (FILLER_WORDS.includes(t)) bump(t);
+    if (t === "like" && !LIKE_REAL_BEFORE.has(tokens[i - 1] ?? "") && !LIKE_REAL_AFTER.has(tokens[i + 1] ?? "")) bump("like");
+    for (const p of FILLER_PHRASES) {
+      const [a, b] = p.split(" ");
+      if (t === a && tokens[i + 1] === b) bump(p);
+    }
+  });
+  const repeats: string[] = [];
+  for (let i = 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t === tokens[i - 1] && t.length >= 4 && !REPEAT_IGNORE.has(t) && !repeats.includes(`${t} ${t}`)) repeats.push(`${t} ${t}`);
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) + repeats.length;
+  const words = tokens.length;
+  return { counts, repeats, total, words, per100: words ? Math.round((total / words) * 1000) / 10 : 0 };
+}
+
+/** Over this many fillers per 100 words, the answer sounds unsure. */
+export const FILLERS_PER_100_LIMIT = 2;
+
+/** One plain line for the page and the model. */
+export function fillerLine(r: FillerReport): string {
+  if (!r.words) return "";
+  const list = Object.entries(r.counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `"${k}" ×${n}`);
+  if (r.repeats.length) list.push(`repeated words ×${r.repeats.length} (${r.repeats.slice(0, 3).join(", ")})`);
+  return `${r.total} fillers in ${r.words} words (${r.per100} per 100)${list.length ? `: ${list.join(", ")}` : ""}.`;
+}
+
 export interface DeliveryNote {
   kind: "pace" | "pitch" | "pauses" | "hesitation" | "hedges";
   tone: "hit" | "gap";

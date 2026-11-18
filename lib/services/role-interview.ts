@@ -30,6 +30,7 @@ export async function saveRoleInterview(deps: AgentDeps, userId: string, input: 
       lookFor: q.lookFor,
       context: q.context ?? null,
       source: q.source ?? null,
+      modelAnswer: q.modelAnswer ?? null,
     })),
     nowIso,
   );
@@ -53,6 +54,7 @@ export async function listRoleInterview(deps: AgentDeps, userId: string, ref: Ap
         interviewer: q.interviewer,
         competency: q.competency,
         text: q.text,
+        hasModelAnswer: q.modelAnswer !== null,
         updatedAt: q.updatedAt,
       };
     }),

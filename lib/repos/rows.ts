@@ -323,6 +323,7 @@ export interface InterviewRoleQuestionRow {
   look_for: string;
   context: string | null;
   source: string | null;
+  model_answer: string | null;
   created_at: string;
   updated_at: string;
 }

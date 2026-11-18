@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-18 (evening) - Model answers, comparison, fillers
+
+Parag: wants a model answer per question, then to speak his own and get compared, with feedback on fillers.
+- **Migration 0013**: `interview_role_questions.model_answer`. MCP `upsert_interview_questions` takes `modelAnswer` (max 3000); `list_interview_questions` returns `hasModelAnswer`.
+- **Page**: "Model answer" reveal above the mock. **Debrief**: prompt gets the model answer and returns `comparison {covered, missed, different}` (max 4 each), shown as "Against the model answer"; the said-numbers warning now checks written + model answer.
+- **Fillers**: `fillerReport` / `fillerLine` / `FILLERS_PER_100_LIMIT=2`; Fillers block on every debrief (not only when voice was measured); the delivery block no longer repeats hedges.
+- **Not stored**: comparison and fillers are not saved with the attempt (transcript is, so fillers can be recomputed). **Checked**: tests, tsc, model answer reveal in demo. **Not checked**: a real debrief with a model.
+
 ## 2026-11-18 (later) - Practice read-back over MCP
 
 - MCP tool `list_interview_practice` (read-only): per question, written answer + newest attempts (transcript, scores, strengths, improvements). Scope by application, question ids or `since`; `attemptsPerQuestion` 1-10, default 3. Tests in `lib/services/interview-practice.test.ts` and `lib/mcp/server.test.ts`.

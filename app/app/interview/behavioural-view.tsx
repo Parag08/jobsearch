@@ -34,6 +34,8 @@ export interface ViewQuestion extends Question {
   /** Role interviews only: the round, and how `context` is labelled. */
   round?: string | null;
   contextLabel?: string;
+  /** Role interviews only: a strong answer from the user's own evidence. */
+  modelAnswer?: string | null;
 }
 
 export function BehaviouralView({
@@ -259,6 +261,18 @@ export function BehaviouralView({
               )}
             </details>
           </div>
+
+          {selected.modelAnswer && (
+            <details className={ui.reveal}>
+              <summary>Model answer</summary>
+              <p className={ui.sub}>
+                Built from your own evidence. Read it, close it, then answer in your own words: the feedback compares the two.
+              </p>
+              {selected.modelAnswer.split(/\n\s*\n/).map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </details>
+          )}
 
           <MockInterview questionId={selected.id} />
 
