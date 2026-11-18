@@ -9,6 +9,7 @@ import {
   voicePromptLine,
   type VoiceFrame,
   type VoiceSummary,
+  fillerReport,
 } from "./voice";
 
 const SR = 48000;
@@ -185,5 +186,31 @@ describe("parseVoiceSummary", () => {
     expect(parseVoiceSummary({ ...ok, wordsPerMinute: -4 })).toBeNull();
     expect(parseVoiceSummary({ ...ok, pauses: "lots" })).toBeNull();
     expect(parseVoiceSummary(null)).toBeNull();
+  });
+});
+
+describe("fillerReport", () => {
+  it("counts fillers, filler 'like', and repeated words per 100 words", () => {
+    const text =
+      "So uh I was like the project lead and um we had like a lot of uh issues. I would like to say the business business side was hard, it looks like it worked.";
+    const r = fillerReport(text);
+    expect(r.counts).toMatchObject({ uh: 2, um: 1, like: 2 });
+    expect(r.repeats).toEqual(["business business"]);
+    expect(r.words).toBe(34);
+    expect(r.total).toBe(6);
+    expect(r.per100).toBeCloseTo(17.6, 1);
+  });
+
+  it("does not count 'like' when it is a real word", () => {
+    const r = fillerReport("I would like to show what it looks like. Things like tests felt like work. I'd like that.");
+    expect(r.counts.like).toBeUndefined();
+  });
+
+  it("ignores repeats of short connecting words a transcriber doubles", () => {
+    expect(fillerReport("that that was it, I I think so").repeats).toEqual([]);
+  });
+
+  it("is empty for no text", () => {
+    expect(fillerReport("")).toEqual({ counts: {}, repeats: [], total: 0, words: 0, per100: 0 });
   });
 });

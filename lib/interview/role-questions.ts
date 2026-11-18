@@ -33,6 +33,7 @@ export const ROLE_QUESTION_LIMITS = {
   round: 120,
   interviewer: 160,
   source: 300,
+  modelAnswer: 3000,
   perSet: 40,
 } as const;
 
@@ -47,6 +48,8 @@ export const RoleQuestionInputSchema = z.object({
   lookFor: z.string().trim().min(1).max(L.lookFor),
   context: opt(L.context),
   source: opt(L.source),
+  /** A strong answer built only from the user's own evidence: read before answering, compared in the debrief. */
+  modelAnswer: opt(L.modelAnswer),
 });
 export type RoleQuestionInput = z.infer<typeof RoleQuestionInputSchema>;
 

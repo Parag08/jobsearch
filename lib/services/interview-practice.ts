@@ -1,5 +1,6 @@
 import { listAnswers, listAttempts } from "../repos/answers";
 import { listRoleQuestions } from "../repos/role-questions";
+import { listModelAnswers } from "../repos/model-answers";
 import { roleQuestionId } from "../interview/role-questions";
 import { findApplication, type AgentDeps, type ApplicationRef } from "./agent-sync";
 
@@ -37,6 +38,7 @@ export async function listInterviewPractice(deps: AgentDeps, userId: string, q: 
   const since = q.since ?? "";
   const attempts = (await listAttempts(db, userId)).filter((a) => a.createdAt >= since && (!ids || ids.includes(a.questionId)));
   const answers = new Map((await listAnswers(db, userId)).map((a) => [a.questionId, a]));
+  const models = new Map((await listModelAnswers(db, userId)).map((m) => [m.questionId, m]));
 
   const order = ids ?? [...new Set(attempts.map((a) => a.questionId))];
   const questions = order.map((questionId) => {
@@ -48,6 +50,7 @@ export async function listInterviewPractice(deps: AgentDeps, userId: string, q: 
       writtenAnswer: written
         ? { mode: written.mode, body: written.body, situation: written.situation, task: written.task, action: written.action, result: written.result, updatedAt: written.updatedAt }
         : null,
+      modelAnswer: models.get(questionId) ?? null,
       attemptCount: mine.length,
       attempts: mine.slice(0, q.attemptsPerQuestion).map((a) => ({
         at: a.createdAt,

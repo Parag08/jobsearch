@@ -284,6 +284,30 @@ describe("debrief", () => {
   it("throws when a score is missing", () => {
     expect(() => parseMockDebrief({ scores: { structure: 3 }, followUps: [] }, s)).toThrow();
   });
+
+  it("asks for a comparison only when there is a model answer, and gives it the fillers line", () => {
+    const base = { question: question.text, lookFor: "Evidence", firmNote: null, session: s };
+    const withModel = buildMockDebriefPrompt({ ...base, modelAnswer: "I shipped it in ten months; 10+ PB migrated.", fillers: "12 fillers in 300 words (4 per 100)." });
+    expect(withModel).toContain("Model answer (built from the candidate's own evidence):");
+    expect(withModel).toContain("I shipped it in ten months; 10+ PB migrated.");
+    expect(withModel).toContain('"comparison"');
+    expect(withModel).toMatch(/do not expect the same words/i);
+    expect(withModel).toContain("12 fillers in 300 words");
+    const without = buildMockDebriefPrompt(base);
+    expect(without).not.toContain('"comparison"');
+    expect(without).not.toContain("Model answer");
+  });
+
+  it("parses the comparison, trimmed and capped, and tolerates it missing", () => {
+    const scores = { structure: 3, ownership: 3, specificity: 3, impact: 3, reflection: 3, relevance: 3 };
+    const d = parseMockDebrief(
+      { scores, comparison: { covered: [" The boundary "], missed: ["10+ PB", "", "bugs", "team", "phases", "sign-off"], different: ["Said 1 PB, model says 10+ PB"] } },
+      s,
+    );
+    expect(d.comparison).toEqual({ covered: ["The boundary"], missed: ["10+ PB", "bugs", "team", "phases"], different: ["Said 1 PB, model says 10+ PB"] });
+    expect(parseMockDebrief({ scores }, s).comparison).toBeNull();
+    expect(parseMockDebrief({ scores, comparison: "nonsense" }, s).comparison).toBeNull();
+  });
 });
 
 describe("parseMockSession", () => {

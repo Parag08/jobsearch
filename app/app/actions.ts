@@ -21,6 +21,8 @@ import { getProfile, saveProfile } from "@/lib/repos/profiles";
 import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
+import { buildRewritePrompt, guardRewrite } from "@/lib/interview/model-answer";
+import { setModelAnswer } from "@/lib/services/model-answers";
 import { deliverySignals, numberDrift, overallScore, type DeliverySignals, type Scores } from "@/lib/interview/score";
 import { parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
 import { findQuestion } from "./interview/bank";
@@ -61,10 +63,11 @@ import {
   parseMockSession,
   startMock,
   type FollowUpVerdict,
+  type ModelComparison,
   type MockSession,
   type Tone,
 } from "@/lib/interview/mock";
-import { hedgeCounts, parseVoiceSummary, voicePromptLine, type VoiceSummary } from "@/lib/interview/voice";
+import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -386,6 +389,78 @@ export async function removeCustomQuestionAction(questionId: string): Promise<{ 
  * interview answer collapses on the first probe, which is exactly the moment it
  * matters (DESIGN.md section 3). Probing a draft adds no claim; writing one does.
  */
+export interface ModelAnswerState {
+  saved?: boolean;
+  error?: string;
+}
+
+/** The draft in the answer editor, in the order it reads. */
+function draftFromForm(formData: FormData): { text: string; substance: string } {
+  const field = (k: string) => String(formData.get(k) ?? "").trim();
+  if (field("mode") === "free") return { text: field("body"), substance: field("body") };
+  const parts = (["situation", "task", "action", "result"] as const).map((k) => [k, field(k)] as const).filter(([, v]) => v);
+  return { text: parts.map(([k, v]) => `${k[0].toUpperCase()}${k.slice(1)}: ${v}`).join("\n"), substance: parts.map(([, v]) => v).join(" ") };
+}
+
+/**
+ * Rewrite the user's written answer into a model answer (source "ai"). Saves the draft
+ * first, so nothing typed is lost. One premium call (polish, token rule #5); the output
+ * must state no number the draft does not contain (guardRewrite), or it is refused.
+ * The user's written answer itself is never changed (DESIGN.md section 3).
+ */
+export async function rewriteModelAnswerAction(_prev: ModelAnswerState | null, formData: FormData): Promise<ModelAnswerState> {
+  const { db, userId } = await ws();
+  const questionId = String(formData.get("questionId") ?? "");
+  const found = await findQuestion(db, userId, questionId);
+  if (!found) return { error: "Unknown question." };
+  const draft = draftFromForm(formData);
+  if (draft.substance.length < 80) return { error: "Write your answer first - the model answer is built from what you wrote." };
+
+  const saved = await saveAnswerAction(null, formData);
+  if (saved.error) return { error: saved.error };
+
+  const apiKey = process.env.AI_GATEWAY_API_KEY;
+  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const prompt = buildRewritePrompt({
+    question: found.question.text,
+    lookFor: found.question.lookFor,
+    context: found.context,
+    contextLabel: found.contextLabel,
+    draft: draft.text,
+  });
+  let out = "";
+  try {
+    for await (const d of streamGatewayText({ apiKey, model, prompt, maxOutputTokens: 700 })) out += d;
+  } catch (err) {
+    return { error: err instanceof Error ? `Could not rewrite: ${err.message}` : "Could not rewrite." };
+  }
+  await logTokens(db, userId, { date: today(), module: "interview-model-answer", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+
+  const check = guardRewrite(draft.text, out);
+  if (!check.ok) {
+    if (check.added.length) return { error: `The rewrite added ${check.added.join(", ")}, which your answer does not say. Nothing was saved - try again.` };
+    return { error: check.empty ? "The rewrite came back empty. Try again." : "The rewrite came back too long. Try again." };
+  }
+  await setModelAnswer({ db }, userId, { questionId, text: check.text, source: "ai" }, new Date().toISOString());
+  revalidatePath("/app/interview");
+  return { saved: true };
+}
+
+/** Save the model answer as the user edited it (source "user"). */
+export async function saveModelAnswerAction(_prev: ModelAnswerState | null, formData: FormData): Promise<ModelAnswerState> {
+  const { db, userId } = await ws();
+  const questionId = String(formData.get("questionId") ?? "");
+  if (!(await findQuestion(db, userId, questionId))) return { error: "Unknown question." };
+  try {
+    await setModelAnswer({ db }, userId, { questionId, text: String(formData.get("modelAnswer") ?? ""), source: "user" }, new Date().toISOString());
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save." };
+  }
+  revalidatePath("/app/interview");
+  return { saved: true };
+}
+
 export interface ProbeState {
   questions?: string[];
   error?: string;
@@ -690,6 +765,10 @@ export interface MockFeedbackResult extends ScoreResult {
   /** Measured in the page while you spoke; null for typed answers. */
   voice?: VoiceSummary | null;
   hedges?: Record<string, number>;
+  /** Fillers counted on everything the candidate said. */
+  fillers?: FillerReport;
+  /** Against the question's model answer (role interviews), when it has one. */
+  comparison?: ModelComparison | null;
   session?: MockSession;
 }
 
@@ -726,7 +805,9 @@ export async function mockFeedbackAction(input: {
   // Length, pace and "I" vs "we" are judged on the main answer - follow-ups are short by design.
   const first = s.turns.find((t) => t.role === "candidate")?.text ?? "";
   const signals = deliverySignals(first, null);
-  const { saidNotWritten } = numberDrift(said, await writtenAnswerFor(question.id));
+  // Numbers said aloud are checked against the written answer and the model answer together.
+  const { saidNotWritten } = numberDrift(said, [await writtenAnswerFor(question.id), found.modelAnswer ?? ""].join(" "));
+  const fillers = fillerReport(said);
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const voice = parseVoiceSummary(input.voice);
   const hedges = hedgeCounts(said);
@@ -739,6 +820,8 @@ export async function mockFeedbackAction(input: {
     session: s,
     delivery: voicePromptLine(voice, hedges),
     questionFromCandidate: found.typed,
+    modelAnswer: found.modelAnswer,
+    fillers: fillerLine(fillers),
   });
 
   let debrief;
@@ -769,6 +852,8 @@ export async function mockFeedbackAction(input: {
     strengths: debrief.strengths,
     improvements: debrief.improvements,
     followUps: debrief.followUps,
+    comparison: debrief.comparison,
+    fillers,
     voice,
     hedges,
     signals,

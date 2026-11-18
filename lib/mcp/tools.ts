@@ -20,6 +20,8 @@ import {
 } from "../services/agent-sync";
 import { listRoleInterview, removeRoleInterview, saveRoleInterview } from "../services/role-interview";
 import { listInterviewPractice } from "../services/interview-practice";
+import { setModelAnswer } from "../services/model-answers";
+import { MODEL_ANSWER_MAX } from "../interview/model-answer";
 import { ROLE_QUESTION_LIMITS, RoleInterviewInputSchema } from "../interview/role-questions";
 
 /** Who is calling and when - resolved from the bearer token by the route, never from tool input. */
@@ -123,6 +125,12 @@ const PracticeSchema = z.object({
   attemptsPerQuestion: z.number().int().min(1).max(PRACTICE_MAX_ATTEMPTS).default(PRACTICE_DEFAULT_ATTEMPTS),
 });
 
+const SetModelAnswerSchema = z.object({
+  questionId: z.string().min(1),
+  text: z.string().min(1).max(MODEL_ANSWER_MAX),
+  force: z.boolean().optional(),
+});
+
 const RemoveRoleQuestionsSchema = z.object({ externalRefs: z.array(z.string().min(1)).min(1).max(ROLE_QUESTION_LIMITS.perSet) });
 
 const textProp = (max: number, description: string) => ({ type: "string", maxLength: max, description }) as const;
@@ -134,6 +142,10 @@ const roleQuestionProps = {
   lookFor: textProp(ROLE_QUESTION_LIMITS.lookFor, "What a strong answer shows - the rubric the mock interviewer scores against"),
   context: textProp(ROLE_QUESTION_LIMITS.context, "What the interviewer should know: where the question comes from, what to probe. Facts only from your sources."),
   source: textProp(ROLE_QUESTION_LIMITS.source, "Where the question comes from (a candidate report, the recruiter's email)"),
+  modelAnswer: textProp(
+    ROLE_QUESTION_LIMITS.modelAnswer,
+    "A strong spoken answer (about 90 seconds) built ONLY from the user's own confirmed evidence - never an invented fact or number. Shown to the user before they answer and compared against in the mock debrief.",
+  ),
 } as const;
 
 export const TOOLS: Tool[] = [
@@ -410,6 +422,25 @@ export const TOOLS: Tool[] = [
     },
     async run({ db, userId }, args) {
       return listInterviewPractice({ db }, userId, PracticeSchema.parse(args ?? {}));
+    },
+  },
+  {
+    name: "set_model_answer",
+    description:
+      "Set the model answer for one interview question (any question id: 'role:<id>' from list_interview_questions, a bank id, 'custom:<id>'). It is shown to the user before they answer and the mock debrief compares their spoken answer with it. Build it ONLY from the user's confirmed evidence or their own written answer - never invent a fact or number. Never overwrites a model answer the user wrote or rewrote in the app unless force is true; the result says when it kept theirs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        questionId: str,
+        text: { type: "string", maxLength: MODEL_ANSWER_MAX, description: "About 90 seconds spoken; plain paragraphs" },
+        force: { type: "boolean", description: "Replace even the user's own model answer. Only when the user asked." },
+      },
+      required: ["questionId", "text"],
+      additionalProperties: false,
+    },
+    async run({ db, userId, nowIso }, args) {
+      const a = SetModelAnswerSchema.parse(args);
+      return setModelAnswer({ db }, userId, { ...a, source: "agent" }, nowIso);
     },
   },
 ];

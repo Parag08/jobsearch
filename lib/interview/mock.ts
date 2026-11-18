@@ -277,12 +277,25 @@ export interface FollowUpVerdict {
   note: string;
 }
 
+/** How a spoken answer compared with the model answer; null when there was none. */
+export interface ModelComparison {
+  /** Points from the model answer the candidate made. */
+  covered: string[];
+  /** Points from the model answer they left out. */
+  missed: string[];
+  /** Facts or numbers they said differently from the model answer. */
+  different: string[];
+}
+
 export interface MockDebrief {
   scores: Scores;
   strengths: string[];
   improvements: string[];
   followUps: FollowUpVerdict[];
+  comparison: ModelComparison | null;
 }
+
+const COMPARISON_MAX = 4;
 
 export function buildMockDebriefPrompt(input: {
   question: string;
@@ -297,6 +310,10 @@ export function buildMockDebriefPrompt(input: {
   interviewer?: string | null;
   /** How to name firmNote; defaults to the job description. */
   contextLabel?: string | null;
+  /** A strong answer built from the candidate's evidence; when given, the debrief compares against it. */
+  modelAnswer?: string | null;
+  /** Measured fillers (fillerLine), empty when nothing was said. */
+  fillers?: string;
 }): string {
   const rubric = SCORE_DIMENSIONS.map((d) => `- ${d}: ${DIMENSION_HELP[d]}`).join("\n");
   const probes = input.session.turns.flatMap((t) => (t.probe ? [`- ${t.probe}: "${t.text}"`] : []));
@@ -326,9 +343,23 @@ export function buildMockDebriefPrompt(input: {
       ? "- If it matters, include ONE improvement about delivery, based only on the measured line below - never guess at tone."
       : "",
     input.delivery ?? "",
+    input.fillers ? `Measured fillers (counted from the transcript, not judged): ${input.fillers}` : "",
+    input.fillers ? "- If the fillers rate is over 2 per 100 words, make one improvement about them, naming the worst ones." : "",
+    ...(input.modelAnswer
+      ? [
+          "",
+          "Model answer (built from the candidate's own evidence):",
+          input.modelAnswer,
+          "",
+          "Compare what the candidate SAID with the model answer. Do not expect the same words or order - judge the substance:",
+          "- covered: points from the model answer they made; missed: points they left out that matter most;",
+          "- different: any fact or number they said differently from the model answer (quote both).",
+          `At most ${COMPARISON_MAX} items in each list. The model answer is a reference, not a script.`,
+        ]
+      : []),
     "",
     "Reply with JSON only, exactly this shape:",
-    `{"scores":{${SCORE_DIMENSIONS.map((d) => `"${d}":1`).join(",")}},"strengths":["..."],"improvements":["..."],"followUps":[{"probe":"result","verdict":"held","note":"..."}]}`,
+    `{"scores":{${SCORE_DIMENSIONS.map((d) => `"${d}":1`).join(",")}},"strengths":["..."],"improvements":["..."],"followUps":[{"probe":"result","verdict":"held","note":"..."}]${input.modelAnswer ? ',"comparison":{"covered":["..."],"missed":["..."],"different":["..."]}' : ""}}`,
     "Give at most 3 strengths and at most 3 improvements.",
     "",
     "Transcript:",
@@ -352,7 +383,19 @@ export function parseMockDebrief(raw: unknown, s: MockSession): MockDebrief {
     if (!probe || !verdict || !asked.has(probe) || followUps.some((f) => f.probe === probe)) continue;
     followUps.push({ probe, verdict, note: v.note.trim() });
   }
-  return { ...base, followUps };
+  return { ...base, followUps, comparison: parseComparison((raw as { comparison?: unknown } | null)?.comparison) };
+}
+
+const ComparisonListSchema = z.array(z.coerce.string()).catch([]);
+
+function parseComparison(raw: unknown): ModelComparison | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const list = (k: string) =>
+    ComparisonListSchema.parse((raw as Record<string, unknown>)[k] ?? [])
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .slice(0, COMPARISON_MAX);
+  return { covered: list("covered"), missed: list("missed"), different: list("different") };
 }
 
 // ---- the session crosses the wire, so it is validated on the way back in -----------------

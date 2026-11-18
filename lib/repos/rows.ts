@@ -298,6 +298,7 @@ export interface RowMap {
   role_plans: RolePlanRow;
   interview_custom_questions: InterviewCustomQuestionRow;
   interview_role_questions: InterviewRoleQuestionRow;
+  interview_model_answers: InterviewModelAnswerRow;
 }
 
 /** A question the user typed for themselves (migration 0011); its question id is `custom:<id>`. */
@@ -323,6 +324,17 @@ export interface InterviewRoleQuestionRow {
   look_for: string;
   context: string | null;
   source: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A model answer for one question id (migration 0013). */
+export interface InterviewModelAnswerRow {
+  id: string;
+  user_id: string;
+  question_id: string;
+  text: string;
+  source: "agent" | "ai" | "user";
   created_at: string;
   updated_at: string;
 }

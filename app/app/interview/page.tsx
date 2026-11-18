@@ -8,6 +8,8 @@ import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
 import { listCompanyQuestions, listCustomQuestions, questionBank } from "./bank";
+import { listModelAnswers } from "@/lib/repos/model-answers";
+import type { ModelAnswer } from "@/lib/interview/model-answer";
 import type { CompanyQuestion } from "@/lib/interview/company-questions";
 import type { RoleQuestion } from "@/lib/interview/role-questions";
 import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
@@ -47,7 +49,7 @@ export default async function Interview({
   const params = await searchParams;
   const tab: Tab = TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
 
-  const [projects, profile, answers, attempts, caseSessions, companyQs, customQs] = await Promise.all([
+  const [projects, profile, answers, attempts, caseSessions, companyQs, customQs, modelAnswers] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     listAnswers(db, userId),
@@ -55,6 +57,7 @@ export default async function Interview({
     tab === "casing" ? listCaseSessions(db, userId) : Promise.resolve([]),
     tab === "behavioural" ? listCompanyQuestions(db, userId) : Promise.resolve([]),
     tab === "behavioural" ? listCustomQuestions(db, userId) : Promise.resolve([]),
+    tab === "behavioural" ? listModelAnswers(db, userId).catch(() => []) : Promise.resolve([]),
   ]);
   const bullets = projects.flatMap((p) => p.bullets);
 
@@ -80,7 +83,7 @@ export default async function Interview({
       </nav>
 
       {tab === "behavioural" && (
-        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} customQuestions={customQs} />
+        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} customQuestions={customQs} modelAnswers={modelAnswers} />
       )}
       {tab === "casing" && (
         <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} />
@@ -102,12 +105,14 @@ function Behavioural({
   bullets,
   companyQuestions,
   customQuestions,
+  modelAnswers,
 }: {
   answers: Answer[];
   attempts: Attempt[];
   bullets: { id: string; text: string; skills: string[] }[];
   companyQuestions: (CompanyQuestion | RoleQuestion)[];
   customQuestions: Question[];
+  modelAnswers: ModelAnswer[];
 }) {
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
@@ -123,6 +128,7 @@ function Behavioural({
       answers={answers}
       attempts={attempts}
       evidenced={[...evidenced]}
+      modelAnswers={modelAnswers}
     />
   );
 }

@@ -7,6 +7,8 @@ import type { Question, QuestionGroup } from "@/lib/interview/questions";
 import { behaviouralView } from "@/lib/interview/scope";
 import { addCustomQuestionAction, removeCustomQuestionAction, type AddQuestionState } from "../actions";
 import { AnswerEditor } from "./answer-editor";
+import { ModelAnswerPanel } from "./model-answer-panel";
+import type { ModelAnswer } from "@/lib/interview/model-answer";
 import { MockInterview } from "./mock-interview";
 import ui from "../ui.module.css";
 
@@ -45,6 +47,7 @@ export function BehaviouralView({
   answers,
   attempts,
   evidenced,
+  modelAnswers,
 }: {
   /** The generic bank's groups, in order. */
   groups: QuestionGroup[];
@@ -56,11 +59,14 @@ export function BehaviouralView({
   answers: Answer[];
   attempts: Attempt[];
   evidenced: string[];
+  /** Model answers by question id, any source. */
+  modelAnswers: ModelAnswer[];
 }) {
   const params = useSearchParams();
   const detailRef = useRef<HTMLElement>(null);
 
   const byQuestion = new Map(answers.map((a) => [a.questionId, a]));
+  const modelAnswerFor = new Map(modelAnswers.map((m) => [m.questionId, m]));
   const bestScore = new Map<string, number>();
   for (const a of attempts)
     bestScore.set(
@@ -259,6 +265,8 @@ export function BehaviouralView({
               )}
             </details>
           </div>
+
+          <ModelAnswerPanel questionId={selected.id} answer={modelAnswerFor.get(selected.id) ?? null} />
 
           <MockInterview questionId={selected.id} />
 

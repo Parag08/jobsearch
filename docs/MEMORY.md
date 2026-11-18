@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-18 (evening) - Model answers (agent, AI rewrite, user), comparison, fillers
+
+Parag: wants a model answer per question - from the agent, or the app's AI rewriting his own written answer, or edited by him - then to speak and be compared, with filler feedback. All of it over MCP too.
+- **Migration 0013**: `interview_model_answers` (user_id, question_id unique; text; source agent|ai|user). Replaced an earlier unmerged draft that put a column on role questions.
+- **Write path**: `setModelAnswer` only. MCP `set_model_answer {questionId, text, force?}` and `modelAnswer` on `upsert_interview_questions` (returns `modelAnswers {saved, keptYours}`); `list_interview_questions` returns `modelAnswerSource`; `list_interview_practice` returns `modelAnswer`.
+- **App**: "Rewrite as model answer" on the notes editor (saves the draft first; premium call; `guardRewrite` refuses added numbers); `ModelAnswerPanel` shows source, Edit/Save (source user), or "write one yourself" when empty.
+- **Debrief**: compares with the model answer (`comparison`), numbers checked against written + model; Fillers block on every debrief (`fillerReport`, 2 per 100 words threshold).
+- **Checked in the browser (demo + temporary seed)**: empty state -> write -> save shows "Written by you"; rewrite saves notes then reports the missing AI key; Cognition question shows "Prepared by your agent". **Not checked**: a real rewrite or debrief with a model; comparison and fillers are not stored with the attempt.
+
 ## 2026-11-18 (later) - Practice read-back over MCP
 
 - MCP tool `list_interview_practice` (read-only): per question, written answer + newest attempts (transcript, scores, strengths, improvements). Scope by application, question ids or `since`; `attemptsPerQuestion` 1-10, default 3. Tests in `lib/services/interview-practice.test.ts` and `lib/mcp/server.test.ts`.

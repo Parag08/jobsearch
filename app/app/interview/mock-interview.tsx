@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
-import { combineVoice, deliveryNotes, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
+import { combineVoice, deliveryNotes, FILLERS_PER_100_LIMIT, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
 import { ScoreCard } from "./score-card";
 import { AgentAvatar } from "./agent-avatar";
 import {
@@ -701,23 +701,78 @@ export function MockInterview({ questionId }: { questionId: string }) {
               </ul>
             </div>
           )}
-          {(feedback.voice || (feedback.hedges && Object.keys(feedback.hedges).length > 0)) && (
+          {feedback.comparison && (
             <div className={ui.callout}>
-              <p className={ui.mono}>Delivery - measured from your voice</p>
-              {feedback.voice ? (
-                <ul className={ui.rows}>
-                  {deliveryNotes(feedback.voice, feedback.hedges ?? {}).map((n) => (
-                    <li key={n.kind} className={ui.row}>
-                      <p>{n.text}</p>
-                      <span className={ui.chip} data-tone={n.tone}>
-                        {n.kind}
-                      </span>
+              <p className={ui.mono}>Against the model answer</p>
+              <ul className={ui.rows}>
+                {feedback.comparison.covered.map((x) => (
+                  <li key={`c-${x}`} className={ui.row}>
+                    <p>{x}</p>
+                    <span className={ui.chip} data-tone="hit">covered</span>
+                  </li>
+                ))}
+                {feedback.comparison.missed.map((x) => (
+                  <li key={`m-${x}`} className={ui.row}>
+                    <p>{x}</p>
+                    <span className={ui.chip} data-tone="gap">missed</span>
+                  </li>
+                ))}
+                {feedback.comparison.different.map((x) => (
+                  <li key={`d-${x}`} className={ui.row}>
+                    <p>{x}</p>
+                    <span className={ui.chip} data-tone="gap">said differently</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {feedback.fillers && feedback.fillers.words > 0 && (
+            <div className={ui.callout}>
+              <p className={ui.mono}>Fillers - counted from what you said</p>
+              <ul className={ui.rows}>
+                <li className={ui.row}>
+                  <p>
+                    {feedback.fillers.total} in {feedback.fillers.words} words: {feedback.fillers.per100} per 100.{" "}
+                    {feedback.fillers.per100 > FILLERS_PER_100_LIMIT
+                      ? "Enough to sound unsure. Pause instead of filling the gap."
+                      : "Clean - keep it like that."}
+                  </p>
+                  <span className={ui.chip} data-tone={feedback.fillers.per100 > FILLERS_PER_100_LIMIT ? "gap" : "hit"}>
+                    fillers
+                  </span>
+                </li>
+                {Object.entries(feedback.fillers.counts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([word, n]) => (
+                    <li key={word} className={ui.row}>
+                      <p>&ldquo;{word}&rdquo;</p>
+                      <span className={ui.chip}>×{n}</span>
                     </li>
                   ))}
-                </ul>
-              ) : (
-                <p className={ui.sub}>You typed your answers, so there is no voice to measure - only the words.</p>
-              )}
+                {feedback.fillers.repeats.length > 0 && (
+                  <li className={ui.row}>
+                    <p>Repeated words: {feedback.fillers.repeats.join(", ")}</p>
+                    <span className={ui.chip}>×{feedback.fillers.repeats.length}</span>
+                  </li>
+                )}
+              </ul>
+              <p className={ui.sub}>Speech-to-text drops some fillers, so the real count is usually higher.</p>
+            </div>
+          )}
+          {feedback.voice && (
+            <div className={ui.callout}>
+              <p className={ui.mono}>Delivery - measured from your voice</p>
+              {/* Fillers have their own block above, so they are not repeated here. */}
+              <ul className={ui.rows}>
+                {deliveryNotes(feedback.voice, {}).map((n) => (
+                  <li key={n.kind} className={ui.row}>
+                    <p>{n.text}</p>
+                    <span className={ui.chip} data-tone={n.tone}>
+                      {n.kind}
+                    </span>
+                  </li>
+                ))}
+              </ul>
               <p className={ui.sub}>Measured in your browser. Only these numbers were sent - never your voice.</p>
             </div>
           )}
