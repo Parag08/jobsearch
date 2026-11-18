@@ -3,6 +3,8 @@ import { listApplications } from "../repos/applications";
 import { listRoleQuestions, removeRoleQuestions, upsertRoleQuestions } from "../repos/role-questions";
 import { roleQuestionId, type RoleInterviewInput } from "../interview/role-questions";
 import { findApplication, type AgentDeps, type ApplicationRef } from "./agent-sync";
+import { setModelAnswer } from "./model-answers";
+import { listModelAnswers } from "../repos/model-answers";
 
 /**
  * What an agent may do to a user's role interviews (MCP tools upsert_interview_questions,
@@ -30,11 +32,19 @@ export async function saveRoleInterview(deps: AgentDeps, userId: string, input: 
       lookFor: q.lookFor,
       context: q.context ?? null,
       source: q.source ?? null,
-      modelAnswer: q.modelAnswer ?? null,
     })),
     nowIso,
   );
-  return { application: appBrief(app), ...counts };
+  // Model answers sent with the set: the agent's own, so never over the user's (setModelAnswer).
+  const ids = new Map((await listRoleQuestions(deps.db, userId)).map((r) => [r.externalRef, roleQuestionId(r.id)]));
+  const modelAnswers = { saved: 0, keptYours: [] as string[] };
+  for (const q of input.questions) {
+    if (!q.modelAnswer) continue;
+    const r = await setModelAnswer(deps, userId, { questionId: ids.get(q.externalRef)!, text: q.modelAnswer, source: "agent" }, nowIso);
+    if (r.saved) modelAnswers.saved += 1;
+    else modelAnswers.keptYours.push(q.externalRef);
+  }
+  return { application: appBrief(app), ...counts, modelAnswers };
 }
 
 /** One application's questions, or every application's when no ref is given. */
@@ -42,6 +52,7 @@ export async function listRoleInterview(deps: AgentDeps, userId: string, ref: Ap
   const app = ref.id || ref.externalRef ? await findApplication(deps, userId, ref) : null;
   const apps = new Map((await listApplications(deps.db, userId)).map((a) => [a.id, a]));
   const questions = (await listRoleQuestions(deps.db, userId)).filter((q) => !app || q.applicationId === app.id);
+  const answered = new Map((await listModelAnswers(deps.db, userId)).map((m) => [m.questionId, m.source]));
   return {
     questions: questions.map((q) => {
       const a = apps.get(q.applicationId);
@@ -54,7 +65,7 @@ export async function listRoleInterview(deps: AgentDeps, userId: string, ref: Ap
         interviewer: q.interviewer,
         competency: q.competency,
         text: q.text,
-        hasModelAnswer: q.modelAnswer !== null,
+        modelAnswerSource: answered.get(roleQuestionId(q.id)) ?? null,
         updatedAt: q.updatedAt,
       };
     }),

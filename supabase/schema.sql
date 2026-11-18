@@ -17,6 +17,7 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists interview_model_answers cascade;
 drop table if exists interview_role_questions cascade;
 drop table if exists interview_custom_questions cascade;
 drop table if exists role_plans cascade;
@@ -393,13 +394,23 @@ create table interview_role_questions (
   look_for text not null check (char_length(look_for) between 1 and 4000),
   context text check (context is null or char_length(context) <= 4000),
   source text,
-  -- 0013: a model answer built from the user's evidence, compared against in the mock debrief
-  model_answer text check (model_answer is null or char_length(model_answer) <= 8000),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, external_ref)
 );
 create index interview_role_questions_app on interview_role_questions (user_id, application_id, position);
+
+-- ---- model answers (0013): one per user and question id; source agent | ai | user -------
+create table interview_model_answers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  question_id text not null,
+  text text not null check (char_length(text) between 1 and 8000),
+  source text not null check (source in ('agent', 'ai', 'user')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, question_id)
+);
 
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
@@ -422,6 +433,7 @@ alter table api_tokens enable row level security;
 alter table role_plans enable row level security;
 alter table interview_custom_questions enable row level security;
 alter table interview_role_questions enable row level security;
+alter table interview_model_answers enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -443,7 +455,7 @@ begin
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
-                           'interview_custom_questions','interview_role_questions']
+                           'interview_custom_questions','interview_role_questions','interview_model_answers']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);

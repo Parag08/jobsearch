@@ -2,13 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
-## 2026-11-18 (evening) - Model answers, comparison, fillers
+## 2026-11-18 (evening) - Model answers (agent, AI rewrite, user), comparison, fillers
 
-Parag: wants a model answer per question, then to speak his own and get compared, with feedback on fillers.
-- **Migration 0013**: `interview_role_questions.model_answer`. MCP `upsert_interview_questions` takes `modelAnswer` (max 3000); `list_interview_questions` returns `hasModelAnswer`.
-- **Page**: "Model answer" reveal above the mock. **Debrief**: prompt gets the model answer and returns `comparison {covered, missed, different}` (max 4 each), shown as "Against the model answer"; the said-numbers warning now checks written + model answer.
-- **Fillers**: `fillerReport` / `fillerLine` / `FILLERS_PER_100_LIMIT=2`; Fillers block on every debrief (not only when voice was measured); the delivery block no longer repeats hedges.
-- **Not stored**: comparison and fillers are not saved with the attempt (transcript is, so fillers can be recomputed). **Checked**: tests, tsc, model answer reveal in demo. **Not checked**: a real debrief with a model.
+Parag: wants a model answer per question - from the agent, or the app's AI rewriting his own written answer, or edited by him - then to speak and be compared, with filler feedback. All of it over MCP too.
+- **Migration 0013**: `interview_model_answers` (user_id, question_id unique; text; source agent|ai|user). Replaced an earlier unmerged draft that put a column on role questions.
+- **Write path**: `setModelAnswer` only. MCP `set_model_answer {questionId, text, force?}` and `modelAnswer` on `upsert_interview_questions` (returns `modelAnswers {saved, keptYours}`); `list_interview_questions` returns `modelAnswerSource`; `list_interview_practice` returns `modelAnswer`.
+- **App**: "Rewrite as model answer" on the notes editor (saves the draft first; premium call; `guardRewrite` refuses added numbers); `ModelAnswerPanel` shows source, Edit/Save (source user), or "write one yourself" when empty.
+- **Debrief**: compares with the model answer (`comparison`), numbers checked against written + model; Fillers block on every debrief (`fillerReport`, 2 per 100 words threshold).
+- **Checked in the browser (demo + temporary seed)**: empty state -> write -> save shows "Written by you"; rewrite saves notes then reports the missing AI key; Cognition question shows "Prepared by your agent". **Not checked**: a real rewrite or debrief with a model; comparison and fillers are not stored with the attempt.
 
 ## 2026-11-18 (later) - Practice read-back over MCP
 

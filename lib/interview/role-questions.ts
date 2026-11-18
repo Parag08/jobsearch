@@ -86,7 +86,6 @@ export interface StoredRoleQuestion {
   lookFor: string;
   context: string | null;
   source: string | null;
-  modelAnswer: string | null;
   updatedAt: string;
 }
 
@@ -94,7 +93,6 @@ export interface RoleQuestion extends CompanyQuestion {
   round: string | null;
   interviewer: string | null;
   source: string | null;
-  modelAnswer: string | null;
   /** How the UI and prompts name `context`. */
   contextLabel: string;
 }
@@ -123,7 +121,6 @@ export function roleQuestions(stored: StoredRoleQuestion[], apps: Application[])
       round: s.round,
       interviewer: s.interviewer,
       source: s.source,
-      modelAnswer: s.modelAnswer,
       contextLabel: ROLE_CONTEXT_LABEL,
     }));
 }

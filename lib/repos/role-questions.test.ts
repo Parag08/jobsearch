@@ -13,7 +13,6 @@ const q = (over: Partial<RoleQuestionWrite> = {}): RoleQuestionWrite => ({
   lookFor: "Depth.",
   context: null,
   source: null,
-  modelAnswer: null,
   ...over,
 });
 
@@ -34,12 +33,11 @@ describe("role questions repo", () => {
     const db = new FakeDb();
     await upsertRoleQuestions(db, "u1", "app-1", [q()], NOW);
     const [before] = await listRoleQuestions(db, "u1");
-    const r = await upsertRoleQuestions(db, "u1", "app-1", [q({ text: "Walk me through your best project.", modelAnswer: "Result first." })], "2026-11-19T09:00:00Z");
+    const r = await upsertRoleQuestions(db, "u1", "app-1", [q({ text: "Walk me through your best project." })], "2026-11-19T09:00:00Z");
     expect(r).toEqual({ created: 0, updated: 1 });
     const [after] = await listRoleQuestions(db, "u1");
     expect(after.id).toBe(before.id);
     expect(after.text).toBe("Walk me through your best project.");
-    expect(after.modelAnswer).toBe("Result first.");
     expect(after.updatedAt).toBe("2026-11-19T09:00:00Z");
   });
 

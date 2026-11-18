@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { probeStoryAction, saveAnswerAction, type ProbeState, type SaveState } from "../actions";
+import { probeStoryAction, rewriteModelAnswerAction, saveAnswerAction, type ModelAnswerState, type ProbeState, type SaveState } from "../actions";
 import type { AnswerMode } from "@/lib/repos/answers";
 import ui from "../ui.module.css";
 
@@ -35,6 +35,7 @@ export function AnswerEditor({
   const [mode, setMode] = useState<AnswerMode>(initial.mode);
   const [saveState, save, saving] = useActionState<SaveState | null, FormData>(saveAnswerAction, null);
   const [probe, askInterviewer, probing] = useActionState<ProbeState | null, FormData>(probeStoryAction, null);
+  const [rewrite, rewriteAsModel, rewriting] = useActionState<ModelAnswerState | null, FormData>(rewriteModelAnswerAction, null);
 
   return (
     <form className={ui.stack} key={questionId}>
@@ -79,6 +80,11 @@ export function AnswerEditor({
         <button className={ui.btn} type="submit" formAction={askInterviewer} disabled={probing}>
           {probing ? "Reading your answer…" : "Ask an interviewer"}
         </button>
+        <button className={ui.btn} type="submit" formAction={rewriteAsModel} disabled={rewriting} title="Saves your answer, then rewrites it into the model answer above - using only what you wrote">
+          {rewriting ? "Rewriting…" : "Rewrite as model answer"}
+        </button>
+        {rewrite?.saved && !rewriting && <span className={ui.sub}>Model answer updated - open it above.</span>}
+        {rewrite?.error && <span className={ui.warn}>{rewrite.error}</span>}
         {saveState?.saved && !saving && <span className={ui.sub}>Saved.</span>}
         {saveState?.error && <span className={ui.warn}>{saveState.error}</span>}
         {probe?.error && <span className={ui.warn}>{probe.error}</span>}

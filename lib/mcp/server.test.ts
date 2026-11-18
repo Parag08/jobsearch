@@ -205,7 +205,8 @@ describe("MCP role interviews", () => {
 
     const listed = await call(ctx, "list_interview_questions", { externalRef: "cog-de" });
     expect(listed.data.questions.map((q: { externalRef: string }) => q.externalRef)).toEqual(["cog:background", "cog:agents"]);
-    expect(listed.data.questions.map((q: { hasModelAnswer: boolean }) => q.hasModelAnswer)).toEqual([false, true]);
+    expect(listed.data.questions.map((q: { modelAnswerSource: string | null }) => q.modelAnswerSource)).toEqual([null, "agent"]);
+    expect(saved.data.modelAnswers).toEqual({ saved: 1, keptYours: [] });
 
     const removed = await call(ctx, "remove_interview_questions", { externalRefs: ["cog:agents"] });
     expect(removed.data).toEqual({ removed: 1 });
@@ -236,5 +237,24 @@ describe("MCP interview practice", () => {
     expect(r.data.questions).toHaveLength(1);
     expect(r.data.questions[0]).toMatchObject({ text: "Background?", attemptCount: 0 });
     expect((await call(ctx, "list_interview_practice", { attemptsPerQuestion: 99 })).isError).toBe(true);
+  });
+});
+
+describe("MCP model answers", () => {
+  it("sets a model answer, shows it in practice, and keeps the user's own", async () => {
+    const db = new FakeDb();
+    const ctx = ctxFor(db);
+    await call(ctx, "upsert_application", { externalRef: "cog", company: "Cognition", role: "DE" });
+    await call(ctx, "upsert_interview_questions", { externalRef: "cog", questions: [{ externalRef: "cog:bg", competency: "Fit", text: "Background?", lookFor: "x" }] });
+    const [{ questionId }] = (await call(ctx, "list_interview_questions", { externalRef: "cog" })).data.questions;
+    expect((await call(ctx, "set_model_answer", { questionId, text: "I'm an engineer who..." })).data).toEqual({ saved: true });
+    const practice = (await call(ctx, "list_interview_practice", { externalRef: "cog" })).data;
+    expect(practice.questions[0].modelAnswer).toMatchObject({ text: "I'm an engineer who...", source: "agent" });
+
+    // The user rewrites it in the app:
+    const { putModelAnswer } = await import("../repos/model-answers");
+    await putModelAnswer(db, "user-1", { questionId, text: "My own", source: "user" }, "2026-11-19T00:00:00Z");
+    expect((await call(ctx, "set_model_answer", { questionId, text: "Agent again" })).data).toEqual({ saved: false, keptSource: "user" });
+    expect((await call(ctx, "set_model_answer", { questionId: "role:nope", text: "x" })).isError).toBe(true);
   });
 });
