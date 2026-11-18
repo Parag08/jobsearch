@@ -129,6 +129,15 @@ describe("buildFollowUpPrompt", () => {
     expect(buildFollowUpPrompt({ ...base, question: question.text })).not.toMatch(/typed by the candidate/);
   });
 
+  it("plays the interviewer a role interview names, and labels its brief as a brief", () => {
+    const base = { question: question.text, lookFor: "x", session: running(), latest: vagueWe, candidates: ["ownership" as const] };
+    const role = buildFollowUpPrompt({ ...base, firmNote: "Candidates report a project deep-dive.", interviewer: "a Deployed Engineer at Cognition", contextLabel: "Interview brief" });
+    expect(role).toMatch(/You are a Deployed Engineer at Cognition, interviewing a candidate/);
+    expect(role).not.toMatch(/strategy consulting/);
+    expect(role).toContain("Context (Interview brief): Candidates report a project deep-dive.");
+    expect(buildFollowUpPrompt({ ...base, firmNote: null })).toMatch(/strategy consulting/);
+  });
+
   it("carries the tone, the rubric, the firm note and the latest answer", () => {
     expect(prompt).toMatch(/sceptical/i);
     expect(prompt).toContain("Handles conflict with evidence");
@@ -230,6 +239,13 @@ describe("debrief", () => {
     for (const d of ["structure", "ownership", "specificity", "impact", "reflection", "relevance"]) expect(p).toContain(d);
     expect(p).toContain('"followUps"');
     expect(p).toContain("I ran the workshop.");
+  });
+
+  it("debriefs as the interviewer a role interview names", () => {
+    const p = buildMockDebriefPrompt({ question: question.text, lookFor: "Evidence", firmNote: "Brief.", session: s, interviewer: "a Deployed Engineer at Cognition", contextLabel: "Interview brief" });
+    expect(p).toMatch(/You interviewed a candidate as a Deployed Engineer at Cognition/);
+    expect(p).toContain("Context (Interview brief): Brief.");
+    expect(p).not.toMatch(/strategy consulting/);
   });
 
   it("marks a question the candidate typed as data, not instructions", () => {

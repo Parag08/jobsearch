@@ -31,6 +31,9 @@ export interface ViewQuestion extends Question {
   company?: string;
   short?: string;
   context?: string | null;
+  /** Role interviews only: the round, and how `context` is labelled. */
+  round?: string | null;
+  contextLabel?: string;
 }
 
 export function BehaviouralView({
@@ -248,9 +251,10 @@ export function BehaviouralView({
                 )}
               </summary>
               <p>{selected.lookFor}</p>
+              {selected.round && <p className={ui.sub}>Round: {selected.round}</p>}
               {selected.context && (
                 <p className={ui.sub}>
-                  From the job description: {selected.context}
+                  {selected.contextLabel ?? "From the job description"}: {selected.context}
                 </p>
               )}
             </details>

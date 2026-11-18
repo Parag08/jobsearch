@@ -9,6 +9,7 @@ import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
 import { listCompanyQuestions, listCustomQuestions, questionBank } from "./bank";
 import type { CompanyQuestion } from "@/lib/interview/company-questions";
+import type { RoleQuestion } from "@/lib/interview/role-questions";
 import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
 import type { Question } from "@/lib/interview/questions";
 import { BehaviouralView } from "./behavioural-view";
@@ -105,7 +106,7 @@ function Behavioural({
   answers: Answer[];
   attempts: Attempt[];
   bullets: { id: string; text: string; skills: string[] }[];
-  companyQuestions: CompanyQuestion[];
+  companyQuestions: (CompanyQuestion | RoleQuestion)[];
   customQuestions: Question[];
 }) {
   // What your CV bullets already evidence, before you have written anything.

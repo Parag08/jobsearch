@@ -18,6 +18,8 @@ import {
   upsertApplication,
   upsertContact,
 } from "../services/agent-sync";
+import { listRoleInterview, removeRoleInterview, saveRoleInterview } from "../services/role-interview";
+import { ROLE_QUESTION_LIMITS, RoleInterviewInputSchema } from "../interview/role-questions";
 
 /** Who is calling and when - resolved from the bearer token by the route, never from tool input. */
 export interface ToolContext {
@@ -108,6 +110,19 @@ const LogInteractionSchema = z
     summary: z.string().min(1),
   })
   .refine((r) => r.id || r.externalRef, "give id or externalRef");
+
+const RemoveRoleQuestionsSchema = z.object({ externalRefs: z.array(z.string().min(1)).min(1).max(ROLE_QUESTION_LIMITS.perSet) });
+
+const textProp = (max: number, description: string) => ({ type: "string", maxLength: max, description }) as const;
+const roleQuestionProps = {
+  externalRef: { type: "string", description: "Stable id for this question, e.g. 'cognition-de:deep-dive'. Re-sending it updates the question and keeps its answers." },
+  competency: { type: "string", description: "What it tests, e.g. 'Technical depth', 'Customer judgement', 'Motivation'" },
+  text: textProp(ROLE_QUESTION_LIMITS.text, "The question as the interviewer would ask it"),
+  short: textProp(ROLE_QUESTION_LIMITS.short, "Short list label, e.g. 'Technical deep-dive'"),
+  lookFor: textProp(ROLE_QUESTION_LIMITS.lookFor, "What a strong answer shows - the rubric the mock interviewer scores against"),
+  context: textProp(ROLE_QUESTION_LIMITS.context, "What the interviewer should know: where the question comes from, what to probe. Facts only from your sources."),
+  source: textProp(ROLE_QUESTION_LIMITS.source, "Where the question comes from (a candidate report, the recruiter's email)"),
+} as const;
 
 export const TOOLS: Tool[] = [
   {
@@ -319,6 +334,52 @@ export const TOOLS: Tool[] = [
     async run({ db, userId }, args) {
       const { id, externalRef, ...interaction } = LogInteractionSchema.parse(args);
       return logInteraction({ db }, userId, { id, externalRef }, interaction);
+    },
+  },
+  {
+    name: "upsert_interview_questions",
+    description:
+      "Prepare a role interview: questions for one application's real interview round, shown on the app's Interview tab under that company and practised in its mock interview. Give the application (id or externalRef), the round, who the interviewer is (sets the mock interviewer's persona), and the questions in the order they would come. Idempotent on each question's externalRef: re-sending updates in place and keeps the user's answers. Never put claims about the user in a question; rubrics say what a strong answer shows.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...refProps,
+        round: textProp(ROLE_QUESTION_LIMITS.round, "The round, e.g. 'Technical interview with a Deployed Engineer, 24 Nov'"),
+        interviewer: textProp(ROLE_QUESTION_LIMITS.interviewer, "Who asks, e.g. 'a Deployed Engineer at Cognition'"),
+        questions: {
+          type: "array",
+          minItems: 1,
+          maxItems: ROLE_QUESTION_LIMITS.perSet,
+          items: { type: "object", properties: roleQuestionProps, required: ["externalRef", "competency", "text", "lookFor"], additionalProperties: false },
+        },
+      },
+      required: ["questions"],
+      additionalProperties: false,
+    },
+    async run({ db, userId, nowIso }, args) {
+      return saveRoleInterview({ db }, userId, RoleInterviewInputSchema.parse(args), nowIso);
+    },
+  },
+  {
+    name: "list_interview_questions",
+    description: "The role-interview questions already prepared: for one application (id or externalRef), or for every application when none is given. Returns text and round, not rubrics.",
+    inputSchema: { type: "object", properties: { ...refProps }, additionalProperties: false },
+    async run({ db, userId }, args) {
+      const ref = z.object({ id: z.string().min(1).optional(), externalRef: z.string().min(1).optional() }).parse(args ?? {});
+      return listRoleInterview({ db }, userId, ref);
+    },
+  },
+  {
+    name: "remove_interview_questions",
+    description: "Remove role-interview questions by their externalRefs. The user's written answers and past attempts are kept.",
+    inputSchema: {
+      type: "object",
+      properties: { externalRefs: { type: "array", items: str, minItems: 1, maxItems: ROLE_QUESTION_LIMITS.perSet } },
+      required: ["externalRefs"],
+      additionalProperties: false,
+    },
+    async run({ db, userId }, args) {
+      return removeRoleInterview({ db }, userId, RemoveRoleQuestionsSchema.parse(args).externalRefs);
     },
   },
 ];

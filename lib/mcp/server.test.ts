@@ -189,3 +189,37 @@ describe("MCP role reading and role_insights", () => {
     expect(names).toContain("role_insights");
   });
 });
+
+describe("MCP role interviews", () => {
+  const questions = [
+    { externalRef: "cog:background", competency: "Fit", text: "Walk me through your background.", lookFor: "Ends on why DE." },
+    { externalRef: "cog:agents", competency: "Agent fluency", text: "Where do coding agents fail for you?", lookFor: "A real failure and how it was caught.", context: "Reported by candidates.", source: "Aced report" },
+  ];
+
+  it("prepares, lists and removes questions for an application", async () => {
+    const ctx = ctxFor(new FakeDb());
+    await call(ctx, "upsert_application", { externalRef: "cog-de", company: "Cognition", role: "Deployed Engineer" });
+    const saved = await call(ctx, "upsert_interview_questions", { externalRef: "cog-de", round: "Technical", interviewer: "a Deployed Engineer", questions });
+    expect(saved.isError).toBe(false);
+    expect(saved.data).toMatchObject({ created: 2, updated: 0, application: { company: "Cognition" } });
+
+    const listed = await call(ctx, "list_interview_questions", { externalRef: "cog-de" });
+    expect(listed.data.questions.map((q: { externalRef: string }) => q.externalRef)).toEqual(["cog:background", "cog:agents"]);
+
+    const removed = await call(ctx, "remove_interview_questions", { externalRefs: ["cog:agents"] });
+    expect(removed.data).toEqual({ removed: 1 });
+    expect((await call(ctx, "list_interview_questions")).data.questions).toHaveLength(1);
+  });
+
+  it("returns a tool error for an unknown application or a bad set", async () => {
+    const ctx = ctxFor(new FakeDb());
+    expect((await call(ctx, "upsert_interview_questions", { externalRef: "nope", questions })).isError).toBe(true);
+    await call(ctx, "upsert_application", { externalRef: "cog-de", company: "Cognition", role: "DE" });
+    expect((await call(ctx, "upsert_interview_questions", { externalRef: "cog-de", questions: [] })).isError).toBe(true);
+  });
+
+  it("is listed with the other tools", () => {
+    const names = TOOLS.map((t) => t.name);
+    expect(names).toEqual(expect.arrayContaining(["upsert_interview_questions", "list_interview_questions", "remove_interview_questions"]));
+  });
+});
