@@ -53,8 +53,8 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
         {error && <p className={styles.pending}>{explain(error)}</p>}
 
         <p className={styles.note}>
-          Next we help you build your record — bring a CV, a LinkedIn PDF, or just talk it through. We
-          only ever put things on your CV that your own record can back.
+          You will land on your pipeline. Start by pasting a job posting, and we will read it and
+          open an application for it.
         </p>
 
         <Link href="/" className={styles.back}>

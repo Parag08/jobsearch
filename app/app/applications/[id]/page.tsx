@@ -60,7 +60,7 @@ export default async function ApplicationPage({
   const letterFrozen = app.appliedAt !== null;
   const bullets = projects.flatMap((p) => p.bullets);
   const bank: Record<string, Bullet> = Object.fromEntries(bullets.map((b) => [b.id, b]));
-  const gaps = app.jdExtract ? applicationGaps(app.jdExtract, bullets) : null;
+  const gaps = app.jdExtract ? applicationGaps(app.jdExtract, bullets, projects) : null;
   const nextStages = STAGES.filter((s) => canTransition(app.stage, s));
   // The text the interviewer read: an override or chosen variant beats the bank line.
   const shownText = (b: Bullet) =>

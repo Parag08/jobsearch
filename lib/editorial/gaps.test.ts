@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { applicationGaps } from "./gaps";
-import type { Bullet, JdExtract } from "../types";
+import type { Bullet, JdExtract, Project } from "../types";
 
 const jd: JdExtract = {
   company: "Firm X",
@@ -59,6 +59,37 @@ describe("applicationGaps", () => {
       "pe investors",
       "cursor",
     ]);
+  });
+
+  it("the role a bullet sits under is evidence: a degree held is a fact on the record", () => {
+    const edu: Bullet = { id: "e1", projectId: "insead", roleFamily: "consulting", text: "President, Fintech Club", skills: [] };
+    const projects: Project[] = [
+      {
+        id: "insead",
+        name: "INSEAD - MBA Class of December 2026",
+        org: "INSEAD",
+        dates: "2026",
+        role: "MBA Class of December 2026",
+        narrative: "",
+        outcomes: [],
+        skills: [],
+        sectorTags: [],
+        bullets: [edu],
+      },
+    ];
+    const g = applicationGaps({ ...jd, skills: [], keywords: ["MBA", "INSEAD", "due diligence"] }, [edu], projects);
+    expect(g.evidenced).toEqual([
+      { term: "mba", kind: "keyword", bulletIds: ["e1"] },
+      { term: "insead", kind: "keyword", bulletIds: ["e1"] },
+    ]);
+    expect(g.gaps).toEqual([{ term: "due diligence", kind: "keyword" }]);
+  });
+
+  it("a word inside a heading word is not evidence", () => {
+    const b: Bullet = { id: "x1", projectId: "p", roleFamily: "consulting", text: "Led a squad", skills: [] };
+    const p = { id: "p", name: "Acme - Programme Manager", org: "Acme", dates: null, role: "Programme Manager", narrative: "", outcomes: [], skills: [], sectorTags: [], bullets: [b] };
+    const g = applicationGaps({ ...jd, skills: [], keywords: ["ram"] }, [b], [p]);
+    expect(g.gaps).toEqual([{ term: "ram", kind: "keyword" }]);
   });
 
   it("never invents evidence: a plausible-but-untagged term stays a gap", () => {

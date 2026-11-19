@@ -102,8 +102,81 @@
   gap: 28px;
 }
 
+/* Mobile menu (nav-links.tsx): hidden on wide screens, replaces the link row below 640px. */
+.menuWrap {
+  display: none;
+  position: relative;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+  padding: 6px 11px;
+  border: 0;
+  border-radius: var(--radius-float);
+  background: var(--accent-wash);
+  cursor: pointer;
+}
+
+.menuButton svg {
+  transition: transform var(--motion);
+}
+
+.menuButton svg[data-open] {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: var(--shadow-glass), inset 0 1px 0 var(--glass-edge);
+}
+
+.menu .link {
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border-radius: 14px;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .menu {
+    background: color-mix(in srgb, var(--paper) 96%, transparent);
+  }
+}
+
 @media (max-width: 640px) {
   .links {
+    display: none;
+  }
+  .menuWrap {
+    display: block;
+  }
+  .bar {
+    gap: 8px;
+  }
+  /* The wordmark and the workspace pill do not both fit beside the menu on a phone. */
+  .wordmark {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .mode {
     display: none;
   }
 }

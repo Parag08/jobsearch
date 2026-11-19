@@ -82,7 +82,7 @@ export default function Home() {
         {live ? (
           <>
             <form action={startWithGoogle} className={styles.navForm}>
-              <button type="submit" className={styles.navLink}>Sign in</button>
+              <button type="submit" className={`${styles.navLink} ${styles.navSecondary}`}>Sign in</button>
             </form>
             <form action={startWithGoogle} className={styles.navForm}>
               <button type="submit" className={styles.navCta}>Get started</button>
@@ -90,7 +90,7 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Link href="/signin" className={styles.navLink}>
+            <Link href="/signin" className={`${styles.navLink} ${styles.navSecondary}`}>
               Sign in
             </Link>
             <Link href="/signin" className={styles.navCta}>
@@ -107,41 +107,34 @@ export default function Home() {
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroText}>
-            <Reveal delay={0}>
-              <p className={styles.eyebrow}>Your job search, end to end</p>
-            </Reveal>
-            <Reveal delay={80}>
-              <h1>From the first search to the final offer.</h1>
-            </Reveal>
-            <Reveal delay={160}>
-              <p className={styles.lede}>
-                JobSearch finds the roles, reads each job, builds your CV from what you have actually
-                done, tracks every application and rehearses you for the interview - and, soon, helps you
-                negotiate the offer. AI does the heavy lifting, and nothing is ever claimed that your
-                record cannot back.
-              </p>
-            </Reveal>
-            <Reveal delay={240}>
-              <div className={styles.ctas}>
-                {live ? (
-                  <form action={startWithGoogle}>
-                    <GoogleButton label="Continue with Google" />
-                  </form>
-                ) : (
-                  <Link href="/signin" className={styles.cta}>
-                    Get started
-                  </Link>
-                )}
-                {demoAvailable && (
-                  <Link href="/app" className={styles.ctaQuiet}>
-                    See it with sample data
-                  </Link>
-                )}
-              </div>
-              <p className={styles.ctaNote}>Free to start. One click creates your account or signs you in — no password to make.</p>
-            </Reveal>
+            <p className={styles.eyebrow}>Your job search, end to end</p>
+            <h1>From the first search to the final offer.</h1>
+            <p className={styles.lede}>
+              JobSearch finds the roles, reads each job, builds your CV from what you have actually
+              done, tracks every application and rehearses you for the interview - and, soon, helps you
+              negotiate the offer. AI does the heavy lifting, and nothing is ever claimed that your
+              record cannot back.
+            </p>
+            <div className={styles.ctas}>
+              {live ? (
+                <form action={startWithGoogle}>
+                  <GoogleButton label="Continue with Google" />
+                </form>
+              ) : (
+                <Link href="/signin" className={styles.cta}>
+                  Get started
+                </Link>
+              )}
+              {demoAvailable && (
+                <Link href="/app" className={styles.ctaQuiet}>
+                  See it with sample data
+                </Link>
+              )}
+            </div>
+            <p className={styles.ctaNote}>Free to start. One click creates your account or signs you in — no password to make.</p>
           </div>
-          <Reveal delay={200} className={styles.heroDemo}>
+          {/* The hero text renders at once (a reveal hid it until hydration); the demo card keeps the one entrance. */}
+          <Reveal delay={120} className={styles.heroDemo}>
             <HeroDemo />
           </Reveal>
         </section>
