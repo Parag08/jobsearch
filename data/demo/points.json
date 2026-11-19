@@ -1,0 +1,456 @@
+{
+  "_readme": [
+    "Fictional sample data for the public demo."
+  ],
+  "points": [
+    {
+      "id": "meridian-honors",
+      "roleId": "meridian-mba",
+      "text": "Vice President, Product & Technology Club | Consortium Merit Scholar",
+      "variants": [
+        {
+          "label": "scholar-forward",
+          "text": "Consortium Merit Scholar | Vice President, Product & Technology Club"
+        }
+      ],
+      "tags": [
+        "team-leadership",
+        "influence"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "meridian-capstone",
+      "roleId": "meridian-mba",
+      "text": "Led a five-person capstone advising a regional grocer on pricing and loyalty strategy",
+      "variants": [],
+      "tags": [
+        "strategy-consulting",
+        "pricing",
+        "team-leadership"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "brightleaf-triage",
+      "roleId": "brightleaf-intern",
+      "text": "Sized a $15M annual opportunity in teleconsultation triage by modelling clinic capacity against patient demand across three markets",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Sized a $15M annual teleconsultation triage opportunity by modelling clinic capacity against demand in three markets"
+        }
+      ],
+      "tags": [
+        "product-strategy",
+        "data-analysis",
+        "revenue"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "brightleaf-interviews",
+      "roleId": "brightleaf-intern",
+      "text": "Synthesised 30 patient and clinician interviews into four product bets, two of which were funded for pilot",
+      "variants": [],
+      "tags": [
+        "research",
+        "discovery",
+        "product-strategy"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "brightleaf-pricing",
+      "roleId": "brightleaf-intern",
+      "text": "Recommended a tiered care-programme subscription that raised modelled margin by 9 points",
+      "variants": [],
+      "tags": [
+        "pricing",
+        "revenue",
+        "data-analysis"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "brightleaf-exec",
+      "roleId": "brightleaf-intern",
+      "text": "Presented the strategy to the regional leadership team and secured sponsorship for the pilot",
+      "variants": [],
+      "tags": [
+        "influence",
+        "stakeholder-management"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "brightleaf-benchmark",
+      "roleId": "brightleaf-intern",
+      "text": "Benchmarked competitors and shaped the narrative for the leadership review",
+      "variants": [],
+      "tags": [
+        "research",
+        "product-strategy"
+      ],
+      "strength": 2,
+      "status": "draft",
+      "inMaster": false
+    },
+    {
+      "id": "quillpay-checkout",
+      "roleId": "quillpay-spm",
+      "text": "Redesigned merchant onboarding and cut time-to-first-payment from 9 days to 2, lifting activation by 31%",
+      "variants": [
+        {
+          "label": "metrics-forward",
+          "text": "Lifted merchant activation 31% by cutting time-to-first-payment from 9 days to 2 through a redesigned onboarding flow"
+        }
+      ],
+      "tags": [
+        "product-management",
+        "conversion",
+        "growth"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "quillpay-lending",
+      "roleId": "quillpay-spm",
+      "text": "Launched a merchant working-capital product that reached $48M in disbursements within 14 months",
+      "variants": [],
+      "tags": [
+        "launch",
+        "revenue",
+        "zero-to-one"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "quillpay-roadmap",
+      "roleId": "quillpay-spm",
+      "text": "Owned a quarterly roadmap for a 14-person squad across payments, lending and risk, balancing growth bets against compliance work",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Owned the quarterly roadmap for a 14-person payments, lending and risk squad"
+        }
+      ],
+      "tags": [
+        "roadmap",
+        "prioritization",
+        "people-management"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "quillpay-experiments",
+      "roleId": "quillpay-spm",
+      "text": "Ran 40+ A/B tests on checkout and repayment flows, raising on-time repayment by 12%",
+      "variants": [],
+      "tags": [
+        "experimentation",
+        "metrics-kpi",
+        "data-analysis"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "quillpay-compliance",
+      "roleId": "quillpay-spm",
+      "text": "Delivered MAS-aligned onboarding and reporting changes ahead of the regulatory deadline with zero audit findings",
+      "variants": [],
+      "tags": [
+        "compliance",
+        "project-management",
+        "stakeholder-management"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "quillpay-mentoring",
+      "roleId": "quillpay-spm",
+      "text": "Mentored four associate product managers, two of whom were promoted within 18 months",
+      "variants": [],
+      "tags": [
+        "mentorship",
+        "people-management"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "quillpay-fraud",
+      "roleId": "quillpay-spm",
+      "text": "Partnered with Risk and Engineering to cut fraud losses by 22% without hurting approval rates",
+      "variants": [],
+      "tags": [
+        "cross-functional",
+        "metrics-kpi",
+        "product-management"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "quillpay-vendors",
+      "roleId": "quillpay-spm",
+      "text": "Managed relationships with banking and KYC vendors, renegotiating terms that saved $320K a year",
+      "variants": [],
+      "tags": [
+        "vendor-management",
+        "budget-management"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "quillpay-platform",
+      "roleId": "quillpay-spm",
+      "text": "Improved the developer experience for the partner API and helped the team ship faster",
+      "variants": [],
+      "tags": [
+        "product-management",
+        "process-improvement"
+      ],
+      "strength": 2,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "northwind-app",
+      "roleId": "northwind-pm",
+      "text": "Grew monthly active users of the retail app from 280K to 610K by rebuilding search and personalised recommendations",
+      "variants": [],
+      "tags": [
+        "product-management",
+        "growth",
+        "metrics-kpi"
+      ],
+      "strength": 5,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "northwind-checkout",
+      "roleId": "northwind-pm",
+      "text": "Introduced one-tap checkout, increasing mobile conversion by 18% and adding $6M in annual sales",
+      "variants": [
+        {
+          "label": "short",
+          "text": "Raised mobile conversion 18% (+$6M annual sales) with one-tap checkout"
+        }
+      ],
+      "tags": [
+        "conversion",
+        "launch",
+        "revenue"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "northwind-marketplace",
+      "roleId": "northwind-pm",
+      "text": "Onboarded 120 third-party sellers to the marketplace in nine months, reaching 14% of total GMV",
+      "variants": [],
+      "tags": [
+        "gtm",
+        "sales-partnership",
+        "growth"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "northwind-discovery",
+      "roleId": "northwind-pm",
+      "text": "Built a customer research programme with store staff and shoppers that informed the next two roadmap cycles",
+      "variants": [],
+      "tags": [
+        "discovery",
+        "research",
+        "roadmap"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "northwind-agile",
+      "roleId": "northwind-pm",
+      "text": "Introduced two-week sprints and a shared Jira workflow across product, design and engineering",
+      "variants": [],
+      "tags": [
+        "agile-jira",
+        "process-improvement",
+        "cross-functional"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "northwind-loyalty",
+      "roleId": "northwind-pm",
+      "text": "Relaunched the loyalty programme, lifting repeat purchase rate by 11 points",
+      "variants": [],
+      "tags": [
+        "product-management",
+        "metrics-kpi",
+        "growth"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "northwind-stores",
+      "roleId": "northwind-pm",
+      "text": "Worked with store operations on in-store pickup and helped improve the customer experience",
+      "variants": [],
+      "tags": [
+        "customer-facing",
+        "ops-execution"
+      ],
+      "strength": 2,
+      "status": "draft",
+      "inMaster": false
+    },
+    {
+      "id": "harbourline-tracking",
+      "roleId": "harbourline-apm",
+      "text": "Shipped real-time parcel tracking used by 85% of customers, reducing support contacts by 24%",
+      "variants": [],
+      "tags": [
+        "launch",
+        "product-management",
+        "metrics-kpi"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "harbourline-routing",
+      "roleId": "harbourline-apm",
+      "text": "Specified a route-planning tool with dispatch teams that cut average delivery time by 16 minutes per stop",
+      "variants": [],
+      "tags": [
+        "ops-execution",
+        "automation",
+        "product-management"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": true
+    },
+    {
+      "id": "harbourline-dashboards",
+      "roleId": "harbourline-apm",
+      "text": "Built SQL dashboards for 60 depot managers, replacing weekly manual reports and saving 120 hours a month",
+      "variants": [],
+      "tags": [
+        "data-analysis",
+        "automation",
+        "process-improvement"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "harbourline-driver-app",
+      "roleId": "harbourline-apm",
+      "text": "Co-led the driver app relaunch with a 20-person delivery team across two vendors",
+      "variants": [],
+      "tags": [
+        "project-management",
+        "vendor-management",
+        "cross-functional"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "harbourline-sla",
+      "roleId": "harbourline-apm",
+      "text": "Defined delivery SLA metrics that became the standard for enterprise contracts worth $9M",
+      "variants": [],
+      "tags": [
+        "metrics-kpi",
+        "sales-partnership"
+      ],
+      "strength": 3,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "harbourline-pilot",
+      "roleId": "harbourline-apm",
+      "text": "Piloted a returns workflow for e-commerce clients and improved processing times",
+      "variants": [],
+      "tags": [
+        "ops-execution",
+        "customer-facing"
+      ],
+      "strength": 2,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "harbourline-onboarding",
+      "roleId": "harbourline-apm",
+      "text": "Documented onboarding for new enterprise clients to reduce setup effort",
+      "variants": [],
+      "tags": [
+        "process-improvement",
+        "customer-facing"
+      ],
+      "strength": 1,
+      "status": "active",
+      "inMaster": false
+    },
+    {
+      "id": "northwind-pricing",
+      "roleId": "northwind-pm",
+      "text": "Led a pricing experiment on delivery fees that improved basket size by 7% with no drop in order volume",
+      "variants": [],
+      "tags": [
+        "pricing",
+        "experimentation",
+        "revenue"
+      ],
+      "strength": 4,
+      "status": "active",
+      "inMaster": false
+    }
+  ]
+}

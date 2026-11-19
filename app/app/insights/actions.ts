@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
-import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
-import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
+import { withLedger } from "@/lib/adapters/llm-factory";
+import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
+import { demoTaxonomy } from "@/lib/db/demo";
 import { GATEWAY_PREMIUM_MODEL } from "@/lib/adapters/vercel-gateway";
 import { retryAfterSeconds } from "@/lib/adapters/llm-http";
 import { logTokens } from "@/lib/repos/token-ledger";
@@ -36,11 +37,12 @@ function back(by: RoleSelector, extra: Record<string, string> = {}, hash = ""): 
 
 /** Read the saved roles that have a posting and no extract yet, one batch (ROLE_READ_BATCH). */
 export async function readUnreadRolesAction(formData?: FormData): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const by = formData ? selection(formData) : {};
   const batch = roleReadBatchFromEnv(process.env);
   if (batch === undefined) redirect(back(by, { error: "Set ROLE_READ_BATCH to read saved roles." }));
-  const base = createLlm(process.env);
+  const base = aiLlm(w, demoTaxonomy);
   if (!base) {
     redirect(back(by, { error: "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY." }));
   }
@@ -63,18 +65,14 @@ export async function readUnreadRolesAction(formData?: FormData): Promise<void> 
 
 /** Draft the gap plan for the current selection: one premium call, stored, shown under #plan. */
 export async function draftRolePlanAction(formData: FormData): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const by = selection(formData);
   const maxGaps = rolePlanMaxGapsFromEnv(process.env);
   if (maxGaps === undefined) redirect(back(by, { error: "Set ROLE_PLAN_MAX_GAPS to enable plan drafting." }, "#plan"));
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) redirect(back(by, { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." }, "#plan"));
+  if (!aiReady(w)) redirect(back(by, { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." }, "#plan"));
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
-  const write = async (prompt: string) => {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey: apiKey as string, model, prompt, json: false, maxOutputTokens: 1200 })) out += d;
-    return out;
-  };
+  const write = (prompt: string) => aiWrite(w, "role-plan", { model, prompt, json: false, maxOutputTokens: 1200 });
 
   let message: string | null = null;
   try {

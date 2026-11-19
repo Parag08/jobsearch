@@ -14,6 +14,8 @@ export async function POST(req: Request): Promise<Response> {
 
   const w = await getWorkspace();
   if (!w) return Response.json({ error: "Sign in first." }, { status: 401 });
+  // A demo visitor hears the browser's own voice: the paid voice is for signed-in users.
+  if (w.cannedAi) return new Response(null, { status: 501 });
 
   const body = (await req.json().catch(() => null)) as { text?: unknown } | null;
   const text = typeof body?.text === "string" ? body.text : "";

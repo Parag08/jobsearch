@@ -1,0 +1,138 @@
+{
+  "name": {
+    "first": "Maya",
+    "last": "OKAFOR"
+  },
+  "contactLines": [
+    "linkedin.com/in/example-maya",
+    "maya.okafor@example.com",
+    "+65 0000 0000"
+  ],
+  "education": [
+    {
+      "id": "meridian",
+      "org": "Meridian Business School",
+      "location": "Singapore",
+      "blurb": "",
+      "roles": [
+        {
+          "id": "meridian-mba",
+          "title": "MBA Class of December 2026",
+          "dates": "2025 - 2026"
+        }
+      ]
+    },
+    {
+      "id": "eastbrook",
+      "org": "Eastbrook University",
+      "location": "Singapore",
+      "blurb": "",
+      "roles": [
+        {
+          "id": "eastbrook-ba",
+          "title": "Bachelor of Business Administration, Business Analytics",
+          "dates": "2014 - 2018"
+        }
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "id": "brightleaf",
+      "org": "Brightleaf Health",
+      "location": "Singapore",
+      "blurb": "Regional digital health provider connecting patients with clinics and care programmes",
+      "roles": [
+        {
+          "id": "brightleaf-intern",
+          "title": "Product Strategy Intern",
+          "dates": "Jun - Aug 2026",
+          "formDates": {
+            "start": "2026-06",
+            "end": "2026-08"
+          }
+        }
+      ]
+    },
+    {
+      "id": "quillpay",
+      "org": "Quillpay",
+      "location": "Singapore",
+      "blurb": "Fintech scale-up offering payments and merchant lending across Southeast Asia",
+      "roles": [
+        {
+          "id": "quillpay-spm",
+          "title": "Senior Product Manager",
+          "dates": "Mar 2022 - Jun 2025",
+          "formDates": {
+            "start": "2022-03",
+            "end": "2025-06"
+          }
+        }
+      ]
+    },
+    {
+      "id": "northwind",
+      "org": "Northwind Retail Group",
+      "location": "Singapore",
+      "blurb": "Omnichannel retailer operating stores and an e-commerce marketplace across the region",
+      "roles": [
+        {
+          "id": "northwind-pm",
+          "title": "Product Manager",
+          "dates": "Jan 2020 - Feb 2022",
+          "formDates": {
+            "start": "2020-01",
+            "end": "2022-02"
+          }
+        }
+      ]
+    },
+    {
+      "id": "harbourline",
+      "org": "Harbourline Logistics",
+      "location": "Singapore",
+      "blurb": "Regional freight and last-mile delivery operator",
+      "roles": [
+        {
+          "id": "harbourline-apm",
+          "title": "Associate Product Manager",
+          "dates": "Jul 2018 - Dec 2019",
+          "formDates": {
+            "start": "2018-07",
+            "end": "2019-12"
+          }
+        }
+      ]
+    }
+  ],
+  "additional": [
+    {
+      "id": "add-lang",
+      "label": "Languages",
+      "text": "English (Native), Yoruba (Conversational), Mandarin (Beginner)",
+      "locked": true
+    },
+    {
+      "id": "add-skills",
+      "label": "Skills",
+      "text": "Product Management | Roadmapping | Prioritisation | Cross-functional Leadership | Data Analysis",
+      "locked": false,
+      "tailorable": true
+    },
+    {
+      "id": "add-tech",
+      "label": "Technologies",
+      "text": "SQL | Looker | Amplitude | Jira | Figma | A/B Testing Platforms",
+      "locked": false,
+      "tailorable": true
+    },
+    {
+      "id": "add-interests",
+      "label": "Interests",
+      "text": "Mentoring | Trail Running | Urban Sketching",
+      "locked": false,
+      "tailorable": true
+    }
+  ]
+}

@@ -24,6 +24,12 @@ export async function getContact(db: DbClient, userId: string, id: string): Prom
   return toContact(row, await listInteractions(db, userId, id));
 }
 
+/** The date of every interaction the user logged - what the Overview counts as people reached. */
+export async function listInteractionDates(db: DbClient, userId: string): Promise<string[]> {
+  const rows = await many(db.from("interactions").select("date").eq("user_id", userId), "interactions", "list dates");
+  return rows.map((r) => r.date);
+}
+
 /** Contacts without their interaction logs - load one via getContact when composing messages. */
 export async function listContacts(db: DbClient, userId: string): Promise<Contact[]> {
   const rows = await many(db.from("contacts").select().eq("user_id", userId), "contacts", "list");

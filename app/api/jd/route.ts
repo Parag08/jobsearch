@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getWorkspace } from "@/lib/db";
-import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
+import { withLedger } from "@/lib/adapters/llm-factory";
+import { aiLlm } from "@/lib/services/ai-write";
+import { demoTaxonomy } from "@/lib/db/demo";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
 
@@ -18,7 +20,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const jd = typeof body?.jd === "string" ? body.jd.trim() : "";
   if (jd.length < 40) return NextResponse.json({ error: "Send { jd: string } with the full posting." }, { status: 400 });
 
-  const base = createLlm(process.env);
+  const base = aiLlm(w, demoTaxonomy);
   if (!base) {
     return NextResponse.json(
       { error: "No LLM configured. Set GEMINI_API_KEY or GROQ_API_KEY (free tiers) - see .env.example." },

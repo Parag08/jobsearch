@@ -1,0 +1,73 @@
+{
+  "id": "archetype-product-strategy",
+  "company": "",
+  "role": "Product Strategy - base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-10-01T09:00:00.000Z",
+  "updatedAt": "2026-10-01T09:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-strategy",
+    "at": "2026-10-01T09:00:00.000Z"
+  },
+  "notes": "GENERATED from archetype \"product-strategy\". A starting point, not a submission.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": "scholar-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "meridian-capstone",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-triage",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-interviews",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-pricing",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-marketplace",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-pricing",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-sla",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Strategy | Opportunity Sizing | Pricing | Executive Stakeholder Management | Research"
+    }
+  }
+}

@@ -68,9 +68,10 @@ import {
   type Tone,
 } from "@/lib/interview/mock";
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
-import { streamGatewayText } from "@/lib/adapters/vercel-gateway-stream";
+import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
+import { demoTaxonomy } from "@/lib/db/demo";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
-import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
+import { withLedger } from "@/lib/adapters/llm-factory";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
 
@@ -135,20 +136,16 @@ function letterError(applicationId: string, message: string): never {
  * (token rule #5). Without the firm detail the service asks instead of calling the model.
  */
 export async function draftCoverLetterAction(applicationId: string, formData: FormData): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const inputs = {
     firmDetail: String(formData.get("firmDetail") ?? ""),
     recipient: String(formData.get("recipient") ?? ""),
     teamName: String(formData.get("teamName") ?? ""),
   };
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) letterError(applicationId, "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).");
+  if (!aiReady(w)) letterError(applicationId, "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).");
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
-  const write = async (prompt: string) => {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey: apiKey as string, model, prompt, json: false, maxOutputTokens: 1200 })) out += d;
-    return out;
-  };
+  const write = (prompt: string) => aiWrite(w, "cover-letter", { model, prompt, json: false, maxOutputTokens: 1200 });
 
   let message: string | null = null;
   try {
@@ -202,7 +199,10 @@ export async function removeWatchlist(id: string): Promise<void> {
 }
 
 export async function refreshWatchlistAction(): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
+  // The sample watchlist's boards are fictional; the demo shows its stored roles instead.
+  if (w.cannedAi) return;
   await refreshWatchlist({ db, fetcher: new HttpBoardFetcher(fetch) }, userId, today());
   revalidatePath("/app/watchlist");
 }
@@ -236,11 +236,12 @@ export async function setJobStatus(id: string, status: "shortlisted" | "dismisse
  * the board can say what went wrong instead of showing a crash.
  */
 export async function createFromJd(_prev: string | null, formData: FormData): Promise<string | null> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const jd = String(formData.get("jd") ?? "").trim();
   if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
 
-  const base = createLlm(process.env);
+  const base = aiLlm(w, demoTaxonomy);
   if (!base) return "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY.";
 
   const day = today();
@@ -409,7 +410,8 @@ function draftFromForm(formData: FormData): { text: string; substance: string } 
  * The user's written answer itself is never changed (DESIGN.md section 3).
  */
 export async function rewriteModelAnswerAction(_prev: ModelAnswerState | null, formData: FormData): Promise<ModelAnswerState> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const questionId = String(formData.get("questionId") ?? "");
   const found = await findQuestion(db, userId, questionId);
   if (!found) return { error: "Unknown question." };
@@ -419,8 +421,7 @@ export async function rewriteModelAnswerAction(_prev: ModelAnswerState | null, f
   const saved = await saveAnswerAction(null, formData);
   if (saved.error) return { error: saved.error };
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const prompt = buildRewritePrompt({
     question: found.question.text,
@@ -431,7 +432,7 @@ export async function rewriteModelAnswerAction(_prev: ModelAnswerState | null, f
   });
   let out = "";
   try {
-    for await (const d of streamGatewayText({ apiKey, model, prompt, maxOutputTokens: 700 })) out += d;
+    out = await aiWrite(w, "model-answer", { model, prompt, maxOutputTokens: 700 }, { draft: draft.text });
   } catch (err) {
     return { error: err instanceof Error ? `Could not rewrite: ${err.message}` : "Could not rewrite." };
   }
@@ -467,7 +468,8 @@ export interface ProbeState {
 }
 
 export async function probeStoryAction(_prev: ProbeState | null, formData: FormData): Promise<ProbeState> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
 
   const field = (k: string) => String(formData.get(k) ?? "").trim();
   const free = field("mode") === "free";
@@ -484,8 +486,7 @@ export async function probeStoryAction(_prev: ProbeState | null, formData: FormD
     return { error: "Write a rough draft first - the questions come from what you wrote." };
   }
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
   const question = field("question");
   const prompt = [
@@ -502,14 +503,7 @@ export async function probeStoryAction(_prev: ProbeState | null, formData: FormD
 
   let text = "";
   try {
-    for await (const delta of streamGatewayText({
-      apiKey,
-      model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL,
-      prompt,
-      maxOutputTokens: 300,
-    })) {
-      text += delta;
-    }
+    text = await aiWrite(w, "probe", { model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL, prompt, maxOutputTokens: 300 });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not reach the model." };
   }
@@ -568,7 +562,8 @@ export async function startCaseAction(caseId: string): Promise<CaseTurnResult> {
  * the model only phrases the reply and says whether this question is done. Saved every turn.
  */
 export async function caseTurnAction(input: { sessionId: string; text: string }): Promise<CaseTurnResult> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const stored = await getCaseSession(db, userId, input.sessionId);
   if (!stored) return { error: "That interview could not be found." };
   const sheet = findCase(stored.caseId);
@@ -578,8 +573,7 @@ export async function caseTurnAction(input: { sessionId: string; text: string })
   const text = input.text.trim();
   if (!text) return { error: "Say or type something first." };
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
   const q = currentQuestion(sheet, s);
   const check =
@@ -593,10 +587,12 @@ export async function caseTurnAction(input: { sessionId: string; text: string })
   const model = process.env.AI_GATEWAY_CASE_MODEL || GATEWAY_SMALL_MODEL;
   let reply;
   try {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey, model, prompt: buildTurnPrompt(sheet, s, text, check, forced !== null), json: true, maxOutputTokens: 300 })) {
-      out += d;
-    }
+    const out = await aiWrite(
+      w,
+      "case-turn",
+      { model, prompt: buildTurnPrompt(sheet, s, text, check, forced !== null), json: true, maxOutputTokens: 300 },
+      { turn: s.turns.length },
+    );
     reply = parseTurnReply(parseJsonLoose(out));
     if (forced) reply = { ...reply, advance: true };
     // Never let a line with an invented figure, or a repeated nudge, reach the candidate.
@@ -638,23 +634,25 @@ export interface CaseDebriefResult {
 
 /** End the interview and score it. Judgement, so the premium tier (token rule #5). */
 export async function finishCaseAction(sessionId: string): Promise<CaseDebriefResult> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   const stored = await getCaseSession(db, userId, sessionId);
   const sheet = stored && findCase(stored.caseId);
   if (!stored || !sheet) return { error: "That interview could not be found." };
   if (!stored.session.turns.some((t) => t.role === "candidate")) return { error: "Answer at least one question before asking for feedback." };
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
   const signals = caseSignals(sheet, stored.session);
   const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   let debrief;
   try {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey, model, prompt: buildDebriefPrompt(sheet, stored.session, signals), json: true, maxOutputTokens: 900 })) {
-      out += d;
-    }
+    const out = await aiWrite(
+      w,
+      "case-debrief",
+      { model, prompt: buildDebriefPrompt(sheet, stored.session, signals), json: true, maxOutputTokens: 900 },
+      { questionIds: sheet.questions.map((q) => q.id) },
+    );
     debrief = parseDebrief(parseJsonLoose(out));
   } catch (err) {
     return { error: err instanceof Error ? `Could not score the interview: ${err.message}` : "Could not score the interview." };
@@ -710,7 +708,8 @@ export async function startMockAction(input: { questionId: string; tone: Tone; m
  * session lives in the page until feedback, when the whole conversation is saved.
  */
 export async function mockTurnAction(input: { session: unknown; answer: string }): Promise<MockTurnResult> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   let s: MockSession;
   try {
     s = parseMockSession(input.session);
@@ -729,8 +728,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
   const step = nextStep(s, answer, written);
   if (step.kind === "close") return { session: closeMock(s, answer, now) };
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
   // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
   const model = process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL;
@@ -747,8 +745,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
   });
   let reply;
   try {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 200 })) out += d;
+    const out = await aiWrite(w, "mock-turn", { model, prompt, json: true, maxOutputTokens: 200 }, { candidates: step.candidates });
     reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer, written);
   } catch (err) {
     const wait = retryAfterSeconds(err);
@@ -782,7 +779,8 @@ export async function mockFeedbackAction(input: {
   /** Delivery numbers from the page - never audio. Validated; ignored if malformed. */
   voice?: unknown;
 }): Promise<MockFeedbackResult> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   let s: MockSession;
   try {
     s = parseMockSession(input.session);
@@ -799,8 +797,7 @@ export async function mockFeedbackAction(input: {
     return { error: "There is not enough to give feedback on yet - answer the question first.", session: s };
   }
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  if (!apiKey) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).", session: s };
+  if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).", session: s };
 
   // Length, pace and "I" vs "we" are judged on the main answer - follow-ups are short by design.
   const first = s.turns.find((t) => t.role === "candidate")?.text ?? "";
@@ -826,8 +823,16 @@ export async function mockFeedbackAction(input: {
 
   let debrief;
   try {
-    let out = "";
-    for await (const d of streamGatewayText({ apiKey, model, prompt, json: true, maxOutputTokens: 900 })) out += d;
+    const out = await aiWrite(
+      w,
+      "mock-feedback",
+      { model, prompt, json: true, maxOutputTokens: 900 },
+      {
+        probes: s.turns.flatMap((t) => (t.probe ? [t.probe] : [])),
+        hasModelAnswer: Boolean(found.modelAnswer),
+        words: said.split(/\s+/).filter(Boolean).length,
+      },
+    );
     debrief = parseMockDebrief(parseJsonLoose(out), s);
   } catch (err) {
     return { error: err instanceof Error ? `Could not score that: ${err.message}` : "Could not score that.", session: s };

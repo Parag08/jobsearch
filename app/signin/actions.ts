@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { DEMO_COOKIE } from "@/lib/demo/visitors";
 import { redirect } from "next/navigation";
 import { createServerSupabase, readSupabaseEnv } from "@/lib/db/supabase";
 
@@ -10,6 +11,8 @@ export type Provider = "google" | "linkedin_oidc";
 export async function signInWith(provider: Provider): Promise<void> {
   const env = readSupabaseEnv();
   if (!env) redirect("/signin?error=not_configured");
+  // Signing in ends a demo visit, or the sample workspace would keep winning (lib/db getWorkspace).
+  (await cookies()).delete(DEMO_COOKIE);
   const h = await headers();
   const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const supabase = await createServerSupabase(env);
