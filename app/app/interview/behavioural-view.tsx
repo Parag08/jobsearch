@@ -8,7 +8,7 @@ import { behaviouralView } from "@/lib/interview/scope";
 import { addCustomQuestionAction, removeCustomQuestionAction, type AddQuestionState } from "../actions";
 import { AnswerEditor } from "./answer-editor";
 import { ModelAnswerPanel } from "./model-answer-panel";
-import type { ModelAnswer } from "@/lib/interview/model-answer";
+import { SOURCE_LABEL, type ModelAnswer } from "@/lib/interview/model-answer";
 import { MockInterview } from "./mock-interview";
 import ui from "../ui.module.css";
 
@@ -250,33 +250,24 @@ export function BehaviouralView({
             {scope.kind === "mine" && (
               <RemoveQuestion questionId={selected.id} onRemoved={() => show(href({ mine: true }))} />
             )}
-            <details className={ui.reveal}>
-              <summary>
-                What good looks like
-                {cvBacked && (
-                  <span className={ui.chip} data-tone="hit">
-                    your CV has evidence
-                  </span>
-                )}
-              </summary>
-              <p>{selected.lookFor}</p>
-              {selected.round && <p className={ui.sub}>Round: {selected.round}</p>}
-              {selected.context && (
-                <p className={ui.sub}>
-                  {selected.contextLabel ?? "From the job description"}: {selected.context}
-                </p>
-              )}
-            </details>
           </div>
 
-          <ModelAnswerPanel questionId={selected.id} answer={modelAnswerFor.get(selected.id) ?? null} />
+          <QuestionAids
+            key={selected.id}
+            questionId={selected.id}
+            lookFor={selected.lookFor}
+            round={selected.round ?? null}
+            context={selected.context ? { label: selected.contextLabel ?? "From the job description", text: selected.context } : null}
+            cvBacked={cvBacked}
+            answer={modelAnswerFor.get(selected.id) ?? null}
+          />
 
-          <MockInterview questionId={selected.id} />
+          <MockInterview questionId={selected.id} questionText={selected.text} />
 
           <NotesDisclosure openFirst={!modelAnswerFor.has(selected.id)}>
             <summary>
               Your notes
-              {hasText(current) && <span className={ui.sub}>saved</span>}
+              {hasText(current) && <span className={ui.sectionMeta}>Saved</span>}
             </summary>
             <AnswerEditor
               questionId={selected.id}
@@ -295,7 +286,7 @@ export function BehaviouralView({
           {history.length > 0 && (
             <details className={ui.reveal}>
               <summary>
-                Your attempts <span className={ui.sub}>{history.length}</span>
+                Your attempts <span className={ui.sectionMeta}>{history.length}</span>
               </summary>
               <ul className={ui.rows}>
                 {history.map((a) => (
@@ -323,6 +314,69 @@ export function BehaviouralView({
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * What good looks like and the model answer: one row of pill toggles under the question, so
+ * both read as things to open (Parag, 2026-11-19), with whichever is open shown right below.
+ */
+function QuestionAids({
+  questionId,
+  lookFor,
+  round,
+  context,
+  cvBacked,
+  answer,
+}: {
+  questionId: string;
+  lookFor: string;
+  round: string | null;
+  context: { label: string; text: string } | null;
+  cvBacked: boolean;
+  answer: ModelAnswer | null;
+}) {
+  const [open, setOpen] = useState<{ look: boolean; model: boolean }>({ look: false, model: false });
+  const toggle = (k: "look" | "model") => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const lookId = `look-${questionId}`;
+  const modelId = `model-${questionId}`;
+  return (
+    <>
+      <div className={ui.aidRow}>
+        <button type="button" className={ui.aidBtn} aria-expanded={open.look} aria-controls={lookId} onClick={() => toggle("look")}>
+          What good looks like
+          {cvBacked && <span className={ui.sectionMeta}>· your CV has evidence</span>}
+          <span className={ui.aidChevron} aria-hidden="true">
+            ›
+          </span>
+        </button>
+        <button type="button" className={ui.aidBtn} aria-expanded={open.model} aria-controls={modelId} onClick={() => toggle("model")}>
+          Model answer
+          <span className={ui.sectionMeta}>· {answer ? SOURCE_LABEL[answer.source] : "none yet"}</span>
+          <span className={ui.aidChevron} aria-hidden="true">
+            ›
+          </span>
+        </button>
+      </div>
+      {open.look && (
+        <div className={ui.aidPanel} id={lookId}>
+          <h3>What good looks like</h3>
+          <p>{lookFor}</p>
+          {round && <p className={ui.sub}>Round: {round}</p>}
+          {context && (
+            <p className={ui.sub}>
+              {context.label}: {context.text}
+            </p>
+          )}
+        </div>
+      )}
+      {open.model && (
+        <div className={ui.aidPanel} id={modelId}>
+          <h3>Model answer</h3>
+          <ModelAnswerPanel questionId={questionId} answer={answer} />
+        </div>
+      )}
+    </>
   );
 }
 

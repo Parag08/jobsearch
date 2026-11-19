@@ -308,6 +308,32 @@ describe("debrief", () => {
     expect(parseMockDebrief({ scores }, s).comparison).toBeNull();
     expect(parseMockDebrief({ scores, comparison: "nonsense" }, s).comparison).toBeNull();
   });
+
+  it("turns an item the model sent as an object into a sentence, never [object Object]", () => {
+    const scores = { structure: 3, ownership: 3, specificity: 3, impact: 3, reflection: 3, relevance: 3 };
+    const d = parseMockDebrief(
+      {
+        scores,
+        comparison: {
+          covered: [],
+          missed: [],
+          different: [{ candidate: "20 developers", model: "11 developers" }, { said: "1 PB", model_answer: "10 PB" }, { note: "Gartner rating" }],
+        },
+      },
+      s,
+    );
+    expect(d.comparison!.different).toEqual([
+      "You said “20 developers”; the model answer says “11 developers”",
+      "You said “1 PB”; the model answer says “10 PB”",
+      "Gartner rating",
+    ]);
+    expect(d.comparison!.different.join(" ")).not.toContain("[object Object]");
+  });
+
+  it("asks for each difference as one sentence", () => {
+    const prompt = buildMockDebriefPrompt({ question: "q", lookFor: "l", firmNote: null, session: s, modelAnswer: "A model answer." });
+    expect(prompt).toContain('one string each');
+  });
 });
 
 describe("parseMockSession", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { canonicalNumber, extractNumbers } from "../stories/consistency";
-import { DIMENSION_HELP, SCORE_DIMENSIONS, deliverySignals, numberDrift, parseScore, type Scores } from "./score";
+import { DIMENSION_HELP, SCORE_DIMENSIONS, deliverySignals, numberDrift, parseScore, TextListSchema, type Scores } from "./score";
 
 /**
  * A behavioural mock interview with follow-ups (DESIGN.md section 3), as pure functions.
@@ -359,7 +359,7 @@ export function buildMockDebriefPrompt(input: {
           "",
           "Compare what the candidate SAID with the model answer. Do not expect the same words or order - judge the substance:",
           "- covered: points from the model answer they made; missed: points they left out that matter most;",
-          "- different: any fact or number they said differently from the model answer (quote both).",
+          '- different: any fact or number they said differently from the model answer, one string each, like "You said 20 developers; the model answer says 11".',
           `At most ${COMPARISON_MAX} items in each list. The model answer is a reference, not a script.`,
         ]
       : []),
@@ -392,7 +392,7 @@ export function parseMockDebrief(raw: unknown, s: MockSession): MockDebrief {
   return { ...base, followUps, comparison: parseComparison((raw as { comparison?: unknown } | null)?.comparison) };
 }
 
-const ComparisonListSchema = z.array(z.coerce.string()).catch([]);
+const ComparisonListSchema = TextListSchema.catch([]);
 
 function parseComparison(raw: unknown): ModelComparison | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;

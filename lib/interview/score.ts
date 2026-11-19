@@ -136,10 +136,37 @@ export function buildScoringPrompt(input: ScoringInput): string {
 const clamp = (n: number) => Math.min(5, Math.max(1, Math.round(n)));
 const scoreValue = z.coerce.number().transform(clamp);
 
+const SAID_KEYS = ["said", "candidate", "you", "yours", "spoken", "answer"];
+const MODEL_KEYS = ["model", "model_answer", "modelanswer", "reference", "expected"];
+
+/**
+ * A list item from the model as plain text. Models sometimes send an object where a sentence
+ * was asked for (a "said differently" pair, say), and String() would print "[object Object]".
+ * A said/model pair becomes one sentence; any other object is its text values joined.
+ */
+export function asText(x: unknown): string {
+  if (x == null) return "";
+  if (typeof x === "string") return x;
+  if (typeof x === "number" || typeof x === "boolean") return String(x);
+  if (Array.isArray(x)) return x.map(asText).filter(Boolean).join("; ");
+  if (typeof x === "object") {
+    const entries = Object.entries(x as Record<string, unknown>).map(([k, v]) => [k.toLowerCase().replace(/[\s-]/g, "_"), asText(v)] as const);
+    const find = (keys: string[]) => entries.find(([k]) => keys.includes(k) || keys.includes(k.replace(/_/g, "")))?.[1];
+    const said = find(SAID_KEYS);
+    const model = find(MODEL_KEYS);
+    if (said && model) return `You said “${said}”; the model answer says “${model}”`;
+    return entries.map(([, v]) => v).filter(Boolean).join("; ");
+  }
+  return "";
+}
+
+/** A list of model-written lines, each read as text (never "[object Object]"). */
+export const TextListSchema = z.array(z.unknown().transform(asText));
+
 const ModelScoreSchema = z.object({
   scores: z.object(Object.fromEntries(SCORE_DIMENSIONS.map((d) => [d, scoreValue])) as Record<ScoreDimension, typeof scoreValue>),
-  strengths: z.array(z.coerce.string()).default([]),
-  improvements: z.array(z.coerce.string()).default([]),
+  strengths: TextListSchema.default([]),
+  improvements: TextListSchema.default([]),
 });
 
 export interface ModelScore {

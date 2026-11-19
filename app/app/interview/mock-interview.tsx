@@ -6,6 +6,7 @@ import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSe
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
 import { combineVoice, deliveryNotes, FILLERS_PER_100_LIMIT, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
 import { ScoreCard } from "./score-card";
+import { reportFileName, reportMarkdown, transcriptMarkdown } from "@/lib/interview/report";
 import { AgentAvatar } from "./agent-avatar";
 import {
   LANGS,
@@ -92,7 +93,7 @@ function Icon({ name }: { name: keyof typeof ICON }) {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export function MockInterview({ questionId }: { questionId: string }) {
+export function MockInterview({ questionId, questionText }: { questionId: string; questionText: string }) {
   const [tone, setTone] = useState<Tone>("neutral");
   const [maxFollowUps, setMaxFollowUps] = useState(3);
   const [voice, setVoice] = useState(true);
@@ -522,6 +523,42 @@ export function MockInterview({ questionId }: { questionId: string }) {
     </div>
   );
 
+  // ---- downloads: Markdown, for keeping or for a local model ------------------------------
+  function save(name: string, text: string) {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  const today = () => new Date().toISOString().slice(0, 10);
+  function downloadTranscript() {
+    if (!session) return;
+    save(reportFileName(questionText, today(), "transcript"), transcriptMarkdown({ question: questionText, date: today(), session }));
+  }
+  function downloadReport() {
+    if (!session || !feedback?.scores) return;
+    save(
+      reportFileName(questionText, today(), "report"),
+      reportMarkdown({
+        question: questionText,
+        date: today(),
+        model: feedback.model,
+        overall: feedback.overall,
+        scores: feedback.scores,
+        strengths: feedback.strengths,
+        improvements: feedback.improvements,
+        saidNotWritten: feedback.saidNotWritten,
+        comparison: feedback.comparison ?? null,
+        followUps: feedback.followUps?.map((f) => ({ label: PROBE_LABEL[f.probe], verdict: VERDICT_LABEL[f.verdict], note: f.note })),
+        fillers: feedback.fillers,
+        delivery: feedback.voice ? deliveryNotes(feedback.voice, {}).map((n) => n.text) : [],
+        session: feedback.session ?? session,
+      }),
+    );
+  }
+
   // ---- the lobby ---------------------------------------------------------------------
   if (!session) {
     return (
@@ -683,11 +720,30 @@ export function MockInterview({ questionId }: { questionId: string }) {
 
       {error && <p className={ui.warn}>{error}</p>}
 
+      {/* After the call: the transcript and the downloads sit right under the stage, before the
+          feedback, so what they open is next to where you clicked. */}
+      {(done || feedback?.scores) && (
+        <div className={ui.debriefBar}>
+          <button className={ui.btn} type="button" aria-expanded={showTranscript} onClick={() => setShowTranscript((t) => !t)}>
+            {showTranscript ? "Hide transcript" : "Read transcript"}
+          </button>
+          <span className={ui.callBarGap} />
+          <button className={ui.textBtn} type="button" onClick={downloadTranscript}>
+            Download transcript
+          </button>
+          {feedback?.scores && (
+            <button className={ui.textBtn} type="button" onClick={downloadReport}>
+              Download report
+            </button>
+          )}
+        </div>
+      )}
+
       {showTranscript && (
-        <ol className={ui.transcript}>
+        <ol className={ui.transcript} aria-label="Transcript">
           {session.turns.map((t, i) => (
             <li key={i} className={ui.turn} data-role={t.role}>
-              <span className={ui.mono}>
+              <span className={ui.turnWho}>
                 {t.role === "interviewer" ? "Interviewer" : "You"}
                 {t.probe ? ` · ${PROBE_LABEL[t.probe]}` : ""}
               </span>
@@ -700,103 +756,96 @@ export function MockInterview({ questionId }: { questionId: string }) {
       <div ref={endRef} />
       {feedback?.scores ? (
         <>
-          {feedback.followUps && feedback.followUps.length > 0 && (
-            <div className={ui.callout}>
-              <p className={ui.mono}>How you handled the follow-ups</p>
-              <ul className={ui.rows}>
-                {feedback.followUps.map((f) => (
-                  <li key={f.probe} className={ui.row}>
-                    <p>{f.note}</p>
-                    <span className={ui.chip} data-tone={f.verdict === "held" ? "hit" : f.verdict === "weak" ? "gap" : undefined}>
-                      {PROBE_LABEL[f.probe]}: {VERDICT_LABEL[f.verdict]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {feedback.comparison && (
-            <div className={ui.callout}>
-              <p className={ui.mono}>Against the model answer</p>
-              <ul className={ui.rows}>
-                {feedback.comparison.covered.map((x) => (
-                  <li key={`c-${x}`} className={ui.row}>
-                    <p>{x}</p>
-                    <span className={ui.chip} data-tone="hit">covered</span>
-                  </li>
-                ))}
-                {feedback.comparison.missed.map((x) => (
-                  <li key={`m-${x}`} className={ui.row}>
-                    <p>{x}</p>
-                    <span className={ui.chip} data-tone="gap">missed</span>
-                  </li>
-                ))}
-                {feedback.comparison.different.map((x) => (
-                  <li key={`d-${x}`} className={ui.row}>
-                    <p>{x}</p>
-                    <span className={ui.chip} data-tone="gap">said differently</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {feedback.fillers && feedback.fillers.words > 0 && (
-            <div className={ui.callout}>
-              <p className={ui.mono}>Fillers - counted from what you said</p>
-              <ul className={ui.rows}>
-                <li className={ui.row}>
-                  <p>
-                    {feedback.fillers.total} in {feedback.fillers.words} words: {feedback.fillers.per100} per 100.{" "}
-                    {feedback.fillers.per100 > FILLERS_PER_100_LIMIT
-                      ? "Enough to sound unsure. Pause instead of filling the gap."
-                      : "Clean - keep it like that."}
-                  </p>
-                  <span className={ui.chip} data-tone={feedback.fillers.per100 > FILLERS_PER_100_LIMIT ? "gap" : "hit"}>
-                    fillers
+          <ScoreCard result={feedback} />
+          {feedback.comparison &&
+            feedback.comparison.covered.length + feedback.comparison.missed.length + feedback.comparison.different.length > 0 && (
+              <details className={ui.debriefMore}>
+                <summary>
+                  Against the model answer
+                  <span className={ui.sectionMeta}>
+                    {[
+                      `${feedback.comparison.covered.length} covered`,
+                      `${feedback.comparison.missed.length} missed`,
+                      feedback.comparison.different.length ? `${feedback.comparison.different.length} said differently` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
-                </li>
-                {Object.entries(feedback.fillers.counts)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([word, n]) => (
-                    <li key={word} className={ui.row}>
-                      <p>&ldquo;{word}&rdquo;</p>
-                      <span className={ui.chip}>×{n}</span>
+                </summary>
+                <ul className={ui.debriefList}>
+                  {feedback.comparison.covered.map((x) => (
+                    <li key={`c-${x}`}>
+                      <span className={ui.tag} data-tone="good">Covered</span> {x}
                     </li>
                   ))}
-                {feedback.fillers.repeats.length > 0 && (
-                  <li className={ui.row}>
-                    <p>Repeated words: {feedback.fillers.repeats.join(", ")}</p>
-                    <span className={ui.chip}>×{feedback.fillers.repeats.length}</span>
-                  </li>
-                )}
-              </ul>
-              <p className={ui.sub}>Speech-to-text drops some fillers, so the real count is usually higher.</p>
-            </div>
-          )}
-          {feedback.voice && (
-            <div className={ui.callout}>
-              <p className={ui.mono}>Delivery - measured from your voice</p>
-              {/* Fillers have their own block above, so they are not repeated here. */}
-              <ul className={ui.rows}>
-                {deliveryNotes(feedback.voice, {}).map((n) => (
-                  <li key={n.kind} className={ui.row}>
-                    <p>{n.text}</p>
-                    <span className={ui.chip} data-tone={n.tone}>
-                      {n.kind}
-                    </span>
+                  {feedback.comparison.missed.map((x) => (
+                    <li key={`m-${x}`}>
+                      <span className={ui.tag} data-tone="attention">Missed</span> {x}
+                    </li>
+                  ))}
+                  {feedback.comparison.different.map((x) => (
+                    <li key={`d-${x}`}>
+                      <span className={ui.tag} data-tone="mid">Said differently</span> {x}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          {feedback.followUps && feedback.followUps.length > 0 && (
+            <details className={ui.debriefMore}>
+              <summary>
+                How you handled the follow-ups
+                <span className={ui.sectionMeta}>
+                  {feedback.followUps.filter((f) => f.verdict === "held").length} of {feedback.followUps.length} held up
+                </span>
+              </summary>
+              <ul className={ui.debriefList}>
+                {feedback.followUps.map((f) => (
+                  <li key={f.probe}>
+                    <span className={ui.tag} data-tone={f.verdict === "held" ? "good" : f.verdict === "weak" ? "attention" : "mid"}>
+                      {PROBE_LABEL[f.probe]}: {VERDICT_LABEL[f.verdict]}
+                    </span>{" "}
+                    {f.note}
                   </li>
                 ))}
               </ul>
-              <p className={ui.sub}>Measured in your browser. Only these numbers were sent - never your voice.</p>
-            </div>
+            </details>
           )}
-          <ScoreCard result={feedback} />
+          {((feedback.fillers && feedback.fillers.words > 0) || feedback.voice) && (
+            <details className={ui.debriefMore}>
+              <summary>
+                Fillers and delivery
+                {feedback.fillers && feedback.fillers.words > 0 && (
+                  <span className={ui.sectionMeta}>
+                    {feedback.fillers.per100} fillers per 100 words
+                    {feedback.fillers.per100 > FILLERS_PER_100_LIMIT ? ", too many" : ", clean"}
+                  </span>
+                )}
+              </summary>
+              <ul className={ui.debriefList}>
+                {feedback.fillers && feedback.fillers.words > 0 && (
+                  <li>
+                    {feedback.fillers.total} in {feedback.fillers.words} words
+                    {Object.keys(feedback.fillers.counts).length > 0 &&
+                      `: ${Object.entries(feedback.fillers.counts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([w, n]) => `“${w}” ×${n}`)
+                        .join(", ")}`}
+                    {feedback.fillers.repeats.length > 0 && `. Repeated: ${feedback.fillers.repeats.join(", ")}`}.{" "}
+                    {feedback.fillers.per100 > FILLERS_PER_100_LIMIT ? "Pause instead of filling the gap." : "Keep it like that."}
+                  </li>
+                )}
+                {feedback.voice && deliveryNotes(feedback.voice, {}).map((n) => <li key={n.kind}>{n.text}</li>)}
+              </ul>
+              <p className={ui.sub}>
+                Speech-to-text drops some fillers, so the real count is usually higher. Delivery is measured in your browser;
+                only the numbers are sent, never your voice.
+              </p>
+            </details>
+          )}
           <div className={ui.actions}>
             <button className={ui.btn} data-primary="" type="button" onClick={start}>
               Try again
-            </button>
-            <button className={ui.btn} type="button" onClick={() => setShowTranscript((t) => !t)}>
-              {showTranscript ? "Hide transcript" : "Read the transcript"}
             </button>
           </div>
         </>

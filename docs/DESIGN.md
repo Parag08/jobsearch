@@ -681,6 +681,30 @@ source of evidence, so every point is editable in place.
   that says how many CVs use the point and how many were sent, and that copies already made
   or sent keep it while those CVs leave it out from now on (export reads the bank).
 
+### Interview question pane (`/app/interview`)
+
+Clarified 2026-11-19 (Parag: "I don't know where my answer starts, where it ends, and where the
+notes are").
+
+- **Aid row:** under the question, **What good looks like** and **Model answer** are one row of
+  pill toggles (border, chevron, the source "Written by you" beside the label); open, a pill
+  turns accent-wash with a blue border and its panel shows right below the row, white, with a
+  heading. Both can be open at once.
+- **Sections:** Your notes and Your attempts are section headings (1rem, semibold, ink,
+  chevron on the right, a hairline above), their meta ("Saved", the count) in soft text.
+- **The model answer** sits in its own white card (`ui.answerCard`): ink text at 15px,
+  1.65 line height, every line break its own paragraph with 12px between, a 72ch measure. The
+  instruction ("Read it, close it, then answer in your own words") is a small soft line above
+  the card, never inside it. **Edit model answer** is a text button under it.
+- **After a mock interview:** a bar right under the stage, before any feedback: **Read
+  transcript** (it opens directly below the bar), **Download transcript** and **Download
+  report** (Markdown, built by `lib/interview/report.ts`, for keeping or a local model). Then
+  the score card (score, bars in two columns, What worked and Do differently side by side),
+  then folded rows with their counts in the title: Against the model answer (Covered /
+  Missed / Said differently tags), How you handled the follow-ups, Fillers and delivery.
+  **Try again** last. Model-written list items always read as text (`asText`): an object the
+  model sends is turned into a sentence, never "[object Object]".
+
 ### Application (`/app/applications/[id]`)
 
 Rebuilt 2026-11-19 (critique 5.2-5.13).
