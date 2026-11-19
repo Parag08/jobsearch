@@ -21,8 +21,9 @@
   --ink-soft: #6e6e73;
   --ink-faint: #76767b;
 
-  /* ---- accent: system blue ------------------------------------------------------------ */
-  --accent: #007aff;
+  /* ---- accent: system blue ------------------------------------------------------------
+     #0071E3 (Apple's web blue) rather than #007AFF: white text on it passes 4.5:1. */
+  --accent: #0071e3;
   --accent-text: #0066d6;
   --accent-wash: #e5f1ff;
 
@@ -219,6 +220,9 @@ html:not([data-js]) [data-reveal] {
 html {
   -webkit-text-size-adjust: 100%;
   color-scheme: light;
+  /* Reserve the scrollbar's space on every page, so moving between a long page and a short
+     one never shifts the layout sideways. */
+  scrollbar-gutter: stable;
 }
 
 body {

@@ -487,7 +487,7 @@ the brighter dark-mode system colours. Every role has a light and a dark value.
 | `--line` / `--line-strong` | `#E5E5EA` / `#D1D1D6` | `#2C2C2E` / `#3A3A3C` | hairlines |
 | `--ink` | `#1D1D1F` | `#F5F5F7` | text |
 | `--ink-soft` / `--ink-faint` | `#6E6E73` / `#76767B` | `#AEAEB2` / `#8E8E93` | supporting text, meta |
-| `--accent` / `--accent-text` | `#007AFF` / `#0066D6` | `#0A84FF` / `#409CFF` | the action colour (fills / text) |
+| `--accent` / `--accent-text` | `#0071E3` / `#0066D6` | `#0A84FF` / `#409CFF` | the action colour (fills / text) |
 | `--warm` / `--warm-text` | `#34C759` / `#1F7A37` | `#30D158` / `#4ADE74` | progress: offer, practised, covered |
 | `--on-warm` | `#062B10` | `#00210A` | text on a green fill (white fails contrast) |
 | `--stale` / `--stale-text` | `#FF9500` / `#B25000` | `#FF9F0A` / `#FFB340` | no reply in 2 weeks |
@@ -554,11 +554,10 @@ Never content cards, rows, fields or the page background. Mandatory fallback whe
 
 | Token | Value |
 | --- | --- |
-| Reading pages | `72rem` max |
-| Pipeline (board) | `88rem` max (`.main:has([data-board])`), nav widens to match |
+| Every app page | `72rem` max, the pipeline included: one width for all tabs, so switching never resizes the page |
 | Prose measure | `68ch` |
 | Spacing | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64; panels pad 24 |
-| Board columns | `minmax(200px, 1fr)`; on phones 82% wide with scroll-snap |
+| Board columns | `minmax(160px, 1fr)` (six fit in 72rem); on phones 82% wide with scroll-snap |
 
 ### Motion
 
@@ -571,6 +570,32 @@ Never content cards, rows, fields or the page background. Mandatory fallback whe
 
 Menus and sheets set `transform-origin` at the control that opened them (the mobile nav menu
 top-left, Add a job top-right, top-left on phones). Buttons press to `scale(0.98)`.
+
+### Overview (`/app/home`)
+
+Added 2026-11-19 (Parag: the JobSearch name in the menu bar did nothing; he wanted a page that
+reports from every page and keeps him applying, reaching out and practising). It opens from
+the JobSearch name only; it is not a nav item. Parag tried and rejected a Three.js scene here:
+the page has no animation.
+
+- **Focal point:** a headline chosen from the week's real state (`lib/home/momentum.ts`: start,
+  offer, interviews, goal met, streak, quiet, moving) and one button, the most useful next
+  step (follow up, chase a quiet application, send the oldest saved one, add a first job,
+  look at new roles, practise). Further steps sit under "After that".
+- **Progress tab:** a card each for jobs applied, people reached and practice. Each shows its
+  own streak (consecutive days, ending today or yesterday), a 14-day strip in the activity's
+  colour (blue, purple, green), the total (applications, conversations, practice time in
+  hours and minutes plus sessions) and this week against the goal in env (`HOME_GOAL_*`;
+  unset = no goal shown). Practice time: a mock interview's recorded length, or its words at
+  130 wpm; a case's time between turns, each gap capped at 10 minutes
+  (`lib/home/practice-time.ts`). Then one tile per page (pipeline, experience, watchlist,
+  interview, cases).
+- **Insights tab:** what you are searching for (role families of the roles read) and what those
+  roles ask for, each requirement marked on your CV / done but not written down / not on
+  record (the same rules as `/app/insights`), with a link there for the full list and the gap
+  plan.
+- **Voice:** count effort, never failure. A closed application is a try ("Most close, and every
+  one sharpens the next"). A quiet week is an invitation back in, never a scold.
 
 ### Logo — Stages
 
@@ -660,7 +685,7 @@ Two load-bearing joints:
 - **Editorial layer: system proposes, you edit** (2026-11-10).
 - **High-scoring sourced jobs auto-create `saved` applications** (2026-11-10).
 - **Contacts are added by name or pasted LinkedIn URL**, stored as a link, never fetched (2026-11-10).
-- **Palette: Apple-style blue and white** (2026-11-19, Parag, replacing Sage Studio) — system blue `#007AFF` on white cards over `#F2F2F7`, a system colour per stage, green for progress, San Francisco / Inter, capsule buttons (§5). Sage Studio (2026-11-11) and Heather before it are retired.
+- **Palette: Apple-style blue and white** (2026-11-19, Parag, replacing Sage Studio) — system blue (`#0071E3`, Apple's web blue, so white text passes contrast) on white cards over `#F2F2F7`, a system colour per stage, green for progress, San Francisco / Inter, capsule buttons (§5). Sage Studio (2026-11-11) and Heather before it are retired.
 - **Pipeline is a Kanban board** (2026-11-19, Parag's reference: Twinkle on Dribbble) — a column per working stage even when empty, grey tracks, lifted cards with a role-family tag and a company monogram, Add a job as the page's one primary action.
 - **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
   both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
