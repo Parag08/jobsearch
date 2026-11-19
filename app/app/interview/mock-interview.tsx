@@ -119,6 +119,8 @@ export function MockInterview({ questionId, questionText }: { questionId: string
   const [settingsOpen, setSettingsOpen] = useState(false);
   /** Ended before there was enough to score: say so, offer a retry - no error loop. */
   const [endedEarly, setEndedEarly] = useState(false);
+  /** Discard asks once, on the call bar itself, before throwing the interview away. */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -231,6 +233,7 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     spoken.current = [];
     endedRef.current = false;
     setEndedEarly(false);
+    setConfirmDiscard(false);
     setSession(null);
     setDraft("");
     setInterim("");
@@ -410,6 +413,22 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     if (v) spoken.current.push(v);
     voiceFrames.current = [];
     setFeedback(r);
+  }
+
+  /** First press of Discard: hold the call still (no voice, no mic, no auto-send) and ask. */
+  function askDiscard() {
+    stopListening();
+    stopSpeaking();
+    clearSilence();
+    setConfirmDiscard(true);
+  }
+
+  /**
+   * Throw the interview away: no feedback, no score, nothing saved. The conversation only
+   * lives in this page until feedback is asked for, so resetting is the whole job.
+   */
+  function discard() {
+    reset();
   }
 
   /**
@@ -625,7 +644,20 @@ export function MockInterview({ questionId, questionText }: { questionId: string
           </p>
         )}
 
-        {!done && (
+        {!done && confirmDiscard && (
+          <div className={ui.callBar} role="group" aria-label="Discard this interview?">
+            <span className={ui.callBarNote}>Discard this interview? You won&apos;t get feedback and nothing is saved.</span>
+            <span className={ui.callBarGap} />
+            <button className={ui.iconBtn} type="button" onClick={() => setConfirmDiscard(false)} autoFocus>
+              Keep going
+            </button>
+            <button className={ui.btn} data-danger="" type="button" onClick={discard}>
+              Discard
+            </button>
+          </div>
+        )}
+
+        {!done && !confirmDiscard && (
           <div className={ui.callBar}>
             {canListen && (
               <button
@@ -686,11 +718,20 @@ export function MockInterview({ questionId, questionText }: { questionId: string
             )}
             <span className={ui.callBarGap} />
             <button
+              className={ui.iconBtn}
+              type="button"
+              onClick={askDiscard}
+              disabled={busy === "feedback"}
+              title="Discard this interview without feedback"
+            >
+              Discard
+            </button>
+            <button
               className={ui.btn}
               type="button"
               onClick={end}
               disabled={busy === "feedback"}
-              title="End the interview"
+              title="End the interview and get feedback"
             >
               End
             </button>

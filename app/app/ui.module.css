@@ -1120,6 +1120,15 @@
 .iconBtn:focus-visible { outline: 2px solid var(--room-highlight); outline-offset: 2px; }
 .stageTop .iconBtn { margin-left: auto; min-width: 32px; height: 32px; padding: 0 6px; }
 .stage .callBar .btn { height: 38px; }
+/* Discard (mock-interview.tsx): asked once on the bar itself. The note uses the room's ink;
+   the destructive button is the system red, never the accent. */
+.callBarNote { font-size: 0.8125rem; color: var(--room-ink); line-height: 1.35; }
+.btn[data-danger] { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn[data-danger]:hover { opacity: 0.9; }
+@media (max-width: 640px) {
+  .callBar[role="group"] { flex-wrap: wrap; }
+  .callBar[role="group"] .callBarNote { flex-basis: 100%; }
+}
 
 /* Question list: a status dot instead of a chip, a quiet score only once practised. */
 .qdot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
@@ -1171,8 +1180,8 @@
 .answerCard p { margin: 0; }
 .qrow { display: contents; }
 /* Plain buttons on the stage take the room's colours, in either theme. */
-.stage .btn:not([data-primary]) { background: var(--room-glass); color: var(--room-ink); border-color: var(--room-mute); }
-.stage .btn:not([data-primary]):hover { background: rgba(255, 255, 255, 0.08); }
+.stage .btn:not([data-primary]):not([data-danger]) { background: var(--room-glass); color: var(--room-ink); border-color: var(--room-mute); }
+.stage .btn:not([data-primary]):not([data-danger]):hover { background: rgba(255, 255, 255, 0.08); }
 
 /* Phones: the Add a job button wraps to the left, so its sheet grows from the left; the
    board swipes a column at a time. */
