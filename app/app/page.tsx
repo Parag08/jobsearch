@@ -14,8 +14,9 @@ const DEEP: Stage[] = ["interview", "case", "offer", "negotiation"];
 
 /**
  * Pipeline board (M5). Closed is neutral whatever the reason; only stale and due earn colour.
- * With PIPELINE_RECENT_DAYS set the board shows that window of activity, and ?show=all the
- * whole history; the stats always count everything.
+ * The board always opens on every application: a default window hid the whole board
+ * whenever nothing had moved that week. With PIPELINE_RECENT_DAYS set, ?show=recent
+ * narrows it to that window of activity; the stats always count everything.
  */
 export default async function Pipeline({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const { show } = await searchParams;
@@ -32,7 +33,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
 
   const byStage = Object.fromEntries(STAGES.map((s) => [s, [] as Application[]])) as Record<Stage, Application[]>;
   const recentDays = pipelineRecentDaysFromEnv(process.env);
-  const showAll = recentDays === undefined || show === "all";
+  const showAll = recentDays === undefined || show !== "recent";
   const shown = showAll ? apps : recentApplications(apps, today, recentDays);
   for (const a of byRecentActivity(shown)) byStage[a.stage].push(a);
   const columnMax = pipelineColumnMaxFromEnv(process.env);
@@ -78,8 +79,8 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         <p className={ui.sub}>
           {showAll
             ? `All ${apps.length} applications. `
-            : `${shown.length} of ${apps.length} applications: active in the last ${recentDays} days. `}
-          <Link href={showAll ? "/app" : "/app?show=all"}>{showAll ? `Show the last ${recentDays} days` : "Show all"}</Link>
+            : `${shown.length} of ${apps.length} applications moved in the last ${recentDays} days. `}
+          <Link href={showAll ? "/app?show=recent" : "/app"}>{showAll ? `Only the last ${recentDays} days` : "Show all"}</Link>
         </p>
       )}
 

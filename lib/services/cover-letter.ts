@@ -76,7 +76,7 @@ export async function draftCoverLetter(
   const applicantName = profile?.displayName ?? "";
   const brief = buildLetterBrief({
     jd,
-    gaps: applicationGaps(jd, allBullets).gaps,
+    gaps: applicationGaps(jd, allBullets, projects).gaps,
     cvBullets,
     contacts,
     firmDetail: inputs.firmDetail,

@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 - Front-end critique (no code changed)
+
+Parag asked for a hard critique of the front end, wording included. Written to **docs/UI-CRITIQUE.md** (sections per screen, P0/P1/P2, Now / Change to copy). Reviewed on the dev server in demo mode at 1366px and 375px; dark mode not checked.
+- **P0s:** app nav links vanish under 640px with no menu (`app.module.css:105`); landing nav overflows at 375px; pipeline defaults to "last 7 days" so the board shows nothing; the CV headline says "INSEAD MBA" while "mba" is listed as an honest gap (honesty rule visibly contradicted); sign-in promises an onboarding step that has no screen.
+- **Themes:** system-speak in UI copy, five names for the experience corpus (record/bank/evidence/master/points), taxonomy slugs and priority codes rendered as labels, and a palette that matches the generic AI look (`#F4F1EA` oat + terracotta + Fraunces + Plex Mono eyebrows).
+- **P0s fixed the same day (uncommitted):** `applicationGaps(jd, bank, projects)` now counts the role heading a bullet sits under as evidence, whole words only (tests in `lib/editorial/gaps.test.ts`; both callers pass projects); the pipeline always opens on every application and `PIPELINE_RECENT_DAYS` only sizes an opt-in "Only the last N days" link (`?show=recent`; old `?show=all` links still work); below 640px the app nav folds into a menu button naming the current page with a glass sheet (`nav-links.tsx`); landing hides Sign in under 480px and the hero text no longer waits on `Reveal`; sign-in no longer promises an onboarding step. Checked in the browser at 375px and desktop, demo mode.
+- **Next:** the vocabulary/copy pass, then a real board + stage stepper, then a palette study.
+
 ## 2026-11-18 (evening) - Model answers (agent, AI rewrite, user), comparison, fillers
 
 Parag: wants a model answer per question - from the agent, or the app's AI rewriting his own written answer, or edited by him - then to speak and be compared, with filler feedback. All of it over MCP too.
