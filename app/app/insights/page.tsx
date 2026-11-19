@@ -93,7 +93,7 @@ export default async function Insights({ searchParams }: { searchParams: Promise
         <div>
           <h2 id="plan-h">Plan for the gaps</h2>
           <p className={ui.sub}>
-            {plan ? `Written ${plan.generatedAt} from ${plan.rolesSeen} ${plan.rolesSeen === 1 ? "role" : "roles"}.` : "A short plan for closing what these roles ask for and your Bank doesn't show."}
+            {plan ? `Written ${plan.generatedAt} from ${plan.rolesSeen} ${plan.rolesSeen === 1 ? "role" : "roles"}.` : "A short plan for closing what these roles ask for and your experience doesn't show yet."}
           </p>
         </div>
         {planEnabled && toPlan > 0 && (
@@ -122,7 +122,7 @@ export default async function Insights({ searchParams }: { searchParams: Promise
         <div className={ui.headText}>
           <h1>Insights</h1>
           <p className={ui.facts}>
-            <span>What the roles you&apos;ve collected ask for, and whether your Bank backs it.</span>
+            <span>What the roles you&apos;ve collected ask for, and whether your experience backs it.</span>
           </p>
         </div>
       </div>

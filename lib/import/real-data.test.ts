@@ -77,7 +77,7 @@ describe("the real CVbuilder workspace", () => {
       "Bain & Company - Consultant (General Consulting)",
       "Bain & Company - Consultant, Technology Insights Group (TIG)",
       "Microsoft - Regional Partner Development Manager, Singapore",
-      "Tiktok - Product Manager Project Intern (TikTok Live-Ecosystem Governance)",
+      "TikTok - Product Manager Project Intern (TikTok Live-Ecosystem Governance)",
     ]);
     for (const { application, jdRaw, cv } of ws.applications) {
       expect(jdRaw.length).toBeGreaterThan(0);

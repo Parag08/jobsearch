@@ -549,7 +549,7 @@ export function MockInterview({ questionId }: { questionId: string }) {
             <button className={ui.btn} data-primary="" type="button" onClick={start} disabled={busy === "start"}>
               {busy === "start" ? "Joining…" : "Join interview"}
             </button>
-            <p>{handsFree && canListen ? "Answer out loud. Pause, and I'll follow up." : "Type or talk, then send. I'll follow up."}</p>
+            <p>{handsFree && canListen ? "Answer out loud. Pause when you're done and I'll follow up." : "Answer out loud or type, then send. I'll follow up."}</p>
           </div>
         </div>
         {settingsOpen && settingsPanel}

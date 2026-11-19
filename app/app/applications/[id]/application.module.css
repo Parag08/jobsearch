@@ -1,0 +1,234 @@
+/* One application (DESIGN.md section 5, Application). Shared parts come from ../../ui.module.css. */
+
+.back {
+  align-self: flex-start;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.back:hover { text-decoration: underline; }
+.back span { margin-right: 2px; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.alert {
+  font-size: 0.875rem;
+  color: var(--stale-text);
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--stale) 12%, transparent);
+  margin: 0;
+}
+
+.warnText { font-size: 0.8125rem; color: var(--stale-text); margin: 0; }
+
+/* ---- stage stepper: the stage colour scale, filled up to where you are ---- */
+
+.stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.step { position: relative; }
+
+/* The connecting track between dots. */
+.step:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  right: calc(50% + 10px);
+  width: calc(100% - 16px);
+  height: 2px;
+  background: var(--line);
+}
+
+.step[data-state="done"]:not(:first-child)::before,
+.step[data-state="current"]:not(:first-child)::before { background: var(--stage); }
+
+.stepBtn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--motion), color var(--motion);
+}
+
+button.stepBtn:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 4%, transparent); }
+button.stepBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+span.stepBtn { cursor: default; }
+
+.stepDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  box-sizing: border-box;
+}
+
+.step[data-state="done"] .stepDot { border-color: var(--stage); background: var(--stage); }
+
+.step[data-state="current"] .stepDot {
+  width: 18px;
+  height: 18px;
+  margin-top: -2px;
+  border-color: var(--stage);
+  background: var(--stage);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--stage) 22%, transparent);
+}
+
+.step[data-state="current"] .stepBtn { color: var(--ink); font-weight: 600; }
+
+.closed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.applyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.applyRow p { margin: 0; }
+
+.stageFoot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.nextForm { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 6px; }
+.nextRow { display: flex; gap: 8px; }
+.nextRow input { flex: 1; min-width: 0; }
+
+.closeMenu { position: relative; }
+.closeMenu > summary { list-style: none; }
+.closeMenu > summary::-webkit-details-marker { display: none; }
+
+.reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+/* ---- what they want ---- */
+
+.group { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---- CV ---- */
+
+.summaryLine { font-size: 0.9375rem; line-height: 1.5; margin: 4px 0 0; }
+
+.lines {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ---- cover letter ---- */
+
+.issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.issues li { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+.prose { max-width: 68ch; display: flex; flex-direction: column; gap: 12px; }
+.prose p { line-height: 1.6; margin: 0; }
+
+.letterForm { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fieldRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+/* ---- interview prep ---- */
+
+.prepHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.prepList { list-style: none; margin: 0; padding: 0; }
+
+.prepItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.prepItem:first-child { border-top: 0; }
+.prepMain { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.prepMain p { margin: 0; font-size: 0.9rem; }
+
+.prepTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .stepper { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 12px; }
+  .step:nth-child(5)::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepBtn { transition: none; }
+}

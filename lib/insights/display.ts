@@ -16,8 +16,8 @@ export const STATUS_LABEL: Record<RequirementStatus, string> = {
 /** What each group means, said once under its heading. */
 export const STATUS_SUB: Record<RequirementStatus, string> = {
   gap: "Nothing in your history backs these yet.",
-  unstated: "Your history mentions these, but no point in your Bank says so. Add one.",
-  evidenced: "At least one point in your Bank says so.",
+  unstated: "Your history mentions these, but no point in your Experience says so. Add one.",
+  evidenced: "At least one point in your Experience says so.",
 };
 
 /** The summary-panel tone (ui.module.css: attention, mid, good). */

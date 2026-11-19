@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectTags, importCvbuilder, type CvbSource } from "./cvbuilder";
+import { canonicalCompany, detectTags, importCvbuilder, type CvbSource } from "./cvbuilder";
 
 /** Minimal stand-ins for the data/cvbuilder/*.json files (the real data is exercised in real-data.test.ts). */
 const taxonomy = {
@@ -156,6 +156,22 @@ const applications = [
 
 const src: CvbSource = { profile, points, taxonomy, archetypes, applications };
 const opts = { userId: "11111111-1111-1111-1111-111111111111", today: "2026-09-02" };
+
+describe("canonicalCompany", () => {
+  it("takes the posting's own casing when it spells the name differently", () => {
+    expect(canonicalCompany("Tiktok", "Product Manager Project Intern (TikTok Live-Ecosystem Governance)")).toBe("TikTok");
+  });
+  it("keeps the name when the posting agrees, or never mentions it", () => {
+    expect(canonicalCompany("Stripe", "Stripe is hiring")).toBe("Stripe");
+    expect(canonicalCompany("Acme", "A role somewhere")).toBe("Acme");
+  });
+  it("ignores an all-caps shout or a lower-case mention", () => {
+    expect(canonicalCompany("Bain & Company", "BAIN & COMPANY careers, bain & company")).toBe("Bain & Company");
+  });
+  it("matches whole words only", () => {
+    expect(canonicalCompany("Meta", "metadata and Metaverse teams")).toBe("Meta");
+  });
+});
 
 describe("detectTags", () => {
   it("finds taxonomy tags and the phrases that matched", () => {

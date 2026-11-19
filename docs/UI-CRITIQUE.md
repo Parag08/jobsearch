@@ -271,3 +271,42 @@ running app or read in the code; it supersedes 7.x and 8.1–8.6 above, which it
 | I9 | "On your CV" is a long, fully open list at the same weight as the gaps. | Collapsed by default. |
 | I10 | Developer messages shown to users in monospace: "Set ROLE_READ_BATCH to enable.", "Set ROLE_PLAN_MAX_GAPS to enable plan drafting."; the plan's date line in monospace; plan prose runs the full width. (8.5) | Plain sentences ("Reading roles isn't switched on for this workspace"); date in soft text; plan at the 68ch measure; **Make a plan for these gaps** as the page's one primary, beside the gaps. |
 | I11 | The unread-roles notice and the "Read 3 roles." result are loose grey lines between the header and the picker. | One notice row inside the summary panel, with **Read them** beside it. |
+
+---
+
+## 11 · Status check before the fix pass (2026-11-19)
+
+**Every "open" item below was fixed the same day on `feat/critique-pass`** (see docs/MEMORY.md),
+except the remote branch clean-up, which the permission check blocked.
+
+Every item above not already marked fixed, re-checked against `main` after PRs #9–#17 (code
+search for the quoted text, plus the running app). **Already fixed** means an earlier PR
+removed it; **open** means this pass fixes it; **kept** means it stays, with the reason.
+
+| # | Status | Note |
+|---|---|---|
+| 0.2 | open | Bank → **Experience** (page and nav; `/app/bank` URL kept); items are **points** everywhere. |
+| 0.3 | mostly fixed | Bank, Insights, Watchlist map slugs to labels; application page still shows raw terms. |
+| 0.4, 9.1–9.2 | already fixed | Blue-and-white system theme replaced oat/terracotta/Fraunces/Plex Mono (PR #11). |
+| 0.5 | open | Hyphens as dashes remain on the landing ("quiet - and", "inside it - and") and Coming next. |
+| 1.4 | open | Agent → **Assistant** ("Connections" would collide with contacts and networking). |
+| 1.5 | open | See 0.2. |
+| 1.6 | open | "demo workspace" pill → **Sample data**. |
+| 1.7 | open | Auto theme still shows a clock. |
+| 2.1, 2.3 | already fixed | Headline and lede rewritten. |
+| 2.2 | open | Footer still says "your job search, end to end". |
+| 2.4 | open | Hero demo still advances every 2.6s. |
+| 2.5, 2.7–2.10 | already fixed | Stat row gone; step tags are Automatic / AI / You; copy rewritten. |
+| 2.6 | open | New problem: step 1 says boards are checked "every day", but nothing runs on a schedule. And Coming next still lists cover letters, which shipped. |
+| 2.11 | open | Process-map lede. |
+| 3.2, 3.3 | open | Sign-in helper copy and "Back". |
+| 4.2–4.6, 4.8, 4.9 | already fixed | Kanban board, header facts line, Add a job sheet, cards without the import note (PRs #9, #11). |
+| 4.7 | open | "Tiktok" casing from the import; titles clamp at two lines (fine). |
+| 5.2–5.13 | open | The application page is untouched since the critique. |
+| 6.x | already fixed | Bank redesign (PR #15). |
+| 7.x, 8.1–8.6 | already fixed | Watchlist and Insights (PR #16). |
+| 8.7, 8.8 | already fixed | Question bank generalised; notes open when there is no model answer. |
+| 8.9 | kept | The two lines are the two modes (hands-free listens; otherwise you send). Wording aligned. |
+| 8.10 | open | Tab **Casing** → **Cases**. |
+| 8.11–8.13 | open | Agent page copy, raw tool names, mono "0 active", no Copy button. |
+| 9.3–9.5 | mostly fixed | Remaining "→" links and mono labels are on the application page (5.x). |

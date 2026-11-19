@@ -216,6 +216,24 @@ const SENIORITIES = [
  * Four FNV-1a passes with different offset bases fill the 128 bits; the version
  * nibble is 8 ("custom", RFC 9562) because this is a hash, not a random uuid.
  */
+/**
+ * A company name in the casing its own posting uses ("Tiktok" -> "TikTok"), so the board shows
+ * the brand as written. Only a mixed-case spelling counts: an all-caps heading or a lower-case
+ * mention is not evidence of how the name is written. Whole-word matches only.
+ */
+export function canonicalCompany(company: string, text: string): string {
+  if (!company) return company;
+  const escaped = company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+  for (const m of text.matchAll(re)) {
+    const seen = m[0];
+    if (seen === company) return company;
+    const mixed = seen !== seen.toUpperCase() && seen !== seen.toLowerCase();
+    if (mixed) return seen;
+  }
+  return company;
+}
+
 export function stableId(kind: string, slug: string): string {
   // The "jobpilot:" prefix is frozen, not a stale product name: every id in the
   // live DB hashes from it. Renaming it regenerates every id, so the next seed
@@ -472,8 +490,9 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     const sectorPath = [label, ...(location ? [location] : [])];
     const sectorId = stableId("sector", sectorPath.join(">"));
 
+    const company = canonicalCompany(file.company, `${file.role} ${file.jd}`);
     const jdExtract: JdExtract = {
-      company: file.company,
+      company,
       role: file.role,
       roleFamily,
       sectorPath,
@@ -494,7 +513,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
         masterCvId: master.id,
         diff: diffFromMaster(master, selection, jdExtract, bank),
         bulletIds: selection.ids,
-        summaryLine: `${master.summaryLine.replace(/\.$/, "")}, targeting ${file.role} at ${file.company}.`,
+        summaryLine: `${master.summaryLine.replace(/\.$/, "")}, targeting ${file.role} at ${company}.`,
         filePath: null,
       };
     } else if (!master) {
@@ -504,7 +523,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     applications.push({
       application: ApplicationSchema.parse({
         id: stableId("application", file.id),
-        company: file.company,
+        company,
         role: file.role,
         sectorId,
         stage: "saved",
@@ -513,7 +532,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
         cvVersionId: cv?.id ?? null,
         referralContactId: null,
         // CVbuilder never recorded whether these went out, so the import will not claim they did.
-        nextAction: "Imported from CVbuilder - confirm whether this was submitted, then advance the stage",
+        nextAction: "Check whether you sent this. If you did, mark it as applied.",
         savedAt,
         appliedAt: null,
         updatedAt: file.updatedAt ?? `${opts.today ?? UNDATED_FALLBACK_DATE}T00:00:00.000Z`,
@@ -525,7 +544,7 @@ export function importCvbuilder(src: CvbSource, opts: ImportOptions): ImportedWo
     const key = sectorPath.join(">");
     const acc = sectorAcc.get(key) ?? { path: sectorPath, skills: {}, companies: new Set<string>(), titles: new Set<string>(), jdCount: 0 };
     for (const s of hits.tags) acc.skills[s] = (acc.skills[s] ?? 0) + 1;
-    if (file.company) acc.companies.add(file.company);
+    if (company) acc.companies.add(company);
     if (file.role) acc.titles.add(file.role);
     acc.jdCount += 1;
     sectorAcc.set(key, acc);

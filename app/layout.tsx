@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import { themeBootScript } from "@/lib/theme";
 import "./globals.css";
@@ -8,7 +8,14 @@ import "./globals.css";
 // Apple-style: San Francisco on Apple devices (the system font, nothing to load) and Inter,
 // its closest open cousin, everywhere else (docs/DESIGN.md section 5). Code uses the
 // system monospace.
-const sans = Inter({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
+// Inter ships with the app (the Fontsource package) instead of being fetched from Google at
+// build time: that fetch failing once was enough to fail a deploy.
+const sans = localFont({
+  src: "../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  weight: "100 900",
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "JobSearch",

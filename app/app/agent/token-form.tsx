@@ -12,8 +12,8 @@ export function TokenForm() {
   return (
     <>
       <form action={action} className={ui.form}>
-        <input name="name" className={ui.input} placeholder="What will use it (e.g. Claude on my laptop)" maxLength={60} aria-label="Token name" />
-        <select name="scope" className={ui.input} defaultValue="write" aria-label="What the token may do">
+        <input name="name" className={ui.input} placeholder="What will use it (e.g. Claude on my laptop)" maxLength={60} aria-label="Key name" />
+        <select name="scope" className={ui.input} defaultValue="write" aria-label="What the key may do">
           <option value="write">Read and update</option>
           <option value="read">Read only</option>
         </select>
@@ -25,13 +25,13 @@ export function TokenForm() {
           ))}
         </select>
         <button type="submit" className={ui.btn} disabled={pending}>
-          {pending ? "Creating…" : "Create token"}
+          {pending ? "Creating…" : "Create key"}
         </button>
       </form>
       {state?.error && <p className={ui.sub}>{state.error}</p>}
       {state?.token && (
         <div role="status">
-          <p className={ui.sub}>Copy this now. It is shown once and is not stored; if you lose it, revoke it and make another.</p>
+          <p className={ui.sub}>Copy this now. It&apos;s shown once and isn&apos;t stored; if you lose it, revoke it and make another.</p>
           <pre className={ui.code} data-testid="new-token" style={{ userSelect: "all", overflowX: "auto" }}>
             {state.token}
           </pre>

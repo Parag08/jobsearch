@@ -24,7 +24,7 @@ describe("chipsFor", () => {
   it("labels the family and skills in sentence case", () => {
     const c = chipsFor({ roleFamily: "product-management", skills: ["metrics-kpi", "ops-execution"] });
     expect(c.family).toBe("Product management");
-    expect(c.skills).toEqual(["Metrics kpi", "Ops execution"]);
+    expect(c.skills).toEqual(["Metrics KPI", "Ops execution"]);
     expect(c.more).toBe(0);
   });
   it("drops repeats and any skill that only repeats the family", () => {
