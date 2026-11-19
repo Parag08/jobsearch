@@ -459,8 +459,10 @@ boards systematically cover the wrong half of the market.
 ### Principles
 
 1. **One focal point per screen.** The one action a screen is for is the only filled blue
-   button on it (Pipeline: Add a job; landing: Get started). Everything else is a secondary
-   button, a text link or plain text.
+   button on it (Pipeline: Add a job; landing: Continue with Google). Everything else is a
+   secondary button, a text link or plain text. One action gets one name: Google sign-in
+   creates the account on the first visit, so the landing has no separate "Get started"; the
+   nav has a single Sign in, for readers who have scrolled past the hero.
 2. **Colour means something.** System blue is for doing. Each pipeline stage has its own
    system colour so the board reads at a glance. Green is progress. Orange is "gone quiet".
    Red is fenced to destructive confirmations: a rejection is never red, closed is grey.
@@ -601,6 +603,12 @@ the page has no animation.
 
 Four dots rising, each more solid than the last: the pipeline from `saved` to `offer`, in
 `currentColor`.
+
+The favicon (`app/icon.svg`) is the same mark: the same dots and opacity ramp, in the accent
+on a white tile (`#0071E3`), or `#0A84FF` on a near-black tile when the browser is in dark
+mode. It can't read CSS variables, so its colours are copied from the tokens. Change it
+whenever the logo or the accent changes. Don't put `--` inside its XML comments: that makes
+the SVG invalid and the icon disappears.
 
 ### Earlier systems
 

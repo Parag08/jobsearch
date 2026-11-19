@@ -74,14 +74,6 @@
   white-space: nowrap;
 }
 
-/* On a phone, Get started does both jobs (one Google action creates or signs in), so
-   Sign in steps aside rather than wrapping and pushing the CTA off the edge. */
-@media (max-width: 480px) {
-  .navSecondary {
-    display: none;
-  }
-}
-
 /* the nav's Google actions are <form>s with a submit button: lay them out like the links */
 .navForm {
   display: contents;

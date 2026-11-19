@@ -56,7 +56,7 @@ export default function Home() {
   const supabase = readSupabaseEnv();
   const live = supabase !== null;
   const demoAvailable = !live;
-  // Get started goes straight to Google (the same server action /signin uses) - no detour
+  // Sign in goes straight to Google (the same server action /signin uses) - no detour
   // page. Without Supabase the action could only bounce to /signin, so link there directly.
   const startWithGoogle = signInWith.bind(null, "google");
   const clientId = readGoogleClientId();
@@ -79,24 +79,17 @@ export default function Home() {
             Demo
           </Link>
         )}
+        {/* One sign-in, not two: Google makes the account on the first visit, so "Sign in"
+            and "Get started" were the same action under two names (and the hero's Google
+            button a third). The nav keeps one, for readers who have scrolled past the hero. */}
         {live ? (
-          <>
-            <form action={startWithGoogle} className={styles.navForm}>
-              <button type="submit" className={`${styles.navLink} ${styles.navSecondary}`}>Sign in</button>
-            </form>
-            <form action={startWithGoogle} className={styles.navForm}>
-              <button type="submit" className={styles.navCta}>Get started</button>
-            </form>
-          </>
+          <form action={startWithGoogle} className={styles.navForm}>
+            <button type="submit" className={styles.navCta}>Sign in</button>
+          </form>
         ) : (
-          <>
-            <Link href="/signin" className={`${styles.navLink} ${styles.navSecondary}`}>
-              Sign in
-            </Link>
-            <Link href="/signin" className={styles.navCta}>
-              Get started
-            </Link>
-          </>
+          <Link href="/signin" className={styles.navCta}>
+            Sign in
+          </Link>
         )}
       </GlassNav>
 
