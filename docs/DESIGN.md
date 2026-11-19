@@ -696,6 +696,11 @@ notes are").
   1.65 line height, every line break its own paragraph with 12px between, a 72ch measure. The
   instruction ("Read it, close it, then answer in your own words") is a small soft line above
   the card, never inside it. **Edit model answer** is a text button under it.
+- **Leaving a call:** two buttons at the right of the call bar. **Discard** (a room-glass
+  button) asks once, on the bar itself: "Discard this interview? You won't get feedback and
+  nothing is saved", with **Keep going** and a red **Discard**; the voice and mic stop while it
+  asks. Confirming goes back to Join interview with nothing scored or stored. **End** gets
+  feedback, as before. Added 2026-11-19 (Parag: End always evaluated the answer).
 - **After a mock interview:** a bar right under the stage, before any feedback: **Read
   transcript** (it opens directly below the bar), **Download transcript** and **Download
   report** (Markdown, built by `lib/interview/report.ts`, for keeping or a local model). Then
