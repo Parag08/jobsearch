@@ -3,6 +3,7 @@ import { Logo } from "./_components/logo";
 import { GlassNav } from "./_components/glass-nav";
 import { ThemeToggle } from "./_components/theme-toggle";
 import { HeroDemo } from "./_components/hero-demo";
+import { demoMaxVisitorsFromEnv } from "@/lib/demo/visitors";
 import { ProcessMap } from "./_components/process-map";
 import { Reveal } from "./_components/reveal";
 import { GoogleButton } from "./_components/google-button";
@@ -49,12 +50,14 @@ const COMING = [
 ];
 
 export default function Home() {
-  // The demo workspace only exists when Supabase is unconfigured (lib/db). With it
-  // configured, /app redirects a signed-out visitor to /signin - so offering "Demo"
-  // in production would be two prominent links that lead nowhere.
+  // Two demos: the public one (/demo, a fictional person, no AI spend) whenever
+  // DEMO_MAX_VISITORS is set, else the local sample workspace when Supabase is unconfigured.
+  // With neither, /app redirects to /signin, so no demo link is offered.
   const supabase = readSupabaseEnv();
   const live = supabase !== null;
-  const demoAvailable = !live;
+  const publicDemo = demoMaxVisitorsFromEnv(process.env) !== undefined;
+  const demoHref = publicDemo ? "/demo" : live ? null : "/app/home";
+  const demoAvailable = demoHref !== null;
   // Sign in goes straight to Google (the same server action /signin uses) - no detour
   // page. Without Supabase the action could only bounce to /signin, so link there directly.
   const startWithGoogle = signInWith.bind(null, "google");
@@ -74,9 +77,10 @@ export default function Home() {
       >
         <ThemeToggle />
         {demoAvailable && (
-          <Link href="/app/home" className={styles.navLink}>
-            Demo
-          </Link>
+          // A plain link: /demo is a route that sets a cookie, so it must not be prefetched.
+          <a href={demoHref ?? undefined} className={styles.navLink}>
+            Try the demo
+          </a>
         )}
         {/* One sign-in, not two: Google makes the account on the first visit, so "Sign in"
             and "Get started" were the same action under two names (and the hero's Google
@@ -115,9 +119,9 @@ export default function Home() {
                 </Link>
               )}
               {demoAvailable && (
-                <Link href="/app/home" className={styles.ctaLink}>
-                  See it with sample data
-                </Link>
+                <a href={demoHref ?? undefined} className={styles.ctaLink}>
+                  Try it with sample data
+                </a>
               )}
             </div>
             <p className={styles.ctaNote}>Free. Sign in with Google: no password, and your account is made on the first visit.</p>

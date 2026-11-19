@@ -313,7 +313,8 @@ export default async function ApplicationPage({
             <p className={ui.sub}>
               {[
                 `Dear ${letter.recipient || letter.teamName}`,
-                shortDate(letter.date, today),
+                // Already written out by letterDate ("19 November 2026"), not an ISO date.
+                letter.date,
                 letter.edited ? "Edited by you" : "Drafted for you",
                 letterFrozen ? "Sent, kept as it was" : "",
               ]

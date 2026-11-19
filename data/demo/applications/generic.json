@@ -1,0 +1,79 @@
+{
+  "id": "generic",
+  "company": "",
+  "role": "Generic CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-09-02T00:00:00.000Z",
+  "updatedAt": "2026-09-02T00:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "notes": "The hand-to-anyone CV for people who are not hiring now but might be later.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-triage",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-interviews",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-experiments",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-marketplace",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-tracking",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Roadmapping | Prioritisation | Experimentation | Cross-functional Leadership"
+    }
+  }
+}

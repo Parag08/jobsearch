@@ -6,6 +6,7 @@ import {
   getContact,
   insertContact,
   listContacts,
+  listInteractionDates,
   updateContact,
 } from "./contacts";
 
@@ -58,5 +59,15 @@ describe("contacts repo", () => {
     await insertContact(db, "u2", { ...newContact, name: "Someone Else" });
     const contacts = await listContacts(db, "u1");
     expect(contacts.map((c) => c.name)).toEqual(["Priya"]);
+  });
+
+  it("listInteractionDates gives every outreach date for the user, and only theirs", async () => {
+    const db = new FakeDb();
+    const mine = await insertContact(db, "u1", newContact);
+    const theirs = await insertContact(db, "u2", newContact);
+    await addInteraction(db, "u1", mine.id, { date: "2026-11-10", channel: "email", summary: "hi" });
+    await addInteraction(db, "u1", mine.id, { date: "2026-11-17", channel: "call", summary: "call" });
+    await addInteraction(db, "u2", theirs.id, { date: "2026-11-18", channel: "email", summary: "x" });
+    expect((await listInteractionDates(db, "u1")).sort()).toEqual(["2026-11-10", "2026-11-17"]);
   });
 });

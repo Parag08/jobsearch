@@ -1,0 +1,77 @@
+{
+  "id": "lumen-bank-senior-pm",
+  "company": "Lumen Bank",
+  "role": "Senior Product Manager, Digital Lending",
+  "reference": "",
+  "jd": "About the role\nLumen Bank is expanding its digital lending franchise in Singapore and is hiring a Senior Product Manager to own the end-to-end journey for small-business and consumer credit products. You will report to the Head of Digital Lending and work daily with engineering, risk, compliance, design and the commercial teams.\n\nWhat you will do\n- Own the product roadmap for the lending application, onboarding and repayment experience, and the metrics it moves: activation, approval rate, time-to-yes and on-time repayment.\n- Partner with Credit Risk and Compliance to ship changes that satisfy MAS expectations without adding friction for good customers.\n- Run structured discovery with customers, relationship managers and operations teams, and turn what you learn into clear problem statements and prioritised bets.\n- Design and run experiments, read the results with discipline, and decide what to scale or stop.\n- Work with engineering leads on sequencing, trade-offs and delivery, keeping a squad of 10 to 15 people focused on outcomes.\n- Present progress and investment cases to senior leadership every quarter.\n- Coach junior product managers and help raise the quality bar across the product group.\n\nWhat we are looking for\n- 6+ years in product management, ideally in fintech, payments, lending or another regulated digital product.\n- A track record of launching products that reached measurable adoption and revenue.\n- Strong analytical skills: comfortable with SQL, funnel analysis and experiment design.\n- Experience working with risk, compliance and vendors in a regulated environment.\n- Excellent written and verbal communication with executives and engineers alike.\n- An MBA or equivalent experience is a plus.\n- Based in Singapore, with the right to work here.\n\nWhy Lumen\nYou will join a well-capitalised bank that is serious about digital products, with real ownership, a supportive leadership team and the chance to shape how thousands of Singapore businesses borrow.",
+  "createdAt": "2026-11-17T08:30:00.000Z",
+  "updatedAt": "2026-11-17T08:30:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-management",
+    "at": "2026-11-17T08:30:00.000Z"
+  },
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-checkout",
+        "variant": "metrics-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-experiments",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-fraud",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-compliance",
+        "variant": null,
+        "overrideText": "Delivered MAS-aligned onboarding and reporting changes ahead of the regulatory deadline, with zero audit findings and no drop in approval rates"
+      },
+      {
+        "pointId": "quillpay-mentoring",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-tracking",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Roadmapping | Prioritisation | Experimentation | Cross-functional Leadership"
+    }
+  }
+}

@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { FakeDb } from "../repos/fake-db";
 import { importCvbuilder } from "../import/cvbuilder";
 import { seedFakeDb } from "./seed-fake-db";
+import type { ImportedWorkspace } from "../import/cvbuilder";
+import { seedDemoExtras, stageDemoApplications } from "../demo/extras";
+import { DEMO_TTL_SECONDS, VisitorStore } from "../demo/visitors";
 
 /** The demo workspace's owner id - a fixed placeholder, never a real auth user. */
 export const DEMO_USER_ID = "00000000-0000-0000-0000-000000000d3e";
@@ -19,16 +22,14 @@ export const DEMO_USER_ID = "00000000-0000-0000-0000-000000000d3e";
  */
 const holder = globalThis as { __jobsearchDemoDb?: FakeDb | null };
 
-export function getDemoDb(root = process.cwd()): FakeDb {
-  const cached = holder.__jobsearchDemoDb;
-  if (cached) return cached;
-  const dataDir = join(root, "data", "cvbuilder");
+/** Read a CVbuilder-shaped folder (data/cvbuilder or data/demo) into an imported workspace. */
+function loadCorpus(dataDir: string): ImportedWorkspace {
   const readJson = (...p: string[]) => JSON.parse(readFileSync(join(dataDir, ...p), "utf8"));
   const applications = readdirSync(join(dataDir, "applications"))
     .filter((f) => f.endsWith(".json"))
     .sort()
     .map((f) => JSON.parse(readFileSync(join(dataDir, "applications", f), "utf8")));
-  const ws = importCvbuilder(
+  return importCvbuilder(
     {
       profile: readJson("profile.json"),
       points: readJson("points.json"),
@@ -39,10 +40,46 @@ export function getDemoDb(root = process.cwd()): FakeDb {
     },
     { userId: DEMO_USER_ID },
   );
+}
+
+export function getDemoDb(root = process.cwd()): FakeDb {
+  const cached = holder.__jobsearchDemoDb;
+  if (cached) return cached;
   const db = new FakeDb();
-  seedFakeDb(db, ws);
+  seedFakeDb(db, loadCorpus(join(root, "data", "cvbuilder")));
   holder.__jobsearchDemoDb = db;
   return db;
+}
+
+// ---- the public demo: a fictional person, one copy per visitor --------------------------------
+
+const visitors = globalThis as {
+  __jobsearchDemoCorpus?: ImportedWorkspace;
+  __jobsearchVisitors?: VisitorStore<FakeDb>;
+};
+
+/** The fictional sample person in data/demo/ - never the owner's corpus. */
+function demoCorpus(root: string): ImportedWorkspace {
+  return (visitors.__jobsearchDemoCorpus ??= loadCorpus(join(root, "data", "demo")));
+}
+
+/** The taxonomy the demo reads postings with (lib/demo/canned.ts lexicalExtract). */
+export function demoTaxonomy(root = process.cwd()): unknown {
+  return JSON.parse(readFileSync(join(root, "data", "demo", "taxonomy.json"), "utf8"));
+}
+
+/** A fresh sample workspace: the fictional corpus, staged along the pipeline, plus watchlist and practice. */
+export function freshVisitorDb(root = process.cwd(), today = new Date().toISOString().slice(0, 10)): FakeDb {
+  const db = new FakeDb();
+  seedFakeDb(db, stageDemoApplications(structuredClone(demoCorpus(root)), today));
+  seedDemoExtras(db, DEMO_USER_ID, today);
+  return db;
+}
+
+/** This visitor's own sample workspace (lib/demo/visitors.ts); edits stay theirs until it expires. */
+export function getVisitorDemoDb(visitorId: string, max: number, root = process.cwd()): FakeDb {
+  visitors.__jobsearchVisitors ??= new VisitorStore(() => freshVisitorDb(root), { ttlMs: DEMO_TTL_SECONDS * 1000, max });
+  return visitors.__jobsearchVisitors.get(visitorId);
 }
 
 /** Test hook. */

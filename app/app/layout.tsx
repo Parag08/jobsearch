@@ -45,10 +45,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <NavLinks items={NAV} />
           <div className={styles.right}>
             <ThemeToggle />
-            <span className={styles.mode} data-mode={w.mode} title={w.mode === "demo" ? "You're looking at sample data. Changes reset when the server restarts." : w.email ?? ""}>
+            <span className={styles.mode} data-mode={w.mode} title={w.cannedAi ? "A fictional person's workspace. Your changes last two idle hours." : w.mode === "demo" ? "You're looking at sample data. Changes reset when the server restarts." : w.email ?? ""}>
               {w.mode === "demo" ? "Sample data" : (w.email ?? "Signed in")}
             </span>
-            {w.mode === "live" ? (
+            {w.cannedAi ? null : w.mode === "live" ? (
               <form action={signOut}>
                 <button type="submit" className={styles.quiet}>
                   Sign out
@@ -62,6 +62,24 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
+      {w.cannedAi && (
+        <aside className={styles.demoBar} aria-label="Demo">
+          <p>
+            <strong>You&apos;re trying JobSearch with a made-up person, Maya.</strong> Click anything: AI answers are
+            pre-written, and your changes last two idle hours.
+          </p>
+          <div className={styles.demoActions}>
+            <Link href="/signin" className={styles.demoCta}>
+              Start your own
+            </Link>
+            <form action="/demo/exit" method="post">
+              <button type="submit" className={styles.quiet}>
+                Leave demo
+              </button>
+            </form>
+          </div>
+        </aside>
+      )}
       <main className={styles.main}>{children}</main>
     </div>
   );

@@ -1,0 +1,73 @@
+{
+  "id": "archetype-project-management",
+  "company": "",
+  "role": "Project Management - base CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-10-01T09:00:00.000Z",
+  "updatedAt": "2026-10-01T09:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "project-management",
+    "at": "2026-10-01T09:00:00.000Z"
+  },
+  "notes": "GENERATED from archetype \"project-management\". A starting point, not a submission.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": "scholar-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-exec",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-vendors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-agile",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-driver-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-dashboards",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Project and Programme Management | Vendor Management | Compliance Delivery | Budget Management | Agile Delivery"
+    }
+  }
+}

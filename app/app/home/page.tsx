@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
-import { listContacts } from "@/lib/repos/contacts";
+import { listContacts, listInteractionDates } from "@/lib/repos/contacts";
 import { listAttempts } from "@/lib/repos/answers";
 import { listCaseSessions } from "@/lib/repos/case-sessions";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
@@ -128,9 +128,10 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [apps, contacts, attempts, cases, jobs, projects, profile] = await Promise.all([
+  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile] = await Promise.all([
     listApplications(db, userId),
     listContacts(db, userId),
+    listInteractionDates(db, userId),
     listAttempts(db, userId),
     listCaseSessions(db, userId),
     listSourcedJobs(db, userId),
@@ -143,7 +144,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const m = momentum({
     today,
     applications: apps.map((a) => ({ id: a.id, company: a.company, stage: a.stage, savedAt: a.savedAt, appliedAt: a.appliedAt })),
-    outreachDates: contacts.flatMap((c) => c.interactions.map((i) => i.date)),
+    outreachDates,
     practice: [
       ...attempts.map((a) => ({ date: a.createdAt, seconds: attemptSeconds(a) })),
       ...cases.map((c) => ({ date: c.updatedAt, seconds: caseSeconds(c.session.turns.map((t) => t.at)) })),

@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 (after #19) - Public demo that spends no tokens (branch feat/token-free-demo)
+
+Parag asked for a demo with sample data visitors can click through, worried about token spend, or else a video. Chose the interactive demo: video goes stale, and clicking shows more.
+- **Fictional person** Maya Okafor in `data/demo/` (CVbuilder file shapes, made-up companies, `example.com` contacts). The old local demo still loads `data/cvbuilder/` (Parag's real CV) only when Supabase is unconfigured; the public demo never does.
+- **`/demo`** sets a random-id cookie; `getWorkspace()` gives that visitor their own FakeDb (`lib/demo/visitors.ts`, two idle hours, at most `DEMO_MAX_VISITORS` per server - unset = demo off, the kill switch). `lib/demo/extras.ts` stages the applications across the pipeline and adds watchlist, roles, answers, attempts, a contact.
+- **No tokens:** every model call now goes through `lib/services/ai-write.ts`; with `cannedAi` it answers from `lib/demo/canned.ts` (same parsers and guards run). Postings are read by rules (`lexicalExtract`). Watchlist refresh is a no-op, TTS returns 501 (browser voice), tokens can't be made.
+- Landing: "Try the demo" + "Try it with sample data" when the demo is on. Banner in the app shell. DESIGN.md "Demo (`/demo`)".
+- **To do on Vercel:** set `DEMO_MAX_VISITORS=200` (Production + Preview), or the links don't show.
+
 ## 2026-11-19 (late night) - Bank, Watchlist, Insights, nav, then the rest of the critique (PRs #15-#17, branch feat/critique-pass)
 
 - **Bank (#15):** summary panel, To do sentences linking to roles and points, collapsible roles with monograms, coloured strength bands (strong green, solid teal, weak orange; no-number points capped at 2 as the intake guard does), and **edit any point in place** (wording, strength, family, skills, variants), add a point, delete with a note of how many CVs use it. `lib/bank/display.ts`, `updateBullet`/`deleteBullet`.

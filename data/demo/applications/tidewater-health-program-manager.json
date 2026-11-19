@@ -1,0 +1,77 @@
+{
+  "id": "tidewater-health-program-manager",
+  "company": "Tidewater Health",
+  "role": "Program Manager, Digital Care",
+  "reference": "",
+  "jd": "Tidewater Health is a private healthcare group operating hospitals and clinics in Singapore. Our Digital Care programme is modernising how patients book, consult and manage their care, and we are hiring a Program Manager to coordinate its delivery.\n\nResponsibilities\n- Plan and run a portfolio of digital projects including patient app releases, telehealth expansion and clinic system integrations.\n- Build and maintain integrated plans, budgets, risk registers and status reporting for the steering committee.\n- Coordinate engineering teams, clinical leaders, vendors and compliance stakeholders to keep delivery on track.\n- Manage third-party vendor contracts, deliverables and performance.\n- Ensure projects comply with PDPA and healthcare regulatory requirements.\n- Facilitate agile ceremonies and introduce lightweight governance that teams actually follow.\n- Escalate issues early and drive them to resolution with senior stakeholders, and keep a clear decision log so that the steering committee can see what was agreed, by whom and why.\n- Measure programme outcomes: adoption, patient satisfaction and cost to serve.\n\nRequirements\n- 6+ years of experience in programme, project or product delivery, with at least three years in a regulated sector.\n- Proven record of delivering complex, multi-stakeholder technology projects on time and on budget.\n- Experience managing vendors and budgets above $1M.\n- Strong knowledge of Jira, agile and traditional planning methods; PMP or equivalent is an advantage.\n- Excellent communication with clinicians, executives and engineers.\n- Healthcare experience is a plus but not required.\n- Singapore-based, with the right to work here.\n\nWhat we offer\nMeaningful work improving patient experience, stable leadership and a collaborative multidisciplinary team.",
+  "createdAt": "2026-10-09T11:30:00.000Z",
+  "updatedAt": "2026-10-09T11:30:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "project-management",
+    "at": "2026-10-09T11:30:00.000Z"
+  },
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-exec",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-compliance",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-vendors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-mentoring",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-agile",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-driver-app",
+        "variant": null,
+        "overrideText": "Co-led the driver app relaunch with a 20-person delivery team across two vendors, keeping scope, budget and release dates on track"
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-dashboards",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Project and Programme Management | Vendor Management | Compliance Delivery | Budget Management | Agile Delivery"
+    }
+  }
+}

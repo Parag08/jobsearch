@@ -1,0 +1,77 @@
+{
+  "id": "kestrel-ai-pm-platform",
+  "company": "Kestrel AI",
+  "role": "Product Manager, Developer Platform",
+  "reference": "",
+  "jd": "Kestrel AI builds machine-learning tooling that helps enterprise teams deploy and monitor models. We are growing our Singapore office and looking for a Product Manager for our Developer Platform.\n\nThe role\nYou will own the APIs, SDKs and documentation that customers use to integrate Kestrel into their products, and you will be the connection between engineering, developer relations and our enterprise customers across Asia-Pacific.\n\nResponsibilities\n- Define the roadmap for the public API, SDKs and developer console, balancing new capability with reliability and ease of use.\n- Talk to developers and solution architects weekly and translate their pain points into clear, prioritised requirements.\n- Work with engineering on technical trade-offs, versioning, deprecation and security.\n- Define success metrics for developer adoption: time to first call, activation, retention and support volume.\n- Partner with Sales Engineering and Customer Success on launches and enterprise onboarding.\n- Write crisp product specs and release notes.\n- Contribute to pricing and packaging for usage-based plans.\n\nRequirements\n- 4 to 8 years in product management, with at least two years on an API, platform or B2B product.\n- Technical fluency: you can read an API reference, write SQL and discuss architecture with engineers.\n- Evidence of improving developer or partner experience with measurable results.\n- Strong analytical and experimentation skills.\n- Excellent communication, especially in explaining technical topics to non-technical audiences.\n- Interest in AI and machine learning; deep ML expertise is not required.\n- Based in Singapore.\n\nBenefits\nEquity, flexible working, a learning budget and a collaborative team that ships often.",
+  "createdAt": "2026-11-05T14:00:00.000Z",
+  "updatedAt": "2026-11-05T14:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-management",
+    "at": "2026-11-05T14:00:00.000Z"
+  },
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-platform",
+        "variant": null,
+        "overrideText": "Improved the developer experience for a partner API by rewriting documentation and error handling, helping partners integrate faster and reducing support tickets"
+      },
+      {
+        "pointId": "quillpay-checkout",
+        "variant": "metrics-forward",
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-experiments",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-fraud",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-vendors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-agile",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-dashboards",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Roadmapping | Prioritisation | Experimentation | Cross-functional Leadership"
+    }
+  }
+}

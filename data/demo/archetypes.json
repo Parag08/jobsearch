@@ -1,0 +1,164 @@
+{
+  "_readme": [
+    "Fictional sample archetypes for the public demo."
+  ],
+  "excludedTitleKeywords": [
+    "intern",
+    "designer",
+    "sales development"
+  ],
+  "archetypes": [
+    {
+      "id": "product-management",
+      "label": "Product Management",
+      "targetRoles": "Product Manager / Senior PM - owning a product area, a roadmap, and the metrics it moves.",
+      "titleKeywords": [
+        "product manager",
+        "product owner",
+        "senior product manager",
+        "product lead"
+      ],
+      "budget": 12,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "meridian-honors",
+        "brightleaf-interviews",
+        "quillpay-checkout",
+        "quillpay-lending",
+        "quillpay-roadmap",
+        "quillpay-experiments",
+        "quillpay-fraud",
+        "northwind-app",
+        "northwind-checkout",
+        "northwind-marketplace",
+        "harbourline-tracking",
+        "harbourline-routing"
+      ],
+      "exclude": [
+        "brightleaf-benchmark",
+        "northwind-stores",
+        "harbourline-onboarding"
+      ],
+      "variants": {
+        "meridian-honors": "scholar-forward",
+        "quillpay-checkout": "metrics-forward",
+        "quillpay-roadmap": "short",
+        "northwind-checkout": "short"
+      },
+      "additionalOverrides": {
+        "add-skills": "Product Management | Roadmapping | Prioritisation | Experimentation | Cross-functional Leadership"
+      },
+      "notes": "Lead with shipped products and measurable outcomes; keep one strategy bullet for range.",
+      "evidence": [
+        {
+          "id": "seed-product-management",
+          "kind": "seed",
+          "label": "Composite product management role",
+          "weight": 1,
+          "addedAt": "2026-10-01",
+          "text": "We are looking for a Product Manager in Singapore to work with engineering, design and commercial teams. You will own priorities, use data to make decisions, and communicate clearly with senior stakeholders."
+        }
+      ]
+    },
+    {
+      "id": "product-strategy",
+      "label": "Product Strategy",
+      "targetRoles": "Product Strategy / Growth Strategy Manager - sizing opportunities, shaping bets, and influencing leadership.",
+      "titleKeywords": [
+        "product strategy",
+        "strategy manager",
+        "growth strategy",
+        "business strategy"
+      ],
+      "budget": 12,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "meridian-honors",
+        "meridian-capstone",
+        "brightleaf-triage",
+        "brightleaf-interviews",
+        "brightleaf-pricing",
+        "quillpay-lending",
+        "quillpay-roadmap",
+        "northwind-marketplace",
+        "northwind-pricing",
+        "harbourline-sla"
+      ],
+      "exclude": [
+        "brightleaf-benchmark",
+        "northwind-stores",
+        "harbourline-onboarding",
+        "quillpay-platform"
+      ],
+      "variants": {
+        "meridian-honors": "scholar-forward",
+        "brightleaf-triage": "short",
+        "quillpay-roadmap": "short"
+      },
+      "additionalOverrides": {
+        "add-skills": "Product Strategy | Opportunity Sizing | Pricing | Executive Stakeholder Management | Research"
+      },
+      "notes": "Lead with sizing and pricing work; the MBA-era projects carry real weight here.",
+      "evidence": [
+        {
+          "id": "seed-product-strategy",
+          "kind": "seed",
+          "label": "Composite product strategy role",
+          "weight": 1,
+          "addedAt": "2026-10-01",
+          "text": "We are looking for a Product Strategy in Singapore to work with engineering, design and commercial teams. You will own priorities, use data to make decisions, and communicate clearly with senior stakeholders."
+        }
+      ]
+    },
+    {
+      "id": "project-management",
+      "label": "Project Management",
+      "targetRoles": "Program / Project Manager - delivering cross-functional work on time, within budget and compliance constraints.",
+      "titleKeywords": [
+        "program manager",
+        "project manager",
+        "delivery manager",
+        "programme"
+      ],
+      "budget": 12,
+      "maxPerRole": 3,
+      "minPerRole": 1,
+      "pin": [
+        "meridian-honors",
+        "brightleaf-exec",
+        "quillpay-compliance",
+        "quillpay-vendors",
+        "quillpay-roadmap",
+        "northwind-agile",
+        "northwind-app",
+        "harbourline-driver-app",
+        "harbourline-routing",
+        "harbourline-dashboards"
+      ],
+      "exclude": [
+        "brightleaf-benchmark",
+        "northwind-stores"
+      ],
+      "variants": {
+        "meridian-honors": "scholar-forward",
+        "quillpay-roadmap": "short"
+      },
+      "additionalOverrides": {
+        "add-skills": "Project and Programme Management | Vendor Management | Compliance Delivery | Budget Management | Agile Delivery"
+      },
+      "notes": "Lead with delivery, vendors and compliance; keep one product-outcome bullet.",
+      "evidence": [
+        {
+          "id": "seed-project-management",
+          "kind": "seed",
+          "label": "Composite project management role",
+          "weight": 1,
+          "addedAt": "2026-10-01",
+          "text": "We are looking for a Program in Singapore to work with engineering, design and commercial teams. You will own priorities, use data to make decisions, and communicate clearly with senior stakeholders."
+        }
+      ]
+    }
+  ]
+}

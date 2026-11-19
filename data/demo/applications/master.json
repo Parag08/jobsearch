@@ -1,0 +1,82 @@
+{
+  "id": "master",
+  "company": "",
+  "role": "Master CV",
+  "reference": "",
+  "jd": "",
+  "createdAt": "2026-09-02T00:00:00.000Z",
+  "updatedAt": "2026-09-02T00:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "notes": "The frozen reference CV: every master-flagged bullet, no tailoring.",
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-triage",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-interviews",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-experiments",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-fraud",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-marketplace",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-tracking",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {}
+  }
+}

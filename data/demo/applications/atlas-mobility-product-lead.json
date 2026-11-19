@@ -1,0 +1,77 @@
+{
+  "id": "atlas-mobility-product-lead",
+  "company": "Atlas Mobility",
+  "role": "Product Lead, Rider Experience",
+  "reference": "",
+  "jd": "About Atlas Mobility\nAtlas Mobility runs ride-hailing, bike-share and delivery services across Southeast Asia, with its regional product team based in Singapore. We are hiring a Product Lead to own the rider experience across the app.\n\nResponsibilities\n- Define the vision and roadmap for booking, pricing display, payments and in-trip experience for riders in Singapore, Malaysia and Indonesia.\n- Lead a cross-functional team of product managers, designers and engineers, setting clear goals and holding the team to them.\n- Use data to find friction and opportunity: funnel conversion, cancellation rates, repeat usage and net promoter score.\n- Partner with Operations, Marketplace and Pricing teams to balance rider experience with supply and unit economics.\n- Run an experimentation programme and share what you learn across the business.\n- Work with regional city teams to adapt features to local regulations and customer needs.\n- Be the senior voice of the rider in leadership discussions.\n\nRequirements\n- 7+ years of product management experience in consumer apps, marketplaces, e-commerce or logistics.\n- Demonstrated impact on conversion, retention or revenue at scale, with numbers you can talk through.\n- Experience managing or mentoring product managers.\n- Strong skills in prioritisation, stakeholder management and communicating trade-offs.\n- Comfort working with ops-heavy businesses where product and operations meet.\n- Willingness to work with regional teams across time zones.\n- Singapore-based role; relocation support is available.\n\nWhat we offer\nA fast-moving, mission-driven team, competitive compensation and the chance to shape products used by millions of riders every week.",
+  "createdAt": "2026-11-12T10:15:00.000Z",
+  "updatedAt": "2026-11-12T10:15:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-management",
+    "at": "2026-11-12T10:15:00.000Z"
+  },
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-experiments",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-mentoring",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-app",
+        "variant": null,
+        "overrideText": "Grew monthly active users of a retail app from 280K to 610K by rebuilding search and personalised recommendations, owning the roadmap with design and engineering"
+      },
+      {
+        "pointId": "northwind-checkout",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-marketplace",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-loyalty",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-tracking",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-routing",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Management | Roadmapping | Prioritisation | Experimentation | Cross-functional Leadership"
+    }
+  }
+}

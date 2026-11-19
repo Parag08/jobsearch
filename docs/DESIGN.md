@@ -774,6 +774,28 @@ Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, I1-I11).
   reads at the 68ch measure with "Written … from N roles" under the heading. The panel is
   not drawn when there is nothing to plan and no plan.
 
+### Demo (`/demo`)
+
+Added 2026-11-19. The public demo is the real app on a made-up person's workspace, so a
+visitor learns by clicking rather than watching a video.
+
+- **Who:** Maya Okafor, a fictional product manager in Singapore (`data/demo/`, the same file
+  shapes as `data/cvbuilder/`). Every company in it is made up and every contact line is an
+  `example.com` placeholder. The owner's own corpus never reaches a visitor.
+- **Entry:** "Try the demo" in the landing nav and "Try it with sample data" under the hero,
+  shown only while `DEMO_MAX_VISITORS` is set. Both are plain links (not prefetched), because
+  `/demo` sets the visitor cookie and goes to the Overview.
+- **Banner:** one accent-wash strip under the nav: who this is, that AI answers are
+  pre-written and changes last two idle hours, then **Start your own** (the one primary, to
+  `/signin`) and **Leave demo** (quiet). It stacks on a phone. The nav pill says "Sample data";
+  there is no Sign in or Sign out beside it, because the banner already offers the way out.
+- **Behaviour:** each visitor gets their own copy (`lib/demo/visitors.ts`): applications
+  spread across the pipeline, a watchlist with roles, two written answers, two practice
+  attempts and one contact (`lib/demo/extras.ts`). Every AI feature answers from
+  `lib/demo/canned.ts` after a short pause, through the same parsers and guards as a real
+  reply. Watchlist refresh does nothing, the interviewer uses the browser's voice, and
+  Assistant tokens cannot be made.
+
 ### Logo — Stages
 
 Four dots rising, each more solid than the last: the pipeline from `saved` to `offer`, in

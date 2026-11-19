@@ -1,0 +1,77 @@
+{
+  "id": "orchard-commerce-strategy",
+  "company": "Orchard Commerce",
+  "role": "Strategy and Growth Manager",
+  "reference": "",
+  "jd": "Orchard Commerce operates a multi-brand online marketplace and fulfilment network serving shoppers across Singapore and Southeast Asia. We are looking for a Strategy and Growth Manager to join our Corporate Strategy team in Singapore, reporting to the VP of Strategy.\n\nWhat you will do\n- Identify and size new growth opportunities such as new categories, markets, services and partnerships, and build the business case for each.\n- Develop pricing, promotion and unit-economics models to inform decisions by the Management Committee.\n- Work with Product, Marketing and Operations leaders to turn strategic priorities into quarterly plans and track execution.\n- Conduct market, customer and competitor research and synthesise it into clear recommendations.\n- Prepare board and investor materials in partnership with Finance.\n- Support M&A and partnership evaluation, including commercial due diligence.\n- Lead cross-functional working groups on high-priority initiatives, including a regional expansion programme that spans several markets and requires close coordination with local teams.\n\nWhat we are looking for\n- 5+ years of experience in product, strategy, consulting or corporate development, ideally in e-commerce, retail or marketplaces.\n- An MBA from a leading business school is preferred.\n- Excellent analytical skills; you build models in Excel or SQL and can explain the story behind the numbers.\n- Experience launching new products or businesses and measuring their impact.\n- Strong stakeholder management and the ability to influence senior leaders without direct authority.\n- Comfort with ambiguity and fast-changing priorities.\n- Based in Singapore.\n\nWhy join\nDirect access to executive leadership, a broad remit and the chance to see strategic decisions turn into shipped outcomes.",
+  "createdAt": "2026-10-28T09:00:00.000Z",
+  "updatedAt": "2026-10-28T09:00:00.000Z",
+  "pageSize": "original",
+  "scale": 1,
+  "generatedFrom": {
+    "archetype": "product-strategy",
+    "at": "2026-10-28T09:00:00.000Z"
+  },
+  "selection": {
+    "points": [
+      {
+        "pointId": "meridian-honors",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "meridian-capstone",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-triage",
+        "variant": "short",
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-interviews",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "brightleaf-pricing",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-lending",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "quillpay-roadmap",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-marketplace",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "northwind-pricing",
+        "variant": null,
+        "overrideText": "Led a delivery-fee pricing experiment for an omnichannel retailer that improved basket size by 7% with no drop in order volume"
+      },
+      {
+        "pointId": "northwind-checkout",
+        "variant": null,
+        "overrideText": null
+      },
+      {
+        "pointId": "harbourline-sla",
+        "variant": null,
+        "overrideText": null
+      }
+    ],
+    "additionalOverrides": {
+      "add-skills": "Product Strategy | Opportunity Sizing | Pricing | Executive Stakeholder Management | Research"
+    }
+  }
+}
