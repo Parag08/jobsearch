@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 (night) - Overview page from the JobSearch name (branch feat/home-dashboard, off feat/blue-premium, uncommitted)
+
+Parag: the JobSearch name in the menu bar did nothing (it linked to `/`, which middleware sends back to `/app`). It now opens `/app/home`, an overview. His follow-ups, applied: **not** a nav item ("Home" removed); **no Three.js visual** (built, rejected, deleted); keep the streak idea but **one per activity** (jobs applied, people reached, practised) with totals including practice time; a second tab with **insights from what you search for**.
+- `lib/home/momentum.ts` (week counts, overall + per-activity streaks, 14-day strips, mood, next steps), `lib/home/practice-time.ts` (attempt length or words at 130 wpm; case turn gaps capped at 10 min), `lib/home/settings.ts` (`HOME_GOAL_*` from env - **set them on Vercel** too). All tested.
+- Page: headline + one action; tabs Progress (three streak cards, after-that steps, a tile per page) and Insights (role families read, top 10 requirements with coverage, link to `/app/insights`).
+- Light accent `#007AFF` -> `#0071E3` so white button text passes 4.5:1.
+- **Checked** in the browser: name -> overview, both tabs, no console errors; 970 tests. **Not seen:** the cards with real activity (demo data has none recent). Signed-in landing is still `/app` (pipeline).
+
 ## 2026-11-19 (evening) - Apple-style blue and white re-theme + Kanban pipeline (PR: feat/blue-premium)
 
 Parag: make the UI premium using a YouTube video (7 fixes for AI-looking UI), leaning blue. Compared "Harbour" (navy/cobalt) with an Apple-style mock; he chose **Apple-style, colourful**, and pointed to a Dribbble Kanban (Twinkle) for the pipeline. Standing instruction: keep a DESIGN.md for every project (docs/DESIGN.md section 5 rewritten).
