@@ -134,6 +134,12 @@ export function MockInterview({ questionId }: { questionId: string }) {
   const spoken = useRef<VoiceSummary[]>([]);
   /** Set the moment you press End, so a reply already on its way cannot reopen the call. */
   const endedRef = useRef(false);
+  /**
+   * Bumped by every reset (another question, leaving the page, Try again). A reply that
+   * comes back after a bump belongs to a call that is over: it must not take the stage,
+   * speak, or open the mic.
+   */
+  const gen = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
 
   draftRef.current = draft;
@@ -217,6 +223,7 @@ export function MockInterview({ questionId }: { questionId: string }) {
   };
 
   function reset() {
+    gen.current += 1;
     stopListening();
     stopSpeaking();
     voiceFrames.current = [];
@@ -319,7 +326,9 @@ export function MockInterview({ questionId }: { questionId: string }) {
 
   /** Say the interviewer's new line; in hands-free mode, listen once it has finished. */
   async function interviewerSays(text: string) {
+    const g = gen.current;
     if (voice) await speak(text, lang);
+    if (g !== gen.current) return;
     if (handsFreeRef.current && canListen && !typing && sessionRef.current?.status === "running") startListening();
   }
 
@@ -327,7 +336,9 @@ export function MockInterview({ questionId }: { questionId: string }) {
     reset();
     primeAudio(); // inside the click, so the voice can drive the avatar
     setBusy("start");
+    const g = gen.current;
     const r = await startMockAction({ questionId, tone, maxFollowUps });
+    if (g !== gen.current) return;
     setBusy(null);
     if (r.error || !r.session) return setError(r.error ?? "Could not start.");
     setSession(r.session);
@@ -345,14 +356,15 @@ export function MockInterview({ questionId }: { questionId: string }) {
     setBusy("turn");
     busyRef.current = "turn";
     setError(null);
+    const g = gen.current;
     const r = await mockTurnAction({ session: s, answer });
-    if (endedRef.current) return; // you left the call while it was thinking
+    if (endedRef.current || g !== gen.current) return; // you left the call while it was thinking
     if (r.retryAfter) {
       setError(r.error ?? null);
       setBusy(null);
       busyRef.current = null;
       setTimeout(() => {
-        if (!endedRef.current) void send();
+        if (!endedRef.current && g === gen.current) void send();
       }, r.retryAfter * 1000);
       return;
     }
@@ -383,7 +395,9 @@ export function MockInterview({ questionId }: { questionId: string }) {
     const answer = s.status === "running" ? `${draftRef.current} ${interimRef.current}`.trim() : undefined;
     const v = answer ? voiceFor(answer) : null;
     const voiceSummary = combineVoice(v ? [...spoken.current, v] : spoken.current);
+    const g = gen.current;
     const r = await mockFeedbackAction({ session: s, answer: answer || undefined, voice: voiceSummary });
+    if (g !== gen.current) return;
     setBusy(null);
     busyRef.current = null;
     if (r.session) {

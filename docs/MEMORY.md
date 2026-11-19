@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 (later) - Interview tab bug fixes (PR: fix/interview-tab)
+
+- **Question switch leaked state:** switching questions is client-side, so the notes editor ("Saved.", follow-ups, Blank/STAR mode), the model-answer editor and the mock interview kept the previous question's state. The detail pane in `behavioural-view.tsx` is now keyed by question id.
+- **Late replies after leaving a call:** `mock-interview.tsx` has a generation ref bumped by every reset; start/turn/feedback replies and the speak-then-listen step drop out if it moved, so an old reply can no longer take the stage, speak or open the mic. `case-room.tsx` has an `alive` ref for the same reason.
+- **Case clock** kept running after a case ended (and showed days on a resumed one): `caseElapsedSeconds` in `lib/interview/case-progress.ts` stops at the last turn once done. **Case cards** counted in-progress attempts as attempts: `caseProgress` counts finished, scored ones and says "one in progress" separately. CaseRoom is keyed by case id too. Tests: `lib/interview/case-progress.test.ts`.
+- **Technical tab** said "No Skills or Technologies line" when the lines existed but nothing was backed. **Notes** open by default when a question has no model answer, so "Write your notes below" is visible.
+- **Not checked:** real mock turns, debriefs or case replies (no AI key locally); the race fixes are reasoned, not reproduced.
+
 ## 2026-11-19 - Front-end critique + P0 fixes
 
 Parag asked for a hard critique of the front end, wording included. Written to **docs/UI-CRITIQUE.md** (sections per screen, P0/P1/P2, Now / Change to copy). Reviewed on the dev server in demo mode at 1366px and 375px; dark mode not checked.

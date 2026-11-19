@@ -240,8 +240,11 @@ export function BehaviouralView({
         </div>
       </aside>
 
+      {/* Keyed by question: the notes editor, model answer and mock interview each hold
+          their own state ("Saved.", follow-ups, an open editor), and none of it may carry
+          over to the next question when the switch happens in the browser. */}
       {selected && (
-        <section className={ui.qdetail} ref={detailRef}>
+        <section className={ui.qdetail} ref={detailRef} key={selected.id}>
           <div className={ui.qhead}>
             <h2>{selected.text}</h2>
             {scope.kind === "mine" && (
@@ -270,7 +273,7 @@ export function BehaviouralView({
 
           <MockInterview questionId={selected.id} />
 
-          <details className={ui.reveal}>
+          <NotesDisclosure openFirst={!modelAnswerFor.has(selected.id)}>
             <summary>
               Your notes
               {hasText(current) && <span className={ui.sub}>saved</span>}
@@ -287,7 +290,7 @@ export function BehaviouralView({
                 result: current?.result ?? "",
               }}
             />
-          </details>
+          </NotesDisclosure>
 
           {history.length > 0 && (
             <details className={ui.reveal}>
@@ -320,6 +323,20 @@ export function BehaviouralView({
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * The notes disclosure. Opens on its own when the question has no model answer yet, since
+ * the way to one runs through your notes ("Rewrite as model answer"). After that it is
+ * yours to open and close: a model answer arriving does not snap it shut.
+ */
+function NotesDisclosure({ openFirst, children }: { openFirst: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(openFirst);
+  return (
+    <details className={ui.reveal} open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      {children}
+    </details>
   );
 }
 
