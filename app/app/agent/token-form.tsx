@@ -32,7 +32,7 @@ export function TokenForm() {
       {state?.token && (
         <div role="status">
           <p className={ui.sub}>Copy this now. It is shown once and is not stored; if you lose it, revoke it and make another.</p>
-          <pre className={ui.mono} data-testid="new-token" style={{ userSelect: "all", overflowX: "auto" }}>
+          <pre className={ui.code} data-testid="new-token" style={{ userSelect: "all", overflowX: "auto" }}>
             {state.token}
           </pre>
         </div>

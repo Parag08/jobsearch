@@ -7,10 +7,23 @@ import { byRecentActivity, funnelStats, recentApplications, staleApplications } 
 import { pipelineColumnMaxFromEnv, pipelineRecentDaysFromEnv } from "@/lib/pipeline-settings";
 import { followupsDue } from "@/lib/outreach";
 import { STAGES, type Application, type Stage } from "@/lib/types";
-import { JdForm } from "./jd-form";
+import { AddJob, AddJobGhost } from "./jd-form";
+import { familyLabel, monogram, toneFor } from "@/lib/pipeline-display";
 import ui from "./ui.module.css";
 
-const DEEP: Stage[] = ["interview", "case", "offer", "negotiation"];
+/** What an empty column is waiting for, so an empty track still says what goes there. */
+const EMPTY_HINT: Partial<Record<Stage, string>> = {
+  saved: "Jobs you add land here.",
+  applied: "Mark a job as applied and it moves here.",
+  screening: "A recruiter call or first screen.",
+  interview: "Interview rounds.",
+  case: "Case rounds.",
+  offer: "Offers in hand.",
+  negotiation: "Offers you are negotiating.",
+};
+
+/** The working stages get a column each, empty or not, so you can see the funnel at a glance. */
+const ACTIVE: Stage[] = ["saved", "applied", "screening", "interview", "case", "offer"];
 
 /**
  * Pipeline board (M5). Closed is neutral whatever the reason; only stale and due earn colour.
@@ -37,43 +50,50 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const shown = showAll ? apps : recentApplications(apps, today, recentDays);
   for (const a of byRecentActivity(shown)) byStage[a.stage].push(a);
   const columnMax = pipelineColumnMaxFromEnv(process.env);
-  // Only stages with cards get a column, so they share the full width; empty ones are named in a line below.
-  const busy = STAGES.filter((s) => byStage[s].length > 0);
-  const empty = STAGES.filter((s) => byStage[s].length === 0);
+  // Negotiation only earns a column once something reaches it; closed is a count, not a column.
+  const columns = byStage.negotiation.length ? [...ACTIVE, "negotiation" as Stage] : ACTIVE;
+  const closed = byStage.closed.length;
+  const label = (s: Stage) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  const card = (a: Application) => (
-    <Link key={a.id} href={`/app/applications/${a.id}`} className={ui.card} data-stale={stale.has(a.id) ? "" : undefined}>
-      <b>{a.company}</b>
-      <span className={ui.role}>{a.role}</span>
-      {a.nextAction && <span className={ui.next}>{a.nextAction}</span>}
-      {stale.has(a.id) && <span className={ui.badge} data-tone="stale">no response · follow up</span>}
-      {a.stage === "closed" && a.closedReason && <span className={ui.badge}>{a.closedReason}</span>}
-    </Link>
-  );
+  const card = (a: Application) => {
+    const family = a.jdExtract?.roleFamily;
+    return (
+      <Link key={a.id} href={`/app/applications/${a.id}`} className={ui.card} data-stale={stale.has(a.id) ? "" : undefined}>
+        <b className={ui.cardTitle}>{a.role}</b>
+        <span className={ui.role}>{a.company}</span>
+        <span className={ui.cardFoot}>
+          <span className={ui.cardTags}>
+            {family && (
+              <span className={ui.tag} data-tone={toneFor(family)}>
+                {familyLabel(family)}
+              </span>
+            )}
+            {stale.has(a.id) && <span className={ui.tag} data-tone="stale">No reply in 2 weeks</span>}
+            {a.stage === "closed" && a.closedReason && <span className={ui.tag}>{a.closedReason}</span>}
+          </span>
+          <span className={ui.monogram} data-tone={toneFor(a.company)} aria-hidden="true">
+            {monogram(a.company)}
+          </span>
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <>
       <div className={ui.head}>
-        <h1>Pipeline</h1>
-        <span className={ui.mono}>{today}</span>
+        <div className={ui.headText}>
+          <h1>Pipeline</h1>
+          <p className={ui.facts}>
+            <span><b>{active}</b> open</span>
+            <span><b>{stats.applied}</b> applied</span>
+            {stats.applied > 0 && <span><b>{Math.round(stats.responseRate * 100)}%</b> replied</span>}
+            <span data-tone={stale.size ? "stale" : undefined}><b>{stale.size}</b> waiting over 2 weeks</span>
+            <span data-tone={due.length ? "due" : undefined}><b>{due.length}</b> follow-ups due</span>
+          </p>
+        </div>
+        <AddJob openFirst={apps.length === 0} />
       </div>
-
-      <div className={ui.stats}>
-        <div className={ui.stat}><b>{active}</b><span>open applications</span></div>
-        <div className={ui.stat}><b>{stats.applied}</b><span>ever applied</span></div>
-        <div className={ui.stat}><b>{stats.applied ? Math.round(stats.responseRate * 100) : 0}%</b><span>response rate</span></div>
-        <div className={ui.stat} data-tone={stale.size ? "stale" : undefined}><b>{stale.size}</b><span>stale past 14 days</span></div>
-        <div className={ui.stat} data-tone={due.length ? "due" : undefined}><b>{due.length}</b><span>follow-ups due</span></div>
-      </div>
-
-      <section className={ui.panel}>
-        <h2>Paste a job description</h2>
-        <p className={ui.sub}>
-          It is read once into structure - company, role, seniority, skills - and opens a saved
-          application. The raw posting is kept for audit and never re-enters a prompt.
-        </p>
-        <JdForm />
-      </section>
 
       {recentDays !== undefined && (
         <p className={ui.sub}>
@@ -84,33 +104,40 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         </p>
       )}
 
-      <div className={ui.board} style={{ gridTemplateColumns: `repeat(${Math.max(busy.length, 1)}, minmax(200px, 1fr))` }}>
-        {busy.map((stage) => {
+      <div className={ui.board} data-board="" style={{ "--cols": columns.length } as React.CSSProperties}>
+        {columns.map((stage) => {
           const cards = byStage[stage];
           const top = columnMax === undefined ? cards : cards.slice(0, columnMax);
           const rest = cards.slice(top.length);
           return (
-            <section key={stage} className={ui.col} aria-label={stage}>
-              <div
-                className={ui.colHead}
-                data-deep={DEEP.includes(stage) ? "" : undefined}
-                style={{ "--stage-bg": `var(--stage-${stage})` } as React.CSSProperties}
-              >
-                <span>{stage}</span>
-                <span>{cards.length}</span>
+            <section key={stage} className={ui.col} aria-label={label(stage)}>
+              <div className={ui.colHead} style={{ "--stage-bg": `var(--stage-${stage})` } as React.CSSProperties}>
+                <span className={ui.stageDot} aria-hidden="true" />
+                <span>{label(stage)}</span>
+                <span className={ui.colCount}>{cards.length}</span>
               </div>
-              <div className={ui.colCards}>{top.map(card)}</div>
+              {cards.length === 0 ? (
+                <p className={ui.colEmpty}>{EMPTY_HINT[stage]}</p>
+              ) : (
+                <div className={ui.colCards}>{top.map(card)}</div>
+              )}
               {rest.length > 0 && (
                 <details className={ui.more}>
                   <summary>Show {rest.length} more</summary>
                   <div className={ui.colCards}>{rest.map(card)}</div>
                 </details>
               )}
+              {stage === "saved" && <AddJobGhost />}
             </section>
           );
         })}
       </div>
-      {empty.length > 0 && <p className={ui.mono}>Nothing in: {empty.join(" · ")}</p>}
+      {closed > 0 && (
+        <details className={ui.more}>
+          <summary>{closed} closed</summary>
+          <div className={ui.closedRow}>{byStage.closed.map(card)}</div>
+        </details>
+      )}
 
       {due.length > 0 && (
         <section className={ui.panel}>

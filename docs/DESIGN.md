@@ -445,251 +445,144 @@ boards systematically cover the wrong half of the market.
 
 ## 5 · Design system
 
-Reference studied: the Mintlify system (`styles.refero.design/style/80d7ef36-…`).
-Original palette proposal: `https://claude.ai/code/artifact/c45039da-89d8-4ede-ac32-2eabbdb2442d`
+> **Re-themed 2026-11-19: Apple-style blue and white replaces Sage Studio.** Parag chose it
+> after comparing it with a navy-and-cobalt option ("Harbour"), and asked for the colourful
+> version. The rebuild also applies the seven checks from "How to make AI-generated UI look
+> expensive" (Griffin Wooldridge): one focal point per screen, spacing on a 4/8 scale,
+> hierarchy from weight and colour rather than size, colour only where it means something,
+> real content, consistent details, and motion that starts where you acted. The pipeline
+> board follows the Kanban pattern Parag pointed to (Twinkle, Dribbble): columns as soft
+> tracks, lifted white cards, a coloured tag and a round badge per card, an add button at
+> the foot of the first column.
+> **The tokens in `app/globals.css` are the source of truth;** this section explains them.
 
-> **Re-themed 2026-11-11: Sage Studio replaces Heather.** Heather (one muted violet on pure white)
-> read as plain. Every colour in that palette was a shade of the same hue, so progress, scores and
-> stages could not stand out. Sage Studio keeps the structure of this system (hairlines, radius
-> encodes elevation, glass only for floating elements, nothing shouts) and changes the material:
-> a warm oat canvas, sage for actions, and **one fenced warm colour, terracotta, for progress**.
-> The aim is a calmer job search: a stressful activity gets a palette that lowers the temperature.
-> The tokens in `app/globals.css` are the source of truth. The tables below were updated to match.
+### Principles
 
-### The conflict, and how it resolves
-
-The reference and the brief pull in opposite directions, and pretending otherwise would produce
-mush. Stated plainly:
-
-| | The reference (Mintlify) | Our brief |
-| --- | --- | --- |
-| Depth | flat and forensic — **no glassmorphism, no gradients** | keep Apple liquid glass |
-| Radius | 4 / 16 / 24px, **no pill buttons** | glass wants capsules |
-| Accent | one chromatic spark, never on large surfaces | Sage (formerly Heather) is the identity |
-| Canvas | pure white, **no off-white backgrounds** | lighter, yes |
-
-**The resolution: radius and material encode elevation.** Everything that sits *in* the page is flat
-and follows the reference — white surface, 1px hairline, committed small radius, no shadow.
-Everything that *floats above* the page is glass and capsule-shaped. That is also how Apple actually
-uses the material: glass is for controls hovering over content, never for the content itself.
-
-So the pill is not decoration — it is the signal that a thing floats. And glass is not a skin over
-the whole UI — it is a material with a strict habitat. Both references stay intact because they
-govern different layers.
-
-### Light by day, dark by night
-
-Still no automatic `prefers-color-scheme` inversion: the theme is never an OS default we inherit.
-(An earlier build flipped with the OS, which is why the live site once rendered dark on Parag's machine.)
-
-Dark returned on 2026-09-24 as the **explicit toggle** this section promised. The toggle is a capsule
-button in both navs that cycles **Auto → Light → Dark**, saved per browser in `localStorage`. **Auto**
-follows the viewer's *local clock*, meaning the browser's own time and timezone: dark from 19:00 to 07:00.
-An inline script sets `<html data-theme>` before first paint so there is no white flash, and the
-toggle re-checks at the next switch and when the tab returns. Logic and tests: `lib/theme.ts`.
-
-The dark twin in `globals.css` keeps every role and rule. The canvas is a forest ink, not black.
-The stage scale inverts, so progress still reads as "more accent" by brightening instead of
-deepening. The glass edge highlight is a token (`--glass-edge`) so it dims in dark.
-
-### The governing principle (unchanged)
-
-Most palettes reserve red for errors. JobSearch inverts that: its most frequent negative states are
-`lost`, `withdrawn` and `ghosted`, and **none is a user error**. Colouring them red turns a dashboard
-into an accusation and makes the most common outcome the loudest thing on screen.
-
-> **Closed states get the quietest colour in the system, not the loudest. Progress gets the accent.
-> Nothing shouts.**
+1. **One focal point per screen.** The one action a screen is for is the only filled blue
+   button on it (Pipeline: Add a job; landing: Get started). Everything else is a secondary
+   button, a text link or plain text.
+2. **Colour means something.** System blue is for doing. Each pipeline stage has its own
+   system colour so the board reads at a glance. Green is progress. Orange is "gone quiet".
+   Red is fenced to destructive confirmations: a rejection is never red, closed is grey.
+3. **Hierarchy from weight and ink.** Titles are bold and tightly tracked, only a step bigger
+   than body. Secondary text is a softer grey, never a smaller size alone.
+4. **Objects lift, pages don't.** Cards (things you open) are white with a soft layered shadow.
+   Page sections sit on the grouped grey, separated by space and a hairline.
+5. **Motion answers you.** Menus and sheets grow from the control that opened them, open in
+   200ms and close in 120ms. Nothing animates on its own except the landing demo and the
+   interview orb. `prefers-reduced-motion` turns it all off.
+6. **No uppercase labels, no monospace labels.** Sentence case everywhere; monospace only for
+   real code (the agent setup command, tokens).
 
 ### Colour
 
-The canvas is warm oat, and cards sit one step lighter on it (`--card`). Separation still comes
-from **hairlines, not shadows** (the reference's strongest lesson). Neutrals carry a green-olive
-cast so they read as chosen rather than inherited.
+Light is iOS grouped: white cards on `#F2F2F7`. Dark is true black behind raised greys, with
+the brighter dark-mode system colours. Every role has a light and a dark value.
 
-| Token | Value | Use |
-| --- | --- | --- |
-| `--paper` | `#F4F1EA` | oat canvas |
-| `--card` | `#FBF9F4` | card and panel surfaces (`--surface` aliases it) |
-| `--wash` | `#ECE8DD` | hover washes, recessed rows, subtle fills |
-| `--line` | `#DFDACD` | hairlines, input borders — the default separator |
-| `--line-strong` | `#C9C2B0` | dividers that must carry weight |
-| `--ink` | `#22301F` | body text, icon strokes |
-| `--ink-soft` | `#4F5A4A` | supporting text |
-| `--ink-faint` | `#737B6C` | captions, meta, timestamps |
-| `--accent` | `#4F6F52` | Sage — actions, fills, marks, focus |
-| `--accent-text` | `#3D5A40` | accent-coloured **text and links** |
-| `--accent-wash` | `#E2E8D8` | accent tint fills |
-| `--warm` | `#C96A3F` | Terracotta — progress marks only |
-| `--warm-text` | `#9C4620` | warm **text** |
-| `--warm-wash` | `#F7E0D2` | warm tint fills |
-
-Two tokens per colour exist for one reason: the fill shade is too light for small text. Fills and
-marks use `--accent` / `--warm`; anything set as small text uses the `-text` token. *(Verify with a
-contrast checker before shipping.)*
-
-**Exactly one second colour, and it is fenced.** Sage is for *doing*: buttons, links, focus,
-selection. Terracotta is for *progress*: late pipeline stages, practised questions, streaks, wins,
-the warm ambient wash on the landing page. Terracotta never marks a rejection and is never a
-primary action. A third chromatic colour is still forbidden.
-
-### Stage scale
-
-Sage deepens as an application advances and **turns warm at offer**, the moment worth celebrating.
-Terminal states step **sideways into neutral**.
-
-| Stage | Colour |
-| --- | --- |
-| `saved` | `#ECE8DD` |
-| `applied` | `#DDE3D0` |
-| `screening` | `#C3D0B0` |
-| `interview` | `#587852` |
-| `case` | `#4A6A48` |
-| `offer` | `#B0582F` |
-| `negotiation` | `#8F4524` |
-| `closed` | `#A39F93` — neutral **whatever the reason**; the reason is a word, not a colour |
-
-### Semantic colour
-
-Two states earn colour outside the scale, because a decision depends on each:
-
-| Meaning | Fill | Text | Trigger |
+| Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| Stale | `#B8893A` | `#7D5D1D` | past `STALE_AFTER_DAYS = 14`, no response |
-| Due today | `--accent` | `--accent-text` | a follow-up is due |
+| `--paper` | `#F2F2F7` | `#000000` | page canvas (grouped background) |
+| `--card` | `#FFFFFF` | `#1C1C1E` | cards, panels, sheets |
+| `--track` | `#E9E9EE` | `#121214` | pipeline column tracks |
+| `--line` / `--line-strong` | `#E5E5EA` / `#D1D1D6` | `#2C2C2E` / `#3A3A3C` | hairlines |
+| `--ink` | `#1D1D1F` | `#F5F5F7` | text |
+| `--ink-soft` / `--ink-faint` | `#6E6E73` / `#76767B` | `#AEAEB2` / `#8E8E93` | supporting text, meta |
+| `--accent` / `--accent-text` | `#007AFF` / `#0066D6` | `#0A84FF` / `#409CFF` | the action colour (fills / text) |
+| `--warm` / `--warm-text` | `#34C759` / `#1F7A37` | `#30D158` / `#4ADE74` | progress: offer, practised, covered |
+| `--on-warm` | `#062B10` | `#00210A` | text on a green fill (white fails contrast) |
+| `--stale` / `--stale-text` | `#FF9500` / `#B25000` | `#FF9F0A` / `#FFB340` | no reply in 2 weeks |
+| `--danger` | `#FF3B30` | `#FF453A` | destructive confirmations only |
 
-**Red exists but is fenced**: `#A8342E` on `#F7EAE9`, for genuinely destructive confirmations only —
-deleting a project, deleting an account. It appears nowhere else in the product.
+**Stage colours** (the dot in each column head, the landing demo):
 
-### Typography
-
-Three families, one role each. The reference uses a single neutral face; we keep the serif because it
-is what stops a job tracker reading as a CRM. What we take from the reference is its **type
-discipline**: a real modular scale, negative tracking at display sizes, and a 16px body floor.
-
-| Role | Face | Weights |
+| Stage | Light | Dark |
 | --- | --- | --- |
-| Display | **Fraunces** | 400 |
-| Body / UI | **DM Sans** | 400 / 500 / 600 |
-| Data | **IBM Plex Mono** | 400 / 500 |
+| saved | `#C7C7CC` grey | `#48484A` |
+| applied | `#5AC8FA` light blue | `#64D2FF` |
+| screening | `#5856D6` indigo | `#5E5CE6` |
+| interview | `#007AFF` blue | `#0A84FF` |
+| case | `#AF52DE` purple | `#BF5AF2` |
+| offer | `#34C759` green | `#30D158` |
+| negotiation | `#28A745` deep green | `#32D74B` |
+| closed | `#AEAEB2` grey, whatever the reason | `#636366` |
 
-Scale (1.2 ratio from a 16px base):
+**Tag tones** (`--tone-{blue,indigo,purple,teal,orange,pink}` plus `-wash`): card tags and
+company monograms. Tag text uses the darker shade of each system colour so it passes contrast
+at 11px. Which tone a role family or company gets is a stable hash (`lib/pipeline-display.ts`),
+so the same family is always the same colour.
 
-| Step | Size | Line height | Tracking | Use |
-| --- | --- | --- | --- | --- |
-| Display | 57px | 1.06 | −0.02em | landing hero only |
-| H1 | 40px | 1.12 | −0.015em | page titles |
-| H2 | 28px | 1.2 | −0.01em | section heads |
-| H3 | 20px | 1.3 | −0.005em | card and row titles |
-| Body | **16px** | 1.55 | −0.005em | everything read in prose |
-| Small | 14px | 1.5 | 0 | dense UI, secondary |
-| Caption | 13px | 1.5 | +0.08em | uppercase eyebrows, Plex Mono |
+**The interview room** stays dark in both themes, like a FaceTime call (`--room-*`, a
+`#2C2C2E` to `#0D0D0F` radial).
 
-Rules taken wholesale from the reference: **never set body below 14px**, never a line-height looser
-than 1.5, tighten tracking as size grows and loosen it only on uppercase labels. Digits that stack in
-a column always take `font-variant-numeric: tabular-nums`.
+### Type
 
-### Radius encodes elevation
+One family. **San Francisco** where the system has it (`-apple-system`, so Apple devices load
+nothing), **Inter** (via `next/font`) everywhere else, then `system-ui`. `--font-serif` and
+`--font-mono` are kept only as aliases that resolve to it; real code uses `--font-code` (the
+system monospace).
 
-The single most load-bearing rule in this system.
+| Role | Size | Weight | Tracking |
+| --- | --- | --- | --- |
+| Landing headline | clamp(2.4rem, 5.6vw, 3.75rem) | 700 | -0.035em |
+| Page title (large title) | 2rem | 700 | -0.025em |
+| h2 | 1.25rem | 700 | -0.015em |
+| h3 / card title | 1.0625rem / 0.875rem | 700 / 600 | -0.01em |
+| Body | 16px (floor) | 400 | -0.006em |
+| Small, labels, meta | 0.8125rem | 400-600 | 0 |
+| Tags | 0.6875rem | 600 | 0 |
 
-| Radius | Applies to | Why |
-| --- | --- | --- |
-| `6px` | inputs, tags, small buttons | committed, slightly softened for Sage |
-| `16px` | cards, panels | in-page content |
-| `24px` | large containers, sheets | in-page, but structural |
-| `999px` | **floating glass only** — sticky nav, popovers, toasts, floating actions | a capsule means "this hovers" |
+Digits that stack take `tabular-nums`.
 
-A pill on a static in-page element is a bug, not a style choice.
+### Radius and elevation
 
-### Elevation
+Nested surfaces take a smaller radius than their container so the curves line up:
+`--radius` 8px (controls, chips, tags) inside `--radius-card` 12px (cards) inside
+`--radius-panel` 16px (panels, column tracks). Buttons and floating glass are capsules
+(`--radius-button`, `--radius-float`: 999px).
 
-**In-page surfaces have no shadow.** Separation is a 1px `--line` border — straight from the
-reference, and it was already our rule.
+Shadows are soft and layered, never one heavy blur, and only on things you can pick up or that
+float: `--shadow-card` (pipeline cards; `--shadow-card-hover` lifts 1px on hover) and
+`--shadow-glass` (nav, menus, the Add a job sheet). Page sections have none.
 
-Only glass casts anything, because a floating thing must read as floating:
+### Glass
 
-```
---shadow-glass: 0 1px 2px rgba(34, 48, 31, 0.05),
-                0 8px 24px rgba(34, 48, 31, 0.07);
-```
-
-No other shadow token exists. No coloured shadows, no gradients on content surfaces.
-
-### Liquid glass — the material
-
-**Habitat, strictly.** Glass is permitted on: the sticky nav, modals and sheets, popovers and menus,
-toasts, and the landing hero card. It is forbidden on: content cards, table rows, form fields, the
-page background, and anything inside `/app`'s working surfaces.
-
-```
-background: color-mix(in srgb, var(--paper) 72%, transparent);
-backdrop-filter: blur(20px) saturate(180%);
-border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-border-radius: 999px;   /* or 20px for sheets */
-```
-
-The `inset` highlight is what makes it read as a lens edge rather than a translucent rectangle —
-without it, glass on a white canvas looks like a rendering mistake.
-
-**Glass needs something to refract.** One slow ambient wash of `--accent-wash` behind the page gives
-it something to bend; on a flat white canvas glass is invisible. Keep it to a single soft field,
-well under the content, never animated fast enough to notice.
-
-**Fallback is mandatory.** Where `backdrop-filter` is unsupported, glass becomes `--paper` at 96%
-opacity with the same border. Never let a nav become unreadable because a filter didn't apply:
-
-```
-@supports not (backdrop-filter: blur(1px)) { … }
-```
+Unchanged habitat: the sticky nav, menus, sheets, popovers, toasts and the landing demo card.
+Never content cards, rows, fields or the page background. Mandatory fallback where
+`backdrop-filter` is unsupported.
 
 ### Layout
 
 | Token | Value |
 | --- | --- |
-| Shell max-width | `90rem` (1440px) |
+| Reading pages | `72rem` max |
+| Pipeline (board) | `88rem` max (`.main:has([data-board])`), nav widens to match |
 | Prose measure | `68ch` |
-| Section gap | `80px` (clamped down on small screens) |
-| Card padding | `24px` |
-| Spacing scale | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 80 · 96 |
-
-The reference caps its shell at 1200px. Ours is wider because it is an application shell as well as a
-marketing page, and 1200px stranded a third of a wide screen. **Prose still stops at 68ch** — filling
-the viewport is a layout decision, never a licence to run text to the window edge.
+| Spacing | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64; panels pad 24 |
+| Board columns | `minmax(200px, 1fr)`; on phones 82% wide with scroll-snap |
 
 ### Motion
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--motion` | `120ms ease-out` | every in-app state change |
-| `--spring` | `cubic-bezier(0.32, 1.4, 0.55, 1)` | glass only — the nav collapsing into its pill |
+| `--motion` | 140ms `cubic-bezier(0.2, 0, 0, 1)` | hovers, state changes |
+| `--motion-open` | 200ms, same curve | menus and sheets opening |
+| `--motion-close` | 120ms `cubic-bezier(0.4, 0, 1, 1)` | closing gets out of the way faster |
+| `--spring` | `cubic-bezier(0.32, 0.72, 0, 1)` | landing only (nav pill, demo) |
 
-In-app motion stays at 120ms and changes opacity plus at most 2px of translate. The spring is a
-**marketing-surface allowance**: it belongs to glass, which is the one element permitted to feel
-physical. `prefers-reduced-motion` disables the spring and the ambient drift; glass itself stays,
-because it is material rather than movement.
+Menus and sheets set `transform-origin` at the control that opened them (the mobile nav menu
+top-left, Add a job top-right, top-left on phones). Buttons press to `scale(0.98)`.
 
 ### Logo — Stages
 
-Four dots rising, each more solid than the last: the pipeline from `saved` to `offer`. The opacity
-ramp `0.28 / 0.5 / 0.75 / 1.0` is the same logic as the stage scale, so the mark and the interface
-teach each other. Final dot larger, giving the sequence a destination. Drawn in `currentColor`.
+Four dots rising, each more solid than the last: the pipeline from `saved` to `offer`, in
+`currentColor`.
 
-### Taken and rejected
+### Earlier systems
 
-| From the reference | Verdict |
-| --- | --- |
-| White canvas, no off-white | **Taken, then dropped 2026-11-11** — Sage uses a warm oat canvas |
-| Separation by 1px border, not fill or shadow | **Taken** — already our instinct |
-| One chromatic accent, never on large surfaces | **Amended 2026-11-11** — one accent plus one fenced progress colour |
-| Committed radius scale, no arbitrary values | **Taken**, extended so radius signals elevation |
-| 16px body floor, tightening tracking, modular scale | **Taken** |
-| Shadows at 0.03–0.05 or none | **Taken** for content; glass is the sole exception |
-| Inter as a single universal family | **Rejected** — the serif (now Fraunces) is the anti-CRM signal |
-| Pure grey neutrals | **Rejected** — ours keep a green-olive cast |
-| No glassmorphism at all | **Rejected**, but confined to floating elements only |
-| 1200px shell | **Rejected** — 1440px; we are an app, not only a doc site |
+Heather (one violet on white, to 2026-11-11) and Sage Studio (sage on warm oat with terracotta,
+to 2026-11-19) are retired. Sage Studio was dropped because its oat-and-terracotta palette with a
+serif display and monospace eyebrows read as the generic AI-generated look (`docs/UI-CRITIQUE.md`
+section 9).
 
 ## 6 · How they connect
 
@@ -767,14 +660,16 @@ Two load-bearing joints:
 - **Editorial layer: system proposes, you edit** (2026-11-10).
 - **High-scoring sourced jobs auto-create `saved` applications** (2026-11-10).
 - **Contacts are added by name or pasted LinkedIn URL**, stored as a link, never fetched (2026-11-10).
-- **Palette: Sage Studio** (2026-11-11, replacing Heather) — sage `#4F6F52` on a warm oat canvas, terracotta `#C96A3F` fenced to progress (§5).
+- **Palette: Apple-style blue and white** (2026-11-19, Parag, replacing Sage Studio) — system blue `#007AFF` on white cards over `#F2F2F7`, a system colour per stage, green for progress, San Francisco / Inter, capsule buttons (§5). Sage Studio (2026-11-11) and Heather before it are retired.
+- **Pipeline is a Kanban board** (2026-11-19, Parag's reference: Twinkle on Dribbble) — a column per working stage even when empty, grey tracks, lifted cards with a role-family tag and a company monogram, Add a job as the page's one primary action.
 - **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
   both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
-- **Radius encodes elevation.** 4 / 12 / 20px for anything in the page; `999px` capsules reserved for
-  floating glass. A pill on a static element is a bug.
+- **Nested radius** (2026-11-19, replacing "radius encodes elevation"): 8 inside 12 inside 16, so
+  curves line up; buttons and floating glass are capsules.
 - **Liquid glass has a strict habitat** — sticky nav, sheets, popovers, toasts, the landing hero card.
   Never on content cards, table rows, form fields or the page background.
-- **Separation is a 1px hairline, not a shadow or a fill.** Glass is the only thing that casts.
+- **Objects lift, pages don't** (2026-11-19, replacing "only glass casts"): cards you can open carry a
+  soft layered shadow; page sections are separated by space and a hairline.
 - **Logo: Stages** — four rising dots encoding the pipeline, in `currentColor`.
 - **Behavioural questions are generic; company questions come from your pipeline** (2026-11-10,
   Parag). No firm filter: a good story is a good story anywhere. "Why <company>?", "Why this

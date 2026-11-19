@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 (evening) - Apple-style blue and white re-theme + Kanban pipeline (PR: feat/blue-premium)
+
+Parag: make the UI premium using a YouTube video (7 fixes for AI-looking UI), leaning blue. Compared "Harbour" (navy/cobalt) with an Apple-style mock; he chose **Apple-style, colourful**, and pointed to a Dribbble Kanban (Twinkle) for the pipeline. Standing instruction: keep a DESIGN.md for every project (docs/DESIGN.md section 5 rewritten).
+- **Tokens** (`app/globals.css`): iOS grouped grey + white cards, system blue action, a system colour per stage, green progress (`--warm` now green; `--on-warm` for text on it), orange stale, tag tones `--tone-*`, `--track`, `--shadow-card`. Dark = true black + dark-mode system colours. Room = FaceTime dark.
+- **Type**: one family, `-apple-system` then Inter (`next/font`); Fraunces and Plex Mono dropped; `--font-serif/--font-mono` alias it; `--font-code` for real code (`ui.code` on the agent page). All uppercase/tracked labels removed.
+- **Pipeline**: header = large title + coloured facts line + **Add a job** (sheet grows from the button, `jd-form.tsx` `AddJob`/`AddJobGhost`, opens on an empty pipeline); board = a column per working stage (negotiation only when used, closed folded), grey tracks, lifted cards (role title, company, role-family tag, monogram via `lib/pipeline-display.ts`, tested), empty-column hints, 88rem page via `:has([data-board])`, phone swipe with scroll-snap.
+- **Landing**: headline "A CV that only says what you can prove.", one primary button + text link, stat trio cut, step copy rewritten.
+- **Checked** in the browser: landing, pipeline (light, dark, 375px), Add a job open/close, interview tab, application page. 943 tests, typecheck clean. **Not done:** Bank, Watchlist, Insights and the application page only inherit the tokens (no layout pass); no drag-and-drop between stages; DESIGN.md mock of the Harbour option is not kept.
+
 ## 2026-11-19 (later) - Interview tab bug fixes (PR: fix/interview-tab)
 
 - **Question switch leaked state:** switching questions is client-side, so the notes editor ("Saved.", follow-ups, Blank/STAR mode), the model-answer editor and the mock interview kept the previous question's state. The detail pane in `behavioural-view.tsx` is now keyed by question id.

@@ -40,7 +40,7 @@ export default async function AgentAccess() {
           see anyone else&apos;s data. Every token expires, a read-only token cannot change anything, and you can revoke a
           token at any time.
         </p>
-        <pre className={ui.mono} style={{ overflowX: "auto" }}>{`claude mcp add --transport http jobsearch ${endpoint} --header "Authorization: Bearer <token>"`}</pre>
+        <pre className={ui.code} style={{ overflowX: "auto" }}>{`claude mcp add --transport http jobsearch ${endpoint} --header "Authorization: Bearer <token>"`}</pre>
         <p className={ui.sub}>Tools: {TOOLS.map((t) => t.name).join(", ")}.</p>
       </section>
 

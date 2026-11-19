@@ -136,8 +136,8 @@ export function AgentAvatar({
         const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
         camera.position.set(0, -lift, 6);
 
-        const accent = new THREE.Color(cssColor("--accent", "#4f6f52"));
-        const light = new THREE.Color(cssColor("--room-glow", "#f6efe0"));
+        const accent = new THREE.Color(cssColor("--accent", "#2647c6"));
+        const light = new THREE.Color(cssColor("--room-glow", "#f3f6ff"));
 
         const uniforms = {
           uTime: { value: 0 },
