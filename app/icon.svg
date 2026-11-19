@@ -1,7 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <rect width="48" height="48" rx="10" fill="#f4f1ea"/>
-  <circle cx="10" cy="34" r="3.4" fill="#4f6f52" opacity="0.28"/>
-  <circle cx="19" cy="29" r="3.4" fill="#4f6f52" opacity="0.5"/>
-  <circle cx="28" cy="22" r="3.4" fill="#4f6f52" opacity="0.75"/>
-  <circle cx="38" cy="13" r="4.6" fill="#c96a3f"/>
+  <!-- The Stages mark (app/_components/logo.tsx): same dots, same opacity ramp, in the accent blue.
+       Light: white tile, #0071E3. Dark browser chrome: near-black tile, #0A84FF. -->
+  <style>
+    .tile { fill: #ffffff; }
+    .dot { fill: #0071e3; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #1c1c1e; }
+      .dot { fill: #0a84ff; }
+    }
+  </style>
+  <rect class="tile" width="48" height="48" rx="11"/>
+  <g transform="translate(1 1)">
+    <circle class="dot" cx="7" cy="34" r="3.2" opacity="0.28"/>
+    <circle class="dot" cx="17" cy="29" r="3.2" opacity="0.5"/>
+    <circle class="dot" cx="27" cy="22" r="3.2" opacity="0.75"/>
+    <circle class="dot" cx="38" cy="13" r="4.4"/>
+  </g>
 </svg>
