@@ -5,12 +5,13 @@ import { Logo } from "../_components/logo";
 import { getWorkspace } from "@/lib/db";
 import { signOut } from "../signin/actions";
 import { ThemeToggle } from "../_components/theme-toggle";
-import { NavLinks } from "./nav-links";
+import { BrandLink, NavLinks } from "./nav-links";
 import styles from "./app.module.css";
 
 /**
  * The day's order first (what to do next, your applications, practice), then the tools that
- * feed them: find roles, see what they ask for, your evidence, and setup last.
+ * feed them: find roles, see what they ask for, your evidence, and setup last. On wide
+ * screens the JobSearch name is the Overview tab; the phone menu lists Overview by name.
  */
 const NAV = [
   ["/app/home", "Overview"],
@@ -37,10 +38,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className={styles.shell}>
       <header className={styles.top}>
         <nav className={styles.bar} aria-label="App">
-          <Link href="/app/home" className={styles.brand} aria-label="JobSearch overview">
+          <BrandLink>
             <Logo size={20} />
             <span className={styles.wordmark}>JobSearch</span>
-          </Link>
+          </BrandLink>
           <NavLinks items={NAV} />
           <div className={styles.right}>
             <ThemeToggle />
