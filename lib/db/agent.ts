@@ -1,18 +1,20 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type { DbClient } from "../repos/db";
-import { bearerToken, hashToken } from "../agent/token";
+import { bearerToken, hashToken, type TokenScope } from "../agent/token";
 import { resolveApiToken } from "../repos/api-tokens";
 import { asDbClient } from "./supabase";
 
 export interface AgentWorkspace {
   db: DbClient;
   userId: string;
+  scope: TokenScope;
 }
 
 export type AgentAuth =
   | { ok: true; workspace: AgentWorkspace }
-  | { ok: false; reason: "unconfigured" | "unauthorized" };
+  | { ok: false; reason: "unconfigured" | "unauthorized" | "expired" }
+  | { ok: false; reason: "rate_limited"; retryAfterSec: number };
 
 /**
  * Resolve an agent request (the MCP endpoint) to a workspace from its bearer token.
@@ -36,6 +38,8 @@ export async function getAgentWorkspace(
   if (!token) return { ok: false, reason: "unauthorized" };
 
   const db = asDbClient(createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } }));
-  const userId = await resolveApiToken(db, hashToken(token), nowIso);
-  return userId ? { ok: true, workspace: { db, userId } } : { ok: false, reason: "unauthorized" };
+  const r = await resolveApiToken(db, hashToken(token), nowIso);
+  if (r.ok) return { ok: true, workspace: { db, userId: r.userId, scope: r.scope } };
+  if (r.reason === "rate_limited") return { ok: false, reason: "rate_limited", retryAfterSec: r.retryAfterSec };
+  return { ok: false, reason: r.reason === "expired" ? "expired" : "unauthorized" };
 }

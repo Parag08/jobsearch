@@ -18,3 +18,6 @@ export function bearerToken(header: string | null | undefined): string | null {
   const m = /^Bearer\s+(\S+)\s*$/i.exec(header ?? "");
   return m && m[1].startsWith(TOKEN_PREFIX) ? m[1] : null;
 }
+
+export { TOKEN_SCOPES, TOKEN_LIFETIME_DAYS, DEFAULT_TOKEN_DAYS, tokenOptions, tokenExpiry, isExpired } from "./token-options";
+export type { TokenScope } from "./token-options";

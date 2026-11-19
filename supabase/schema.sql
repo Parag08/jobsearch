@@ -350,6 +350,7 @@ create index case_sessions_user_case on case_sessions (user_id, case_id, created
 
 -- ---- agent access: personal tokens for the MCP endpoint /api/mcp (0009) -------------
 -- Only the SHA-256 hash is stored; the token is shown once, on creation.
+-- scope, expiry and the per-token rate-limit window came in 0014.
 create table api_tokens (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles (user_id) on delete cascade,
@@ -357,7 +358,11 @@ create table api_tokens (
   token_hash text not null unique,
   created_at timestamptz not null default now(),
   last_used_at timestamptz,
-  revoked_at timestamptz
+  revoked_at timestamptz,
+  scope text not null default 'write' constraint api_tokens_scope_check check (scope in ('read', 'write')),
+  expires_at timestamptz not null default (now() + interval '90 days'),
+  window_start timestamptz,
+  window_count integer not null default 0
 );
 
 -- ---- role insights: one generated gap plan per role family (0010) -------------------
