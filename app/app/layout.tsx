@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className={styles.shell}>
       <header className={styles.top}>
         <nav className={styles.bar} aria-label="App">
-          <Link href="/" className={styles.brand}>
+          <Link href="/app/home" className={styles.brand} aria-label="JobSearch overview">
             <Logo size={20} />
             <span className={styles.wordmark}>JobSearch</span>
           </Link>
