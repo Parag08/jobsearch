@@ -14,6 +14,24 @@ import styles from "./app.module.css";
  * that names the current page and opens the same links in a glass sheet
  * (glass is for floating things, docs/DESIGN.md section 5).
  */
+/** The overview's address: the JobSearch name is its tab on wide screens. */
+export const OVERVIEW = "/app/home";
+
+/**
+ * The logo and name, acting as the Overview tab (Parag, 2026-11-19: a name that did nothing
+ * visible beside an Overview tab that did the same thing was one control too many). It takes
+ * the current-page pill like any tab, so it reads as one.
+ */
+export function BrandLink({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const current = pathname === OVERVIEW;
+  return (
+    <Link href={OVERVIEW} className={styles.brand} aria-current={current ? "page" : undefined} aria-label="JobSearch, overview" title="Overview">
+      {children}
+    </Link>
+  );
+}
+
 export function NavLinks({ items }: { items: ReadonlyArray<readonly [string, string]> }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -41,15 +59,18 @@ export function NavLinks({ items }: { items: ReadonlyArray<readonly [string, str
     };
   }, [open]);
 
-  const links = items.map(([href, label]) => (
+  const link = ([href, label]: readonly [string, string]) => (
     <Link key={href} href={href} className={styles.link} aria-current={isCurrent(href) ? "page" : undefined}>
       {label}
     </Link>
-  ));
+  );
+  // The row skips Overview (the name is its tab); the phone menu lists every page.
+  const rowLinks = items.filter(([href]) => href !== OVERVIEW).map(link);
+  const menuLinks = items.map(link);
 
   return (
     <>
-      <div className={styles.links}>{links}</div>
+      <div className={styles.links}>{rowLinks}</div>
       <div className={styles.menuWrap} ref={wrap}>
         <button
           type="button"
@@ -65,7 +86,7 @@ export function NavLinks({ items }: { items: ReadonlyArray<readonly [string, str
         </button>
         {open && (
           <nav id={menuId} className={styles.menu} aria-label="Pages">
-            {links}
+            {menuLinks}
           </nav>
         )}
       </div>

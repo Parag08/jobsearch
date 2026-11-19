@@ -577,8 +577,10 @@ top-left, Add a job top-right, top-left on phones). Buttons press to `scale(0.98
 
 Added 2026-11-19 (Parag: the JobSearch name in the menu bar did nothing; he wanted a page that
 reports from every page and keeps him applying, reaching out and practising). It opens from
-the JobSearch name and, since 2026-11-19, the first nav tab (it was hidden behind the name
-and nobody found it). It is where sign-in lands. Parag tried and rejected a Three.js scene here:
+the JobSearch name, which is its tab: on the overview the name takes the current-page pill,
+like any tab (2026-11-19; a separate Overview tab beside a name that went to the same place
+was one control too many). On phones, where the row folds into a menu, the menu lists
+Overview by name. It is where sign-in lands. Parag tried and rejected a Three.js scene here:
 the page has no animation.
 
 - **Focal point:** a headline chosen from the week's real state (`lib/home/momentum.ts`: start,
@@ -606,6 +608,9 @@ Decided 2026-11-19 (Parag: overview, then pipeline, then interview). The day's o
 then the tools that feed it:
 
 **Overview · Pipeline · Interview · Watchlist · Insights · Bank · Agent**
+
+On wide screens the JobSearch name is the Overview tab (its pill shows when you are there),
+so the row reads **JobSearch · Pipeline · Interview · …**; the phone menu lists all seven.
 
 Overview says what to do next; Pipeline is the applications; Interview is practice. Then
 Watchlist finds roles, Insights says what they ask for, the Bank holds your evidence, and
