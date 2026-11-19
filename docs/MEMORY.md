@@ -2,6 +2,11 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 (after #21) - Live demo 500 and page speed (branch fix/live-demo-and-speed)
+
+- **Demo 500 on the live site:** `lib/db/demo.ts` read `data/demo/` with `fs`; Vercel's bundle did not include it (ENOENT `/var/task/data/demo/applications`). Now imported as modules (`lib/demo/corpus.ts`); the scratch production build carries it.
+- **Speed:** warm public pages answer in 60-100ms (TTFB, curl from Singapore); first hits after a deploy are 0.5-0.8s cold starts. Signed-in pages called Supabase auth once in middleware and once per `getWorkspace()` caller (layout + page); `getWorkspace` is now `cache()`d per request. Signed-in timings not measured (no session in the browser pane).
+
 ## 2026-11-19 (after #19) - Public demo that spends no tokens (branch feat/token-free-demo)
 
 Parag asked for a demo with sample data visitors can click through, worried about token spend, or else a video. Chose the interactive demo: video goes stale, and clicking shows more.

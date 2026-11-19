@@ -6,6 +6,7 @@ import { seedFakeDb } from "./seed-fake-db";
 import type { ImportedWorkspace } from "../import/cvbuilder";
 import { seedDemoExtras, stageDemoApplications } from "../demo/extras";
 import { DEMO_TTL_SECONDS, VisitorStore } from "../demo/visitors";
+import { DEMO_SOURCE } from "../demo/corpus";
 
 /** The demo workspace's owner id - a fixed placeholder, never a real auth user. */
 export const DEMO_USER_ID = "00000000-0000-0000-0000-000000000d3e";
@@ -58,27 +59,27 @@ const visitors = globalThis as {
   __jobsearchVisitors?: VisitorStore<FakeDb>;
 };
 
-/** The fictional sample person in data/demo/ - never the owner's corpus. */
-function demoCorpus(root: string): ImportedWorkspace {
-  return (visitors.__jobsearchDemoCorpus ??= loadCorpus(join(root, "data", "demo")));
+/** The fictional sample person in data/demo/ - never the owner's corpus. Bundled, not read from disk. */
+function demoCorpus(): ImportedWorkspace {
+  return (visitors.__jobsearchDemoCorpus ??= importCvbuilder(DEMO_SOURCE, { userId: DEMO_USER_ID }));
 }
 
 /** The taxonomy the demo reads postings with (lib/demo/canned.ts lexicalExtract). */
-export function demoTaxonomy(root = process.cwd()): unknown {
-  return JSON.parse(readFileSync(join(root, "data", "demo", "taxonomy.json"), "utf8"));
+export function demoTaxonomy(): unknown {
+  return DEMO_SOURCE.taxonomy;
 }
 
 /** A fresh sample workspace: the fictional corpus, staged along the pipeline, plus watchlist and practice. */
-export function freshVisitorDb(root = process.cwd(), today = new Date().toISOString().slice(0, 10)): FakeDb {
+export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): FakeDb {
   const db = new FakeDb();
-  seedFakeDb(db, stageDemoApplications(structuredClone(demoCorpus(root)), today));
+  seedFakeDb(db, stageDemoApplications(structuredClone(demoCorpus()), today));
   seedDemoExtras(db, DEMO_USER_ID, today);
   return db;
 }
 
 /** This visitor's own sample workspace (lib/demo/visitors.ts); edits stay theirs until it expires. */
-export function getVisitorDemoDb(visitorId: string, max: number, root = process.cwd()): FakeDb {
-  visitors.__jobsearchVisitors ??= new VisitorStore(() => freshVisitorDb(root), { ttlMs: DEMO_TTL_SECONDS * 1000, max });
+export function getVisitorDemoDb(visitorId: string, max: number): FakeDb {
+  visitors.__jobsearchVisitors ??= new VisitorStore(() => freshVisitorDb(), { ttlMs: DEMO_TTL_SECONDS * 1000, max });
   return visitors.__jobsearchVisitors.get(visitorId);
 }
 
