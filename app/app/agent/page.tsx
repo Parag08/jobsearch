@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApiTokens } from "@/lib/repos/api-tokens";
+import { isExpired } from "@/lib/agent/token";
 import { TOOLS } from "@/lib/mcp/tools";
 import { revokeTokenAction } from "./actions";
 import { TokenForm } from "./token-form";
@@ -22,12 +23,13 @@ export default async function AgentAccess() {
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const endpoint = `${proto}://${host}/api/mcp`;
   const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "never");
+  const nowIso = new Date().toISOString();
 
   return (
     <>
       <div className={ui.head}>
         <h1>Agent access</h1>
-        <span className={ui.mono}>{tokens.filter((t) => !t.revokedAt).length} active</span>
+        <span className={ui.mono}>{tokens.filter((t) => !t.revokedAt && !isExpired(t.expiresAt, nowIso)).length} active</span>
       </div>
 
       <section className={ui.panel}>
@@ -35,7 +37,8 @@ export default async function AgentAccess() {
         <p className={ui.sub}>
           This workspace speaks MCP. An agent holding one of your tokens can read your pipeline and contacts and update
           them as you work: add an application, move a stage (with its date and evidence), log a conversation. It cannot
-          see anyone else&apos;s data, and you can revoke a token at any time.
+          see anyone else&apos;s data. Every token expires, a read-only token cannot change anything, and you can revoke a
+          token at any time.
         </p>
         <pre className={ui.mono} style={{ overflowX: "auto" }}>{`claude mcp add --transport http jobsearch ${endpoint} --header "Authorization: Bearer <token>"`}</pre>
         <p className={ui.sub}>Tools: {TOOLS.map((t) => t.name).join(", ")}.</p>
@@ -50,7 +53,9 @@ export default async function AgentAccess() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Access</th>
                   <th>Created</th>
+                  <th>Expires</th>
                   <th>Last used</th>
                   <th />
                 </tr>
@@ -59,7 +64,9 @@ export default async function AgentAccess() {
                 {tokens.map((t) => (
                   <tr key={t.id}>
                     <td>{t.name}</td>
+                    <td>{t.scope === "write" ? "read and update" : "read only"}</td>
                     <td>{day(t.createdAt)}</td>
+                    <td>{isExpired(t.expiresAt, nowIso) ? `expired ${day(t.expiresAt)}` : day(t.expiresAt)}</td>
                     <td>{day(t.lastUsedAt)}</td>
                     <td>
                       {t.revokedAt ? (

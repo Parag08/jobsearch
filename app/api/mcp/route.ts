@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAgentWorkspace } from "@/lib/db/agent";
-import { handleBody } from "@/lib/mcp/server";
+import { capReads, handleBody, MAX_READS_PER_REQUEST } from "@/lib/mcp/server";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
 import { logTokens } from "@/lib/repos/token-ledger";
 
@@ -22,13 +22,23 @@ export async function POST(request: Request): Promise<Response> {
   const nowIso = new Date().toISOString();
   const auth = await getAgentWorkspace(request.headers.get("authorization"), nowIso);
   if (!auth.ok) {
-    return auth.reason === "unconfigured"
-      ? rpcError(503, -32000, "Agent access is not configured on this deployment.")
-      : rpcError(401, -32001, "Missing or invalid token. Create one on /app/agent.", { "WWW-Authenticate": "Bearer" });
+    switch (auth.reason) {
+      case "unconfigured":
+        return rpcError(503, -32000, "Agent access is not configured on this deployment.");
+      case "rate_limited":
+        return rpcError(429, -32002, `Too many requests for this token. Retry in ${auth.retryAfterSec}s.`, {
+          "Retry-After": String(auth.retryAfterSec),
+        });
+      case "expired":
+        return rpcError(401, -32001, "This token has expired. Create a new one on /app/agent.", { "WWW-Authenticate": "Bearer" });
+      default:
+        return rpcError(401, -32001, "Missing or invalid token. Create one on /app/agent.", { "WWW-Authenticate": "Bearer" });
+    }
   }
 
+  if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return rpcError(413, -32600, "Request too large.");
   const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) return rpcError(413, -32600, "Request too large.");
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return rpcError(413, -32600, "Request too large.");
   let body: unknown;
   try {
     body = JSON.parse(raw);
@@ -42,11 +52,14 @@ export async function POST(request: Request): Promise<Response> {
     const { db, userId } = auth.workspace;
     const date = nowIso.slice(0, 10);
     const llm = base
-      ? withLedger(base, async (e) => {
-          await logTokens(db, userId, { date, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(
-            () => undefined,
-          );
-        })
+      ? capReads(
+          withLedger(base, async (e) => {
+            await logTokens(db, userId, { date, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(
+              () => undefined,
+            );
+          }),
+          MAX_READS_PER_REQUEST,
+        )
       : undefined;
     const reply = await handleBody(body, { ...auth.workspace, nowIso, llm });
     return reply === null ? new Response(null, { status: 202 }) : NextResponse.json(reply);

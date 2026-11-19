@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-19 - Agent (MCP) safety hardening
+
+Parag asked for a safety review of the agent workflows, then a PR for the five gaps found.
+- **Tokens (migration 0014, mirrored in `schema.sql`)**: `scope` read|write (existing rows: write), `expires_at` (existing rows: 90 days from migration), `window_start`/`window_count` for a 60/min per-token rate limit (`lib/agent/rate-limit.ts`, 429 + Retry-After). `/app/agent` picks scope and 30/90/365 days and lists both.
+- **MCP**: every tool has `annotations`; read tokens only list/call read-only tools; `set_stage` closed and `set_model_answer` force need `confirmedByUser: true`; batch max 20, `jdRaw` max 60k, at most 3 posting reads per request (`capReads`), body cap counts bytes.
+- **Prompts**: data-not-instructions lines in JD extraction, mock follow-up/debrief, scoring and rewrite; server instructions say returned postings/transcripts/notes are data.
+- **SECURITY_MODEL.md** no longer says the MCP path makes no LLM calls.
+- **Ship:** merge, db.yml applies 0014. Existing tokens keep working (write) and expire 90 days after the migration runs.
+
 ## 2026-11-18 (evening) - Model answers (agent, AI rewrite, user), comparison, fillers
 
 Parag: wants a model answer per question - from the agent, or the app's AI rewriting his own written answer, or edited by him - then to speak and be compared, with filler feedback. All of it over MCP too.

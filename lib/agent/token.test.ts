@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { insertApiToken, listApiTokens, resolveApiToken, revokeApiToken } from "../repos/api-tokens";
-import { bearerToken, generateToken, hashToken, TOKEN_PREFIX } from "./token";
+import { bearerToken, generateToken, hashToken, isExpired, tokenExpiry, tokenOptions, TOKEN_PREFIX } from "./token";
 
 describe("agent tokens", () => {
   it("generates distinct prefixed tokens and a stable hash that is not the token", () => {
@@ -22,24 +22,64 @@ describe("agent tokens", () => {
     expect(bearerToken(null)).toBeNull();
   });
 
-  it("resolves a stored hash to its owner, stamps last use, and stops after revocation", async () => {
+  const opts = { scope: "write" as const, expiresAt: "2027-01-01T00:00:00.000Z" };
+
+  it("resolves a stored hash to its owner and scope, stamps last use, and stops after revocation", async () => {
     const db = new FakeDb();
     const token = generateToken();
-    const created = await insertApiToken(db, "user-1", "laptop", hashToken(token));
+    const created = await insertApiToken(db, "user-1", "laptop", hashToken(token), opts);
 
-    expect(await resolveApiToken(db, hashToken(token), "2026-11-13T01:00:00Z")).toBe("user-1");
-    expect(await resolveApiToken(db, hashToken("jsk_wrong"), "2026-11-13T01:00:00Z")).toBeNull();
+    expect(await resolveApiToken(db, hashToken(token), "2026-11-13T01:00:00Z")).toEqual({ ok: true, userId: "user-1", scope: "write" });
+    expect(await resolveApiToken(db, hashToken("jsk_wrong"), "2026-11-13T01:00:00Z")).toEqual({ ok: false, reason: "invalid" });
     expect((await listApiTokens(db, "user-1"))[0].lastUsedAt).toBe("2026-11-13T01:00:00Z");
     expect(await listApiTokens(db, "user-2")).toEqual([]);
 
     await revokeApiToken(db, "user-1", created.id, "2026-11-13T02:00:00Z");
-    expect(await resolveApiToken(db, hashToken(token), "2026-11-13T03:00:00Z")).toBeNull();
+    expect(await resolveApiToken(db, hashToken(token), "2026-11-13T03:00:00Z")).toEqual({ ok: false, reason: "invalid" });
+  });
+
+  it("keeps a read-only scope and refuses a token once it has expired", async () => {
+    const db = new FakeDb();
+    const token = generateToken();
+    const made = await insertApiToken(db, "user-1", "reader", hashToken(token), { scope: "read", expiresAt: "2026-12-01T00:00:00.000Z" });
+    expect(made).toMatchObject({ scope: "read", expiresAt: "2026-12-01T00:00:00.000Z" });
+    expect(await resolveApiToken(db, hashToken(token), "2026-11-30T23:59:59.000Z")).toEqual({ ok: true, userId: "user-1", scope: "read" });
+    expect(await resolveApiToken(db, hashToken(token), "2026-12-01T00:00:00.000Z")).toEqual({ ok: false, reason: "expired" });
+  });
+
+  it("treats a row without an explicit write scope or expiry as read-only and expired", async () => {
+    const db = new FakeDb();
+    const token = generateToken();
+    db.seed("api_tokens", [{ user_id: "user-1", name: "old", token_hash: hashToken(token) }]);
+    expect(await resolveApiToken(db, hashToken(token), "2026-11-13T01:00:00Z")).toEqual({ ok: false, reason: "expired" });
+  });
+
+  it("rate-limits a token per window and lets it through again after the window", async () => {
+    const db = new FakeDb();
+    const token = generateToken();
+    await insertApiToken(db, "user-1", "laptop", hashToken(token), opts);
+    const limit = { requests: 2, windowMs: 60_000 };
+    const at = (s: string) => resolveApiToken(db, hashToken(token), `2026-11-13T01:00:${s}.000Z`, limit);
+    expect((await at("00")).ok).toBe(true);
+    expect((await at("10")).ok).toBe(true);
+    expect(await at("20")).toEqual({ ok: false, reason: "rate_limited", retryAfterSec: 40 });
+    expect((await resolveApiToken(db, hashToken(token), "2026-11-13T01:01:00.000Z", limit)).ok).toBe(true);
   });
 
   it("never stores the token itself", async () => {
     const db = new FakeDb();
     const token = generateToken();
-    await insertApiToken(db, "user-1", "laptop", hashToken(token));
+    await insertApiToken(db, "user-1", "laptop", hashToken(token), opts);
     expect(JSON.stringify(db.rows("api_tokens"))).not.toContain(token);
+  });
+
+  it("reads scope and lifetime from the form, defaulting to write for 90 days, and computes expiry", () => {
+    expect(tokenOptions("read", "30")).toEqual({ scope: "read", days: 30 });
+    expect(tokenOptions("admin", "9999")).toEqual({ scope: "write", days: 90 });
+    expect(tokenOptions(undefined, undefined)).toEqual({ scope: "write", days: 90 });
+    expect(tokenExpiry("2026-11-19T00:00:00.000Z", 30)).toBe("2026-12-19T00:00:00.000Z");
+    expect(isExpired("2026-11-19T00:00:00+00:00", "2026-11-18T23:59:59.000Z")).toBe(false);
+    expect(isExpired("2026-11-19T00:00:00+00:00", "2026-11-19T00:00:00.000Z")).toBe(true);
+    expect(isExpired(null, "2026-11-19T00:00:00.000Z")).toBe(true);
   });
 });
