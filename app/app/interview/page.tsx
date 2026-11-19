@@ -17,6 +17,7 @@ import type { Question } from "@/lib/interview/questions";
 import { BehaviouralView } from "./behavioural-view";
 import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
+import { caseProgress, type CaseProgress } from "@/lib/interview/case-progress";
 import { CaseRoom } from "./case-room";
 import ui from "../ui.module.css";
 
@@ -142,6 +143,15 @@ const CASE_TYPE_LABEL: Record<string, string> = {
   "pe-due-diligence": "PE due diligence",
   "pe-value-creation": "PE value creation",
 };
+/** One line under each case card: how far you have got with it. */
+function progressLine(p: CaseProgress | undefined): string {
+  if (!p) return "Not tried yet";
+  if (p.best !== null) {
+    const tries = `${p.finished} ${p.finished === 1 ? "attempt" : "attempts"}`;
+    return `Best ${p.best.toFixed(1)} / 5 · ${tries}${p.running ? " · one in progress" : ""}`;
+  }
+  return p.running ? "In progress" : "Finished - open it to get your feedback";
+}
 const caseTypeLabel = (t: string) => CASE_TYPE_LABEL[t] ?? t.replace(/-/g, " ");
 const pretty = (s: string) => s.replace(/-/g, " ");
 
@@ -161,12 +171,7 @@ function Casing({
   const shown = caseLibrary.cases.filter((c) => activeType === "all" || c.caseType === activeType);
   const selected = caseLibrary.cases.find((c) => c.id === selectedId);
 
-  const best = new Map<string, number>();
-  const tries = new Map<string, number>();
-  for (const s of sessions) {
-    tries.set(s.caseId, (tries.get(s.caseId) ?? 0) + 1);
-    if (s.overall !== null) best.set(s.caseId, Math.max(best.get(s.caseId) ?? 0, s.overall));
-  }
+  const progress = caseProgress(sessions);
   const latest = selected ? sessions.find((s) => s.caseId === selected.id) : undefined; // newest first
 
   const link = (next: { case?: string; type?: string }) => {
@@ -197,7 +202,7 @@ function Casing({
             </span>
           </div>
           <CaseRoom
-            key={latest?.id ?? "new"}
+            key={`${selected.id}:${latest?.id ?? "new"}`}
             sheet={selected}
             latest={
               latest
@@ -244,17 +249,7 @@ function Casing({
                     {c.level} · {c.minutes} min
                   </span>
                 </span>
-                <span className={ui.sub}>
-                  {best.has(c.id) ? (
-                    <>
-                      Best <b>{best.get(c.id)!.toFixed(1)}</b> / 5 · {tries.get(c.id)} {tries.get(c.id) === 1 ? "attempt" : "attempts"}
-                    </>
-                  ) : tries.has(c.id) ? (
-                    "In progress"
-                  ) : (
-                    "Not tried yet"
-                  )}
-                </span>
+                <span className={ui.sub}>{progressLine(progress.get(c.id))}</span>
               </Link>
             ))}
           </div>
@@ -322,9 +317,9 @@ function Technical({
           </div>
         </>
       )}
-      {surface.evidenced.length === 0 ? (
+      {surface.evidenced.length === 0 && surface.asserted.length === 0 ? (
         <p className={ui.empty}>No Skills or Technologies line on the profile yet.</p>
-      ) : (
+      ) : surface.evidenced.length === 0 ? null : (
         <>
           <p className={ui.mono}>Backed by the bank</p>
           <ul className={ui.rows}>

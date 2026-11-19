@@ -11,6 +11,7 @@ import {
 import type { CaseSheet, Exhibit, QuestionKind } from "@/lib/interview/case-sheet";
 import { CASE_DIMENSIONS, CASE_DIMENSION_HELP, type CaseSession } from "@/lib/interview/case-session";
 import { BARS, OPENING } from "@/lib/interview/case-method";
+import { caseElapsedSeconds } from "@/lib/interview/case-progress";
 import { LANGS, recognitionCtor, speak, stopSpeaking, type SpeechRecognitionLike } from "./speech";
 import ui from "../ui.module.css";
 
@@ -55,6 +56,8 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
+  /** False once you leave the case: a late reply must not speak or restart anything. */
+  const alive = useRef(true);
 
   useEffect(() => {
     setCanListen(recognitionCtor() !== null);
@@ -87,10 +90,17 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [turnCount, pending, debrief]);
 
-  useEffect(() => () => { stopListening(); stopSpeaking(); }, []);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      stopListening();
+      stopSpeaking();
+    };
+  }, []);
 
   function sayNew(before: number, s: CaseSession) {
-    if (!voice) return;
+    if (!voice || !alive.current) return;
     const lines = s.turns.slice(before).filter((t) => t.role === "interviewer").map((t) => t.text);
     if (lines.length) void speak(lines.join(" "), lang);
   }
@@ -123,7 +133,7 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
       setDraft(text);
       setError(r.error ?? "Something went wrong.");
       // Rate-limited: nothing is lost - send the same answer again once the wait is over.
-      if (r.retryAfter) setTimeout(() => void send(text), (r.retryAfter + 1) * 1000);
+      if (r.retryAfter) setTimeout(() => alive.current && void send(text), (r.retryAfter + 1) * 1000);
       return;
     }
     setSession(r.session);
@@ -224,7 +234,7 @@ export function CaseRoom({ sheet, latest }: CaseRoomProps) {
 
   const q = sheet.questions[session.index];
   const done = session.status === "done";
-  const elapsed = (now - Date.parse(session.turns[0].at)) / 1000;
+  const elapsed = caseElapsedSeconds(session, now);
   const bar = session.index === 0 && !done ? [OPENING, BARS.structure] : [BARS[q.kind]];
   const exhibitFor = (id?: string): Exhibit | undefined => sheet.questions.find((x) => x.id === id)?.exhibit;
 
