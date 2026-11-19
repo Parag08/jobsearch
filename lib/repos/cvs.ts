@@ -90,3 +90,9 @@ export async function setApplicationCvFilePath(
   );
   return toStoredApplicationCv(row);
 }
+
+/** Every tailored CV the user has, sent or not (the Bank uses it to say where a point is used). */
+export async function listApplicationCvs(db: DbClient, userId: string): Promise<StoredApplicationCv[]> {
+  const rows = await many(db.from("application_cvs").select().eq("user_id", userId), "application_cvs", "list");
+  return rows.map(toStoredApplicationCv);
+}

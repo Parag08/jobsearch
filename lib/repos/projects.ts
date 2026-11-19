@@ -1,5 +1,5 @@
 import type { Bullet, Project } from "../types";
-import { many, one, type DbClient } from "./db";
+import { many, one, RepoError, type DbClient } from "./db";
 import { bulletRow, projectRow, toBullet, toProject } from "./rows";
 
 export type NewProject = Omit<Project, "id" | "bullets">;
@@ -54,4 +54,34 @@ export async function listBulletsByRoleFamily(
     "listByRoleFamily",
   );
   return rows.map(toBullet);
+}
+
+export type BulletPatch = Partial<Pick<Bullet, "text" | "roleFamily" | "skills" | "variants" | "strength">>;
+
+/** Edit one of the user's points; throws when the point is not theirs or does not exist. */
+export async function updateBullet(db: DbClient, userId: string, id: string, patch: BulletPatch): Promise<Bullet> {
+  const row = await one(
+    db
+      .from("bullets")
+      .update({
+        ...(patch.text !== undefined ? { text: patch.text } : {}),
+        ...(patch.roleFamily !== undefined ? { role_family: patch.roleFamily } : {}),
+        ...(patch.skills !== undefined ? { skills: patch.skills } : {}),
+        ...(patch.variants !== undefined ? { variants: patch.variants } : {}),
+        ...(patch.strength !== undefined ? { strength: patch.strength } : {}),
+      })
+      .eq("user_id", userId)
+      .eq("id", id)
+      .select()
+      .single(),
+    "bullets",
+    "update",
+  );
+  return toBullet(row);
+}
+
+/** Remove one of the user's points. Sent applications keep their own snapshot of the text. */
+export async function deleteBullet(db: DbClient, userId: string, id: string): Promise<void> {
+  const { error } = await db.from("bullets").delete().eq("user_id", userId).eq("id", id);
+  if (error) throw new RepoError("bullets", "delete", error.message);
 }

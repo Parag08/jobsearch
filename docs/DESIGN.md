@@ -464,7 +464,7 @@ boards systematically cover the wrong half of the market.
    creates the account on the first visit, so the landing has no separate "Get started"; the
    nav has a single Sign in, for readers who have scrolled past the hero.
 2. **Colour means something.** System blue is for doing. Each pipeline stage has its own
-   system colour so the board reads at a glance. Green is progress. Orange is "gone quiet".
+   system colour so the board reads at a glance. Green is progress. Orange is "needs attention": an application gone quiet, a weak point, a point with no number.
    Red is fenced to destructive confirmations: a rejection is never red, closed is grey.
 3. **Hierarchy from weight and ink.** Titles are bold and tightly tracked, only a step bigger
    than body. Secondary text is a softer grey, never a smaller size alone.
@@ -492,7 +492,7 @@ the brighter dark-mode system colours. Every role has a light and a dark value.
 | `--accent` / `--accent-text` | `#0071E3` / `#0066D6` | `#0A84FF` / `#409CFF` | the action colour (fills / text) |
 | `--warm` / `--warm-text` | `#34C759` / `#1F7A37` | `#30D158` / `#4ADE74` | progress: offer, practised, covered |
 | `--on-warm` | `#062B10` | `#00210A` | text on a green fill (white fails contrast) |
-| `--stale` / `--stale-text` | `#FF9500` / `#B25000` | `#FF9F0A` / `#FFB340` | no reply in 2 weeks |
+| `--stale` / `--stale-text` | `#FF9500` / `#B25000` | `#FF9F0A` / `#FFB340` | needs attention: no reply in 2 weeks, weak point, no number |
 | `--danger` | `#FF3B30` | `#FF453A` | destructive confirmations only |
 
 **Stage colours** (the dot in each column head, the landing demo):
@@ -598,6 +598,42 @@ the page has no animation.
   plan.
 - **Voice:** count effort, never failure. A closed application is a try ("Most close, and every
   one sharpens the next"). A quiet week is an invitation back in, never a scold.
+
+### Bank (`/app/bank`)
+
+Redesigned 2026-11-19 (Parag: the elements were not where they should be; he wanted the
+strength dots in colour and a way to edit any point that is wrong). The Bank is the single
+source of evidence, so every point is editable in place.
+
+- **Header:** "34 points across 10 roles" in soft grey, not monospace.
+- **Summary panel:** three stats side by side (stacking on phones). CV readiness with the meter
+  and one plain line (at 100% it says so; the per-role gaps live in To do, not here); point
+  strength as a stacked bar in the three band colours with a legend; "Missing a number" in
+  orange with a link that filters the page to those points (`?only=needs-number`).
+- **To do:** the onboarding nudge queue as sentences (`lib/bank/display.ts` `todoItems`):
+  "Add a number to “…”", "Add 2 more points to INSEAD", "Add the languages you speak". Each
+  links to its role or point (a link into a collapsed role opens it first) and names the role
+  on the right. Three shown, "Show N more" for the rest. No priority codes, no ids.
+- **Roles:** one collapsible panel each, headed by the company monogram (same tone hash as the
+  board), the company in bold and "role · dates · N points" in grey. Recent roles (this year,
+  last year or present) start open; the rest start closed.
+- **Points:** wording, then tags: "Needs a number" first in orange, the role family as the one
+  coloured tag (tone hash of the family), up to four skills in grey sentence case with repeats
+  and family echoes dropped, "+N" for the rest, and "N variants" as plain grey text.
+- **Strength:** five dots filled to the score, all in the band's colour, with the band named
+  under them so colour is never the only signal. Strong 4-5 green (`--warm`), solid 3 teal
+  (`--tone-teal`), weak 1-2 orange (`--stale`). A point with no number shows at most 2, as
+  the intake guard caps it (`effectiveStrength`), so the page and the editor agree.
+- **Editing:** "Edit" appears on hover or focus (always visible on touch) and turns the row
+  into the editor: wording, strength (tap a dot; 3-5 switch off while there is no number, and
+  the hint says why), role family (free text with the existing families suggested), skills
+  (comma separated), variants (labels fixed because CVs pick variants by label; text editable;
+  removable; flagged for review when the main wording changes). Save is the one filled
+  button; Esc cancels, ⌘↵ saves. "+ Add a point" at the foot of each role opens the same
+  editor empty.
+- **Deleting:** a red text link in the editor opens an inline confirmation on the danger wash
+  that says how many CVs use the point and how many were sent, and that copies already made
+  or sent keep it while those CVs leave it out from now on (export reads the bank).
 
 ### Logo — Stages
 
