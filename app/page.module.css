@@ -126,27 +126,31 @@
 .heroText {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
   max-width: var(--measure);
 }
 
 .eyebrow {
   font-family: var(--font-mono), monospace;
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--accent-text);
 }
 
+/* The focal point: the biggest, darkest, heaviest thing on the page. */
 .hero h1 {
-  font-size: clamp(2.2rem, 6vw, 3.4rem);
-  line-height: 1.06;
+  font-size: clamp(2.4rem, 5.6vw, 3.75rem);
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  max-width: 14ch;
 }
 
 .lede {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   line-height: 1.6;
   color: var(--ink-soft);
+  max-width: 46ch;
 }
 
 .ctas {
@@ -167,8 +171,8 @@
 .ctaQuiet {
   display: inline-flex;
   align-items: center;
-  padding: 11px 20px;
-  border-radius: var(--radius);
+  padding: 11px 22px;
+  border-radius: var(--radius-button);
   font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -194,6 +198,20 @@
 .ctaQuiet {
   color: var(--ink-soft);
   background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+/* The second action is a text link, so only one thing on the hero looks like a button. */
+.ctaLink {
+  padding: 11px 4px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.ctaLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .ctaQuiet:hover {
@@ -257,7 +275,7 @@
   grid-column: 2;
   font-family: var(--font-mono), monospace;
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--accent-text);
 }
 

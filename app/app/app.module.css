@@ -76,7 +76,7 @@
 .mode {
   font-family: var(--font-mono), monospace;
   font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 3px 9px;
   border-radius: var(--radius-float);
   color: var(--ink-soft);
@@ -157,6 +157,12 @@
   .menu {
     background: color-mix(in srgb, var(--paper) 96%, transparent);
   }
+}
+
+/* A board needs the room: the pipeline page widens to the shell, reading pages do not. */
+.main:has([data-board]),
+.shell:has([data-board]) .bar {
+  max-width: 88rem;
 }
 
 @media (max-width: 640px) {

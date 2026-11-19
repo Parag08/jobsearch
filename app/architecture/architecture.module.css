@@ -30,8 +30,7 @@
 .eyebrow {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--ink-faint);
   margin: 0 0 12px;
 }
@@ -106,8 +105,7 @@
 .plannedTag {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--warm-text);
 }
 
@@ -215,8 +213,7 @@
   transition: opacity 120ms linear;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   white-space: nowrap;
   color: var(--ink-faint);
 }
@@ -320,8 +317,7 @@
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--ink-faint);
   margin: 0 0 6px;
 }

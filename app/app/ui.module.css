@@ -3,15 +3,90 @@
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
 }
 
+/* Large title, as on iOS: bold and tightly tracked. */
 .head h1 {
-  font-size: 1.7rem;
-  line-height: 1.15;
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A quiet line of numbers in place of stat tiles: dark number, soft label. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font-size: 0.875rem;
+  color: var(--ink-faint);
+}
+
+.facts b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-right: 4px;
+}
+
+/* Each number in its own system colour, as in Apple's Health summaries. */
+.facts span:nth-child(1) b { color: var(--accent-text); }
+.facts span:nth-child(2) b { color: var(--stage-screening); }
+.facts [data-tone="stale"] b { color: var(--stale-text); }
+.facts [data-tone="due"] b { color: var(--accent-text); }
+
+/* ---- add a job (jd-form.tsx): a floating sheet that grows from its button ---- */
+.addJob {
+  position: relative;
+}
+
+.addJobPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  width: min(36rem, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  background: var(--card);
+  box-shadow: var(--shadow-glass);
+  transform-origin: top right;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.97);
+  visibility: hidden;
+  transition: opacity var(--motion-close), transform var(--motion-close), visibility 0s linear 120ms;
+}
+
+.addJobPanel[data-open] {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition: opacity var(--motion-open), transform var(--motion-open), visibility 0s;
+}
+
+.fieldLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
 }
 
 .sub {
@@ -20,12 +95,27 @@
   max-width: var(--measure);
 }
 
+/* Small supporting label: the body face, a step smaller and fainter. (The name is
+   historical; it is not monospace.) */
 .mono {
-  font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  font-size: 0.8125rem;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
+}
+
+/* Real code only: the agent setup command and tokens. */
+.code {
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 /* ---- stats row ---- */
@@ -37,19 +127,16 @@
 }
 
 .stat {
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  background: var(--surface);
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .stat b {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 400;
-  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-size: 1.5rem;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -71,33 +158,50 @@
 
 .board {
   display: grid;
-  /* One column per stage that has cards (set by the page), sharing the full width. */
-  gap: 10px;
+  /* One column per working stage (set by the page as --cols); scrolls sideways when narrow. */
+  grid-template-columns: repeat(var(--cols, 6), minmax(200px, 1fr));
+  gap: 12px;
   align-items: start;
   overflow-x: auto;
   padding-bottom: 6px;
 }
 
+/* Each column is a soft grey track the cards sit in. */
 .col {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  padding: 10px;
+  border-radius: var(--radius-panel);
+  background: var(--track);
+  min-height: 160px;
 }
 
-/* Cards flow side by side inside a wide column, so a long stage is short on the page. */
 .colCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: start;
+}
+
+.colEmpty {
+  padding: 4px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.closedRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
 }
 
 .more summary {
   cursor: pointer;
   font-family: var(--font-mono), monospace;
   font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   color: var(--ink-soft);
   padding: 4px 8px;
 }
@@ -108,48 +212,147 @@
 
 .colHead {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
-  border-radius: var(--radius);
-  font-family: var(--font-mono), monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 8px;
+  padding: 2px 4px 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--ink);
+}
+
+/* The stage colour lives in a dot, so the column header stays quiet. */
+.stageDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: var(--stage-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
-.colHead[data-deep] {
-  color: var(--surface);
+.colCount {
+  margin-left: auto;
+  font-weight: 500;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
+/* A card is a lifted object: white, soft layered shadow, no hard border. */
 .card {
-  display: block;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
   border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
   text-decoration: none;
   color: inherit;
-  transition: border-color var(--motion), transform var(--motion);
+  transition: box-shadow var(--motion), transform var(--motion);
 }
 
 .card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+.card .cardTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Small coloured tag, as in a Kanban card: tinted fill, darker text of the same hue. */
+.tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: var(--wash);
+  white-space: nowrap;
+}
+
+.tag[data-tone="blue"] { color: var(--tone-blue); background: var(--tone-blue-wash); }
+.tag[data-tone="indigo"] { color: var(--tone-indigo); background: var(--tone-indigo-wash); }
+.tag[data-tone="purple"] { color: var(--tone-purple); background: var(--tone-purple-wash); }
+.tag[data-tone="teal"] { color: var(--tone-teal); background: var(--tone-teal-wash); }
+.tag[data-tone="orange"] { color: var(--tone-orange); background: var(--tone-orange-wash); }
+.tag[data-tone="pink"] { color: var(--tone-pink); background: var(--tone-pink-wash); }
+.tag[data-tone="stale"] { color: var(--stale-text); background: color-mix(in srgb, var(--stale) 16%, transparent); }
+
+/* Company monogram where a Kanban card shows its avatar. */
+.monogram {
+  flex: none;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--monogram-ink);
+  background: var(--tone-blue);
+}
+
+.monogram[data-tone="indigo"] { background: var(--tone-indigo); }
+.monogram[data-tone="purple"] { background: var(--tone-purple); }
+.monogram[data-tone="teal"] { background: var(--tone-teal); }
+.monogram[data-tone="orange"] { background: var(--tone-orange); }
+.monogram[data-tone="pink"] { background: var(--tone-pink); }
+
+/* "+ Add a job" at the foot of a column: a quiet ghost button. */
+.ghostAdd {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  padding: 9px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--motion), background var(--motion), border-color var(--motion);
+}
+
+.ghostAdd:hover {
+  color: var(--accent-text);
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .card b {
-  font-weight: 500;
-  font-size: 0.92rem;
+  font-weight: 600;
+  font-size: 0.875rem;
   display: block;
 }
 
-.card b {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 
 .card .role {
   color: var(--ink-soft);
@@ -178,7 +381,7 @@
   display: inline-block;
   font-family: var(--font-mono), monospace;
   font-size: 0.64rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 1px 7px;
   border-radius: var(--radius);
   color: var(--ink-soft);
@@ -202,10 +405,10 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface);
-  padding: 16px 18px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .panel h2 {
@@ -251,9 +454,10 @@
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
+/* Covered by your experience: green, the colour of progress. */
 .chip[data-tone="hit"] {
-  color: var(--accent-text);
-  background: var(--accent-soft);
+  color: var(--warm-text);
+  background: var(--warm-wash);
 }
 
 .chip[data-tone="gap"] {
@@ -289,10 +493,10 @@
 
 .btn {
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 500;
-  padding: 7px 12px;
-  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  font-weight: 590;
+  padding: 7px 16px;
+  border-radius: var(--radius-button);
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -301,7 +505,15 @@
 }
 
 .btn:hover {
-  border-color: var(--accent);
+  border-color: var(--line-strong);
+}
+
+.btn[data-primary]:hover {
+  background: color-mix(in srgb, var(--accent) 88%, var(--ink));
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn[data-primary] {
@@ -394,8 +606,7 @@
   text-align: left;
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--ink-faint);
   font-weight: 500;
   padding: 8px 10px;
@@ -829,7 +1040,7 @@
 .agentFallback {
   position: absolute; left: 50%; top: 50%; width: 180px; height: 180px; margin: -90px 0 0 -90px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, var(--room-glow) 0%, var(--accent) 45%, #263224 100%);
+  background: radial-gradient(circle at 40% 35%, var(--room-glow) 0%, var(--accent) 45%, var(--room-deep) 100%);
 }
 .stageTop {
   position: absolute; top: 12px; left: 14px; right: 14px;
@@ -925,3 +1136,23 @@
 /* Plain buttons on the stage take the room's colours, in either theme. */
 .stage .btn:not([data-primary]) { background: var(--room-glass); color: var(--room-ink); border-color: var(--room-mute); }
 .stage .btn:not([data-primary]):hover { background: rgba(255, 255, 255, 0.08); }
+
+/* Phones: the Add a job button wraps to the left, so its sheet grows from the left; the
+   board swipes a column at a time. */
+@media (max-width: 640px) {
+  .addJobPanel {
+    left: 0;
+    right: auto;
+    transform-origin: top left;
+  }
+
+  .board {
+    grid-template-columns: repeat(var(--cols, 6), 82%);
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 0;
+  }
+
+  .col {
+    scroll-snap-align: start;
+  }
+}

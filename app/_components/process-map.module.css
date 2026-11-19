@@ -69,7 +69,7 @@
 .kind[data-kind="ai"] {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 1px 6px;
   border-radius: var(--radius);
   color: var(--paper);
@@ -82,7 +82,7 @@
 .aiSoon {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 0 5px;
   border-radius: var(--radius);
   color: var(--accent-text);
@@ -105,7 +105,7 @@
   bottom: calc(50% + 8px);
   font-family: var(--font-mono), monospace;
   font-size: 0.62rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--accent-text);
 }
 
@@ -141,7 +141,7 @@
   top: 12px;
   font-family: var(--font-mono), monospace;
   font-size: 0.62rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--ink-faint);
 }
 
@@ -347,7 +347,7 @@
 .kind {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 1px 6px;
   border-radius: var(--radius);
   color: var(--ink-soft);
@@ -358,7 +358,7 @@
 .coming {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 0 5px;
   border-radius: var(--radius);
   color: var(--ink-faint);

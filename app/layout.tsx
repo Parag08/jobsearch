@@ -1,24 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { DM_Sans, Fraunces, IBM_Plex_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import { themeBootScript } from "@/lib/theme";
 import "./globals.css";
 
-// Sage Studio: Fraunces (a soft, warm serif) for words, DM Sans for work, Plex Mono for data.
-const serif = Fraunces({ subsets: ["latin"], display: "swap", variable: "--font-serif" });
-const sans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-  variable: "--font-sans",
-});
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-  variable: "--font-mono",
-});
+// Apple-style: San Francisco on Apple devices (the system font, nothing to load) and Inter,
+// its closest open cousin, everywhere else (docs/DESIGN.md section 5). Code uses the
+// system monospace.
+const sans = Inter({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "JobSearch",
@@ -31,7 +21,7 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={sans.variable}>
       <head>
         {/* sets data-theme before first paint, so a dark evening never flashes white */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript() }} />

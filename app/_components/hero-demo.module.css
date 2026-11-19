@@ -66,7 +66,7 @@
 .mono {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--ink-faint);
 }
 
@@ -132,7 +132,7 @@
 .label {
   font-family: var(--font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   color: var(--ink-faint);
   opacity: 0;
   transform: translateY(-3px);
@@ -183,7 +183,7 @@
   padding: 0 6px;
   font-family: var(--font-mono), monospace;
   font-size: 0.6rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   white-space: nowrap;
   color: var(--accent-text);
   background: var(--paper);
@@ -259,7 +259,7 @@
 .stage {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 3px 10px;
   border-radius: var(--radius);
   color: var(--ink);
@@ -267,16 +267,16 @@
 }
 
 .stage[data-stage="applied"] { background: var(--stage-applied); }
-.stage[data-stage="screening"] { background: var(--stage-screening); }
-.stage[data-stage="interview"] { background: var(--stage-interview); color: var(--surface); }
-.stage[data-stage="offer"] { background: var(--stage-offer); color: var(--surface); }
-.stage[data-stage="closed"] { background: var(--stage-closed); color: var(--surface); }
+.stage[data-stage="screening"] { background: var(--stage-screening); color: #fff; }
+.stage[data-stage="interview"] { background: var(--stage-interview); color: #fff; }
+.stage[data-stage="offer"] { background: var(--stage-offer); color: var(--on-warm); }
+.stage[data-stage="closed"] { background: var(--stage-closed); color: var(--ink); }
 
 /* who does the work - the same three tags as the process map */
 .tag {
   font-family: var(--font-mono), monospace;
   font-size: 0.62rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   padding: 1px 6px;
   border-radius: var(--radius);
   color: var(--ink-soft);

@@ -17,28 +17,28 @@ import styles from "./page.module.css";
 const STEPS = [
   {
     title: "Find the roles worth your time",
-    body: "Watch the companies you care about. JobSearch reads their own job boards - not aggregators - and brings back the open roles in your cities and your line of work, scored for fit.",
-    ai: "Scored by rules, so it costs nothing to run",
+    body: "Watch the companies you care about. JobSearch checks their own job boards every day and brings back the open roles in your cities and line of work, scored for fit.",
+    ai: "Automatic",
   },
   {
-    title: "Paste a job, get it read",
-    body: "AI reads each job description once into structure - company, role, seniority, the skills it asks for - and opens an application from it.",
-    ai: "AI reads the posting",
+    title: "Paste a job posting",
+    body: "AI pulls out the company, role, level and the skills it asks for, and opens an application for it.",
+    ai: "AI",
   },
   {
     title: "A CV built from your evidence",
-    body: "Your CV is assembled from your own bank of experience. Every skill the job asks for is marked as backed or as a gap, so you know exactly what you can claim.",
-    ai: "Matched against your record, never invented",
+    body: "Each CV is built from your own experience. Every skill the job asks for is marked as covered or as a gap, so you know exactly what you can claim.",
+    ai: "AI, checked against your experience",
   },
   {
-    title: "Track it without the dread",
-    body: "Every application, its stage, and the one thing to do next. Anything gone quiet is flagged, and nothing is ever coloured red.",
-    ai: "Your pipeline, always current",
+    title: "Track every application",
+    body: "See each one's stage and its next step, and get a nudge when one goes quiet. A rejection is never shown in red: most applications close, and that is not failure.",
+    ai: "Automatic",
   },
   {
     title: "Practise until you are ready",
-    body: "Answer behavioural questions out loud and get scored on delivery. Work through live consulting cases with an AI interviewer that pushes back - while the app checks the maths.",
-    ai: "AI interviewer and feedback",
+    body: "Answer interview questions out loud and get scored on what you said and how you said it. Work through live cases with an AI interviewer that pushes back, while the app checks the maths.",
+    ai: "AI",
   },
 ];
 
@@ -107,13 +107,10 @@ export default function Home() {
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroText}>
-            <p className={styles.eyebrow}>Your job search, end to end</p>
-            <h1>From the first search to the final offer.</h1>
+            <h1>A CV that only says what you can prove.</h1>
             <p className={styles.lede}>
-              JobSearch finds the roles, reads each job, builds your CV from what you have actually
-              done, tracks every application and rehearses you for the interview - and, soon, helps you
-              negotiate the offer. AI does the heavy lifting, and nothing is ever claimed that your
-              record cannot back.
+              JobSearch finds roles at the companies you choose, builds each CV from your own
+              experience, shows you the gaps honestly, and rehearses you for the interview.
             </p>
             <div className={styles.ctas}>
               {live ? (
@@ -126,12 +123,12 @@ export default function Home() {
                 </Link>
               )}
               {demoAvailable && (
-                <Link href="/app" className={styles.ctaQuiet}>
+                <Link href="/app" className={styles.ctaLink}>
                   See it with sample data
                 </Link>
               )}
             </div>
-            <p className={styles.ctaNote}>Free to start. One click creates your account or signs you in — no password to make.</p>
+            <p className={styles.ctaNote}>Free. Sign in with Google: no password, and your account is made on the first visit.</p>
           </div>
           {/* The hero text renders at once (a reveal hid it until hydration); the demo card keeps the one entrance. */}
           <Reveal delay={120} className={styles.heroDemo}>
@@ -166,21 +163,6 @@ export default function Home() {
               <li key={c}>{c}</li>
             ))}
           </ul>
-        </Reveal>
-
-        <Reveal as="section" className={styles.quiet}>
-          <div className={styles.quietItem}>
-            <span className={styles.quietNum}>1</span>
-            <p>One record. Every CV and interview story is drawn from it, never written around it.</p>
-          </div>
-          <div className={styles.quietItem}>
-            <span className={styles.quietNum}>0</span>
-            <p>Red pixels for a rejection. Most applications close; that is arithmetic, not failure, and the interface treats it that way.</p>
-          </div>
-          <div className={styles.quietItem}>
-            <span className={styles.quietNum}>$0</span>
-            <p>To run. Free tiers by default, paid pieces opt-in and swappable.</p>
-          </div>
         </Reveal>
 
         <Reveal as="section" className={styles.process}>
