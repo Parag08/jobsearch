@@ -1140,7 +1140,35 @@
 .reveal > summary:hover { color: var(--ink); }
 .reveal[open] > summary { margin-bottom: 10px; }
 .reveal > p { font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
-.qdetail > .reveal { padding-top: 14px; border-top: 1px solid var(--line); }
+.qdetail > .reveal { padding-top: 16px; border-top: 1px solid var(--line); }
+/* In the question pane each disclosure is a section (Model answer, Your notes, Your attempts):
+   a real heading, not a grey aside, so you can see where one part ends and the next begins. */
+.qdetail > .reveal > summary {
+  display: flex;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.qdetail > .reveal > summary::after { margin-left: auto; color: var(--ink-faint); font-weight: 400; }
+.qdetail > .reveal[open] > summary { margin-bottom: 14px; }
+.sectionMeta { font-size: 0.8125rem; font-weight: 400; color: var(--ink-soft); }
+.answerHelp { font-size: 0.8125rem; color: var(--ink-soft); margin: 0 0 10px; }
+/* The model answer: its own white card, ink text, paragraphs spaced, at a reading measure. */
+.answerCard {
+  margin: 0 0 12px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  max-width: 72ch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.answerCard p { margin: 0; }
 .qrow { display: contents; }
 /* Plain buttons on the stage take the room's colours, in either theme. */
 .stage .btn:not([data-primary]) { background: var(--room-glass); color: var(--room-ink); border-color: var(--room-mute); }
@@ -1489,3 +1517,121 @@
   color: var(--ink-soft);
   max-width: 68ch;
 }
+
+/* ==== mock interview debrief (DESIGN.md section 5, Interview question pane) ==== */
+
+/* Right under the stage after a call: transcript and downloads, before the feedback. */
+.debriefBar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.turnWho { font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+
+/* A folded part of the feedback: a row you open, with its count beside the title. */
+.debriefMore {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 12px 16px;
+}
+
+.debriefMore > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.debriefMore > summary::-webkit-details-marker { display: none; }
+.debriefMore > summary::after { content: "›"; margin-left: auto; color: var(--ink-faint); font-weight: 400; transition: transform var(--motion); }
+.debriefMore[open] > summary::after { transform: rotate(90deg); }
+.debriefMore[open] > summary { margin-bottom: 12px; }
+.debriefMore > .sub { margin-top: 10px; font-size: 0.8125rem; }
+
+.debriefList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.debriefList .tag { margin-right: 6px; vertical-align: 1px; }
+
+/* The score card's two lists side by side, stacking on narrow panes. */
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px 24px;
+}
+
+.twoCol h4 { font-size: 0.8125rem; font-weight: 600; color: var(--ink-soft); margin: 0 0 8px; }
+
+.twoCol ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Score bars in two columns: six dimensions in three short rows. */
+.scoreGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px 24px;
+}
+
+/* ==== question aids: What good looks like and Model answer, one row of pill toggles ==== */
+
+.aidRow { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.aidBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--motion), background var(--motion), color var(--motion);
+}
+
+.aidBtn:hover { border-color: var(--accent); color: var(--accent-text); }
+.aidBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.aidBtn[aria-expanded="true"] { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-text); }
+.aidBtn .sectionMeta { font-weight: 400; }
+.aidBtn[aria-expanded="true"] .sectionMeta { color: var(--accent-text); }
+.aidChevron { font-size: 0.9em; transition: transform var(--motion); }
+.aidBtn[aria-expanded="true"] .aidChevron { transform: rotate(90deg); }
+
+.aidPanel {
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aidPanel > h3 { font-size: 0.9375rem; font-weight: 600; margin: 0; }
+.aidPanel > p { font-size: 0.9375rem; line-height: 1.6; margin: 0; max-width: 72ch; }
+.aidPanel .answerCard { border: 0; padding: 0; margin: 0; background: none; }

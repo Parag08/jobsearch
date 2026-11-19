@@ -91,6 +91,16 @@ describe("buildScoringPrompt", () => {
 });
 
 describe("parseScore", () => {
+  it("reads a strength or improvement sent as an object as text", () => {
+    const r = parseScore({
+      scores: { structure: 4, ownership: 3, specificity: 5, impact: 4, reflection: 2, relevance: 5 },
+      strengths: [{ point: "Led with the result" }],
+      improvements: [{ text: "Name the number" }, 7],
+    });
+    expect(r.strengths).toEqual(["Led with the result"]);
+    expect(r.improvements).toEqual(["Name the number", "7"]);
+  });
+
   const good = {
     scores: { structure: 4, ownership: 3, specificity: 5, impact: 4, reflection: 2, relevance: 5 },
     strengths: ["Led with the result"],

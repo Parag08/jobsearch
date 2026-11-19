@@ -16,17 +16,17 @@ export function ScoreCard({ result }: { result: ScoreResult }) {
         <h3>
           {result.overall?.toFixed(1)} <span className={ui.sub}>/ 5</span>
         </h3>
-        <span className={ui.mono}>{result.model}</span>
+        <span className={ui.sectionMeta}>Scored by {result.model}</span>
       </div>
 
-      <div className={ui.scoreBars}>
+      <div className={ui.scoreGrid}>
         {SCORE_DIMENSIONS.map((d) => (
           <div key={d} className={ui.scoreRow} title={DIMENSION_HELP[d]}>
             <span className={ui.scoreName}>{d}</span>
             <span className={ui.scoreTrack}>
               <i style={{ width: `${((result.scores?.[d] ?? 0) / 5) * 100}%` }} />
             </span>
-            <span className={ui.mono}>{result.scores?.[d]}</span>
+            <span className={ui.sectionMeta}>{result.scores?.[d]}</span>
           </div>
         ))}
       </div>
@@ -52,29 +52,29 @@ export function ScoreCard({ result }: { result: ScoreResult }) {
         </p>
       )}
 
-      {result.strengths && result.strengths.length > 0 && (
-        <>
-          <p className={ui.mono}>What worked</p>
-          <ul className={ui.rows}>
-            {result.strengths.map((x) => (
-              <li key={x} className={ui.row}>
-                <p>{x}</p>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      {result.improvements && result.improvements.length > 0 && (
-        <>
-          <p className={ui.mono}>Do differently next time</p>
-          <ul className={ui.rows}>
-            {result.improvements.map((x) => (
-              <li key={x} className={ui.row}>
-                <p>{x}</p>
-              </li>
-            ))}
-          </ul>
-        </>
+      {((result.strengths?.length ?? 0) > 0 || (result.improvements?.length ?? 0) > 0) && (
+        <div className={ui.twoCol}>
+          {result.strengths && result.strengths.length > 0 && (
+            <div>
+              <h4>What worked</h4>
+              <ul>
+                {result.strengths.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {result.improvements && result.improvements.length > 0 && (
+            <div>
+              <h4>Do differently next time</h4>
+              <ul>
+                {result.improvements.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
