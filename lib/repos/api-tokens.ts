@@ -76,22 +76,37 @@ export type ResolvedToken =
  * hash is the credential. Revoked and expired tokens resolve to nothing; a token over its
  * rate limit is refused until its window resets. Stamps last_used_at and the window.
  */
+/**
+ * The owner and scope behind a token hash, once it passes revocation, expiry and the rate
+ * limit. The count is claimed with a compare-and-set on `window_count`, so overlapping
+ * requests on one token cannot both take the last slot; a request that loses the race re-reads.
+ */
 export async function resolveApiToken(
   db: DbClient,
   tokenHash: string,
   nowIso: string,
   limit: { requests: number; windowMs: number } = RATE_LIMIT,
 ): Promise<ResolvedToken> {
-  const rows = await many(db.from("api_tokens").select().eq("token_hash", tokenHash).limit(1), "api_tokens", "resolve");
-  const row = rows[0];
-  if (!row || row.revoked_at) return { ok: false, reason: "invalid" };
-  if (isExpired(row.expires_at, nowIso)) return { ok: false, reason: "expired" };
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rows = await many(db.from("api_tokens").select().eq("token_hash", tokenHash).limit(1), "api_tokens", "resolve");
+    const row = rows[0];
+    if (!row || row.revoked_at) return { ok: false, reason: "invalid" };
+    if (isExpired(row.expires_at, nowIso)) return { ok: false, reason: "expired" };
 
-  const rate = takeRequest({ windowStart: row.window_start ?? null, count: row.window_count ?? 0 }, nowIso, limit);
-  if (!rate.allowed) return { ok: false, reason: "rate_limited", retryAfterSec: rate.retryAfterSec };
-  await db
-    .from("api_tokens")
-    .update({ last_used_at: nowIso, window_start: rate.next.windowStart, window_count: rate.next.count })
-    .eq("id", row.id);
-  return { ok: true, userId: row.user_id, scope: scopeOf(row) };
+    const count = row.window_count ?? 0;
+    const rate = takeRequest({ windowStart: row.window_start ?? null, count }, nowIso, limit);
+    if (!rate.allowed) return { ok: false, reason: "rate_limited", retryAfterSec: rate.retryAfterSec };
+    const claimed = await many(
+      db
+        .from("api_tokens")
+        .update({ last_used_at: nowIso, window_start: rate.next.windowStart, window_count: rate.next.count })
+        .eq("id", row.id)
+        .eq("window_count", count)
+        .select(),
+      "api_tokens",
+      "claim",
+    );
+    if (claimed.length) return { ok: true, userId: row.user_id, scope: scopeOf(row) };
+  }
+  return { ok: false, reason: "rate_limited", retryAfterSec: 1 };
 }

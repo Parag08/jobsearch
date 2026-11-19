@@ -66,6 +66,17 @@ describe("agent tokens", () => {
     expect((await resolveApiToken(db, hashToken(token), "2026-11-13T01:01:00.000Z", limit)).ok).toBe(true);
   });
 
+  it("counts overlapping requests on one token once each, so they cannot share the last slot", async () => {
+    const db = new FakeDb();
+    const token = generateToken();
+    await insertApiToken(db, "user-1", "laptop", hashToken(token), opts);
+    const limit = { requests: 2, windowMs: 60_000 };
+    const now = "2026-11-13T01:00:00.000Z";
+    const results = await Promise.all([1, 2, 3, 4].map(() => resolveApiToken(db, hashToken(token), now, limit)));
+    expect(results.filter((r) => r.ok)).toHaveLength(2);
+    expect(db.rows("api_tokens")[0].window_count).toBe(2);
+  });
+
   it("never stores the token itself", async () => {
     const db = new FakeDb();
     const token = generateToken();
