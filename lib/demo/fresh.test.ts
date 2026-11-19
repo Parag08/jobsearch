@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { freshVisitorDb } from "../db/demo";
+import { DEMO_APPLICATION_FILES } from "./corpus";
 
 describe("freshVisitorDb", () => {
   it("is the fictional person, spread across the pipeline, with practice and a watchlist", () => {
-    const db = freshVisitorDb(process.cwd(), "2026-11-19");
+    const db = freshVisitorDb("2026-11-19");
     expect(JSON.stringify(db.rows("profiles"))).toContain("Maya");
     const stages = new Set(db.rows("applications").map((a) => a.stage));
     expect(stages.size).toBeGreaterThanOrEqual(4);
@@ -14,14 +15,19 @@ describe("freshVisitorDb", () => {
   });
 
   it("gives each visitor an independent copy", () => {
-    const a = freshVisitorDb(process.cwd(), "2026-11-19");
-    const b = freshVisitorDb(process.cwd(), "2026-11-19");
+    const a = freshVisitorDb("2026-11-19");
+    const b = freshVisitorDb("2026-11-19");
     a.seed("watchlist", [{ company: "Only in A" }]);
     expect(b.rows("watchlist").some((w) => w.company === "Only in A")).toBe(false);
   });
 });
 
 describe("data/demo", () => {
+  it("bundles every application file (corpus.ts lists them all)", () => {
+    const onDisk = readdirSync(join(process.cwd(), "data", "demo", "applications")).filter((f) => f.endsWith(".json")).sort();
+    expect([...DEMO_APPLICATION_FILES]).toEqual(onDisk);
+  });
+
   it("carries none of the owner's real details", () => {
     const dir = join(process.cwd(), "data", "demo");
     const files = [

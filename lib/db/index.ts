@@ -1,6 +1,7 @@
 import "server-only";
 import type { DbClient } from "../repos/db";
 import type { FileStore } from "../export/file-store";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { DEMO_USER_ID, getDemoDb, getVisitorDemoDb } from "./demo";
 import { DEMO_COOKIE, demoMaxVisitorsFromEnv, isVisitorId } from "../demo/visitors";
@@ -29,7 +30,14 @@ export interface Workspace {
  * null when Supabase is configured but nobody is signed in (callers redirect
  * to /signin). One function, so every page and route agrees on the mode.
  */
-export async function getWorkspace(): Promise<Workspace | null> {
+export const getWorkspace = cache(resolveWorkspace);
+
+/**
+ * The uncached resolver. getWorkspace wraps it in React's cache(), so the layout, the page
+ * and anything else in one request share one answer - one Supabase auth round trip instead
+ * of one per caller (it was two per page, plus middleware's).
+ */
+async function resolveWorkspace(): Promise<Workspace | null> {
   // A public demo visitor (the /demo route set the cookie) gets their own fictional workspace,
   // even when Supabase is configured. Unset DEMO_MAX_VISITORS and the cookie is ignored.
   const visitor = (await cookies()).get(DEMO_COOKIE)?.value;
