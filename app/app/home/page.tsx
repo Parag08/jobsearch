@@ -13,7 +13,8 @@ import { needsMetric } from "@/lib/onboarding";
 import { momentum, type Activity, type Momentum, type NextStep, type GoalKey } from "@/lib/home/momentum";
 import { homeGoalsFromEnv } from "@/lib/home/settings";
 import { getProfile } from "@/lib/repos/profiles";
-import { roleFamilies, roleInsights, type RequirementStatus } from "@/lib/insights/role-insights";
+import { roleFamilies, roleInsights } from "@/lib/insights/role-insights";
+import { STATUS_LABEL, STATUS_TONE } from "@/lib/insights/display";
 import { attemptSeconds, caseSeconds } from "@/lib/home/practice-time";
 import { familyLabel, toneFor } from "@/lib/pipeline-display";
 import ui from "../ui.module.css";
@@ -119,8 +120,6 @@ function ActivityCard({ a, practiceSeconds }: { a: Activity; practiceSeconds: nu
   );
 }
 
-const STATUS_LABEL: Record<RequirementStatus, string> = { evidenced: "On your CV", unstated: "Done, not on your CV", gap: "Not on record" };
-const STATUS_TONE: Record<RequirementStatus, string | undefined> = { evidenced: "hit", unstated: undefined, gap: "gap" };
 
 export default async function Overview({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const tab = (await searchParams).tab === "insights" ? "insights" : "progress";
@@ -265,11 +264,11 @@ export default async function Overview({ searchParams }: { searchParams: Promise
                     <p>
                       <b>{familyLabel(r.term)}</b>
                     </p>
-                    <span className={ui.mono}>
+                    <span className={ui.sub}>
                       Asked by {r.roles} of {insights.roles} roles
                     </span>
                   </div>
-                  <span className={ui.chip} data-tone={STATUS_TONE[r.status]}>
+                  <span className={ui.tag} data-tone={STATUS_TONE[r.status]}>
                     {STATUS_LABEL[r.status]}
                   </span>
                 </li>

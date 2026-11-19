@@ -12,6 +12,8 @@ import ui from "../ui.module.css";
 import s from "./bank.module.css";
 
 const TODO_SHOWN = 3;
+/** Strength bands in the summary-panel meaning colours (ui.module.css). */
+const BAND_TONE = { strong: "good", solid: "mid", weak: "attention" } as const;
 /** Roles open on arrival: the recent ones, or the first few when none are recent. */
 const OPEN_FALLBACK = 2;
 
@@ -79,41 +81,48 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
     <>
       <OpenOnHash />
       <div className={ui.head}>
-        <h1>Bank</h1>
-        <span className={s.count}>
-          {bullets.length} point{bullets.length === 1 ? "" : "s"} across {projects.length} role{projects.length === 1 ? "" : "s"}
-        </span>
+        <div className={ui.headText}>
+          <h1>Bank</h1>
+          <p className={ui.facts}>
+            <span>
+              <b>{bullets.length}</b> point{bullets.length === 1 ? "" : "s"}
+            </span>
+            <span>
+              <b>{projects.length}</b> role{projects.length === 1 ? "" : "s"}
+            </span>
+          </p>
+        </div>
       </div>
 
       <section className={ui.panel} aria-label="Bank summary">
-        <div className={s.summary}>
-        <div className={s.stat}>
-          <span className={s.statLabel}>CV readiness</span>
-          <b className={s.statValue}>{ready.score}%</b>
+        <div className={ui.summary}>
+        <div className={ui.sumStat}>
+          <span className={ui.sumLabel}>CV readiness</span>
+          <b className={ui.sumValue}>{ready.score}%</b>
           <div className={ui.meter} aria-hidden="true">
             <i style={{ "--w": `${ready.score}%` } as React.CSSProperties} />
           </div>
-          <span className={s.statNote}>{readyLine}</span>
+          <span className={ui.sumNote}>{readyLine}</span>
         </div>
-        <div className={s.stat}>
-          <span className={s.statLabel}>Point strength</span>
-          <div className={s.mix} role="img" aria-label={`${mix.strong} strong, ${mix.solid} solid, ${mix.weak} weak`}>
-            {(["strong", "solid", "weak"] as const).map((b) => (mix[b] > 0 ? <i key={b} data-band={b} style={{ flexGrow: mix[b] }} /> : null))}
+        <div className={ui.sumStat}>
+          <span className={ui.sumLabel}>Point strength</span>
+          <div className={ui.sumBar} role="img" aria-label={`${mix.strong} strong, ${mix.solid} solid, ${mix.weak} weak`}>
+            {(["strong", "solid", "weak"] as const).map((b) => (mix[b] > 0 ? <i key={b} data-tone={BAND_TONE[b]} style={{ flexGrow: mix[b] }} /> : null))}
           </div>
-          <span className={s.legend}>
-            <span data-band="strong">{mix.strong} strong</span>
-            <span data-band="solid">{mix.solid} solid</span>
-            <span data-band="weak">{mix.weak} weak</span>
+          <span className={ui.legend}>
+            <span data-tone={BAND_TONE.strong}>{mix.strong} strong</span>
+            <span data-tone={BAND_TONE.solid}>{mix.solid} solid</span>
+            <span data-tone={BAND_TONE.weak}>{mix.weak} weak</span>
           </span>
         </div>
-        <div className={s.stat}>
-          <span className={s.statLabel}>Missing a number</span>
-          <b className={s.statValue} data-tone={gaps ? "stale" : undefined}>{gaps}</b>
+        <div className={ui.sumStat}>
+          <span className={ui.sumLabel}>Missing a number</span>
+          <b className={ui.sumValue} data-tone={gaps ? "attention" : undefined}>{gaps}</b>
           {gaps > 0 &&
             (onlyGaps ? (
-              <Link href="/app/bank" className={s.statLink}>Show every point</Link>
+              <Link href="/app/bank" className={ui.sumLink}>Show every point</Link>
             ) : (
-              <Link href="/app/bank?only=needs-number" className={s.statLink}>Show only these</Link>
+              <Link href="/app/bank?only=needs-number" className={ui.sumLink}>Show only these</Link>
             ))}
         </div>
         </div>
@@ -131,7 +140,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
             ))}
           </ul>
           {todos.length > TODO_SHOWN && (
-            <Link href={allTodos ? "/app/bank" : "/app/bank?todo=all"} className={s.statLink} scroll={false}>
+            <Link href={allTodos ? "/app/bank" : "/app/bank?todo=all"} className={ui.sumLink} scroll={false}>
               {allTodos ? "Show fewer" : `Show ${todos.length - TODO_SHOWN} more`}
             </Link>
           )}

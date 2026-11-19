@@ -40,8 +40,8 @@
 }
 
 /* Each number in its own system colour, as in Apple's Health summaries. */
-.facts span:nth-child(1) b { color: var(--accent-text); }
-.facts span:nth-child(2) b { color: var(--stage-screening); }
+.facts [data-tone="open"] b { color: var(--accent-text); }
+.facts [data-tone="applied"] b { color: var(--stage-screening); }
 .facts [data-tone="stale"] b { color: var(--stale-text); }
 .facts [data-tone="due"] b { color: var(--accent-text); }
 
@@ -308,6 +308,10 @@
 .tag[data-tone="orange"] { color: var(--tone-orange); background: var(--tone-orange-wash); }
 .tag[data-tone="pink"] { color: var(--tone-pink); background: var(--tone-pink-wash); }
 .tag[data-tone="stale"] { color: var(--stale-text); background: color-mix(in srgb, var(--stale) 16%, transparent); }
+/* Requirement status (Insights, Overview): the summary-panel meaning colours. */
+.tag[data-tone="good"] { color: var(--warm-text); background: var(--warm-wash); }
+.tag[data-tone="mid"] { color: var(--tone-teal); background: var(--tone-teal-wash); }
+.tag[data-tone="attention"] { color: var(--stale-text); background: color-mix(in srgb, var(--stale) 16%, transparent); }
 
 /* Company monogram where a Kanban card shows its avatar. */
 .monogram {
@@ -1370,4 +1374,117 @@
   .homeHero {
     padding: 20px;
   }
+}
+
+/* ==== summary panel: Bank, Insights, Watchlist (DESIGN.md section 5) ====
+   Up to three stats side by side, stacking on phones. A bar (.sumBar) shows a whole in three
+   meaning colours: good green, mid teal, attention orange. */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px 32px;
+}
+
+.sumStat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sumLabel {
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.sumValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sumValue[data-tone="attention"] { color: var(--stale-text); }
+.sumValue[data-tone="good"] { color: var(--warm-text); }
+
+.sumNote {
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.sumLink {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.sumLink:hover { text-decoration: underline; }
+
+.sumBar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin: 12px 0 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line-soft);
+}
+
+.sumBar i { display: block; min-width: 4px; background: var(--line-strong); }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+
+.sumBar i[data-tone="good"], .legend span[data-tone="good"]::before { background: var(--warm); }
+.sumBar i[data-tone="mid"], .legend span[data-tone="mid"]::before { background: var(--tone-teal); }
+.sumBar i[data-tone="attention"], .legend span[data-tone="attention"]::before { background: var(--stale); }
+
+/* A notice row inside a panel: a sentence and, beside it, the one thing to do about it. */
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.notice[data-tone="attention"] { color: var(--stale-text); }
+
+/* Text-weight buttons for row actions (Pause, Remove, Dismiss): quieter than .btn. */
+.textBtn {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.textBtn:hover { text-decoration: underline; }
+.textBtn[data-tone="quiet"] { color: var(--ink-soft); }
+
+/* A plain-sentence empty state: no box inside the panel. */
+.none {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  max-width: 68ch;
 }

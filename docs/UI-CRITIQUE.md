@@ -223,3 +223,51 @@ What I would change:
    rewrites in sections 4–8. Mostly string changes; high return.
 3. Pipeline as a real board + stage stepper (4.5, 5.2).
 4. The visual direction study (section 9), done once across the design tokens.
+
+---
+
+## 10 · Second pass: nav order, Watchlist, Insights (2026-11-19)
+
+Parag asked for Watchlist and Insights to get the treatment the Bank got, and for the tab order
+to follow the day: overview, then pipeline, then interview. Every item below was seen on the
+running app or read in the code; it supersedes 7.x and 8.1–8.6 above, which it folds in.
+**All fixed 2026-11-19** on `feat/watchlist-insights-refine`; DESIGN.md section 5 records the result.
+
+### Nav and landing
+
+| # | Problem | Change |
+|---|---|---|
+| N1 | Tab order follows build history (Pipeline, Bank, Watchlist, Insights, Interview, Agent), not how the product is used. | **Overview, Pipeline, Interview**, then the tools that feed them: **Watchlist** (find roles), **Insights** (what they ask), **Bank** (your evidence), **Agent** (setup) last. |
+| N2 | The overview is reachable only by clicking the JobSearch name, which nobody discovers. | An **Overview** tab, first. The name still opens it. |
+| N3 | Sign-in and the signed-in redirect land on Pipeline. | Land on the overview (`/app/home`), the page that says what to do next. |
+
+### Watchlist (`/app/watchlist`)
+
+| # | Problem | Change |
+|---|---|---|
+| W1 | Backwards order: filters first, companies second, the payoff (roles found) last, below the fold. | Roles found first, then companies, then filters. With no companies yet, companies come first as the invitation. |
+| W2 | **Check boards now** is a pale, disabled primary before anything is watched. (7.2) | Show it only when a company is active; full strength; **Check for new roles**. |
+| W3 | Dense, technical copy: "as whole words - and none of the excluded ones", "public endpoints", "A declared target outranks anything an aggregator stumbles on". (7.3–7.6) | Plain sentences; **Job titles to include / to skip**; **Add company**. |
+| W4 | Filter boxes are uneven (Cities short, the titles tall) and Save floats under them; the panel stays open forever though it is set once. | Three equal boxes; filters in a collapsible panel that starts closed once set, with a one-line summary ("Singapore · 2 titles · 2 skipped"). |
+| W5 | Empty states are dashed boxes inside panels, half the panel wide: a box in a box. | One quiet sentence in the panel, full width. |
+| W6 | Company rows: ATS as a lowercase slug chip ("greenhouse", "unknown") in green or dashed tones that mean nothing here; URL in monospace; lowercase **pause** / **remove**; a paused company looks the same as an active one; no monogram. | Monogram + name; "Checked daily (Greenhouse)" or "Check by hand" in orange; URL as a soft link; **Pause / Resume / Remove** as text buttons; paused rows dimmed with a Paused tag. |
+| W7 | Roles found is a six-column table: scrolls sideways on phones; **Fit** shows "—" until a check has scored the role; **Source** in monospace; lowercase **shortlist** / **dismiss**. | Card rows: title (opens the posting), monogram + company, location, posted date, source; Fit as a tag only when scored; **Shortlist / Dismiss**; 20 shown, then Show all. |
+| W8 | Shortlisting changes nothing visible except that the button disappears. | Shortlisted roles get a tag and sort first. |
+| W9 | The company directory is queried on every load and thrown away; the actions to watch a listed company, or every readable one, exist but no UI calls them (wired in `301bad4`, never rendered). | **Suggested companies**: the readable ones you don't watch yet, each with **Watch**, plus **Watch all N**. Hidden when there are none. |
+| W10 | Monospace for non-code text (DESIGN.md principle 6). | Sans everywhere. |
+
+### Insights (`/app/insights`)
+
+| # | Problem | Change |
+|---|---|---|
+| I1 | Title "Role insights" doesn't match the tab "Insights"; the subtitle floats outside the header. (8.6) | "Insights", subtitle under it in the header. |
+| I2 | Role-family picker is tiny chips with raw slugs and bracketed counts ("product-management (2)"); the selected one turns green, the colour of "covered". (8.4) | A row of pill links in sentence case with a count; selected is the blue accent. |
+| I3 | Title filter crammed beside the chips; placeholder truncates ("or title words, e.g. forwa"). (8.4) | Its own search field, **Filter by title**, with Clear. |
+| I4 | Four stats float on the page background with lowercase jargon labels ("requirements evidenced", "unstated"); "2 roles read" with no "of how many". (8.1, 8.3) | A summary panel like the Bank's: "Based on 2 of 5 roles", a coverage bar, and the three counts in the Overview's words. |
+| I5 | Empty groups take whole panels that say "None." in a dashed box. (8.2) | Hide empty groups; when there are no gaps, the summary says so. |
+| I6 | Vocabulary differs from the Overview's Insights tab ("Gaps / Unstated / Backed by your CV" vs "Not on record / Done, not on your CV / On your CV"). | Use the Overview's words everywhere, with the same colours: orange, teal, green. |
+| I7 | Requirement rows: term as a raw slug; "asked by 2 of 2 roles (100%)" and the wordings in monospace; nothing shows how common it is at a glance. | Sentence-case term, a small share bar, "Asked by 2 of 2 roles", wordings in soft text. |
+| I8 | The details are dead text: "Mentioned in: Role, Org", "2 backing bullets". The fix lives in the Bank, which now has anchors and **Add a point**. | "Mentioned in Valeo Health: add it as a point" linking to that role in the Bank; "Backed by 2 points" linking to the first. |
+| I9 | "On your CV" is a long, fully open list at the same weight as the gaps. | Collapsed by default. |
+| I10 | Developer messages shown to users in monospace: "Set ROLE_READ_BATCH to enable.", "Set ROLE_PLAN_MAX_GAPS to enable plan drafting."; the plan's date line in monospace; plan prose runs the full width. (8.5) | Plain sentences ("Reading roles isn't switched on for this workspace"); date in soft text; plan at the 68ch measure; **Make a plan for these gaps** as the page's one primary, beside the gaps. |
+| I11 | The unread-roles notice and the "Read 3 roles." result are loose grey lines between the header and the picker. | One notice row inside the summary panel, with **Read them** beside it. |

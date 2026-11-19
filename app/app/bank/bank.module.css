@@ -1,86 +1,11 @@
 /* The Bank tab (DESIGN.md section 5, Bank). Shared parts (panel, tag, monogram, buttons,
    inputs, meter) come from ../ui.module.css; this file is only the Bank's own layout. */
 
-.count {
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---- strength bands: green strong, teal solid, orange weak (needs attention) ---- */
 
-.strength[data-band="strong"], .picker[data-band="strong"], .mix i[data-band="strong"], .legend span[data-band="strong"] { --band: var(--warm); --band-text: var(--warm-text); }
-.strength[data-band="solid"], .picker[data-band="solid"], .mix i[data-band="solid"], .legend span[data-band="solid"] { --band: var(--tone-teal); --band-text: var(--tone-teal); }
-.strength[data-band="weak"], .picker[data-band="weak"], .mix i[data-band="weak"], .legend span[data-band="weak"] { --band: var(--stale); --band-text: var(--stale-text); }
-
-/* ---- summary ---- */
-
-.summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 24px 32px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.statLabel {
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-}
-
-.statValue {
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.statValue[data-tone="stale"] { color: var(--stale-text); }
-
-.statNote {
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-}
-
-.statLink {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--accent-text);
-  text-decoration: none;
-  align-self: flex-start;
-}
-
-.statLink:hover { text-decoration: underline; }
-
-.mix {
-  display: flex;
-  gap: 2px;
-  height: 8px;
-  margin: 12px 0 4px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--line-soft);
-}
-
-.mix i { display: block; background: var(--band); min-width: 4px; }
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--band); }
+.strength[data-band="strong"], .picker[data-band="strong"] { --band: var(--warm); --band-text: var(--warm-text); }
+.strength[data-band="solid"], .picker[data-band="solid"] { --band: var(--tone-teal); --band-text: var(--tone-teal); }
+.strength[data-band="weak"], .picker[data-band="weak"] { --band: var(--stale); --band-text: var(--stale-text); }
 
 /* ---- to do ---- */
 

@@ -47,7 +47,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
 
         {!live && (
           <p className={styles.pending}>
-            Sign-in is not connected yet. Meanwhile, <Link href="/app">open the demo workspace</Link>.
+            Sign-in is not connected yet. Meanwhile, <Link href="/app/home">open the demo workspace</Link>.
           </p>
         )}
         {error && <p className={styles.pending}>{explain(error)}</p>}
