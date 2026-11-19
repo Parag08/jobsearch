@@ -554,11 +554,10 @@ Never content cards, rows, fields or the page background. Mandatory fallback whe
 
 | Token | Value |
 | --- | --- |
-| Reading pages | `72rem` max |
-| Pipeline (board) | `88rem` max (`.main:has([data-board])`), nav widens to match |
+| Every app page | `72rem` max, the pipeline included: one width for all tabs, so switching never resizes the page |
 | Prose measure | `68ch` |
 | Spacing | 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64; panels pad 24 |
-| Board columns | `minmax(200px, 1fr)`; on phones 82% wide with scroll-snap |
+| Board columns | `minmax(160px, 1fr)` (six fit in 72rem); on phones 82% wide with scroll-snap |
 
 ### Motion
 

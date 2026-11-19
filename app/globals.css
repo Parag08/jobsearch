@@ -219,6 +219,9 @@ html:not([data-js]) [data-reveal] {
 html {
   -webkit-text-size-adjust: 100%;
   color-scheme: light;
+  /* Reserve the scrollbar's space on every page, so moving between a long page and a short
+     one never shifts the layout sideways. */
+  scrollbar-gutter: stable;
 }
 
 body {

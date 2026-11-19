@@ -159,12 +159,6 @@
   }
 }
 
-/* A board needs the room: the pipeline page widens to the shell, reading pages do not. */
-.main:has([data-board]),
-.shell:has([data-board]) .bar {
-  max-width: 88rem;
-}
-
 @media (max-width: 640px) {
   .links {
     display: none;

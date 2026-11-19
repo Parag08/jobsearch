@@ -158,8 +158,9 @@
 
 .board {
   display: grid;
-  /* One column per working stage (set by the page as --cols); scrolls sideways when narrow. */
-  grid-template-columns: repeat(var(--cols, 6), minmax(200px, 1fr));
+  /* One column per working stage (set by the page as --cols), inside the same width as every
+     other tab so switching tabs never resizes the page; scrolls sideways only when narrow. */
+  grid-template-columns: repeat(var(--cols, 6), minmax(160px, 1fr));
   gap: 12px;
   align-items: start;
   overflow-x: auto;
@@ -172,7 +173,7 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  padding: 10px;
+  padding: 8px;
   border-radius: var(--radius-panel);
   background: var(--track);
   min-height: 160px;
@@ -295,6 +296,9 @@
   color: var(--ink-soft);
   background: var(--wash);
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tag[data-tone="blue"] { color: var(--tone-blue); background: var(--tone-blue-wash); }
