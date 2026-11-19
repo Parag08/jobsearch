@@ -45,9 +45,9 @@ export interface ToolAnnotations {
 }
 
 const READ_ONLY: ToolAnnotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
-/** Adds or updates without losing anything already recorded. */
+/** Only adds a new record (an interaction); nothing already recorded changes. */
 const ADDITIVE: ToolAnnotations = { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false };
-/** Can overwrite, remove or finalise something: a client should confirm with the user first. */
+/** Can overwrite, remove or finalise something (upserts replace fields in place): a client should confirm with the user first. */
 const DESTRUCTIVE: ToolAnnotations = { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false };
 
 /** Caps on agent-sent text, so one call cannot carry an outsized prompt or row. */
@@ -279,7 +279,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: "upsert_application",
-    annotations: ADDITIVE,
+    annotations: DESTRUCTIVE,
     description:
       "Create or update an application record. Idempotent on externalRef; a record made by hand for the same company and role is adopted, not duplicated. New records start in 'saved'. When jdRaw is given, the posting is read once into role family and skills for the role insights: send the full posting text for every role you find, applied to or not. This NEVER changes the stage - a prepared CV is not a submitted application; use set_stage for that.",
     inputSchema: {
@@ -413,7 +413,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: "upsert_interview_questions",
-    annotations: ADDITIVE,
+    annotations: DESTRUCTIVE,
     description:
       "Prepare a role interview: questions for one application's real interview round, shown on the app's Interview tab under that company and practised in its mock interview. Give the application (id or externalRef), the round, who the interviewer is (sets the mock interviewer's persona), and the questions in the order they would come. Idempotent on each question's externalRef: re-sending updates in place and keeps the user's answers. Never put claims about the user in a question; rubrics say what a strong answer shows.",
     inputSchema: {

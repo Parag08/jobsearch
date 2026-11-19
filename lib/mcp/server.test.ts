@@ -270,8 +270,15 @@ describe("MCP safety limits", () => {
     const tools = (res!.result as { tools: { name: string; annotations: { readOnlyHint: boolean; destructiveHint: boolean } }[] }).tools;
     const by = Object.fromEntries(tools.map((t) => [t.name, t.annotations]));
     expect(by.list_applications).toMatchObject({ readOnlyHint: true, destructiveHint: false });
-    expect(by.upsert_application).toMatchObject({ readOnlyHint: false, destructiveHint: false });
-    for (const name of ["set_stage", "upsert_contact", "remove_interview_questions", "set_model_answer"]) {
+    expect(by.log_interaction).toMatchObject({ readOnlyHint: false, destructiveHint: false });
+    for (const name of [
+      "upsert_application",
+      "upsert_interview_questions",
+      "set_stage",
+      "upsert_contact",
+      "remove_interview_questions",
+      "set_model_answer",
+    ]) {
       expect(by[name]).toMatchObject({ readOnlyHint: false, destructiveHint: true });
     }
   });
