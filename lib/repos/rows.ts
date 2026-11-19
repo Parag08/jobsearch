@@ -197,6 +197,10 @@ export interface ApiTokenRow {
   created_at?: string;
   last_used_at?: string | null;
   revoked_at?: string | null;
+  scope?: "read" | "write";
+  expires_at?: string;
+  window_start?: string | null;
+  window_count?: number;
 }
 
 /** A generated gap plan, one per (user, role family) (migration 0010). `plan` is a StoredRolePlan. */

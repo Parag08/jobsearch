@@ -2,10 +2,15 @@ import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { FakeLlm } from "../adapters/llm";
 import type { JdExtract } from "../types";
-import { handleBody, handleMessage, PROTOCOL_VERSIONS } from "./server";
+import { capReads, handleBody, handleMessage, MAX_BATCH, PROTOCOL_VERSIONS } from "./server";
 import { TOOLS, type ToolContext } from "./tools";
 
-const ctxFor = (db: FakeDb, userId = "user-1"): ToolContext => ({ db, userId, nowIso: "2026-11-13T02:00:00.000Z" });
+const ctxFor = (db: FakeDb, userId = "user-1", scope: ToolContext["scope"] = "write"): ToolContext => ({
+  db,
+  userId,
+  nowIso: "2026-11-13T02:00:00.000Z",
+  scope,
+});
 const rpc = (method: string, params?: unknown, id: number | string = 1) => ({ jsonrpc: "2.0", id, method, params });
 
 async function call(ctx: ToolContext, name: string, args: unknown = {}) {
@@ -256,5 +261,75 @@ describe("MCP model answers", () => {
     await putModelAnswer(db, "user-1", { questionId, text: "My own", source: "user" }, "2026-11-19T00:00:00Z");
     expect((await call(ctx, "set_model_answer", { questionId, text: "Agent again" })).data).toEqual({ saved: false, keptSource: "user" });
     expect((await call(ctx, "set_model_answer", { questionId: "role:nope", text: "x" })).isError).toBe(true);
+  });
+});
+
+describe("MCP safety limits", () => {
+  it("annotates every tool, marking read-only and destructive ones", async () => {
+    const res = await handleMessage(rpc("tools/list"), ctxFor(new FakeDb()));
+    const tools = (res!.result as { tools: { name: string; annotations: { readOnlyHint: boolean; destructiveHint: boolean } }[] }).tools;
+    const by = Object.fromEntries(tools.map((t) => [t.name, t.annotations]));
+    expect(by.list_applications).toMatchObject({ readOnlyHint: true, destructiveHint: false });
+    expect(by.log_interaction).toMatchObject({ readOnlyHint: false, destructiveHint: false });
+    for (const name of [
+      "upsert_application",
+      "upsert_interview_questions",
+      "set_stage",
+      "upsert_contact",
+      "remove_interview_questions",
+      "set_model_answer",
+    ]) {
+      expect(by[name]).toMatchObject({ readOnlyHint: false, destructiveHint: true });
+    }
+  });
+
+  it("gives a read-only token only the read-only tools and refuses a write", async () => {
+    const db = new FakeDb();
+    const reader = ctxFor(db, "user-1", "read");
+    const res = await handleMessage(rpc("tools/list"), reader);
+    const names = (res!.result as { tools: { name: string; annotations: { readOnlyHint: boolean } }[] }).tools;
+    expect(names.length).toBe(TOOLS.filter((t) => t.annotations.readOnlyHint).length);
+    expect(names.every((t) => t.annotations.readOnlyHint)).toBe(true);
+
+    const refused = await call(reader, "upsert_application", { company: "Acme", role: "PM" });
+    expect(refused.isError).toBe(true);
+    expect(refused.text).toMatch(/read-only/);
+    expect(db.rows("applications")).toHaveLength(0);
+    expect((await call(reader, "list_applications")).data.count).toBe(0);
+  });
+
+  it("closes an application only with confirmedByUser, and forces a model answer only with it", async () => {
+    const ctx = ctxFor(new FakeDb());
+    await call(ctx, "upsert_application", { externalRef: "x", company: "Acme", role: "PM" });
+    const close = { externalRef: "x", stage: "closed", date: "2026-11-04", evidence: "rejection email", closedReason: "lost" };
+    const refused = await call(ctx, "set_stage", close);
+    expect(refused.isError).toBe(true);
+    expect(refused.text).toMatch(/confirmedByUser/);
+    expect((await call(ctx, "get_application", { externalRef: "x" })).data.stage).toBe("saved");
+    expect((await call(ctx, "set_stage", { ...close, confirmedByUser: true })).data.moved).toBe(true);
+
+    const forced = await call(ctx, "set_model_answer", { questionId: "fit-strengths", text: "An answer.", force: true });
+    expect(forced.isError).toBe(true);
+    expect(forced.text).toMatch(/confirmedByUser/);
+  });
+
+  it("refuses oversized postings and batches", async () => {
+    const ctx = ctxFor(new FakeDb());
+    const big = await call(ctx, "upsert_application", { company: "Acme", role: "PM", jdRaw: "x".repeat(60_001) });
+    expect(big.isError).toBe(true);
+    const batch = Array.from({ length: MAX_BATCH + 1 }, (_, i) => rpc("ping", undefined, i));
+    expect((await handleBody(batch, ctx)) as { error?: { code: number } }).toMatchObject({ error: { code: -32600 } });
+  });
+
+  it("reads at most the capped number of postings per request and still saves the rest unread", async () => {
+    const llm = new FakeLlm();
+    llm.stubJdExtract(extract());
+    const ctx = { ...ctxFor(new FakeDb()), llm: capReads(llm, 1) };
+    const first = await call(ctx, "upsert_application", { externalRef: "a", company: "Acme", role: "PM", jdRaw: "JD one" });
+    const second = await call(ctx, "upsert_application", { externalRef: "b", company: "Beta", role: "PM", jdRaw: "JD two" });
+    expect(first.data.skillsRead).toBe(true);
+    expect(second.data.created).toBe(true);
+    expect(second.data.skillsRead).toBe(false);
+    expect(second.data.readError).toMatch(/read limit/);
   });
 });

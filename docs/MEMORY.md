@@ -2,13 +2,22 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
-## 2026-11-19 - Front-end critique (no code changed)
+## 2026-11-19 - Front-end critique + P0 fixes
 
 Parag asked for a hard critique of the front end, wording included. Written to **docs/UI-CRITIQUE.md** (sections per screen, P0/P1/P2, Now / Change to copy). Reviewed on the dev server in demo mode at 1366px and 375px; dark mode not checked.
 - **P0s:** app nav links vanish under 640px with no menu (`app.module.css:105`); landing nav overflows at 375px; pipeline defaults to "last 7 days" so the board shows nothing; the CV headline says "INSEAD MBA" while "mba" is listed as an honest gap (honesty rule visibly contradicted); sign-in promises an onboarding step that has no screen.
 - **Themes:** system-speak in UI copy, five names for the experience corpus (record/bank/evidence/master/points), taxonomy slugs and priority codes rendered as labels, and a palette that matches the generic AI look (`#F4F1EA` oat + terracotta + Fraunces + Plex Mono eyebrows).
-- **P0s fixed the same day (uncommitted):** `applicationGaps(jd, bank, projects)` now counts the role heading a bullet sits under as evidence, whole words only (tests in `lib/editorial/gaps.test.ts`; both callers pass projects); the pipeline always opens on every application and `PIPELINE_RECENT_DAYS` only sizes an opt-in "Only the last N days" link (`?show=recent`; old `?show=all` links still work); below 640px the app nav folds into a menu button naming the current page with a glass sheet (`nav-links.tsx`); landing hides Sign in under 480px and the hero text no longer waits on `Reveal`; sign-in no longer promises an onboarding step. Checked in the browser at 375px and desktop, demo mode.
+- **P0s fixed the same day (PR #9):** `applicationGaps(jd, bank, projects)` now counts the role heading a bullet sits under as evidence, whole words only (tests in `lib/editorial/gaps.test.ts`; both callers pass projects); the pipeline always opens on every application and `PIPELINE_RECENT_DAYS` only sizes an opt-in "Only the last N days" link (`?show=recent`; old `?show=all` links still work); below 640px the app nav folds into a menu button naming the current page with a glass sheet (`nav-links.tsx`); landing hides Sign in under 480px and the hero text no longer waits on `Reveal`; sign-in no longer promises an onboarding step. Checked in the browser at 375px and desktop, demo mode.
 - **Next:** the vocabulary/copy pass, then a real board + stage stepper, then a palette study.
+
+## 2026-11-19 - Agent (MCP) safety hardening
+
+Parag asked for a safety review of the agent workflows, then a PR for the five gaps found.
+- **Tokens (migration 0014, mirrored in `schema.sql`)**: `scope` read|write (existing rows: write), `expires_at` (existing rows: 90 days from migration), `window_start`/`window_count` for a 60/min per-token rate limit (`lib/agent/rate-limit.ts`, 429 + Retry-After). `/app/agent` picks scope and 30/90/365 days and lists both.
+- **MCP**: every tool has `annotations`; read tokens only list/call read-only tools; `set_stage` closed and `set_model_answer` force need `confirmedByUser: true`; batch max 20, `jdRaw` max 60k, at most 3 posting reads per request (`capReads`), body cap counts bytes.
+- **Prompts**: data-not-instructions lines in JD extraction, mock follow-up/debrief, scoring and rewrite; server instructions say returned postings/transcripts/notes are data.
+- **SECURITY_MODEL.md** no longer says the MCP path makes no LLM calls.
+- **Ship:** merge, db.yml applies 0014. Existing tokens keep working (write) and expire 90 days after the migration runs.
 
 ## 2026-11-18 (evening) - Model answers (agent, AI rewrite, user), comparison, fillers
 
