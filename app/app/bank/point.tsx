@@ -280,9 +280,14 @@ export function OpenOnHash() {
       if (details && !details.open) details.open = true;
       target.scrollIntoView({ block: "center" });
     };
-    open();
+    // After the first paint: the router restores scroll to the top on arrival, which would
+    // undo a scroll made during mount.
+    const t = window.setTimeout(open, 50);
     window.addEventListener("hashchange", open);
-    return () => window.removeEventListener("hashchange", open);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("hashchange", open);
+    };
   }, []);
   return null;
 }

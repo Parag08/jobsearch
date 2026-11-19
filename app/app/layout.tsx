@@ -8,12 +8,17 @@ import { ThemeToggle } from "../_components/theme-toggle";
 import { NavLinks } from "./nav-links";
 import styles from "./app.module.css";
 
+/**
+ * The day's order first (what to do next, your applications, practice), then the tools that
+ * feed them: find roles, see what they ask for, your evidence, and setup last.
+ */
 const NAV = [
+  ["/app/home", "Overview"],
   ["/app", "Pipeline"],
-  ["/app/bank", "Bank"],
+  ["/app/interview", "Interview"],
   ["/app/watchlist", "Watchlist"],
   ["/app/insights", "Insights"],
-  ["/app/interview", "Interview"],
+  ["/app/bank", "Bank"],
   ["/app/agent", "Agent"],
 ] as const;
 

@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { signedInRedirect } from "./routing";
+import { APP_HOME, signedInRedirect } from "./routing";
 
 describe("signedInRedirect", () => {
-  it("sends a signed-in visitor from the landing or sign-in page straight to the dashboard", () => {
-    expect(signedInRedirect("/", true)).toBe("/app");
-    expect(signedInRedirect("/signin", true)).toBe("/app");
+  it("sends a signed-in visitor from the landing or sign-in page straight to the overview", () => {
+    expect(APP_HOME).toBe("/app/home");
+    expect(signedInRedirect("/", true)).toBe("/app/home");
+    expect(signedInRedirect("/signin", true)).toBe("/app/home");
   });
 
   it("leaves signed-out visitors, and every other page, where they are", () => {

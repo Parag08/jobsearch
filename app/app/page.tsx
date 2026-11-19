@@ -85,8 +85,8 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         <div className={ui.headText}>
           <h1>Pipeline</h1>
           <p className={ui.facts}>
-            <span><b>{active}</b> open</span>
-            <span><b>{stats.applied}</b> applied</span>
+            <span data-tone="open"><b>{active}</b> open</span>
+            <span data-tone="applied"><b>{stats.applied}</b> applied</span>
             {stats.applied > 0 && <span><b>{Math.round(stats.responseRate * 100)}%</b> replied</span>}
             <span data-tone={stale.size ? "stale" : undefined}><b>{stale.size}</b> waiting over 2 weeks</span>
             <span data-tone={due.length ? "due" : undefined}><b>{due.length}</b> follow-ups due</span>

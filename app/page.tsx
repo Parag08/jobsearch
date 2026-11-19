@@ -75,7 +75,7 @@ export default function Home() {
       >
         <ThemeToggle />
         {demoAvailable && (
-          <Link href="/app" className={styles.navLink}>
+          <Link href="/app/home" className={styles.navLink}>
             Demo
           </Link>
         )}
@@ -116,7 +116,7 @@ export default function Home() {
                 </Link>
               )}
               {demoAvailable && (
-                <Link href="/app" className={styles.ctaLink}>
+                <Link href="/app/home" className={styles.ctaLink}>
                   See it with sample data
                 </Link>
               )}

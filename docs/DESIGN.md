@@ -577,7 +577,8 @@ top-left, Add a job top-right, top-left on phones). Buttons press to `scale(0.98
 
 Added 2026-11-19 (Parag: the JobSearch name in the menu bar did nothing; he wanted a page that
 reports from every page and keeps him applying, reaching out and practising). It opens from
-the JobSearch name only; it is not a nav item. Parag tried and rejected a Three.js scene here:
+the JobSearch name and, since 2026-11-19, the first nav tab (it was hidden behind the name
+and nobody found it). It is where sign-in lands. Parag tried and rejected a Three.js scene here:
 the page has no animation.
 
 - **Focal point:** a headline chosen from the week's real state (`lib/home/momentum.ts`: start,
@@ -599,13 +600,44 @@ the page has no animation.
 - **Voice:** count effort, never failure. A closed application is a try ("Most close, and every
   one sharpens the next"). A quiet week is an invitation back in, never a scold.
 
+### Navigation order
+
+Decided 2026-11-19 (Parag: overview, then pipeline, then interview). The day's order first,
+then the tools that feed it:
+
+**Overview · Pipeline · Interview · Watchlist · Insights · Bank · Agent**
+
+Overview says what to do next; Pipeline is the applications; Interview is practice. Then
+Watchlist finds roles, Insights says what they ask for, the Bank holds your evidence, and
+Agent is setup, last. Sign-in, the signed-in redirect and the demo links land on the
+overview (`APP_HOME` in `lib/auth/routing.ts`); "Back to pipeline" links on error pages
+still go to the pipeline, as they say.
+
+### Page anatomy (Bank, Watchlist, Insights, Pipeline)
+
+- **Header:** large title, then one line of facts (`ui.facts`: dark number, soft label), the
+  page's one primary action on the right when it has one. A fact is coloured only when the
+  colour means something on that page (`data-tone`: Pipeline's open blue and applied indigo,
+  stale orange, due blue); never by position.
+- **Summary panel** (`ui.summary`): up to three stats side by side, stacking on phones. A
+  stat is a soft label, a big tabular number or a bar, and one line of note or a link.
+- **Meaning colours** for a whole split three ways (`ui.sumBar`, `ui.legend`, `ui.tag`,
+  `data-tone`): **good** green (`--warm`), **mid** teal (`--tone-teal`), **attention**
+  orange (`--stale`). Bank strength: strong / solid / weak. Requirements: on your CV / done,
+  not on your CV / not on record.
+- **Collapsible panels** (`<details>` styled as `ui.panel`, chevron right) for what is set
+  once or is reassurance rather than work: Bank roles, Watchlist filters, "On your CV".
+- **Rows:** monogram (stable tone hash), bold title, soft meta line joined by " · ", tags,
+  and text-weight actions on the right (`ui.textBtn`: blue for the step forward, grey for
+  Dismiss / Remove). Empty states are one sentence (`ui.none`), never a box in a box.
+
 ### Bank (`/app/bank`)
 
 Redesigned 2026-11-19 (Parag: the elements were not where they should be; he wanted the
 strength dots in colour and a way to edit any point that is wrong). The Bank is the single
 source of evidence, so every point is editable in place.
 
-- **Header:** "34 points across 10 roles" in soft grey, not monospace.
+- **Header:** the shared facts line, "34 points · 10 roles".
 - **Summary panel:** three stats side by side (stacking on phones). CV readiness with the meter
   and one plain line (at 100% it says so; the per-role gaps live in To do, not here); point
   strength as a stacked bar in the three band colours with a legend; "Missing a number" in
@@ -634,6 +666,50 @@ source of evidence, so every point is editable in place.
 - **Deleting:** a red text link in the editor opens an inline confirmation on the danger wash
   that says how many CVs use the point and how many were sent, and that copies already made
   or sent keep it while those CVs leave it out from now on (export reads the bank).
+
+### Watchlist (`/app/watchlist`)
+
+Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, W1-W10).
+
+- **Order:** Roles found, Companies you watch, What to look for. With nothing watched yet,
+  Companies leads: adding one is the invitation.
+- **Header:** companies · open roles · shortlisted; **Check for new roles** (primary) only
+  when a company is active. Boards are read when you press it; nothing runs on a schedule,
+  so no copy promises "daily".
+- **Roles found:** shortlisted first, then best fit, then newest (`lib/watchlist/display.ts`
+  `orderRoles`). Each row: monogram, title opening the posting, "Company · City · Posted 3
+  days ago · via Greenhouse", Shortlisted and Fit tags, **Shortlist / Dismiss**. Twenty shown,
+  then "Show all N".
+- **Companies:** monogram, name (Paused tag, dimmed when paused), "Read from Greenhouse" or
+  "Check by hand" in orange, the careers URL as a soft link; **Pause / Resume / Remove**.
+  **Suggested companies**: directory companies with a readable board you don't watch, as
+  "+ Name" pills and **Watch all N**; hidden when the directory has none.
+- **What to look for:** a collapsible panel, closed once set, whose head says what it does
+  ("Singapore · 2 titles · 1 skipped"). Three equal boxes: Cities, Job titles to include, Job
+  titles to skip.
+
+### Insights (`/app/insights`)
+
+Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, I1-I11).
+
+- **Words:** the Overview's, from one place (`lib/insights/display.ts`): **Not on record**
+  (orange), **Done, not on your CV** (teal), **On your CV** (green). Never "gap",
+  "unstated" or "evidenced" on screen.
+- **Picker:** role families as pills in sentence case with a count; the selected one is the
+  blue accent (not green, which means covered). **Filter by title** as its own search
+  field, with Clear.
+- **Summary panel:** roles read in the selection and "Based on 5 of your 7 roles"; what they
+  ask for as a three-colour bar; Not on record as the big number (green 0 says nothing is
+  missing). Unread roles and the result of reading sit in a notice row at its foot with
+  **Read N now**; when reading is off, it says so in a sentence, never an env var name.
+- **Groups:** Not on record, Done not on your CV, the plan, then On your CV (collapsed).
+  Empty groups are not drawn. Each row: the term in sentence case, "Also written as …",
+  "Asked by 2 of 3" with a bar in the group's colour, and a link into the Bank: "Mentioned
+  in Valeo Health: add it as a point" (to the role) or "Backed by 3 points" (to the first
+  point, scrolled to and flashed).
+- **Plan for the gaps:** **Make a plan for these gaps** is the page's one primary; the plan
+  reads at the 68ch measure with "Written … from N roles" under the heading. The panel is
+  not drawn when there is nothing to plan and no plan.
 
 ### Logo — Stages
 

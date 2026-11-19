@@ -1,0 +1,202 @@
+/* The Watchlist (DESIGN.md section 5, Watchlist). Shared parts come from ../ui.module.css. */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.role,
+.company {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.list > li:first-child { border-top: 0; padding-top: 0; }
+
+.role > :first-child,
+.company > :first-child { margin-top: 1px; }
+
+.company[data-paused] .roleBody { opacity: 0.6; }
+
+.roleBody { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.roleTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.roleTitle a { color: var(--ink); text-decoration: none; }
+.roleTitle a:hover { color: var(--accent-text); text-decoration: underline; }
+
+.meta {
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.byHand { color: var(--stale-text); font-weight: 500; }
+
+.url { color: var(--ink-soft); text-decoration: none; }
+.url:hover { color: var(--accent-text); text-decoration: underline; }
+
+.tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+
+.actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- add a company ---- */
+
+.addForm {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2.5fr) auto;
+  gap: 8px;
+}
+
+/* ---- suggestions ---- */
+
+.suggest {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.suggestHead::-webkit-details-marker { display: none; }
+.suggestHead::after { content: "Show"; margin-left: auto; font-size: 0.8125rem; font-weight: 500; color: var(--accent-text); }
+.suggest[open] .suggestHead::after { content: "Hide"; }
+
+.suggestList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.suggestBtn {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--motion), color var(--motion);
+}
+
+.suggestBtn:hover { border-color: var(--accent); color: var(--accent-text); }
+.suggestBtn span { color: var(--accent-text); }
+
+.count {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+/* ---- filters (a collapsible panel) ---- */
+
+.filtersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius);
+}
+
+.filtersHead::-webkit-details-marker { display: none; }
+.filtersHead:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.filtersHead > span:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filtersHead b { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.015em; }
+
+.chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ink-faint);
+  border-bottom: 2px solid var(--ink-faint);
+  transform: rotate(-45deg);
+  transition: transform var(--motion);
+  margin-right: 4px;
+  flex: none;
+}
+
+details[open] > .filtersHead .chevron { transform: rotate(45deg); }
+
+/* <details> does not lay its content out as flex in every browser, so space it by hand. */
+.filtersHead + p { margin-top: 16px; }
+
+.filters {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.field textarea { width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.5; font-weight: 400; }
+
+.filtersFoot { grid-column: 1 / -1; }
+
+@media (max-width: 560px) {
+  .addForm { grid-template-columns: minmax(0, 1fr); }
+  .role, .company { grid-template-columns: auto minmax(0, 1fr); }
+  .actions { grid-column: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron, .suggestBtn { transition: none; }
+}
