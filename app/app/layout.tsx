@@ -19,8 +19,8 @@ const NAV = [
   ["/app/interview", "Interview"],
   ["/app/watchlist", "Watchlist"],
   ["/app/insights", "Insights"],
-  ["/app/bank", "Bank"],
-  ["/app/agent", "Agent"],
+  ["/app/bank", "Experience"],
+  ["/app/agent", "Assistant"],
 ] as const;
 
 /**
@@ -45,8 +45,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <NavLinks items={NAV} />
           <div className={styles.right}>
             <ThemeToggle />
-            <span className={styles.mode} data-mode={w.mode} title={w.mode === "demo" ? "Running on the sample corpus in memory - resets on restart" : w.email ?? ""}>
-              {w.mode === "demo" ? "demo workspace" : (w.email ?? "signed in")}
+            <span className={styles.mode} data-mode={w.mode} title={w.mode === "demo" ? "You're looking at sample data. Changes reset when the server restarts." : w.email ?? ""}>
+              {w.mode === "demo" ? "Sample data" : (w.email ?? "Signed in")}
             </span>
             {w.mode === "live" ? (
               <form action={signOut}>

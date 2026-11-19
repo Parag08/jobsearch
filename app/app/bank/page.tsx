@@ -82,7 +82,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
       <OpenOnHash />
       <div className={ui.head}>
         <div className={ui.headText}>
-          <h1>Bank</h1>
+          <h1>Experience</h1>
           <p className={ui.facts}>
             <span>
               <b>{bullets.length}</b> point{bullets.length === 1 ? "" : "s"}
@@ -94,7 +94,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
         </div>
       </div>
 
-      <section className={ui.panel} aria-label="Bank summary">
+      <section className={ui.panel} aria-label="Experience summary">
         <div className={ui.summary}>
         <div className={ui.sumStat}>
           <span className={ui.sumLabel}>CV readiness</span>

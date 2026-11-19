@@ -35,7 +35,7 @@ type Tab = "behavioural" | "casing" | "technical";
 const TABS: { id: Tab; label: string }[] = [
   { id: "behavioural", label: "Behavioural" },
   { id: "technical", label: "Technical" },
-  { id: "casing", label: "Casing" },
+  { id: "casing", label: "Cases" },
 ];
 
 export default async function Interview({
@@ -321,7 +321,7 @@ function Technical({
         <p className={ui.empty}>No Skills or Technologies line on the profile yet.</p>
       ) : surface.evidenced.length === 0 ? null : (
         <>
-          <p className={ui.mono}>Backed by the bank</p>
+          <p className={ui.sub}>Backed by your experience</p>
           <ul className={ui.rows}>
             {surface.evidenced.map((c) => (
               <li key={`${c.source}-${c.claim}`} className={ui.row}>

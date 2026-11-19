@@ -36,8 +36,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
         <div className={styles.intro}>
           <h1>Get started</h1>
           <p className={styles.sub}>
-            Continuing with Google creates your account if you do not have one yet, and signs you in if
-            you do.
+            New here or coming back, it&apos;s the same button.
           </p>
         </div>
 
@@ -47,18 +46,18 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
 
         {!live && (
           <p className={styles.pending}>
-            Sign-in is not connected yet. Meanwhile, <Link href="/app/home">open the demo workspace</Link>.
+            Sign-in is not connected yet. Meanwhile, <Link href="/app/home">look around with sample data</Link>.
           </p>
         )}
         {error && <p className={styles.pending}>{explain(error)}</p>}
 
         <p className={styles.note}>
-          You will land on your pipeline. Start by pasting a job posting, and we will read it and
-          open an application for it.
+          You&apos;ll land on your overview. Start by adding a job posting to your pipeline: we&apos;ll
+          read it and open an application for it.
         </p>
 
         <Link href="/" className={styles.back}>
-          Back
+          Back to home
         </Link>
       </div>
     </main>

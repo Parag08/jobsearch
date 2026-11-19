@@ -501,6 +501,7 @@
 
 .btn {
   font: inherit;
+  text-decoration: none;
   font-size: 0.8125rem;
   font-weight: 590;
   padding: 7px 16px;

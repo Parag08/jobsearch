@@ -12,12 +12,12 @@ import { readSupabaseEnv } from "@/lib/db/supabase";
 import { readGoogleClientId, shouldOfferOneTap } from "@/lib/auth/google-one-tap";
 import styles from "./page.module.css";
 
-// The journey, end to end. Every line here must describe something the app does today -
-// what is not built yet lives in COMING, and says so.
+// The journey. Every line here must describe something the app does today; what is not
+// built yet lives in COMING, and says so.
 const STEPS = [
   {
     title: "Find the roles worth your time",
-    body: "Watch the companies you care about. JobSearch checks their own job boards every day and brings back the open roles in your cities and line of work, scored for fit.",
+    body: "Watch the companies you care about. When you check, JobSearch reads their own job boards and brings back the open roles in your cities and line of work, scored for fit.",
     ai: "Automatic",
   },
   {
@@ -27,7 +27,7 @@ const STEPS = [
   },
   {
     title: "A CV built from your evidence",
-    body: "Each CV is built from your own experience. Every skill the job asks for is marked as covered or as a gap, so you know exactly what you can claim.",
+    body: "Each CV is built from your own experience. Every skill the job asks for is marked as covered or as a gap, and the cover letter speaks to the gaps in your own words.",
     ai: "AI, checked against your experience",
   },
   {
@@ -43,8 +43,7 @@ const STEPS = [
 ];
 
 const COMING = [
-  "Networking - reach the people in the office you want, even before a role is posted",
-  "Cover letters that speak to the gaps your CV cannot claim",
+  "Networking: reach the people in the office you want, even before a role is posted",
   "Improvement pointers after a rejection, so the next round starts sharper",
   "Offer comparison and a salary negotiation framework",
 ];
@@ -144,8 +143,8 @@ export default function Home() {
           <h2>Nothing on your CV that you cannot back</h2>
           <p>
             Naming a tool, a firm or a method is a claim, and it needs a line of your own experience
-            behind it. Where a job asks for something you have not done, the CV stays quiet - and the
-            gap is shown to you plainly, so you can address it in your own words.
+            behind it. Where a job asks for something you have not done, the CV stays quiet. The gap is
+            shown to you plainly, so you can address it in your own words.
           </p>
         </Reveal>
 
@@ -161,14 +160,14 @@ export default function Home() {
         <Reveal as="section" className={styles.process}>
           <h2>The whole search, step by step</h2>
           <p className={styles.processLede}>
-            Open any stage to see what happens inside it - and which steps AI does for you.
+            Open a stage to see what happens in it and which parts AI does.
           </p>
           <ProcessMap />
         </Reveal>
 
         <Reveal as="footer" className={styles.footer}>
           <Logo size={16} />
-          <span>JobSearch - your job search, end to end.</span>
+          <span>JobSearch</span>
         </Reveal>
       </main>
     </>

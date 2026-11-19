@@ -131,7 +131,7 @@
    and the chip in the footer names the stage anyway */
 .label {
   font-family: var(--font-mono), monospace;
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   letter-spacing: 0;
   color: var(--ink-faint);
   opacity: 0;
@@ -182,7 +182,7 @@
   transform: translate(-50%, -50%);
   padding: 0 6px;
   font-family: var(--font-mono), monospace;
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   letter-spacing: 0;
   white-space: nowrap;
   color: var(--accent-text);
@@ -275,7 +275,7 @@
 /* who does the work - the same three tags as the process map */
 .tag {
   font-family: var(--font-mono), monospace;
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   letter-spacing: 0;
   padding: 1px 6px;
   border-radius: var(--radius);

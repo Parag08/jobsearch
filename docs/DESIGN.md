@@ -519,7 +519,9 @@ so the same family is always the same colour.
 ### Type
 
 One family. **San Francisco** where the system has it (`-apple-system`, so Apple devices load
-nothing), **Inter** (via `next/font`) everywhere else, then `system-ui`. `--font-serif` and
+nothing), **Inter** everywhere else, then `system-ui`. Inter ships with the app
+(`@fontsource-variable/inter` through `next/font/local`): fetching it from Google at build time
+failed a deploy once. `--font-serif` and
 `--font-mono` are kept only as aliases that resolve to it; real code uses `--font-code` (the
 system monospace).
 
@@ -607,10 +609,15 @@ the page has no animation.
 Decided 2026-11-19 (Parag: overview, then pipeline, then interview). The day's order first,
 then the tools that feed it:
 
-**Overview · Pipeline · Interview · Watchlist · Insights · Bank · Agent**
+**Overview · Pipeline · Interview · Watchlist · Insights · Experience · Assistant**
+
+The Bank page is labelled **Experience** and Agent **Assistant** since 2026-11-19 (critique 0.2,
+1.4, 1.5: "Bank" read as finance; "Connections" would collide with contacts). URLs stay
+`/app/bank` and `/app/agent`. Items in Experience are **points** everywhere.
 
 On wide screens the JobSearch name is the Overview tab (its pill shows when you are there),
-so the row reads **JobSearch · Pipeline · Interview · …**; the phone menu lists all seven.
+so the row reads **JobSearch · Pipeline · Interview · Watchlist · Insights · Experience ·
+Assistant**; the phone menu lists all seven.
 
 Overview says what to do next; Pipeline is the applications; Interview is practice. Then
 Watchlist finds roles, Insights says what they ask for, the Bank holds your evidence, and
@@ -632,6 +639,8 @@ still go to the pipeline, as they say.
   not on your CV / not on record.
 - **Collapsible panels** (`<details>` styled as `ui.panel`, chevron right) for what is set
   once or is reassurance rather than work: Bank roles, Watchlist filters, "On your CV".
+- **Labels:** slugs render through `familyLabel` (sentence case, acronyms kept: MBA, KPI,
+  SaaS, B2B). Dates read "7 Sep" (`shortDate`), the year only when it isn't this one.
 - **Rows:** monogram (stable tone hash), bold title, soft meta line joined by " · ", tags,
   and text-weight actions on the right (`ui.textBtn`: blue for the step forward, grey for
   Dismiss / Remove). Empty states are one sentence (`ui.none`), never a box in a box.
@@ -671,6 +680,31 @@ source of evidence, so every point is editable in place.
 - **Deleting:** a red text link in the editor opens an inline confirmation on the danger wash
   that says how many CVs use the point and how many were sent, and that copies already made
   or sent keep it while those CVs leave it out from now on (export reads the bank).
+
+### Application (`/app/applications/[id]`)
+
+Rebuilt 2026-11-19 (critique 5.2-5.13).
+
+- **Header:** "‹ Pipeline" link, the company as the title, then role · Saved 7 Sep · Applied 9 Sep.
+- **Stage stepper:** the seven stages from Saved to Negotiation as dots on a track in the stage
+  colour scale, filled up to the current one (the current dot ringed). Any other stage is a
+  click. **Mark as applied** sits under it while saved, with "We'll keep a copy of the CV and
+  letter exactly as you sent them." **Close application…** opens the reasons: I withdrew,
+  They said no, No reply, and I accepted an offer (from Offer on). A closed application says
+  so in grey and calls it a try.
+- **Next step:** a labelled field with Save.
+- **What they're looking for:** family · seniority · city, then **You can show this** (green
+  tags) and **Not on your record yet** (orange tags, "Address these in your cover letter"),
+  then "Who can apply".
+- **CV:** the summary line labelled as it prints, the lines as a plain list (no relevance
+  scores), page-fit notes in a sentence, Download PDF / Word, **Rebuild CV**, and one line on
+  whether it follows your experience or is kept as sent.
+- **Cover letter:** fields labelled above ("What caught your eye about BCG?" with its helper,
+  Addressed to, Otherwise the team); **Write cover letter**; once written, the editable text and
+  downloads, with "Rewrite it from scratch" folded away.
+- **Interview prep:** each theme with a tag in the meaning colours (Story ready, On your CV only,
+  No story yet) and Practise; "Stories behind your CV: N still to write" folded.
+- **One primary:** Build CV while there is none, else Mark as applied while saved, else none.
 
 ### Watchlist (`/app/watchlist`)
 
@@ -814,6 +848,8 @@ Two load-bearing joints:
 - **Pipeline is a Kanban board** (2026-11-19, Parag's reference: Twinkle on Dribbble) — a column per working stage even when empty, grey tracks, lifted cards with a role-family tag and a company monogram, Add a job as the page's one primary action.
 - **Light by day, dark by night** (2026-09-24). Still no `prefers-color-scheme` inversion. A toggle in
   both navs cycles Auto / Light / Dark; Auto follows the viewer's local clock (dark 19:00-07:00).
+  Its icon is the theme in effect, a sun or a moon; in Auto a small "A" sits on it (a clock
+  face was a riddle; critique 1.7). Drawn after mount, since the browser's clock decides it.
 - **Nested radius** (2026-11-19, replacing "radius encodes elevation"): 8 inside 12 inside 16, so
   curves line up; buttons and floating glass are capsules.
 - **Liquid glass has a strict habitat** — sticky nav, sheets, popovers, toasts, the landing hero card.

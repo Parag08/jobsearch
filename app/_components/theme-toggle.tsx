@@ -77,12 +77,23 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={`Theme: ${LABEL[current]}. Switch to ${nextPref(current)}.`}
       title={`Theme: ${LABEL[current]}`}
     >
-      <Icon pref={current} />
+      {/* Drawn after mount: Auto's sun or moon depends on the browser's clock, which the server can't know. */}
+      {pref !== null && <Icon pref={current} />}
+      {pref === "auto" && (
+        <span className={styles.autoBadge} aria-hidden="true">
+          A
+        </span>
+      )}
     </button>
   );
 }
 
+/**
+ * The theme in effect as a sun or a moon. Auto shows the one the clock has picked, with a
+ * small "A" beside it (a clock face for "auto" was a riddle; critique 1.7).
+ */
 function Icon({ pref }: { pref: ThemePref }) {
+  const shown = resolveTheme(pref, new Date());
   const common = {
     width: 16,
     height: 16,
@@ -94,7 +105,7 @@ function Icon({ pref }: { pref: ThemePref }) {
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
   };
-  if (pref === "light") {
+  if (shown === "light") {
     return (
       <svg {...common}>
         <circle cx="12" cy="12" r="4" />
@@ -102,18 +113,9 @@ function Icon({ pref }: { pref: ThemePref }) {
       </svg>
     );
   }
-  if (pref === "dark") {
-    return (
-      <svg {...common}>
-        <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
-      </svg>
-    );
-  }
-  // auto: a clock face, because auto follows the clock
   return (
     <svg {...common}>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 7.5V12l3 2" />
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
     </svg>
   );
 }

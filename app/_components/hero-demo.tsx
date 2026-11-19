@@ -30,15 +30,18 @@ interface Frame {
   loop?: boolean;
 }
 
+/** Long enough to read a frame's labels before it moves on (critique 2.4: 2.6s was too fast). */
+const FRAME_MS = 4000;
+
 const FRAMES: Frame[] = [
-  { at: "sourcing", chip: "sourcing", tag: "auto", text: "153 roles on your boards - 12 match you", round: 1 },
-  { at: "networking", chip: "networking", tag: "soon", text: "Two alumni in that office - before the role is posted", round: 1 },
+  { at: "sourcing", chip: "sourcing", tag: "auto", text: "153 roles on your boards. 12 match you.", round: 1 },
+  { at: "networking", chip: "networking", tag: "soon", text: "Two alumni in that office, before the role is posted", round: 1 },
   { at: "applying", chip: "applying", tag: "ai", text: "Job read; CV built from 14 points you can back", round: 1 },
-  { at: "interview", chip: "interview", tag: "ai", text: "A live case with an AI interviewer - maths checked", round: 1 },
-  { at: "sourcing", chip: "improve", tag: "soon", text: "Not this time - three pointers for the next round", round: 1, loop: true },
+  { at: "interview", chip: "interview", tag: "ai", text: "A live case with an AI interviewer. Maths checked.", round: 1 },
+  { at: "sourcing", chip: "improve", tag: "soon", text: "Not this time. Three pointers for the next round.", round: 1, loop: true },
   { at: "applying", chip: "applying", tag: "ai", text: "Round two: the gaps they probed are now covered", round: 2 },
   { at: "interview", chip: "interview", tag: "ai", text: "Final round, rehearsed in your own words", round: 2 },
-  { at: "offer", chip: "offer", tag: "soon", text: "Offer in - weigh it, then negotiate it", round: 2 },
+  { at: "offer", chip: "offer", tag: "soon", text: "Offer in. Weigh it, then negotiate it.", round: 2 },
 ];
 
 const TAG_LABEL: Record<Tag, string> = { ai: "AI", auto: "automatic", soon: "soon" };
@@ -83,7 +86,7 @@ export function HeroDemo() {
         setCycle((c) => c + 1);
         return 0;
       });
-    }, 2600);
+    }, FRAME_MS);
     return () => clearInterval(t);
   }, [running]);
 
@@ -102,7 +105,7 @@ export function HeroDemo() {
     <div ref={ref} className={styles.glass} onPointerMove={onMove} aria-label="A sample job search, from sourcing to the offer">
       <div className={styles.sheen} aria-hidden="true" />
       <div className={styles.head}>
-        <span className={styles.company}>Your job search, end to end</span>
+        <span className={styles.company}>One search, start to offer</span>
         <span className={styles.mono}>round {f.round}</span>
       </div>
 
