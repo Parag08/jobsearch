@@ -55,7 +55,7 @@ One record (bullet bank, stories, applications) feeds every stage; Improve write
 | Stage | State | The gap that matters most |
 |---|---|---|
 | Sourcing | Works; **the daily run is failing** | Missing repo secrets (S1) |
-| Networking | Tables and rules only; contacts reachable only over MCP | No page at all (N1) |
+| Networking | Network tab: add people, log conversations, follow-ups (N1, 2026-11-20) | No first-message draft yet (N2) |
 | Applying | Works end to end: read, tailor, letter, export | Output is 7 of 12 against a hand-made CV; no honest rewording yet (A1, A2) |
 | Interview prep | Strongest stage: behavioural mock, cases, delivery scoring, per-application prep | Stories cannot be captured in the app (I1) |
 | Improve | Close with a reason, nothing else | No outcome record to learn from (V1) |
@@ -126,7 +126,7 @@ Ranked. H0 first because the rest builds on data that must be right.
    proposes, you edit". *Deps:* Q3. *Done when:* a reworded bullet shows original and proposal side
    by side, a changed number or an unevidenced tool is rejected by a test, and the benchmark does
    not drop.
-9. **N1 - Networking, minimum CRM** (M). A contacts page (add by name or pasted LinkedIn URL, firm,
+9. ~~**N1 - Networking, minimum CRM** (M).~~ **Shipped 2026-11-20** (`/app/network`). A contacts page (add by name or pasted LinkedIn URL, firm,
    office, warmth), an interaction log that sets `nextFollowupDate`, and contacts shown on watched
    companies. Tables, repo, follow-up rules and MCP tools already exist. *Done when:* the follow-ups
    due count on the pipeline links to real rows a user created in the app.
@@ -214,9 +214,10 @@ Ranked. H0 first because the rest builds on data that must be right.
 |---|---|---|---|
 | Contacts + interactions tables | Shipped (schema, repo) | - | `contacts`, `interactions`; `lib/repos/contacts.ts` |
 | Contacts and interactions over MCP | Shipped 2026-11-13 | Rules | `list/get/upsert_contact`, `log_interaction` |
-| Follow-ups due count on the pipeline | Shipped, but no way to add a contact in the app | Rules | `lib/outreach.ts` `followupsDue` |
-| Contacts page / CRM UI | Not started (N1) | - | - |
-| Log conversations, next follow-up date | Built, not wired (N1) | Rules | `lib/outreach.ts` `nextFollowupDate` |
+| Follow-ups due count on the pipeline | Shipped; links to the Network tab | Rules | `lib/outreach.ts` `followupsDue` |
+| Network tab: add by name or pasted LinkedIn link, warmth, how you know them | Shipped 2026-11-20 (N1) | Rules | `/app/network`, `lib/networking/contacts.ts`, `lib/services/network.ts`, migration 0015 |
+| Log conversations, next follow-up date from warmth | Shipped 2026-11-20 (N1) | Rules | `afterInteraction`, `lib/outreach.ts` `nextFollowupDate` |
+| People you know on each watched company | Shipped 2026-11-20 (N1) | Rules | Watchlist company rows -> `/app/network?company=` |
 | Draft the first message | Built, not wired (N2) | AI | `buildMessageContext`; `draft-outreach` tier, no provider method |
 | Find alumni at a watched firm | Not started; contacts are typed or pasted, never fetched | You | decided 2026-11-10 |
 
@@ -376,3 +377,4 @@ Promote one by giving it an id, a size and a done-when.
   `docs/ARCHITECTURE.md` and the 3D `/architecture` page added. Old numbering maps as: 5 -> N1,
   6 -> V1, 7 -> V2, 8 -> I2, 9 -> I3, 10 -> S2, 11 -> X1, 12 -> O1-O3, 13 -> U2, 14 -> U1,
   15 -> I4, 16 -> S5.
+- 2026-11-20 - Save to pipeline (APPLY-FLOW step 3) and N1 Network tab shipped.

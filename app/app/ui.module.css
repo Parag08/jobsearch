@@ -44,6 +44,9 @@
 .facts [data-tone="applied"] b { color: var(--stage-screening); }
 .facts [data-tone="stale"] b { color: var(--stale-text); }
 .facts [data-tone="due"] b { color: var(--accent-text); }
+/* A fact that opens the page it counts (Pipeline's follow-ups due -> Network). */
+.factLink { color: inherit; text-decoration: none; }
+.factLink:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---- add a job (jd-form.tsx): a floating sheet that grows from its button ---- */
 .addJob {

@@ -157,9 +157,38 @@ export function seedDemoExtras(db: FakeDb, userId: string, today: string): void 
       next_followup: daysAgo(today, -3),
       rolling_summary: "Alumna; offered to refer once the payments role opens.",
     },
+    {
+      id: "demo-contact-2",
+      user_id: userId,
+      name: "Daniel Sato",
+      network: { name: "Former colleague at Quillpay", class: null, campus: null },
+      company: "Orchard Commerce",
+      role: "Head of Product, Checkout",
+      location: "Singapore",
+      warmth: "cold",
+      status: "awaiting-reply",
+      interests: ["checkout"],
+      next_followup: daysAgo(today, 2),
+      rolling_summary: "Worked together briefly at Quillpay; no reply yet.",
+    },
+    {
+      id: "demo-contact-3",
+      user_id: userId,
+      name: "Lena Fischer",
+      network: null,
+      company: "Atlas Mobility",
+      role: "Product Director",
+      location: "Singapore",
+      warmth: "cold",
+      status: "not-contacted",
+      interests: [],
+      next_followup: null,
+      rolling_summary: "",
+    },
   ]);
   db.seed("interactions", [
     { user_id: userId, contact_id: "demo-contact-1", date: daysAgo(today, 9), channel: "linkedin", summary: "Asked for a short chat about the payments team.", raw_text: null },
     { user_id: userId, contact_id: "demo-contact-1", date: daysAgo(today, 2), channel: "coffee", summary: "Coffee: team is hiring in Q1; she will refer.", raw_text: null },
+    { user_id: userId, contact_id: "demo-contact-2", date: daysAgo(today, 16), channel: "email", summary: "Asked how the checkout team thinks about payments risk.", raw_text: null },
   ]);
 }

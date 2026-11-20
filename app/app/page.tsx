@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
-import { listContacts } from "@/lib/repos/contacts";
+import { listContactsWithInteractions } from "@/lib/repos/contacts";
 import { byRecentActivity, funnelStats, recentApplications, staleApplications } from "@/lib/pipeline";
 import { pipelineColumnMaxFromEnv, pipelineRecentDaysFromEnv } from "@/lib/pipeline-settings";
 import { followupsDue } from "@/lib/outreach";
@@ -38,7 +38,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
 
   const today = new Date().toISOString().slice(0, 10);
-  const [apps, contacts] = await Promise.all([listApplications(db, userId), listContacts(db, userId)]);
+  const [apps, contacts] = await Promise.all([listApplications(db, userId), listContactsWithInteractions(db, userId)]);
   const stats = funnelStats(apps);
   const stale = new Set(staleApplications(apps, today).map((a) => a.id));
   const due = followupsDue(contacts, today);
@@ -89,7 +89,9 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
             <span data-tone="applied"><b>{stats.applied}</b> applied</span>
             {stats.applied > 0 && <span><b>{Math.round(stats.responseRate * 100)}%</b> replied</span>}
             <span data-tone={stale.size ? "stale" : undefined}><b>{stale.size}</b> waiting over 2 weeks</span>
-            <span data-tone={due.length ? "due" : undefined}><b>{due.length}</b> follow-ups due</span>
+            <Link href="/app/network" className={ui.factLink} data-tone={due.length ? "due" : undefined}>
+              <b>{due.length}</b> follow-ups due
+            </Link>
           </p>
         </div>
         <AddJob openFirst={apps.length === 0} />
@@ -141,12 +143,16 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
 
       {due.length > 0 && (
         <section className={ui.panel}>
-          <h2>Follow-ups due</h2>
+          <h2>
+            <Link href="/app/network">Follow-ups due</Link>
+          </h2>
           <ul className={ui.rows}>
             {due.map((c) => (
               <li key={c.id} className={ui.row}>
                 <p>
-                  <b>{c.name}</b>
+                  <b>
+                    <Link href={`/app/network#contact-${c.id}`}>{c.name}</Link>
+                  </b>
                   {c.company ? ` · ${c.company}` : ""} — last: {c.interactions[0]?.summary ?? "no interaction logged"}
                 </p>
                 <span className={ui.mono}>{c.nextFollowup}</span>

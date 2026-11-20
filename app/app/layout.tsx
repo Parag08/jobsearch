@@ -18,6 +18,7 @@ const NAV = [
   ["/app", "Pipeline"],
   ["/app/interview", "Interview"],
   ["/app/watchlist", "Watchlist"],
+  ["/app/network", "Network"],
   ["/app/insights", "Insights"],
   ["/app/bank", "Experience"],
   ["/app/agent", "Assistant"],
