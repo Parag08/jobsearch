@@ -69,12 +69,14 @@ import {
 } from "@/lib/interview/mock";
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
-import { saveToPipeline } from "@/lib/services/save-to-pipeline";
+import { readPostingInto, saveToPipeline } from "@/lib/services/save-to-pipeline";
+import { applyFollowUpDaysFromEnv, followUpAfterApplying } from "@/lib/apply/follow-up";
 import { postingEndpoint, postingText } from "@/lib/watchlist/posting";
 import { cannedPosting } from "@/lib/demo/canned";
 import { demoTaxonomy } from "@/lib/db/demo";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { withLedger } from "@/lib/adapters/llm-factory";
+import type { LlmProvider } from "@/lib/adapters/llm";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
 
@@ -91,7 +93,12 @@ export async function moveStage(applicationId: string, to: Stage, closedReason?:
   const { db, userId } = await ws();
   if (!STAGES.includes(to)) return;
   if (to === "applied") {
-    await markApplied({ db }, userId, applicationId, new Date().toISOString());
+    const { application } = await markApplied({ db }, userId, applicationId, new Date().toISOString());
+    // Applied: the next step is the follow-up (docs/APPLY-FLOW.md step 5), unless one is set.
+    const days = applyFollowUpDaysFromEnv(process.env);
+    if (days && !application.nextAction) {
+      await updateApplication(db, userId, { ...application, nextAction: followUpAfterApplying(today(), days) });
+    }
   } else {
     const app = await getApplication(db, userId, applicationId);
     if (!app) return;
@@ -210,27 +217,40 @@ export async function refreshWatchlistAction(): Promise<void> {
   revalidatePath("/app/watchlist");
 }
 
+/** A model that always fails: with no AI configured, Apply still opens the application and keeps the text. */
+const NO_AI = { extractJd: async () => { throw new Error("AI is not set up"); } } as unknown as LlmProvider;
+
+/** The model, logging every call, plus the CV builder Apply and the paste box share. */
+async function applyDeps(w: NonNullable<Awaited<ReturnType<typeof getWorkspace>>>) {
+  const { db, userId } = w;
+  const day = today();
+  const base = aiLlm(w, demoTaxonomy);
+  const llm = base
+    ? withLedger(base, async (e) => {
+        await logTokens(db, userId, { date: day, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(() => undefined);
+      })
+    : NO_AI;
+  const buildCv = async (applicationId: string) => {
+    await tailorCv({ db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) }, userId, applicationId, day);
+  };
+  return { db, llm, buildCv };
+}
+
 /**
- * Save a watchlist role to the pipeline (docs/APPLY-FLOW.md step 3): its posting is read from
- * the board, opened as an application at Saved and given a CV. Stays on the Watchlist, where
- * the row turns into "In pipeline · Open"; when the board has no text, the row asks for a paste.
+ * Apply to a watchlist role (docs/APPLY-FLOW.md steps 3-5): the posting is read from its board,
+ * an application opens at Saved with its CV, and you land on it to send. When the posting
+ * can't be read, you still land there and paste it. Only a real failure stays on the Watchlist.
  */
 export async function saveToPipelineAction(jobId: string): Promise<void> {
   const w = await ws();
   const { db, userId } = w;
-  const base = aiLlm(w, demoTaxonomy);
-  if (!base) redirect(`/app/watchlist?role=${encodeURIComponent(jobId)}&note=no-ai#roles-h`);
-  const day = today();
-  const llm = withLedger(base, async (e) => {
-    await logTokens(db, userId, { date: day, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(() => undefined);
-  });
+  const deps = await applyDeps(w);
   const jobs = w.cannedAi ? await listSourcedJobs(db, userId) : [];
-  let note: string;
+  let target: string;
   try {
     const r = await saveToPipeline(
       {
-        db,
-        llm,
+        ...deps,
         readPosting: async (q) => {
           if (w.cannedAi) {
             const job = jobs.find((j) => j.externalId === q.externalId && j.company === q.company);
@@ -239,31 +259,37 @@ export async function saveToPipelineAction(jobId: string): Promise<void> {
           const res = await fetch(postingEndpoint(q.ats, q.token, q.externalId), {
             headers: { accept: "application/json" },
             signal: AbortSignal.timeout(8000),
-          }).catch(() => null);
-          if (!res?.ok) return null;
+          });
+          if (!res.ok) {
+            console.error("saveToPipelineAction: board answered", res.status, q.ats, q.token, q.externalId);
+            return null;
+          }
           return postingText(q.ats, await res.json().catch(() => null), q.externalId, q.company);
-        },
-        buildCv: async (applicationId) => {
-          await tailorCv(
-            { db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) },
-            userId,
-            applicationId,
-            day,
-          );
         },
       },
       userId,
       jobId,
       new Date().toISOString(),
     );
-    note = "needsPosting" in r ? "paste" : r.cvError ? "no-cv" : "saved";
+    const note = r.read !== "read" ? r.read : r.cvError ? "no-cv" : r.created ? "ready" : "";
+    target = `/app/applications/${r.applicationId}${note ? `?applied=${note}` : ""}`;
   } catch (err) {
     console.error("saveToPipelineAction", err);
-    note = "failed";
+    target = `/app/watchlist?role=${encodeURIComponent(jobId)}&note=failed#roles-h`;
   }
   revalidatePath("/app");
   revalidatePath("/app/watchlist");
-  redirect(`/app/watchlist?role=${encodeURIComponent(jobId)}&note=${note}#role-${encodeURIComponent(jobId)}`);
+  redirect(target);
+}
+
+/** The paste box on an unread application: read the posting (or the kept text), then build the CV. */
+export async function readPostingAction(applicationId: string, _prev: string | null, form: FormData): Promise<string | null> {
+  const w = await ws();
+  const r = await readPostingInto(await applyDeps(w), w.userId, applicationId, String(form.get("posting") ?? ""));
+  if (!r.read) return r.error;
+  revalidatePath("/app");
+  revalidatePath(`/app/applications/${applicationId}`);
+  redirect(`/app/applications/${applicationId}?applied=${r.cvError ? "no-cv" : "ready"}`);
 }
 
 /** What the watchlist keeps: cities, title phrases, excluded phrases (lib/watchlist/targets.ts). */

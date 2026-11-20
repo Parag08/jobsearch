@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
-import { getApplication } from "@/lib/repos/applications";
+import { getApplication, getJdRaw } from "@/lib/repos/applications";
 import { getApplicationCv } from "@/lib/repos/cvs";
 import { listProjects } from "@/lib/repos/projects";
 import { listStories } from "@/lib/repos/stories";
@@ -15,6 +15,8 @@ import { getCoverLetter } from "@/lib/repos/cover-letters";
 import { questionBank } from "../../interview/bank";
 import ui from "../../ui.module.css";
 import s from "./application.module.css";
+import { ReadPosting } from "./read-posting";
+import { applyFollowUpDaysFromEnv } from "@/lib/apply/follow-up";
 
 /**
  * One application (DESIGN.md section 5, Application): where it stands and what to do next,
@@ -50,23 +52,25 @@ export default async function ApplicationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ letterError?: string; cvError?: string }>;
+  searchParams: Promise<{ letterError?: string; cvError?: string; applied?: string }>;
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const { id } = await params;
-  const { letterError, cvError } = await searchParams;
+  const { letterError, cvError, applied } = await searchParams;
 
   const app = await getApplication(db, userId, id);
   if (!app) notFound();
-  const [cv, projects, stories, letter] = await Promise.all([
+  const [cv, projects, stories, letter, jdRaw] = await Promise.all([
     app.cvVersionId ? getApplicationCv(db, userId, app.cvVersionId) : null,
     listProjects(db, userId),
     listStories(db, userId),
     getCoverLetter(db, userId, id),
+    app.jdExtract ? null : getJdRaw(db, userId, id),
   ]);
   const today = new Date().toISOString().slice(0, 10);
+  const followUpDays = applyFollowUpDaysFromEnv(process.env);
   const letterFrozen = app.appliedAt !== null;
   const bullets = projects.flatMap((p) => p.bullets);
   const bank: Record<string, Bullet> = Object.fromEntries(bullets.map((b) => [b.id, b]));
@@ -99,6 +103,27 @@ export default async function ApplicationPage({
           </p>
         </div>
       </div>
+
+      {/* ---- just arrived from Apply on the Watchlist ---- */}
+      {applied === "ready" && cv && app.stage === "saved" && (
+        <p className={s.appliedNote} role="status">
+          Ready to send: the posting is read and your CV is built for it.{" "}
+          {app.applyUrl ? "Open the posting, apply there with this CV, then mark it applied here." : "Apply with this CV, then mark it applied here."}
+        </p>
+      )}
+      {applied === "no-cv" && !cv && (
+        <p className={s.appliedNote} data-tone="attention" role="status">
+          The posting is read, but the CV couldn&apos;t be built yet. Build it from the CV panel below.
+        </p>
+      )}
+
+      {/* ---- the posting, when it isn't read yet ---- */}
+      {!app.jdExtract && (
+        <section className={ui.panel} aria-labelledby="posting-h">
+          <h2 id="posting-h">Add the posting</h2>
+          <ReadPosting applicationId={app.id} kept={Boolean(jdRaw?.trim())} url={app.applyUrl ?? null} />
+        </section>
+      )}
 
       {/* ---- where it stands ---- */}
       <section className={ui.panel} aria-labelledby="stage-h">
@@ -138,12 +163,27 @@ export default async function ApplicationPage({
 
         {app.stage === "saved" && (
           <div className={s.applyRow}>
-            <form action={moveStage.bind(null, app.id, "applied", undefined)}>
-              <button className={ui.btn} data-primary={primary === "apply" ? "" : undefined} type="submit">
-                Mark as applied
-              </button>
-            </form>
-            <p className={ui.sub}>We&apos;ll keep a copy of the CV and letter exactly as you sent them.</p>
+            <div className={s.applySteps}>
+              {app.applyUrl && (
+                <a className={ui.btn} href={app.applyUrl} target="_blank" rel="noopener noreferrer">
+                  Open the posting <span aria-hidden="true">↗</span>
+                </a>
+              )}
+              {cv && (
+                <a className={ui.btn} href={`/api/export/${app.id}?format=pdf`}>
+                  Download CV
+                </a>
+              )}
+              <form action={moveStage.bind(null, app.id, "applied", undefined)}>
+                <button className={ui.btn} data-primary={primary === "apply" ? "" : undefined} type="submit">
+                  Mark as applied
+                </button>
+              </form>
+            </div>
+            <p className={ui.sub}>
+              {app.applyUrl ? "Apply on their site with this CV, then mark it here. " : ""}We&apos;ll keep a copy of the CV and letter exactly as
+              you sent them{followUpDays ? `, and remind you to follow up after ${followUpDays} days` : ""}.
+            </p>
           </div>
         )}
 

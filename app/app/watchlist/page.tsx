@@ -29,16 +29,9 @@ const sourceName = (source: string) => atsLabel(source as never) ?? source.charA
  * are what the page is for; the companies feed them; the filters are set once and fold away.
  * With nothing watched yet, adding a company is the invitation, so it leads.
  */
-/** What the row says after Save to pipeline (saveToPipelineAction's `note`). */
+/** What the Watchlist says when Apply failed outright (saveToPipelineAction's `note`); every other result opens the application. */
 const SAVE_NOTE: Record<string, { text: string; tone?: "attention" }> = {
-  saved: { text: "is in your pipeline, with a CV built for it." },
-  "no-cv": { text: "is in your pipeline. Its CV couldn't be built yet: open it to build one.", tone: "attention" },
-  paste: {
-    text: "couldn't be read from its board. Open the posting, copy the text, and use Add a job on the Pipeline.",
-    tone: "attention",
-  },
-  "no-ai": { text: "couldn't be saved: reading postings isn't set up yet.", tone: "attention" },
-  failed: { text: "couldn't be saved. Try again in a moment.", tone: "attention" },
+  failed: { text: "couldn't be opened. Try again in a moment.", tone: "attention" },
 };
 
 export default async function Watchlist({ searchParams }: { searchParams: Promise<{ roles?: string; role?: string; note?: string }> }) {
@@ -87,7 +80,7 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
     <section className={ui.panel} aria-labelledby="roles-h">
       <div>
         <h2 id="roles-h">Roles found</h2>
-        <p className={ui.sub}>From the job boards of the companies you watch. Save the ones you want to apply for: each opens in your pipeline with its CV built.</p>
+        <p className={ui.sub}>From the job boards of the companies you watch. Press Apply on one you want: it opens in your pipeline with the posting read and a CV built, ready to send.</p>
       </div>
       {savedRole && saveNote && (
         <p className={s.saveNote} data-tone={saveNote.tone} role="status">
@@ -146,7 +139,7 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
                     </Link>
                   ) : (
                     <>
-                      <SaveToPipelineButton jobId={j.id} label={`Save ${j.title} at ${j.company} to your pipeline`} />
+                      <SaveToPipelineButton jobId={j.id} label={`Apply to ${j.title} at ${j.company}`} />
                       <form action={setJobStatus.bind(null, j.id, "dismissed")}>
                         <button className={ui.textBtn} data-tone="quiet" type="submit" aria-label={`Dismiss ${j.title} at ${j.company}`}>
                           Dismiss

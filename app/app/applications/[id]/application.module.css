@@ -127,6 +127,29 @@ span.stepBtn { cursor: default; }
 
 .applyRow p { margin: 0; }
 
+/* Apply strip (docs/APPLY-FLOW.md step 5): the posting, the CV, then Mark as applied. */
+.applySteps { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.applySteps a { text-decoration: none; }
+
+/* After Apply on the Watchlist: green when ready to send, orange when something is missing. */
+.appliedNote {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warm) 12%, transparent);
+}
+.appliedNote[data-tone="attention"] { background: color-mix(in srgb, var(--stale) 14%, transparent); }
+
+/* Add the posting: the paste box on an application that isn't read yet. */
+.readPosting { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.readPosting p { margin: 0; }
+.readPosting textarea { width: 100%; box-sizing: border-box; resize: vertical; line-height: 1.5; }
+.readFoot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.readError { margin: 0 auto 0 0; font-size: 0.8125rem; color: var(--stale-text); }
+
 .stageFoot {
   display: flex;
   align-items: flex-end;

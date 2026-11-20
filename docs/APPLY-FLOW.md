@@ -88,7 +88,11 @@ The demo keeps answering from `lib/demo/canned.ts`.
    `lib/watchlist/posting.ts`; the "why it scored" line is still to do): keep or refetch posting text per ATS, the action, the
    watchlist row states, auto-build CV. *Done when:* one click on a watchlist role opens an
    application with its requirements read and a CV built, and the role shows In pipeline.
-2. **Apply strip** (steps 4-5): Open posting, downloads, Mark as applied as the primary,
+2. **Apply strip** (steps 4-5) - **shipped 2026-11-20**: Save to pipeline became **Apply**, which
+   always lands on the application (a paste box when the board gave no text, instead of the old
+   dead end); the board token now also comes from the company directory or the role's own link;
+   the strip has Open posting, Download CV and Mark as applied, which sets "Follow up if no reply
+   by <date>" (`APPLY_FOLLOW_UP_DAYS`). Open posting, downloads, Mark as applied as the primary,
    follow-up date on apply. *Done when:* a user can go from Saved to Applied without leaving
    the page or searching for the posting.
 3. **Setup checklist** (step 1) on the Overview for an empty workspace, using the targets and
