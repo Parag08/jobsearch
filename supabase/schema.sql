@@ -284,8 +284,14 @@ create table stories (
   competencies text[] not null default '{}',                    -- labels from the user's vocabulary (data, not enum)
   numbers text[] not null default '{}',                         -- metric strings as the user said them
   captured_at date not null default current_date,
-  constraint result_not_blank check (length(btrim(result)) > 0)
+  external_ref text,                                            -- the agent workspace's stable id (0016)
+  source text not null default 'user' check (source in ('user', 'agent')),  -- who typed it in (0016)
+  provenance text,                                              -- where the facts came from; required for agent stories (0016)
+  updated_at timestamptz,                                       -- (0016)
+  constraint result_not_blank check (length(btrim(result)) > 0),
+  constraint stories_agent_provenance check (source <> 'agent' or length(btrim(coalesce(provenance, ''))) > 0)
 );
+create unique index stories_user_external_ref on stories (user_id, external_ref) where external_ref is not null;
 
 -- ---- token economy ------------------------------------------------------------------
 create table token_ledger (
@@ -381,9 +387,13 @@ create table interview_custom_questions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles (user_id) on delete cascade,
   text text not null check (char_length(text) between 1 and 2000),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  external_ref text,                                 -- the agent workspace's stable id (0016)
+  competency text,                                   -- optional, overrides the shared template's (0016)
+  tag text                                           -- optional label, e.g. 'drill' (0016)
 );
 create index interview_custom_questions_user on interview_custom_questions (user_id, created_at desc);
+create unique index interview_custom_questions_user_external_ref on interview_custom_questions (user_id, external_ref) where external_ref is not null;
 
 -- ---- role interviews (0012): prepared for one application's real interview; id 'role:' || id
 create table interview_role_questions (

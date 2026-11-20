@@ -144,6 +144,11 @@ export interface StoryRow {
   competencies: string[];
   numbers: string[];
   captured_at: string;
+  /** Added by migration 0016 (agent prep). */
+  external_ref?: string | null;
+  source?: "user" | "agent";
+  provenance?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ApplicationRow {
@@ -313,6 +318,10 @@ export interface InterviewCustomQuestionRow {
   user_id: string;
   text: string;
   created_at: string;
+  /** Added by migration 0016 (agent prep). */
+  external_ref?: string | null;
+  competency?: string | null;
+  tag?: string | null;
 }
 
 /** A question prepared for one application's interview (migration 0012); its question id is `role:<id>`. */
@@ -520,7 +529,7 @@ export function toStoredApplicationCv(r: ApplicationCvRow): StoredApplicationCv 
 }
 
 export function toInteraction(r: InteractionRow): Interaction {
-  return { date: r.date, channel: r.channel, summary: r.summary };
+  return { id: r.id, date: r.date, channel: r.channel, summary: r.summary };
 }
 
 export function toContact(r: ContactRow, interactions: Interaction[] = []): Contact {

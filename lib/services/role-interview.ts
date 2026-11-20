@@ -48,11 +48,12 @@ export async function saveRoleInterview(deps: AgentDeps, userId: string, input: 
 }
 
 /** One application's questions, or every application's when no ref is given. */
-export async function listRoleInterview(deps: AgentDeps, userId: string, ref: ApplicationRef) {
+/** With includeAnswers, each question also carries its rubric (lookFor), context and model answer text. */
+export async function listRoleInterview(deps: AgentDeps, userId: string, ref: ApplicationRef, opts: { includeAnswers?: boolean } = {}) {
   const app = ref.id || ref.externalRef ? await findApplication(deps, userId, ref) : null;
   const apps = new Map((await listApplications(deps.db, userId)).map((a) => [a.id, a]));
   const questions = (await listRoleQuestions(deps.db, userId)).filter((q) => !app || q.applicationId === app.id);
-  const answered = new Map((await listModelAnswers(deps.db, userId)).map((m) => [m.questionId, m.source]));
+  const models = new Map((await listModelAnswers(deps.db, userId)).map((m) => [m.questionId, m]));
   return {
     questions: questions.map((q) => {
       const a = apps.get(q.applicationId);
@@ -65,8 +66,11 @@ export async function listRoleInterview(deps: AgentDeps, userId: string, ref: Ap
         interviewer: q.interviewer,
         competency: q.competency,
         text: q.text,
-        modelAnswerSource: answered.get(roleQuestionId(q.id)) ?? null,
+        modelAnswerSource: models.get(roleQuestionId(q.id))?.source ?? null,
         updatedAt: q.updatedAt,
+        ...(opts.includeAnswers
+          ? { lookFor: q.lookFor, context: q.context, modelAnswer: models.get(roleQuestionId(q.id))?.text ?? null }
+          : {}),
       };
     }),
   };

@@ -18,6 +18,13 @@ export const StorySchema = z.object({
   /** Metric strings exactly as the user said them: "30%", "400+", "$2.1M". */
   numbers: z.array(z.string()).default([]),
   capturedAt: z.string(), // ISO date
+  /** The agent workspace's stable id for it (migration 0016); null for stories typed in the app. */
+  externalRef: z.string().nullable().optional(),
+  /** Who typed it in: the user in the app, or an agent passing on what the user told it. */
+  source: z.enum(["user", "agent"]).optional(),
+  /** Where the facts came from ("Parag, in chat 2026-11-20"). Required when source is agent. */
+  provenance: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
 });
 export type Story = z.infer<typeof StorySchema>;
 

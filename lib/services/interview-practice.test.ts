@@ -52,6 +52,7 @@ describe("listInterviewPractice", () => {
     ]);
     const r = await listInterviewPractice({ db }, "u1", { since: "2026-11-18", attemptsPerQuestion: 3 });
     expect(r.questions.map((q) => q.questionId)).toEqual(["fit-about-yourself"]);
-    expect(r.questions[0].text).toBeNull();
+    // Bank questions carry their text too (they used to come back null).
+    expect(r.questions[0].text).toBe("Tell me about yourself.");
   });
 });

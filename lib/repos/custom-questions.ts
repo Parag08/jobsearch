@@ -7,7 +7,14 @@ import type { InterviewCustomQuestionRow } from "./rows";
  * Removing one removes only the question: its written answer and attempts are hand-made
  * and stay in the database, out of sight.
  */
-const toStored = (r: InterviewCustomQuestionRow): StoredCustomQuestion => ({ id: r.id, text: r.text, createdAt: r.created_at ?? "" });
+const toStored = (r: InterviewCustomQuestionRow): StoredCustomQuestion => ({
+  id: r.id,
+  text: r.text,
+  createdAt: r.created_at ?? "",
+  externalRef: r.external_ref ?? null,
+  competency: r.competency ?? null,
+  tag: r.tag ?? null,
+});
 
 export async function addCustomQuestion(db: DbClient, userId: string, text: string): Promise<StoredCustomQuestion> {
   const row = await one(
@@ -39,4 +46,52 @@ export async function getCustomQuestion(db: DbClient, userId: string, id: string
 export async function removeCustomQuestion(db: DbClient, userId: string, id: string): Promise<void> {
   const { error } = await db.from("interview_custom_questions").delete().eq("user_id", userId).eq("id", id);
   if (error) throw new RepoError("interview_custom_questions", "remove", error.message);
+}
+
+export interface CustomQuestionInput {
+  externalRef: string;
+  text: string;
+  competency?: string | null;
+  tag?: string | null;
+}
+
+/**
+ * Add or update a question an agent sent, keyed on its externalRef (migration 0016). An
+ * update keeps the row id, so the question id `custom:<id>` - and the answers and attempts
+ * keyed on it - stay with it.
+ */
+export async function upsertCustomQuestion(
+  db: DbClient,
+  userId: string,
+  q: CustomQuestionInput,
+): Promise<{ question: StoredCustomQuestion; created: boolean }> {
+  const existing = await findCustomQuestionByExternalRef(db, userId, q.externalRef);
+  const fields = { text: q.text, competency: q.competency ?? null, tag: q.tag ?? null };
+  if (existing) {
+    const row = await one(
+      db.from("interview_custom_questions").update(fields).eq("user_id", userId).eq("id", existing.id).select().single(),
+      "interview_custom_questions",
+      "update",
+    );
+    return { question: toStored(row), created: false };
+  }
+  const row = await one(
+    db
+      .from("interview_custom_questions")
+      .insert({ user_id: userId, external_ref: q.externalRef, created_at: new Date().toISOString(), ...fields })
+      .select()
+      .single(),
+    "interview_custom_questions",
+    "add",
+  );
+  return { question: toStored(row), created: true };
+}
+
+export async function findCustomQuestionByExternalRef(db: DbClient, userId: string, externalRef: string): Promise<StoredCustomQuestion | null> {
+  const row = await oneOrNull(
+    db.from("interview_custom_questions").select().eq("user_id", userId).eq("external_ref", externalRef).maybeSingle(),
+    "interview_custom_questions",
+    "findByExternalRef",
+  );
+  return row ? toStored(row) : null;
 }

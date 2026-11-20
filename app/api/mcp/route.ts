@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAgentWorkspace } from "@/lib/db/agent";
 import { capReads, handleBody, MAX_READS_PER_REQUEST } from "@/lib/mcp/server";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
+import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
 import { logTokens } from "@/lib/repos/token-ledger";
 
 export const runtime = "nodejs";
@@ -61,7 +62,12 @@ export async function POST(request: Request): Promise<Response> {
           MAX_READS_PER_REQUEST,
         )
       : undefined;
-    const reply = await handleBody(body, { ...auth.workspace, nowIso, llm });
+    const reply = await handleBody(body, {
+      ...auth.workspace,
+      nowIso,
+      llm,
+      customQuestionMaxChars: customQuestionMaxCharsFromEnv(process.env),
+    });
     return reply === null ? new Response(null, { status: 202 }) : NextResponse.json(reply);
   } catch {
     return rpcError(500, -32603, "Internal error");

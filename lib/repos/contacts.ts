@@ -1,5 +1,5 @@
 import type { Contact, Interaction } from "../types";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import { contactPatch, contactRow, interactionRow, toContact, toInteraction } from "./rows";
 
 export type NewContact = Omit<Contact, "id" | "interactions">;
@@ -113,4 +113,33 @@ export async function setContactExternalRef(
     "contacts",
     "setExternalRef",
   );
+}
+
+/** Correct one logged interaction; it must belong to this user and this contact. */
+export async function updateInteraction(
+  db: DbClient,
+  userId: string,
+  contactId: string,
+  id: string,
+  patch: Partial<Pick<Interaction, "date" | "channel" | "summary">>,
+): Promise<Interaction | null> {
+  const row = await oneOrNull(
+    db.from("interactions").update(patch).eq("user_id", userId).eq("contact_id", contactId).eq("id", id).select().maybeSingle(),
+    "interactions",
+    "update",
+  );
+  return row ? toInteraction(row) : null;
+}
+
+/** Remove one logged interaction; true when one was removed. */
+export async function deleteInteraction(db: DbClient, userId: string, contactId: string, id: string): Promise<boolean> {
+  const found = await oneOrNull(
+    db.from("interactions").select().eq("user_id", userId).eq("contact_id", contactId).eq("id", id).maybeSingle(),
+    "interactions",
+    "find",
+  );
+  if (!found) return false;
+  const { error } = await db.from("interactions").delete().eq("user_id", userId).eq("contact_id", contactId).eq("id", id);
+  if (error) throw new RepoError("interactions", "delete", error.message);
+  return true;
 }

@@ -39,7 +39,8 @@ describe("logConversation", () => {
     const id = "contact" in r ? r.contact.id : "";
     await logConversation(db, U, id, { date: "2026-11-20", channel: "linkedin", summary: "Asked for a 15-minute chat." });
     const c = await getContact(db, U, id);
-    expect(c?.interactions).toEqual([{ date: "2026-11-20", channel: "linkedin", summary: "Asked for a 15-minute chat." }]);
+    expect(c?.interactions).toMatchObject([{ date: "2026-11-20", channel: "linkedin", summary: "Asked for a 15-minute chat." }]);
+    expect(c?.interactions[0].id).toEqual(expect.any(String));
     expect(c).toMatchObject({ status: "awaiting-reply", nextFollowup: "2026-11-27" });
   });
 

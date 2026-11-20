@@ -46,3 +46,11 @@ export function competencyPrep(
     return { competency, status, stories: covering, bullets, questionId: question?.id ?? null };
   });
 }
+
+/**
+ * A bullet as it reads on one application's CV: an edited override, else the chosen variant,
+ * else the bank line. Shared by the application page and the MCP prep tool.
+ */
+export function shownBulletText(diff: { overrides?: Record<string, string>; variants?: Record<string, string> } | null | undefined, b: Bullet): string {
+  return diff?.overrides?.[b.id] ?? b.variants?.find((v) => v.label === diff?.variants?.[b.id])?.text ?? b.text;
+}
