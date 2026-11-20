@@ -6,7 +6,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 Parag: company practice felt generic; wanted one realistic adaptive interview per company (e.g. Cognition) with one debrief, and every question still practisable with a role-play. Mid-build: make the page simple and company-first, but keep general practice for days with no interview. Design and decisions: **docs/FULL-INTERVIEW.md** (code lists moves, model picks; MCP read-back + agent role-plays; interviewer model env).
 - Built: plan/session/role-play domain + tests, migration **0017** (not yet applied - `db.yml` applies on push to main), repos, services, actions, `full-interview.tsx`, `role-play-panel.tsx`, page rebuilt around the "Preparing for" strip, MCP `set_role_play` + `rolePlay` on upsert + `fullInterviews` in practice read-back. Demo has a Kestrel AI round with two model answers.
-- **Set on Vercel:** `INTERVIEW_FULL_MAX_TOPICS=8`, `INTERVIEW_FULL_TOPIC_FOLLOW_UPS=3`, `INTERVIEW_FULL_TOTAL_FOLLOW_UPS=12` (unset = full interview off) and optionally `AI_GATEWAY_INTERVIEWER_MODEL`.
+- **Vercel:** `INTERVIEW_FULL_MAX_TOPICS=8`, `INTERVIEW_FULL_TOPIC_FOLLOW_UPS=3`, `INTERVIEW_FULL_TOTAL_FOLLOW_UPS=12` set on Production + Preview (2026-11-20). `AI_GATEWAY_INTERVIEWER_MODEL` not set (falls back to premium).
 - Checked in the browser on the demo (canned AI): company page, full interview (probe on a vague answer, debrief with path and moments), role-play build, Practice and its general interview start, Cases links, phone width. **Not checked:** a real model's turns and debrief (no live key used), voice playback of a role-play.
 - Next: fit-then-case full interview for consulting firms; number rules that read "nine days".
 
