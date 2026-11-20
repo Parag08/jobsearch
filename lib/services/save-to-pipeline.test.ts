@@ -3,7 +3,7 @@ import { FakeDb } from "../repos/fake-db";
 import { FakeLlm } from "../adapters/llm";
 import { listApplications, getJdRaw } from "../repos/applications";
 import { listSourcedJobs } from "../repos/sourced-jobs";
-import { saveToPipeline, sourcedRef } from "./save-to-pipeline";
+import { readPostingInto, saveToPipeline, sourcedRef } from "./save-to-pipeline";
 
 const NOW = "2026-11-20T09:00:00Z";
 const U = "u1";
@@ -49,7 +49,7 @@ describe("saveToPipeline", () => {
   it("reads the posting from its board, opens an application, builds the CV and marks the role tracked", async () => {
     const { db, deps, reads, built } = setup();
     const r = await saveToPipeline(deps, U, "job-1", NOW);
-    expect("applicationId" in r && r.created).toBe(true);
+    expect(r).toMatchObject({ created: true, read: "read" });
     expect(reads).toEqual([{ ats: "greenhouse", token: "kestrel", externalId: "777", company: "Kestrel AI" }]);
 
     const [app] = await listApplications(db, U);
@@ -66,33 +66,82 @@ describe("saveToPipeline", () => {
     const { db, deps, reads } = setup();
     const first = await saveToPipeline(deps, U, "job-1", NOW);
     const again = await saveToPipeline(deps, U, "job-1", NOW);
-    expect(again).toEqual({ applicationId: (first as { applicationId: string }).applicationId, created: false });
+    expect(again).toEqual({ applicationId: first.applicationId, created: false, read: "read" });
     expect(reads).toHaveLength(1);
     expect(await listApplications(db, U)).toHaveLength(1);
   });
 
-  it("asks for a paste when the board gives no text, and changes nothing", async () => {
-    const { db, deps, llm } = setup(null);
-    expect(await saveToPipeline(deps, U, "job-1", NOW)).toEqual({ needsPosting: true, url: "https://boards.greenhouse.io/kestrel/jobs/777" });
+  it("still opens the application when the board gives no text, unread, with the posting link", async () => {
+    const { db, deps, llm, built } = setup(null);
+    const r = await saveToPipeline(deps, U, "job-1", NOW);
+    expect(r).toMatchObject({ created: true, read: "no-text" });
     expect(llm.calls).toHaveLength(0);
-    expect(await listApplications(db, U)).toHaveLength(0);
+    expect(built).toEqual([]);
+    const [app] = await listApplications(db, U);
+    expect(app).toMatchObject({ company: "Kestrel AI", role: "Senior PM", stage: "saved", jdExtract: null, applyUrl: "https://boards.greenhouse.io/kestrel/jobs/777" });
+    expect((await listSourcedJobs(db, U)).find((j) => j.id === "job-1")?.status).toBe("tracked");
   });
 
-  it("asks for a paste when the company is not on a readable watchlist board", async () => {
-    const { deps, reads } = setup();
-    expect(await saveToPipeline(deps, U, "job-2", NOW)).toEqual({ needsPosting: true, url: "https://jobs.lever.co/x/abc" });
-    expect(reads).toHaveLength(0);
+  it("reads the board through the company directory or the role's link when the company is not watched", async () => {
+    const { db, deps, reads } = setup();
+    db.seed("companies", [{ id: "co-1", name: "Nobody Watched", type: "tech", careers_url: "https://jobs.lever.co/nobody", ats: "lever", token: "nobody", confirmed: true, probed_at: null }]);
+    expect(await saveToPipeline(deps, U, "job-2", NOW)).toMatchObject({ created: true, read: "read" });
+    expect(reads[0]).toEqual({ ats: "lever", token: "nobody", externalId: "abc", company: "Nobody Watched" });
+  });
+
+  it("keeps the posting text for a later read when the model fails", async () => {
+    const { db, deps } = setup();
+    const llm = Object.assign(Object.create(deps.llm), { extractJd: async () => { throw new Error("gateway down"); } }) as typeof deps.llm;
+    const failing = { ...deps, llm };
+    const r = await saveToPipeline(failing, U, "job-1", NOW);
+    expect(r).toMatchObject({ created: true, read: "ai-failed" });
+    const [app] = await listApplications(db, U);
+    expect(app.jdExtract).toBeNull();
+    expect(await getJdRaw(db, U, app.id)).toContain("payments roadmap");
   });
 
   it("keeps the application when the CV cannot be built yet", async () => {
     const { db, deps } = setup();
     const r = await saveToPipeline({ ...deps, buildCv: async () => { throw new Error("no master CV"); } }, U, "job-1", NOW);
-    expect(r).toMatchObject({ created: true, cvError: "no master CV" });
+    expect(r).toMatchObject({ created: true, read: "read", cvError: "no master CV" });
     expect(await listApplications(db, U)).toHaveLength(1);
   });
 
   it("rejects a role that is not the user's", async () => {
     const { deps } = setup();
     await expect(saveToPipeline(deps, "someone-else", "job-1", NOW)).rejects.toThrow(/not found/);
+  });
+});
+
+describe("readPostingInto", () => {
+  it("reads a pasted posting into an unread application and builds its CV, keeping company and role", async () => {
+    const { db, deps, built } = setup(null);
+    const { applicationId } = await saveToPipeline(deps, U, "job-1", NOW);
+    const r = await readPostingInto(deps, U, applicationId, "Senior PM\nCompany: Kestrel AI\n\nOwn the payments roadmap.");
+    expect(r).toEqual({ read: true });
+    const [app] = await listApplications(db, U);
+    expect(app.jdExtract?.roleFamily).toBe("product-management");
+    expect(app).toMatchObject({ company: "Kestrel AI", role: "Senior PM" });
+    expect(await getJdRaw(db, U, app.id)).toContain("payments roadmap");
+    expect(built).toEqual([app.id]);
+  });
+
+  it("reads the kept text again when no paste is given", async () => {
+    const { db, deps } = setup();
+    const llm = Object.assign(Object.create(deps.llm), { extractJd: async () => { throw new Error("down"); } }) as typeof deps.llm;
+    const { applicationId } = await saveToPipeline({ ...deps, llm }, U, "job-1", NOW);
+    expect(await readPostingInto(deps, U, applicationId, "")).toEqual({ read: true });
+    expect((await listApplications(db, U))[0].jdExtract).not.toBeNull();
+  });
+
+  it("says what is missing instead of throwing", async () => {
+    const { deps } = setup(null);
+    const { applicationId } = await saveToPipeline(deps, U, "job-1", NOW);
+    expect(await readPostingInto(deps, U, applicationId, "  ")).toEqual({ read: false, error: "Paste the posting's text first." });
+    const llm = Object.assign(Object.create(deps.llm), { extractJd: async () => { throw new Error("down"); } }) as typeof deps.llm;
+    expect(await readPostingInto({ ...deps, llm }, U, applicationId, "Some posting")).toEqual({
+      read: false,
+      error: "The posting couldn't be read just now. It's saved: try again in a moment.",
+    });
   });
 });

@@ -2,6 +2,13 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-20 (evening) - One-click Apply (branch fix/apply-flow)
+
+Parag: Save to pipeline "not working on the live UI"; wanted one **Apply** that pulls everything and lets him apply. Logs couldn't show the failure (Hobby keeps 1h, nothing logged). Code showed why it dead-ended: the board was read only when the role's company was on the watchlist with the same name and a token; anything else said "copy the posting and use Add a job" and stayed on the Watchlist.
+- **Apply** (button renamed) always opens the application and goes to it. Board token from watchlist entry, then company directory, then the role's own board link (`boardFor` in `lib/watchlist/posting.ts`). No text -> unread application + **Add the posting** paste box on its page (`readPostingInto`, `readPostingAction`); model failure keeps the text for **Read it**. Failures now log their reason (`console.error`).
+- Application page **apply strip**: Open the posting, Download CV, Mark as applied; applying sets "Follow up if no reply by <date>" from **`APPLY_FOLLOW_UP_DAYS`** (new env; **set it on Vercel**, unset = none).
+- Demo: roles have example.com links; a Harbour Studio role shows the paste path.
+
 ## 2026-11-20 (later) - Network tab, ROADMAP N1 (branch feat/networking)
 
 PRs #23 and #24 merged. Parag: "continue the roadmap, next would be networking."

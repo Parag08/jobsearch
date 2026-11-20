@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { htmlToText, postingEndpoint, postingText } from "./posting";
+import { boardFor, htmlToText, postingEndpoint, postingText } from "./posting";
 
 describe("postingEndpoint", () => {
   it("names the one-posting URL for each board", () => {
@@ -44,5 +44,39 @@ describe("postingText", () => {
     expect(postingText("greenhouse", { title: "PM" }, "1", "S")).toBeNull();
     expect(postingText("ashby", { jobs: [] }, "y", "K")).toBeNull();
     expect(postingText("unknown", {}, "1", "K")).toBeNull();
+  });
+});
+
+describe("boardFor", () => {
+  const job = (over: Partial<{ source: string; company: string; url: string | null; externalId: string | null }> = {}) => ({
+    source: "greenhouse",
+    company: "Stripe",
+    url: "https://stripe.com/jobs/listing/pm/123?gh_jid=123",
+    externalId: "123",
+    ...over,
+  });
+  it("takes the token from the watchlist entry for that company and board", () => {
+    expect(boardFor(job(), [{ company: "stripe ", ats: "greenhouse", token: "stripe" }], [])).toEqual({ ats: "greenhouse", token: "stripe", externalId: "123" });
+  });
+  it("falls back to the company directory when the company is not watched", () => {
+    expect(boardFor(job(), [], [{ name: "Stripe", ats: "greenhouse", token: "stripe" }])).toEqual({ ats: "greenhouse", token: "stripe", externalId: "123" });
+  });
+  it("falls back to the role's own board link", () => {
+    expect(boardFor(job({ company: "Kestrel", url: "https://job-boards.greenhouse.io/kestrel/jobs/777", externalId: "777" }), [], [])).toEqual({
+      ats: "greenhouse",
+      token: "kestrel",
+      externalId: "777",
+    });
+  });
+  it("reads a board link even when the role came from somewhere else, taking the id from the link", () => {
+    expect(boardFor(job({ source: "agent", url: "https://jobs.lever.co/grab/abc-123", externalId: null }), [], [])).toEqual({
+      ats: "lever",
+      token: "grab",
+      externalId: "abc-123",
+    });
+  });
+  it("is null when nothing names a readable board", () => {
+    expect(boardFor(job({ source: "agent", url: "https://careers.example.com/1", externalId: null }), [], [])).toBeNull();
+    expect(boardFor(job(), [{ company: "Stripe", ats: "lever", token: "x" }], [])).toBeNull();
   });
 });

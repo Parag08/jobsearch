@@ -1,4 +1,5 @@
-import type { AtsKind } from "./ats";
+import { detectAts, type AtsKind } from "./ats";
+import { norm } from "../types";
 
 /**
  * One posting's full text, read from its public board (docs/APPLY-FLOW.md step 3). Refresh
@@ -100,4 +101,37 @@ export function postingText(ats: AtsKind, payload: unknown, externalId: string, 
   const body = parts.filter(Boolean).join("\n\n");
   if (!body) return null;
   return `${title}\nCompany: ${company}\n\n${body}`;
+}
+
+type Readable = Exclude<AtsKind, "unknown">;
+const READABLE = new Set<string>(["greenhouse", "lever", "ashby", "smartrecruiters"]);
+
+/**
+ * Which board to read one role's posting from. A role keeps only its board name and link, so
+ * the token comes from, in order: the user's watchlist entry for that company, the company
+ * directory, or the role's own link when it is a board URL. Roles pushed from elsewhere are
+ * read when their link is a board URL. Null when nothing names a readable board.
+ */
+export function boardFor(
+  job: { source: string; company: string; url: string | null; externalId: string | null },
+  watchlist: { company: string; ats: string; token: string | null }[],
+  directory: { name: string; ats: string; token: string | null }[],
+): { ats: Readable; token: string; externalId: string } | null {
+  const fromLink = job.url ? detectAts(job.url) : null;
+  const linkAts = fromLink && fromLink.ats !== "unknown" ? fromLink : null;
+  const idFromLink = job.url ? (job.url.split("?")[0].split("/").filter(Boolean).pop() ?? null) : null;
+
+  if (READABLE.has(job.source)) {
+    const ats = job.source as Readable;
+    const externalId = job.externalId ?? idFromLink;
+    if (!externalId) return null;
+    const watched = watchlist.find((w) => w.ats === ats && w.token && norm(w.company) === norm(job.company));
+    if (watched?.token) return { ats, token: watched.token, externalId };
+    const listed = directory.find((c) => c.ats === ats && c.token && norm(c.name) === norm(job.company));
+    if (listed?.token) return { ats, token: listed.token, externalId };
+    if (linkAts?.ats === ats && linkAts.token) return { ats, token: linkAts.token, externalId };
+    return null;
+  }
+  if (linkAts?.token && idFromLink && idFromLink !== linkAts.token) return { ats: linkAts.ats as Readable, token: linkAts.token, externalId: idFromLink };
+  return null;
 }

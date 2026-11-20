@@ -724,8 +724,20 @@ Rebuilt 2026-11-19 (critique 5.2-5.13).
 - **Header:** "‹ Pipeline" link, the company as the title, then role · Saved 7 Sep · Applied 9 Sep.
 - **Stage stepper:** the seven stages from Saved to Negotiation as dots on a track in the stage
   colour scale, filled up to the current one (the current dot ringed). Any other stage is a
-  click. **Mark as applied** sits under it while saved, with "We'll keep a copy of the CV and
-  letter exactly as you sent them." **Close application…** opens the reasons: I withdrew,
+  click. While saved, the **apply strip** sits under it (2026-11-20, docs/APPLY-FLOW.md step 5):
+  **Open the posting ↗** (the board link, when there is one), **Download CV** (PDF, once built),
+  then **Mark as applied**, the primary once the CV exists. The line under it says to apply on
+  their site with this CV, that the CV and letter are kept as sent, and, when
+  `APPLY_FOLLOW_UP_DAYS` is set, that marking it applied sets the next step to "Follow up if no
+  reply by 27 Nov" (only when no next step is set).
+- **Arriving from Apply** (`?applied=`): a green strip "Ready to send: the posting is read and
+  your CV is built for it. Open the posting, apply there with this CV, then mark it applied
+  here." while saved; orange when the CV couldn't be built.
+- **Add the posting:** an application whose posting isn't read (its board gave no text, or the
+  read failed) opens with this panel first: "Its board didn't give us the text. Open the
+  posting, copy the whole description and paste it here", a paste box and **Read the posting**
+  (primary, "Reading…"). With the text kept but unread it says so and offers **Read it**. An
+  error answers in orange under the box; on success the page reloads ready to send. **Close application…** opens the reasons: I withdrew,
   They said no, No reply, and I accepted an offer (from Offer on). A closed application says
   so in grey and calls it a try.
 - **Next step:** a labelled field with Save.
@@ -753,14 +765,15 @@ Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, W1-W10).
   so no copy promises "daily".
 - **Roles found:** best fit, then newest, with roles already in the pipeline last
   (`lib/watchlist/display.ts` `orderRoles`). Each row: monogram, title opening the posting,
-  "Company · City · Posted 3 days ago · via Greenhouse", a Fit tag, then **Save to pipeline**
+  "Company · City · Posted 3 days ago · via Greenhouse", a Fit tag, then **Apply**
   (a small accent pill, "Saving…" while it runs) and **Dismiss**. A saved row dims its title
   and shows **In pipeline · Open** in the progress green. Twenty shown, then "Show all N".
-- **Save to pipeline** (2026-11-20, docs/APPLY-FLOW.md step 3) replaced Shortlist: it reads
-  the posting from its board, opens the application at Saved and builds its CV. Its result is
-  a strip at the top of Roles found, because the saved row moves to the end: green "<Role> at
-  <Company> is in your pipeline, with a CV built for it" with **Open it**; orange when the
-  board gave no text ("Open the posting, copy the text, and use Add a job") or it failed.
+- **Apply** (2026-11-20, renamed from Save to pipeline, which replaced Shortlist): a small accent
+  pill, "Preparing…" while it runs. It opens the role as an application at Saved, reads its
+  posting from the board (the watchlist entry, the company directory or the role's own board
+  link gives the token), builds the CV, and **goes to the application page** to send it. When
+  the posting can't be read it still goes there, to the paste box. Only an outright failure
+  stays here, as an orange strip at the top of Roles found.
 - **Companies:** monogram, name (Paused tag, dimmed when paused), "Read from Greenhouse" or
   "Check by hand" in orange, the careers URL as a soft link, then "2 people you know" (or "Add
   someone you know") opening the Network tab for that company; **Pause / Resume / Remove**.

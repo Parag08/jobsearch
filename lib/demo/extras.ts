@@ -56,6 +56,8 @@ const ROLES: { title: string; company: string; daysAgo: number; score: number | 
   { title: "Senior Product Manager, Payments", company: "Kestrel AI", daysAgo: 0, score: 86, status: "shortlisted" },
   { title: "Product Manager, Growth", company: "Orchard Commerce", daysAgo: 1, score: 78, status: "new" },
   { title: "Product Lead, Rider Experience", company: "Atlas Mobility", daysAgo: 3, score: 74, status: "new" },
+  // Harbour Studio's board can't be read, so Apply shows the paste box (docs/APPLY-FLOW.md).
+  { title: "Head of Product", company: "Harbour Studio", daysAgo: 2, score: 72, status: "new" },
   { title: "Product Operations Manager", company: "Kestrel AI", daysAgo: 5, score: 69, status: "new" },
   { title: "Strategy & Operations Lead", company: "Orchard Commerce", daysAgo: 8, score: null, status: "new" },
   { title: "Program Manager, Platform", company: "Atlas Mobility", daysAgo: 11, score: 61, status: "new" },
@@ -98,12 +100,13 @@ export function seedDemoExtras(db: FakeDb, userId: string, today: string): void 
     ROLES.map((r, i) => ({
       user_id: userId,
       // The company's board type, so Save to pipeline treats it as readable (lib/demo/canned.ts cannedPosting).
-      source: WATCH.find((w) => w.company === r.company)?.ats ?? "greenhouse",
+      source: ((ats) => (!ats || ats === "unknown" ? "careers page" : ats))(WATCH.find((w) => w.company === r.company)?.ats),
       external_id: `demo-${i}`,
       title: r.title,
       company: r.company,
       location: "Singapore",
-      url: null,
+      // A made-up link on example.com, so the application page's "Open the posting" shows.
+      url: `${WATCH.find((w) => w.company === r.company)?.url ?? "https://example.com/careers"}/jobs/demo-${i}`,
       posted_at: daysAgo(today, r.daysAgo),
       score: r.score,
       status: r.status,
