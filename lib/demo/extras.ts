@@ -97,7 +97,8 @@ export function seedDemoExtras(db: FakeDb, userId: string, today: string): void 
     "sourced_jobs",
     ROLES.map((r, i) => ({
       user_id: userId,
-      source: "demo",
+      // The company's board type, so Save to pipeline treats it as readable (lib/demo/canned.ts cannedPosting).
+      source: WATCH.find((w) => w.company === r.company)?.ats ?? "greenhouse",
       external_id: `demo-${i}`,
       title: r.title,
       company: r.company,

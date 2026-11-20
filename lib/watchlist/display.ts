@@ -48,10 +48,11 @@ export function postedLabel(postedAt: string | null, today: string): string | nu
   return `Posted ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 }
 
-/** Shortlisted first, then the best fit (when scored), then the newest posting. */
+/** Shortlisted first and roles already in the pipeline last; then the best fit, then the newest posting. */
 export function orderRoles<T extends { status: string; score: number | null; postedAt: string | null }>(roles: T[]): T[] {
   return [...roles].sort(
     (a, b) =>
+      Number(a.status === "tracked") - Number(b.status === "tracked") ||
       Number(b.status === "shortlisted") - Number(a.status === "shortlisted") ||
       (b.score ?? -1) - (a.score ?? -1) ||
       (b.postedAt ?? "").localeCompare(a.postedAt ?? ""),

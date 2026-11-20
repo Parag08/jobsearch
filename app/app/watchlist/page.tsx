@@ -4,6 +4,9 @@ import { getWorkspace } from "@/lib/db";
 import { listWatchlist } from "@/lib/repos/watchlist";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
 import { addWatchlist, refreshWatchlistAction, removeWatchlist, saveJobTargets, setJobStatus, toggleWatchlist, watchAllReadable, watchCompany } from "../actions";
+import { listApplications } from "@/lib/repos/applications";
+import { sourcedJobIdOf } from "@/lib/services/save-to-pipeline";
+import { SaveToPipelineButton } from "./save-button";
 import { getProfile } from "@/lib/repos/profiles";
 import { listCompanies } from "@/lib/repos/companies";
 import { atsLabel, orderRoles, postedLabel, suggestedCompanies, targetSummary } from "@/lib/watchlist/display";
@@ -23,24 +26,51 @@ const sourceName = (source: string) => atsLabel(source as never) ?? source.charA
  * are what the page is for; the companies feed them; the filters are set once and fold away.
  * With nothing watched yet, adding a company is the invitation, so it leads.
  */
-export default async function Watchlist({ searchParams }: { searchParams: Promise<{ roles?: string }> }) {
-  const allRoles = (await searchParams).roles === "all";
+/** What the row says after Save to pipeline (saveToPipelineAction's `note`). */
+const SAVE_NOTE: Record<string, { text: string; tone?: "attention" }> = {
+  saved: { text: "is in your pipeline, with a CV built for it." },
+  "no-cv": { text: "is in your pipeline. Its CV couldn't be built yet: open it to build one.", tone: "attention" },
+  paste: {
+    text: "couldn't be read from its board. Open the posting, copy the text, and use Add a job on the Pipeline.",
+    tone: "attention",
+  },
+  "no-ai": { text: "couldn't be saved: reading postings isn't set up yet.", tone: "attention" },
+  failed: { text: "couldn't be saved. Try again in a moment.", tone: "attention" },
+};
+
+export default async function Watchlist({ searchParams }: { searchParams: Promise<{ roles?: string; role?: string; note?: string }> }) {
+  const params = await searchParams;
+  const allRoles = params.roles === "all";
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [profile, entries, jobs, directory] = await Promise.all([
+  const [profile, entries, jobs, directory, apps] = await Promise.all([
     getProfile(db, userId),
     listWatchlist(db, userId),
     listSourcedJobs(db, userId),
     listCompanies(db).catch(() => []),
+    listApplications(db, userId),
   ]);
+  /** Sourced role id -> the application it was saved as. */
+  const appByRole = new Map(
+    apps.flatMap((a) => {
+      const jobId = sourcedJobIdOf(a.externalRef ?? null);
+      return jobId ? [[jobId, a.id] as const] : [];
+    }),
+  );
   const today = new Date().toISOString().slice(0, 10);
   const watched = new Set(entries.map((e) => e.company));
   const suggestions = suggestedCompanies(directory, watched);
   const active = entries.filter((e) => e.active).length;
-  const roles = orderRoles(jobs.filter((j) => j.status === "new" || j.status === "shortlisted"));
-  const shortlisted = roles.filter((j) => j.status === "shortlisted").length;
+  const roles = orderRoles(
+    jobs.filter((j) => j.status === "new" || j.status === "shortlisted" || (j.status === "tracked" && appByRole.has(j.id))),
+  );
+  const inPipeline = roles.filter((j) => j.status === "tracked").length;
+  // The result of Save to pipeline, said at the top of the list: a saved row moves to the end.
+  const savedRole = params.role ? jobs.find((j) => j.id === params.role) : undefined;
+  const saveNote = savedRole && params.note ? SAVE_NOTE[params.note] : undefined;
+  const savedAppId = savedRole ? appByRole.get(savedRole.id) : undefined;
   const targets = {
     targetGeos: profile?.targetGeos ?? [],
     targetTitles: profile?.targetTitles ?? [],
@@ -52,8 +82,26 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
     <section className={ui.panel} aria-labelledby="roles-h">
       <div>
         <h2 id="roles-h">Roles found</h2>
-        <p className={ui.sub}>From the job boards of the companies you watch. Shortlist the ones worth a closer look.</p>
+        <p className={ui.sub}>From the job boards of the companies you watch. Save the ones you want to apply for: each opens in your pipeline with its CV built.</p>
       </div>
+      {savedRole && saveNote && (
+        <p className={s.saveNote} data-tone={saveNote.tone} role="status">
+          <span>
+            <b>{savedRole.title}</b> at {savedRole.company} {saveNote.text}
+          </span>
+          {savedAppId ? (
+            <Link href={`/app/applications/${savedAppId}`} className={ui.textBtn}>
+              Open it
+            </Link>
+          ) : (
+            savedRole.url && (
+              <a href={savedRole.url} target="_blank" rel="noopener noreferrer" className={ui.textBtn}>
+                Open the posting
+              </a>
+            )
+          )}
+        </p>
+      )}
       {roles.length === 0 ? (
         <p className={ui.none}>
           {active > 0 ? "No open roles match yet. Check for new roles, or widen the filters below." : "Watch a company and check its board to see roles here."}
@@ -62,8 +110,9 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
         <ul className={s.list}>
           {(allRoles ? roles : roles.slice(0, ROLES_SHOWN)).map((j) => {
             const posted = postedLabel(j.postedAt, today);
+            const appId = appByRole.get(j.id);
             return (
-              <li key={j.id} className={s.role}>
+              <li key={j.id} id={`role-${j.id}`} className={s.role} data-saved={appId ? "" : undefined}>
                 <span className={ui.monogram} data-tone={toneFor(j.company)} aria-hidden="true">
                   {monogram(j.company)}
                 </span>
@@ -79,30 +128,27 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
                     )}
                   </p>
                   <p className={s.meta}>{[j.company, j.location, posted, `via ${sourceName(j.source)}`].filter(Boolean).join(" · ")}</p>
-                  {(j.status === "shortlisted" || j.score !== null) && (
+                  {j.score !== null && !appId && (
                     <div className={s.tags}>
-                      {j.status === "shortlisted" && (
-                        <span className={ui.tag} data-tone="blue">
-                          Shortlisted
-                        </span>
-                      )}
-                      {j.score !== null && <span className={ui.tag}>Fit {Math.round(j.score)}</span>}
+                      <span className={ui.tag}>Fit {Math.round(j.score)}</span>
                     </div>
                   )}
                 </div>
                 <div className={s.actions}>
-                  {j.status !== "shortlisted" && (
-                    <form action={setJobStatus.bind(null, j.id, "shortlisted")}>
-                      <button className={ui.textBtn} type="submit" aria-label={`Shortlist ${j.title} at ${j.company}`}>
-                        Shortlist
-                      </button>
-                    </form>
+                  {appId ? (
+                    <Link href={`/app/applications/${appId}`} className={s.inPipeline}>
+                      In pipeline · Open
+                    </Link>
+                  ) : (
+                    <>
+                      <SaveToPipelineButton jobId={j.id} label={`Save ${j.title} at ${j.company} to your pipeline`} />
+                      <form action={setJobStatus.bind(null, j.id, "dismissed")}>
+                        <button className={ui.textBtn} data-tone="quiet" type="submit" aria-label={`Dismiss ${j.title} at ${j.company}`}>
+                          Dismiss
+                        </button>
+                      </form>
+                    </>
                   )}
-                  <form action={setJobStatus.bind(null, j.id, "dismissed")}>
-                    <button className={ui.textBtn} data-tone="quiet" type="submit" aria-label={`Dismiss ${j.title} at ${j.company}`}>
-                      Dismiss
-                    </button>
-                  </form>
                 </div>
               </li>
             );
@@ -248,10 +294,10 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
               <b>{entries.length}</b> {entries.length === 1 ? "company" : "companies"}
             </span>
             <span>
-              <b>{roles.length}</b> open {roles.length === 1 ? "role" : "roles"}
+              <b>{roles.length - inPipeline}</b> open {roles.length - inPipeline === 1 ? "role" : "roles"}
             </span>
             <span>
-              <b>{shortlisted}</b> shortlisted
+              <b>{inPipeline}</b> in pipeline
             </span>
           </p>
         </div>

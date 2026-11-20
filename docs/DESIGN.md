@@ -741,13 +741,19 @@ Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, W1-W10).
 
 - **Order:** Roles found, Companies you watch, What to look for. With nothing watched yet,
   Companies leads: adding one is the invitation.
-- **Header:** companies · open roles · shortlisted; **Check for new roles** (primary) only
+- **Header:** companies · open roles · in pipeline; **Check for new roles** (primary) only
   when a company is active. Boards are read when you press it; nothing runs on a schedule,
   so no copy promises "daily".
-- **Roles found:** shortlisted first, then best fit, then newest (`lib/watchlist/display.ts`
-  `orderRoles`). Each row: monogram, title opening the posting, "Company · City · Posted 3
-  days ago · via Greenhouse", Shortlisted and Fit tags, **Shortlist / Dismiss**. Twenty shown,
-  then "Show all N".
+- **Roles found:** best fit, then newest, with roles already in the pipeline last
+  (`lib/watchlist/display.ts` `orderRoles`). Each row: monogram, title opening the posting,
+  "Company · City · Posted 3 days ago · via Greenhouse", a Fit tag, then **Save to pipeline**
+  (a small accent pill, "Saving…" while it runs) and **Dismiss**. A saved row dims its title
+  and shows **In pipeline · Open** in the progress green. Twenty shown, then "Show all N".
+- **Save to pipeline** (2026-11-20, docs/APPLY-FLOW.md step 3) replaced Shortlist: it reads
+  the posting from its board, opens the application at Saved and builds its CV. Its result is
+  a strip at the top of Roles found, because the saved row moves to the end: green "<Role> at
+  <Company> is in your pipeline, with a CV built for it" with **Open it**; orange when the
+  board gave no text ("Open the posting, copy the text, and use Add a job") or it failed.
 - **Companies:** monogram, name (Paused tag, dimmed when paused), "Read from Greenhouse" or
   "Check by hand" in orange, the careers URL as a soft link; **Pause / Resume / Remove**.
   **Suggested companies**: directory companies with a readable board you don't watch, as

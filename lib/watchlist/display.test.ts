@@ -49,6 +49,13 @@ describe("orderRoles", () => {
     ] as const;
     expect(orderRoles([...roles]).map((r) => r.id)).toEqual(["b", "c", "d", "a"]);
   });
+  it("puts roles already in the pipeline last, so the ones to decide on lead", () => {
+    const roles = [
+      { id: "t", status: "tracked", score: 99, postedAt: "2026-11-19" },
+      { id: "n", status: "new", score: null, postedAt: "2026-11-01" },
+    ] as const;
+    expect(orderRoles([...roles]).map((r) => r.id)).toEqual(["n", "t"]);
+  });
 });
 
 describe("suggestedCompanies", () => {
