@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-20 (night) - Interview prep over MCP (branch feat/mcp-prep)
+
+From a prompt the findparagjob agent wrote (`$FINDPARAGJOB_DIR/tools/portal-sync/mcp-extension-prompt.md`). 11 new tools (26 in all), 2 fixes; listed in **docs/MCP.md**. Migration **0016** (stories external_ref/source/provenance/updated_at with an agent-provenance check; custom questions external_ref/competency/tag). `save_brief` deliberately not built (briefs are derived and overwritten). Interactions now carry ids everywhere (`Interaction.id`). Next: the agent adds matching portal-sync commands once this is merged and deployed.
+
 ## 2026-11-20 (evening) - One-click Apply (branch fix/apply-flow)
 
 Parag: Save to pipeline "not working on the live UI"; wanted one **Apply** that pulls everything and lets him apply. Logs couldn't show the failure (Hobby keeps 1h, nothing logged). Code showed why it dead-ended: the board was read only when the role's company was on the watchlist with the same name and a token; anything else said "copy the posting and use Add a job" and stayed on the Watchlist.

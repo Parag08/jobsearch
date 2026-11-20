@@ -6,6 +6,7 @@ import { getApplicationCv } from "@/lib/repos/cvs";
 import { listProjects } from "@/lib/repos/projects";
 import { listStories } from "@/lib/repos/stories";
 import { prepSet, competencyPrep, type CompetencyStatus } from "@/lib/stories";
+import { shownBulletText } from "@/lib/stories/prep-view";
 import { applicationGaps } from "@/lib/editorial";
 import { canTransition } from "@/lib/pipeline";
 import { familyLabel, shortDate } from "@/lib/pipeline-display";
@@ -77,8 +78,7 @@ export default async function ApplicationPage({
   const gaps = app.jdExtract ? applicationGaps(app.jdExtract, bullets, projects) : null;
   const gapTerms = gaps?.gaps.map((g) => familyLabel(g.term)) ?? [];
   // The text the interviewer read: an override or chosen variant beats the bank line.
-  const shownText = (b: Bullet) =>
-    cv?.diff.overrides?.[b.id] ?? b.variants?.find((v) => v.label === cv?.diff.variants?.[b.id])?.text ?? b.text;
+  const shownText = (b: Bullet) => shownBulletText(cv?.diff, b);
   const prep = app.jdExtract ? prepSet(cv?.bulletIds ?? [], bank, stories, app.jdExtract) : null;
   const byCompetency = prep ? competencyPrep(prep, stories, questionBank.questions) : [];
   const ready = byCompetency.filter((c) => c.status === "story").length;

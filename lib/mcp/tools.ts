@@ -25,6 +25,22 @@ import { setModelAnswer } from "../services/model-answers";
 import { MODEL_ANSWER_MAX } from "../interview/model-answer";
 import { ROLE_QUESTION_LIMITS, RoleInterviewInputSchema } from "../interview/role-questions";
 import type { TokenScope } from "../agent/token";
+import {
+  addCustomQuestionForAgent,
+  applicationPrep,
+  getBriefForAgent,
+  listCustomQuestionsForAgent,
+  listProjectsForAgent,
+  listStoriesForAgent,
+  removeCustomQuestionForAgent,
+  removeInteractionForAgent,
+  removeStoryForAgent,
+  STORY_LIMITS,
+  updateInteractionForAgent,
+  UpsertStorySchema,
+  upsertStoryForAgent,
+} from "../services/agent-prep";
+import { DEFAULT_COMPETENCIES } from "../stories/types";
 
 /** Who is calling and when - resolved from the bearer token by the route, never from tool input. */
 export interface ToolContext {
@@ -35,6 +51,8 @@ export interface ToolContext {
   llm?: LlmProvider;
   /** What the token may do: a read token sees and calls only read-only tools. */
   scope: TokenScope;
+  /** INTERVIEW_CUSTOM_QUESTION_MAX_CHARS; unset = custom questions are off, as in the app. */
+  customQuestionMaxChars?: number;
 }
 
 /** MCP tool annotations: hints a client uses to decide when to ask the user before a call. */
@@ -157,6 +175,39 @@ const LogInteractionSchema = z
     summary: z.string().min(1).max(AGENT_TEXT_LIMITS.summary),
   })
   .refine((r) => r.id || r.externalRef, "give id or externalRef");
+
+const UpdateInteractionSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    externalRef: z.string().min(1).optional(),
+    interactionId: z.string().min(1),
+    date: isoDate.optional(),
+    channel: InteractionSchema.shape.channel.optional(),
+    summary: z.string().min(1).max(AGENT_TEXT_LIMITS.summary).optional(),
+  })
+  .refine((r) => r.id || r.externalRef, "give the contact's id or externalRef")
+  .refine((r) => r.date || r.channel || r.summary, "give at least one of date, channel, summary");
+
+const RemoveInteractionSchema = z
+  .object({ id: z.string().min(1).optional(), externalRef: z.string().min(1).optional(), interactionId: z.string().min(1) })
+  .refine((r) => r.id || r.externalRef, "give the contact's id or externalRef");
+
+const ListStoriesSchema = z.object({ projectId: z.string().min(1).optional(), competency: z.string().min(1).optional(), externalRef: z.string().min(1).optional() });
+
+const AddCustomQuestionSchema = z.object({
+  externalRef: z.string().trim().min(1).max(STORY_LIMITS.ref),
+  text: z.string().min(1),
+  competency: z
+    .string()
+    .nullable()
+    .optional()
+    .refine((c) => c == null || DEFAULT_COMPETENCIES.includes(c), { message: `competency must be one of: ${DEFAULT_COMPETENCIES.join(", ")}` }),
+  tag: z.string().trim().max(40).nullable().optional(),
+});
+
+const RemoveCustomQuestionSchema = z
+  .object({ questionId: z.string().min(1).optional(), externalRef: z.string().min(1).optional() })
+  .refine((r) => r.questionId || r.externalRef, "give questionId or externalRef");
 
 /** Attempts returned per question unless asked: enough to see a trend, small enough for a prompt. */
 const PRACTICE_DEFAULT_ATTEMPTS = 3;
@@ -363,7 +414,7 @@ export const TOOLS: Tool[] = [
   {
     name: "get_contact",
     annotations: READ_ONLY,
-    description: "One contact with their interactions, newest first. Give id or externalRef.",
+    description: "One contact with every field the Network page keeps (including linkedinUrl) and their interactions, newest first, each with its id for update_interaction / remove_interaction. Give id or externalRef.",
     inputSchema: { type: "object", properties: refProps, additionalProperties: false },
     async run({ db, userId }, args) {
       return findContact({ db }, userId, RefSchema.parse(args));
@@ -373,7 +424,7 @@ export const TOOLS: Tool[] = [
     name: "upsert_contact",
     annotations: DESTRUCTIVE,
     description:
-      "Create or update a contact. Idempotent on externalRef; fields left out keep their value. status is one of not-contacted, awaiting-reply, in-conversation, met, dormant - set awaiting-reply only once a message is confirmed sent (a draft is not a sent message).",
+      "Create or update a contact. Idempotent on externalRef; fields left out keep their value, and null clears one (nextFollowup: null clears a stale follow-up). status is one of not-contacted, awaiting-reply, in-conversation, met, dormant - set awaiting-reply only once a message is confirmed sent (a draft is not a sent message).",
     inputSchema: {
       type: "object",
       properties: {
@@ -424,6 +475,38 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    name: "update_interaction",
+    annotations: DESTRUCTIVE,
+    description:
+      "Correct one logged interaction: give the contact (id or externalRef), the interactionId from get_contact, and only the fields to change. Example: {\"externalRef\": \"li:ray\", \"interactionId\": \"<id>\", \"summary\": \"Coffee; he will intro me to the DE lead\"}",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...refProps,
+        interactionId: str,
+        date: dateProp,
+        channel: { type: "string", enum: InteractionSchema.shape.channel.options },
+        summary: { type: "string", maxLength: AGENT_TEXT_LIMITS.summary },
+      },
+      required: ["interactionId"],
+      additionalProperties: false,
+    },
+    async run({ db, userId }, args) {
+      const { id, externalRef, interactionId, ...patch } = UpdateInteractionSchema.parse(args);
+      return updateInteractionForAgent({ db }, userId, { id, externalRef }, interactionId, patch);
+    },
+  },
+  {
+    name: "remove_interaction",
+    annotations: DESTRUCTIVE,
+    description: "Remove one logged interaction that didn't happen or was logged twice. Give the contact (id or externalRef) and the interactionId from get_contact. Example: {\"externalRef\": \"li:ray\", \"interactionId\": \"<id>\"}",
+    inputSchema: { type: "object", properties: { ...refProps, interactionId: str }, required: ["interactionId"], additionalProperties: false },
+    async run({ db, userId }, args) {
+      const { id, externalRef, interactionId } = RemoveInteractionSchema.parse(args);
+      return removeInteractionForAgent({ db }, userId, { id, externalRef }, interactionId);
+    },
+  },
+  {
     name: "upsert_interview_questions",
     annotations: DESTRUCTIVE,
     description:
@@ -451,11 +534,18 @@ export const TOOLS: Tool[] = [
   {
     name: "list_interview_questions",
     annotations: READ_ONLY,
-    description: "The role-interview questions already prepared: for one application (id or externalRef), or for every application when none is given. Returns text and round, not rubrics.",
-    inputSchema: { type: "object", properties: { ...refProps }, additionalProperties: false },
+    description:
+      "The role-interview questions already prepared: for one application (id or externalRef), or for every application when none is given. Returns text and round; with includeAnswers: true, also each question's rubric (lookFor), context and model answer text. Example: {\"externalRef\": \"cognition-de\", \"includeAnswers\": true}",
+    inputSchema: {
+      type: "object",
+      properties: { ...refProps, includeAnswers: { type: "boolean", description: "Also return lookFor, context and modelAnswer text" } },
+      additionalProperties: false,
+    },
     async run({ db, userId }, args) {
-      const ref = z.object({ id: z.string().min(1).optional(), externalRef: z.string().min(1).optional() }).parse(args ?? {});
-      return listRoleInterview({ db }, userId, ref);
+      const { includeAnswers, ...ref } = z
+        .object({ id: z.string().min(1).optional(), externalRef: z.string().min(1).optional(), includeAnswers: z.boolean().optional() })
+        .parse(args ?? {});
+      return listRoleInterview({ db }, userId, ref, { includeAnswers });
     },
   },
   {
@@ -510,6 +600,126 @@ export const TOOLS: Tool[] = [
     async run({ db, userId, nowIso }, args) {
       const { confirmedByUser: _c, ...a } = SetModelAnswerSchema.parse(args);
       return setModelAnswer({ db }, userId, { ...a, source: "agent" }, nowIso);
+    },
+  },
+  {
+    name: "list_projects",
+    annotations: READ_ONLY,
+    description: "The user's projects (each role or programme on their CV) with their CV points, so a story can be attached to one. Example: {}",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    async run({ db, userId }) {
+      return listProjectsForAgent({ db }, userId);
+    },
+  },
+  {
+    name: "list_stories",
+    annotations: READ_ONLY,
+    description:
+      "The user's STAR stories, newest first, with source (user or agent) and provenance. Filter by projectId, competency or externalRef. Example: {\"competency\": \"conflict\"}",
+    inputSchema: {
+      type: "object",
+      properties: { projectId: str, competency: { type: "string", enum: [...DEFAULT_COMPETENCIES] }, externalRef: str },
+      additionalProperties: false,
+    },
+    async run({ db, userId }, args) {
+      return listStoriesForAgent({ db }, userId, ListStoriesSchema.parse(args ?? {}));
+    },
+  },
+  {
+    name: "upsert_story",
+    annotations: DESTRUCTIVE,
+    description:
+      "Store a STAR story the USER told you, in their words: stories are captured, never generated, so never add a fact, step or number they didn't say. provenance (required) says where the facts came from. Attach it to a project (projectId from list_projects, or projectRef = the CVbuilder role id) and optionally one CV point (bulletId or bulletRef). Competencies come from the fixed vocabulary, or are read from the text when left out; numbers must appear in the text. Idempotent on externalRef. Example: {\"externalRef\": \"nutanix-files-migration:boundary-decision\", \"projectRef\": \"nutanix\", \"situation\": \"...\", \"task\": \"...\", \"action\": \"...\", \"result\": \"...\", \"provenance\": \"Parag, in chat 2026-11-20\"}",
+    inputSchema: {
+      type: "object",
+      properties: {
+        externalRef: { type: "string", maxLength: STORY_LIMITS.ref, description: "Stable id from your workspace; re-sending it updates the story" },
+        projectId: str,
+        projectRef: { type: "string", description: "The project's id in the CVbuilder workspace (its role id)" },
+        bulletId: { type: ["string", "null"] },
+        bulletRef: { type: "string", description: "The CV point's id in the CVbuilder workspace" },
+        situation: { type: "string", maxLength: STORY_LIMITS.part },
+        task: { type: "string", maxLength: STORY_LIMITS.part },
+        action: { type: "string", maxLength: STORY_LIMITS.part },
+        result: { type: "string", maxLength: STORY_LIMITS.part },
+        competencies: { type: "array", items: { type: "string", enum: [...DEFAULT_COMPETENCIES] } },
+        numbers: { type: "array", items: str, description: "Figures exactly as the user said them; each must appear in the text" },
+        provenance: { type: "string", maxLength: STORY_LIMITS.provenance, description: "Where the facts came from, e.g. 'Parag, in chat 2026-11-20'" },
+      },
+      required: ["externalRef", "action", "result", "provenance"],
+      additionalProperties: false,
+    },
+    async run({ db, userId, nowIso }, args) {
+      return upsertStoryForAgent({ db }, userId, UpsertStorySchema.parse(args), nowIso);
+    },
+  },
+  {
+    name: "remove_story",
+    annotations: DESTRUCTIVE,
+    description: "Remove one story by id or externalRef. Practice attempts and scores are not touched. Example: {\"externalRef\": \"nutanix-files-migration:boundary-decision\"}",
+    inputSchema: { type: "object", properties: refProps, additionalProperties: false },
+    async run({ db, userId }, args) {
+      return removeStoryForAgent({ db }, userId, RefSchema.parse(args));
+    },
+  },
+  {
+    name: "get_application_prep",
+    annotations: READ_ONLY,
+    description:
+      "Exactly what the application page's \"Interview prep for this job\" shows: each competency the job asks for with its status (story ready / on CV only / no story yet), the stories that cover it, the CV lines that show it and a practice question id; then each line on this job's CV and whether it still needs a story. Give id or externalRef. Example: {\"externalRef\": \"cognition-de\"}",
+    inputSchema: { type: "object", properties: refProps, additionalProperties: false },
+    async run({ db, userId }, args) {
+      return applicationPrep({ db }, userId, RefSchema.parse(args));
+    },
+  },
+  {
+    name: "list_custom_questions",
+    annotations: READ_ONLY,
+    description: "The user's own practice questions (question id custom:<id>), with competency, tag and externalRef. Example: {}",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    async run({ db, userId }) {
+      return listCustomQuestionsForAgent({ db }, userId);
+    },
+  },
+  {
+    name: "add_custom_question",
+    annotations: ADDITIVE,
+    description:
+      "Add a practice question to the user's own list (Interview tab, \"Your questions\"), practised and scored like any other. Idempotent on externalRef: re-sending updates the text and keeps its answers. Example: {\"externalRef\": \"drill:why-team-boundary\", \"text\": \"Why that team boundary?\", \"competency\": \"prioritisation\", \"tag\": \"drill\"}",
+    inputSchema: {
+      type: "object",
+      properties: {
+        externalRef: { type: "string", maxLength: STORY_LIMITS.ref },
+        text: str,
+        competency: { type: ["string", "null"], enum: [...DEFAULT_COMPETENCIES, null] },
+        tag: { type: ["string", "null"], maxLength: 40 },
+      },
+      required: ["externalRef", "text"],
+      additionalProperties: false,
+    },
+    async run({ db, userId, customQuestionMaxChars }, args) {
+      return addCustomQuestionForAgent({ db }, userId, AddCustomQuestionSchema.parse(args), customQuestionMaxChars);
+    },
+  },
+  {
+    name: "remove_custom_question",
+    annotations: DESTRUCTIVE,
+    description: "Remove one of the user's own questions by questionId (custom:<id>) or externalRef. Its written answer and attempts are kept, out of sight. Example: {\"externalRef\": \"drill:why-team-boundary\"}",
+    inputSchema: { type: "object", properties: { questionId: str, externalRef: str }, additionalProperties: false },
+    async run({ db, userId }, args) {
+      return removeCustomQuestionForAgent({ db }, userId, RemoveCustomQuestionSchema.parse(args));
+    },
+  },
+  {
+    name: "get_brief",
+    annotations: READ_ONLY,
+    description:
+      "The daily brief for a date (default today): follow-ups due, applications waiting on a reply, top new roles. A saved brief is returned as saved; today's is composed from the app's data when none was saved. Read-only: briefs are derived from the app's own records. Example: {\"date\": \"2026-11-20\"}",
+    inputSchema: { type: "object", properties: { date: dateProp }, additionalProperties: false },
+    async run({ db, userId, nowIso }, args) {
+      const today = nowIso.slice(0, 10);
+      const { date } = z.object({ date: isoDate.optional() }).parse(args ?? {});
+      return getBriefForAgent({ db }, userId, date ?? today, today);
     },
   },
 ];

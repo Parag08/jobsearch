@@ -74,7 +74,7 @@ Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=y
 - `lib/cover-letter/`, `lib/editorial/` - cover-letter generation, editorial audits and auto-select
 - `lib/stories/`, `lib/repos/`, `lib/watchlist/`, `lib/onboarding/`, `lib/db/`, `lib/services/`, `lib/companies/` - the rest of the domain layer, one concern per folder
 - `app/` - Next.js App Router surfaces (see the route table above)
-- `docs/SPEC.md` - full product spec · `docs/DESIGN.md`, `docs/ROADMAP.md`, `docs/ONBOARDING.md`, `docs/UI-REVIEW.md` · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
+- `docs/SPEC.md` - full product spec · `docs/MCP.md` - every agent (MCP) tool · `docs/DESIGN.md`, `docs/ROADMAP.md`, `docs/ONBOARDING.md`, `docs/UI-REVIEW.md` · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
 
 ## CI
 GitHub Actions in `.github/workflows/`: `ci.yml` (typecheck + tests), `db.yml` (schema/seed checks), `keepalive.yml` (Supabase free-tier keepalive), `sourcing.yml` (scheduled sourcing).

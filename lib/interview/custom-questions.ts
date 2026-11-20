@@ -49,6 +49,12 @@ export interface StoredCustomQuestion {
   id: string;
   text: string;
   createdAt: string;
+  /** Set when an agent added it (migration 0016): its stable id, so a re-send updates it. */
+  externalRef?: string | null;
+  /** What it tests; when set it replaces the shared template's competency. */
+  competency?: string | null;
+  /** A short label, e.g. "drill". */
+  tag?: string | null;
 }
 
 /** Stored rows as questions, newest first. */
@@ -58,7 +64,7 @@ export function customQuestions(stored: StoredCustomQuestion[], template: Custom
     .map((s) => ({
       id: customQuestionId(s.id),
       group: CUSTOM_GROUP.id,
-      competency: template.competency,
+      competency: s.competency || template.competency,
       text: s.text,
       firms: [],
       lookFor: template.lookFor,

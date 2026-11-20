@@ -3,6 +3,7 @@ import { listRoleQuestions } from "../repos/role-questions";
 import { listModelAnswers } from "../repos/model-answers";
 import { roleQuestionId } from "../interview/role-questions";
 import { findApplication, type AgentDeps, type ApplicationRef } from "./agent-sync";
+import { questionTexts } from "./agent-prep";
 
 /**
  * Read-only view of the user's interview practice for an agent (MCP tool
@@ -25,7 +26,8 @@ export interface PracticeQuery extends ApplicationRef {
 export async function listInterviewPractice(deps: AgentDeps, userId: string, q: PracticeQuery) {
   const { db } = deps;
   const role = await listRoleQuestions(db, userId);
-  const roleText = new Map(role.map((r) => [roleQuestionId(r.id), r.text]));
+  // Every kind of question id: bank, company, role and the user's own (bank ones came back null).
+  const texts = await questionTexts(deps, userId);
 
   let ids: string[] | null = null;
   if (q.id || q.externalRef) {
@@ -46,7 +48,7 @@ export async function listInterviewPractice(deps: AgentDeps, userId: string, q: 
     const mine = attempts.filter((a) => a.questionId === questionId);
     return {
       questionId,
-      text: roleText.get(questionId) ?? null,
+      text: texts.get(questionId) ?? null,
       writtenAnswer: written
         ? { mode: written.mode, body: written.body, situation: written.situation, task: written.task, action: written.action, result: written.result, updatedAt: written.updatedAt }
         : null,

@@ -119,6 +119,8 @@ export const ApplicationSchema = z.object({
 export type Application = z.infer<typeof ApplicationSchema>;
 
 export const InteractionSchema = z.object({
+  /** The row id, present on interactions read back (so one can be corrected or removed). */
+  id: z.string().optional(),
   date: z.string(),
   channel: z.enum(["linkedin", "whatsapp", "email", "coffee", "call"]),
   summary: z.string(),

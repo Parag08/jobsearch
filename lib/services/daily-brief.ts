@@ -19,11 +19,12 @@ const TOP_SOURCED = 3;
  * and the top new sourced jobs - composed WITHOUT an LLM and persisted one
  * per (user, date), so regenerating overwrites.
  */
-export async function generateBrief(
-  { db }: DailyBriefDeps,
-  userId: string,
-  today: string,
-): Promise<Brief> {
+export async function generateBrief(deps: DailyBriefDeps, userId: string, today: string): Promise<Brief> {
+  return saveBrief(deps.db, userId, await composeBrief(deps, userId, today));
+}
+
+/** Today's brief from the app's data, without saving it (the MCP get_brief tool reads this). */
+export async function composeBrief({ db }: DailyBriefDeps, userId: string, today: string): Promise<Brief> {
   const [contacts, applications, sourced] = await Promise.all([
     listContacts(db, userId),
     listApplications(db, userId),
@@ -48,5 +49,5 @@ export async function generateBrief(
     })),
   ];
 
-  return saveBrief(db, userId, { date: today, items });
+  return { date: today, items };
 }

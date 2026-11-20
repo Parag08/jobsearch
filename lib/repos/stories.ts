@@ -1,7 +1,7 @@
 import { StorySchema, type Story } from "../stories/types";
 import { matchCompetencies } from "../stories/competencies";
 import { extractNumbers } from "../stories/consistency";
-import { many, one, type DbClient } from "./db";
+import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import type { StoryRow } from "./rows";
 
 export type { StoryRow };
@@ -28,6 +28,10 @@ export function toStory(r: StoryRow): Story {
     competencies: r.competencies,
     numbers: r.numbers,
     capturedAt: r.captured_at,
+    externalRef: r.external_ref ?? null,
+    source: r.source ?? "user",
+    provenance: r.provenance ?? null,
+    updatedAt: r.updated_at ?? null,
   });
 }
 
@@ -43,6 +47,10 @@ export function storyRow(userId: string, s: NewStory): Omit<StoryRow, "id"> {
     competencies: s.competencies,
     numbers: s.numbers,
     captured_at: s.capturedAt,
+    ...(s.externalRef !== undefined ? { external_ref: s.externalRef } : {}),
+    ...(s.source !== undefined ? { source: s.source } : {}),
+    ...(s.provenance !== undefined ? { provenance: s.provenance } : {}),
+    ...(s.updatedAt !== undefined ? { updated_at: s.updatedAt } : {}),
   };
 }
 
@@ -100,4 +108,33 @@ export async function listStories(db: DbClient, userId: string): Promise<Story[]
     "list",
   );
   return rows.map(toStory);
+}
+
+export async function findStoryByExternalRef(db: DbClient, userId: string, externalRef: string): Promise<Story | null> {
+  const row = await oneOrNull(
+    db.from("stories").select().eq("user_id", userId).eq("external_ref", externalRef).maybeSingle(),
+    "stories",
+    "findByExternalRef",
+  );
+  return row ? toStory(row) : null;
+}
+
+export async function getStory(db: DbClient, userId: string, id: string): Promise<Story | null> {
+  const row = await oneOrNull(db.from("stories").select().eq("user_id", userId).eq("id", id).maybeSingle(), "stories", "get");
+  return row ? toStory(row) : null;
+}
+
+/** Replace a story's content in place: its id, and so anything pointing at it, is kept. */
+export async function updateStory(db: DbClient, userId: string, id: string, story: NewStory): Promise<Story> {
+  if (story.result.trim().length === 0) {
+    throw new Error("updateStory: a story needs a Result - what changed because of it?");
+  }
+  const { user_id: _u, ...patch } = storyRow(userId, story);
+  const row = await one(db.from("stories").update(patch).eq("user_id", userId).eq("id", id).select().single(), "stories", "update");
+  return toStory(row);
+}
+
+export async function deleteStory(db: DbClient, userId: string, id: string): Promise<void> {
+  const { error } = await db.from("stories").delete().eq("user_id", userId).eq("id", id);
+  if (error) throw new RepoError("stories", "delete", error.message);
 }
