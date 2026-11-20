@@ -36,7 +36,7 @@ import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLi
 import { buildRolePlayPrompt, guardRolePlay, likelyFollowUps, parseRolePlay, rolePlayBasis, type RolePlay } from "@/lib/interview/role-play";
 import { fullPlanFor } from "@/lib/services/full-interview";
 import { writtenAnswerText } from "@/lib/services/role-plays";
-import { createFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
+import { createFullSession, deleteFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
 import { listModelAnswers } from "@/lib/repos/model-answers";
 import { putRolePlay } from "@/lib/repos/role-plays";
 import { findQuestion } from "./bank";
@@ -210,6 +210,15 @@ export async function finishFullAction(input: { sessionId: string; answer?: stri
     hedges,
     model,
   };
+}
+
+/** Throw a running interview away: deleted, so there is no debrief and nothing is kept. */
+export async function discardFullAction(sessionId: string): Promise<{ error?: string }> {
+  const w = await ws();
+  const gone = await deleteFullSession(w.db, w.userId, sessionId);
+  if (!gone) return { error: "That interview could not be discarded - it may have finished already." };
+  revalidatePath("/app/interview");
+  return {};
 }
 
 /** A finished interview's saved debrief, to show it again. */

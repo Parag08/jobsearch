@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { createFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
+import { createFullSession, deleteFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
 import { startFull } from "../interview/full-session";
 import type { FullPlan } from "../interview/full-plan";
 
@@ -43,5 +43,17 @@ describe("full sessions repo", () => {
     expect(await getFullSession(db, "u2", s.id)).toBeNull();
     expect(await listFullSessions(db, "u1", "app1")).toHaveLength(1);
     expect(await listFullSessions(db, "u2")).toHaveLength(0);
+  });
+
+  it("discarding deletes a running interview for its own user only, never a finished one", async () => {
+    const db = new FakeDb();
+    const s = await createFullSession(db, "u1", session);
+    expect(await deleteFullSession(db, "u2", s.id)).toBe(false);
+    expect(await deleteFullSession(db, "u1", s.id)).toBe(true);
+    expect(await getFullSession(db, "u1", s.id)).toBeNull();
+
+    const done = await createFullSession(db, "u1", { ...session, status: "done" });
+    expect(await deleteFullSession(db, "u1", done.id)).toBe(false);
+    expect(await getFullSession(db, "u1", done.id)).not.toBeNull();
   });
 });

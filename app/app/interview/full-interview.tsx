@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  discardFullAction,
   finishFullAction,
   fullDebriefAction,
   fullTurnAction,
@@ -85,6 +86,9 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
   const [micLevel, setMicLevel] = useState(0);
   const [clock, setClock] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  /** Discard asks once, on the call bar, before throwing the interview away. */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [discarded, setDiscarded] = useState(false);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -245,6 +249,8 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
   }
 
   function enter(id: string, s: FullSession, greet: boolean) {
+    setDiscarded(false);
+    setConfirmDiscard(false);
     setSessionId(id);
     setSession(s);
     sessionRef.current = s;
@@ -357,6 +363,38 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
     setDebrief(r);
   }
 
+  /** First press: hold the call still (no voice, no mic, no auto-send) and ask. */
+  function askDiscard() {
+    stopListening();
+    stopSpeaking();
+    clearSilence();
+    setConfirmDiscard(true);
+  }
+
+  /** Delete the running interview and go back to the lobby: no debrief, nothing kept. */
+  async function discard() {
+    const id = idRef.current;
+    if (!id) return;
+    gen.current += 1;
+    setBusy("start");
+    const r = await discardFullAction(id);
+    setBusy(null);
+    setConfirmDiscard(false);
+    if (r.error) return setError(r.error);
+    spoken.current = [];
+    voiceFrames.current = [];
+    setDraft("");
+    setInterim("");
+    setSession(null);
+    setSessionId(null);
+    sessionRef.current = null;
+    idRef.current = null;
+    setStartedAt(null);
+    setClock(0);
+    setError(null);
+    setDiscarded(true);
+  }
+
   const topicTitle = (id: string) => session?.plan.topics.find((t) => t.id === id)?.short ?? id;
 
   // ---- lobby ------------------------------------------------------------------------------
@@ -372,7 +410,7 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
             </span>
           </div>
           <div className={ui.join}>
-            {card.runningId ? (
+            {card.runningId && !discarded ? (
               <>
                 <button className={ui.btn} data-primary="" type="button" onClick={() => void resume(card.runningId!)} disabled={busy !== null}>
                   {busy === "start" ? "Joining…" : "Resume interview"}
@@ -421,6 +459,7 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
             </button>
           )}
         </div>
+        {discarded && <p className={ui.sub}>Interview discarded. Nothing was scored or kept.</p>}
         {error && <p className={ui.warn}>{error}</p>}
       </div>
     );
@@ -451,7 +490,19 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
             <b>{caption.who}</b> {caption.text}
           </p>
         )}
-        {!done && (
+        {!done && confirmDiscard && (
+          <div className={ui.callBar} role="group" aria-label="Discard this interview?">
+            <span className={ui.callBarNote}>Discard this interview? You won&apos;t get a debrief and nothing is kept.</span>
+            <span className={ui.callBarGap} />
+            <button className={ui.iconBtn} type="button" onClick={() => setConfirmDiscard(false)} autoFocus disabled={busy !== null}>
+              Keep going
+            </button>
+            <button className={ui.btn} data-danger="" type="button" onClick={() => void discard()} disabled={busy !== null}>
+              {busy === "start" ? "Discarding…" : "Discard"}
+            </button>
+          </div>
+        )}
+        {!done && !confirmDiscard && (
           <div className={ui.callBar}>
             {canListen && (
               <button
@@ -480,6 +531,9 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
               </button>
             )}
             <span className={ui.callBarGap} />
+            <button className={ui.iconBtn} type="button" onClick={askDiscard} disabled={busy === "feedback"} title="Discard this interview without a debrief">
+              Discard
+            </button>
             <button className={ui.btn} type="button" onClick={() => void finish()} disabled={busy === "feedback"} title="End the interview and get your debrief">
               End and debrief
             </button>

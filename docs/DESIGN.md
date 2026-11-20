@@ -708,7 +708,11 @@ doesn't have to be just company specific"). Full design: docs/FULL-INTERVIEW.md.
   Your own**.
 - **The full interview room** (`full=1`, "← Back to the questions" above it) is the mock room:
   the orb stage, captions, mic and Type controls, **End and debrief**. The stage clock reads
-  "4:12 · topic 3 of up to 8"; the agenda is never shown during the call. Lobby: **Start full
+  "4:12 · topic 3 of up to 8"; the agenda is never shown during the call. **Discard** (room-glass, left of
+  End and debrief) asks once on the bar: "Discard this interview? You won't get a debrief and
+  nothing is kept", **Keep going** and a red **Discard**; voice and mic stop while it asks.
+  Confirming deletes the running session (a finished one is never deleted) and returns to the
+  lobby with "Interview discarded. Nothing was scored or kept." Added 2026-11-20 (Parag). Lobby: **Start full
   interview** (or **Resume interview** + Start a new one), the interviewer line, tone, voice and
   hands-free, and "See your last debrief".
 - **Full debrief:** the score card; **Your weakest moments, and a stronger version** (You said /
