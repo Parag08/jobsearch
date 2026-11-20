@@ -4,6 +4,7 @@ import { ClosedReasonSchema, InteractionSchema, StageSchema, WarmthSchema, Conta
 import type { DbClient } from "../repos/db";
 import { getJdRaw, listApplications } from "../repos/applications";
 import { listContacts } from "../repos/contacts";
+import { parseLinkedInProfile } from "../networking/contacts";
 import { listProjects } from "../repos/projects";
 import { getProfile } from "../repos/profiles";
 import { getRolePlan } from "../repos/role-plans";
@@ -135,6 +136,16 @@ const UpsertContactSchema = z.object({
   network: ContactSchema.shape.network.optional(),
   interests: z.array(z.string()).optional(),
   nextFollowup: isoDate.nullable().optional(),
+  linkedinUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((v, ctx) => {
+      if (v === null || v === undefined) return v;
+      const p = parseLinkedInProfile(v);
+      if (!p) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "linkedinUrl must be a linkedin.com/in/ profile link" });
+      return p?.url ?? null;
+    }),
 });
 
 const LogInteractionSchema = z
@@ -380,6 +391,7 @@ export const TOOLS: Tool[] = [
         },
         interests: { type: "array", items: str },
         nextFollowup: { type: ["string", "null"], description: "ISO date YYYY-MM-DD" },
+        linkedinUrl: { type: ["string", "null"], description: "LinkedIn profile link (linkedin.com/in/...). Stored as a link, never fetched." },
       },
       required: ["name"],
       additionalProperties: false,

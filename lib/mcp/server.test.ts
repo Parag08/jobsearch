@@ -112,6 +112,15 @@ describe("MCP tools", () => {
     expect(got.data.interactions).toHaveLength(1);
     expect((await call(ctx, "list_contacts", { company: "grab" })).data.count).toBe(1);
   });
+
+  it("keeps a contact's LinkedIn link, normalised, and refuses one that is not a profile", async () => {
+    const ctx = ctxFor(new FakeDb());
+    const r = await call(ctx, "upsert_contact", { externalRef: "li:jane", name: "Jane Tan", linkedinUrl: "sg.linkedin.com/in/jane-tan/" });
+    expect(r.data.contact.linkedinUrl).toBe("https://www.linkedin.com/in/jane-tan");
+    const kept = await call(ctx, "upsert_contact", { externalRef: "li:jane", name: "Jane Tan", company: "Grab" });
+    expect(kept.data.contact.linkedinUrl).toBe("https://www.linkedin.com/in/jane-tan");
+    expect((await call(ctx, "upsert_contact", { name: "X", linkedinUrl: "https://example.com/x" })).isError).toBe(true);
+  });
 });
 
 const extract = (over: Partial<JdExtract> = {}): JdExtract => ({

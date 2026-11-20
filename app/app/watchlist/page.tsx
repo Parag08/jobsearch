@@ -8,6 +8,9 @@ import { listApplications } from "@/lib/repos/applications";
 import { sourcedJobIdOf } from "@/lib/services/save-to-pipeline";
 import { SaveToPipelineButton } from "./save-button";
 import { getProfile } from "@/lib/repos/profiles";
+import { listContacts } from "@/lib/repos/contacts";
+import { countByCompany } from "@/lib/networking/contacts";
+import { norm } from "@/lib/types";
 import { listCompanies } from "@/lib/repos/companies";
 import { atsLabel, orderRoles, postedLabel, suggestedCompanies, targetSummary } from "@/lib/watchlist/display";
 import { monogram, toneFor } from "@/lib/pipeline-display";
@@ -45,13 +48,15 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [profile, entries, jobs, directory, apps] = await Promise.all([
+  const [profile, entries, jobs, directory, apps, contacts] = await Promise.all([
     getProfile(db, userId),
     listWatchlist(db, userId),
     listSourcedJobs(db, userId),
     listCompanies(db).catch(() => []),
     listApplications(db, userId),
+    listContacts(db, userId),
   ]);
+  const peopleAt = countByCompany(contacts);
   /** Sourced role id -> the application it was saved as. */
   const appByRole = new Map(
     apps.flatMap((a) => {
@@ -186,6 +191,7 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
         <ul className={s.list}>
           {entries.map((e) => {
             const board = atsLabel(e.ats);
+            const people = peopleAt.get(norm(e.company)) ?? 0;
             return (
               <li key={e.id} className={s.company} data-paused={!e.active || undefined}>
                 <span className={ui.monogram} data-tone={toneFor(e.company)} aria-hidden="true">
@@ -202,6 +208,10 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
                     <a href={e.careersUrl} target="_blank" rel="noopener noreferrer" className={s.url}>
                       {e.careersUrl.replace(/^https?:\/\/(www\.)?/, "")}
                     </a>
+                    {" · "}
+                    <Link href={`/app/network?company=${encodeURIComponent(e.company)}`} className={s.url}>
+                      {people ? (people === 1 ? "1 person you know" : `${people} people you know`) : "Add someone you know"}
+                    </Link>
                   </p>
                 </div>
                 <div className={s.actions}>

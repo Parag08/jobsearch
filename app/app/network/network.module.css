@@ -1,0 +1,143 @@
+/* The Network tab (DESIGN.md section 5, Network). Shared parts come from ../ui.module.css. */
+
+.list { list-style: none; margin: 0; padding: 0; }
+
+.person {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+  scroll-margin-top: 96px;
+}
+.list > li:first-child { border-top: 0; padding-top: 0; }
+.person > :first-child { margin-top: 1px; }
+.person:target { animation: glow 1.6s ease-out; border-radius: 12px; }
+@keyframes glow { from { background: var(--accent-wash); } to { background: transparent; } }
+
+.body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+.name a { color: var(--ink); text-decoration: none; }
+.name a:hover { color: var(--accent-text); text-decoration: underline; }
+
+.meta { font-size: 0.8125rem; color: var(--ink-soft); margin: 0; overflow-wrap: anywhere; }
+.when { color: var(--ink-faint); white-space: nowrap; }
+
+.side { display: flex; align-items: center; }
+
+.followup {
+  font-size: 0.8125rem;
+  font-weight: 590;
+  white-space: nowrap;
+  color: var(--tone-blue);
+}
+.followup[data-tone="attention"] { color: var(--stale-text); }
+.followup[data-tone="quiet"] { color: var(--ink-faint); font-weight: 500; }
+
+/* ---- the fold under each person: log, history, edit ---- */
+
+.more { margin-top: 4px; }
+.more > summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  list-style: none;
+  padding: 2px 0;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::after { content: " ›"; }
+.more[open] > summary::after { content: " ⌄"; }
+.more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.logForm,
+.editForm,
+.addForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.logForm { margin-top: 12px; }
+.editForm { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line-soft); }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  min-width: 0;
+}
+.field[data-wide] { grid-column: 1 / -1; }
+.field input, .field select { width: 100%; box-sizing: border-box; font-weight: 400; }
+.hint { font-size: 0.75rem; font-weight: 400; color: var(--ink-faint); }
+
+.formFoot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.error { margin: 0 auto 0 0; font-size: 0.8125rem; color: var(--stale-text); }
+
+.history {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+.history li { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---- page notes ---- */
+
+.flash,
+.filter {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.flash { background: color-mix(in srgb, var(--warm) 12%, transparent); }
+.filter { background: var(--wash); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.flash b, .filter b { font-weight: 600; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .person { grid-template-columns: auto minmax(0, 1fr); }
+  .side { grid-column: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person:target { animation: none; }
+}

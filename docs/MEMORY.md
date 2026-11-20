@@ -2,6 +2,15 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-20 (later) - Network tab, ROADMAP N1 (branch feat/networking)
+
+PRs #23 and #24 merged. Parag: "continue the roadmap, next would be networking."
+- **Built `/app/network`** (nav after Watchlist): add a person by name or pasted LinkedIn link (name read from the slug; link kept, never fetched), log a conversation (sets status and next follow-up from warmth, or a chosen date), edit warmth / status / follow-up. Follow-ups due lead the page. Rules only, no tokens.
+- `lib/networking/contacts.ts` (pure), `lib/services/network.ts`, `listContactsWithInteractions`; migration **0015** `contacts.linkedin_url` (mirrored in schema.sql; `db.yml` applies it on push to main, not yet applied by hand). MCP `upsert_contact` accepts `linkedinUrl`.
+- Wired: Pipeline's follow-ups-due fact and panel link to it (the panel used to say "no interaction logged" for everyone because it loaded contacts without logs - fixed); Overview's follow-up step goes there; Watchlist company rows show people you know. Demo has three contacts (one overdue, one not contacted). Process map and architecture graph updated (`outreach` now today/partial, N2 left).
+- **Dev gotcha:** the demo visitor store keeps its factory on `globalThis`, so a changed demo seed needs a dev-server restart to show.
+- **Next:** N2 first-message draft, or APPLY-FLOW step 2 (Send strip).
+
 ## 2026-11-20 - Apply flow designed; Save to pipeline built (branch feat/save-to-pipeline)
 
 Parag: no natural path from roles found -> shortlisted -> pipeline -> applied. Design in **docs/APPLY-FLOW.md** (six steps, build order of four).

@@ -185,6 +185,8 @@ export interface ContactRow {
   rolling_summary: string;
   /** Added by migration 0009 (agent sync). */
   external_ref?: string | null;
+  /** Added by migration 0015 (Network tab). */
+  linkedin_url?: string | null;
   created_at?: string;
 }
 
@@ -535,6 +537,7 @@ export function toContact(r: ContactRow, interactions: Interaction[] = []): Cont
     interactions,
     nextFollowup: r.next_followup,
     externalRef: r.external_ref ?? null,
+    linkedinUrl: r.linkedin_url ?? null,
   });
 }
 
@@ -696,6 +699,8 @@ export function contactPatch(
     status: c.status,
     interests: c.interests,
     next_followup: c.nextFollowup,
+    // Left out when unknown, so an update that never saw the link keeps it.
+    ...(c.linkedinUrl !== undefined ? { linkedin_url: c.linkedinUrl } : {}),
   };
 }
 

@@ -203,6 +203,8 @@ export interface ContactInput {
   network?: Contact["network"];
   interests?: string[];
   nextFollowup?: string | null;
+  /** A LinkedIn profile link, stored as given after normalising; never fetched. */
+  linkedinUrl?: string | null;
 }
 
 export async function upsertContact(
@@ -233,6 +235,7 @@ export async function upsertContact(
       network: input.network !== undefined ? input.network : existing.network,
       interests: input.interests ?? existing.interests,
       nextFollowup: input.nextFollowup !== undefined ? input.nextFollowup : existing.nextFollowup,
+      linkedinUrl: input.linkedinUrl !== undefined ? input.linkedinUrl : existing.linkedinUrl,
     };
     const record = await updateContact(db, userId, merged);
     if (input.externalRef && existing.externalRef !== input.externalRef) {
@@ -251,6 +254,7 @@ export async function upsertContact(
     status: input.status ?? "not-contacted",
     interests: input.interests ?? [],
     nextFollowup: input.nextFollowup ?? null,
+    linkedinUrl: input.linkedinUrl ?? null,
   });
   if (input.externalRef) await setContactExternalRef(db, userId, record.id, input.externalRef);
   return { record: { ...record, externalRef: input.externalRef ?? null }, created: true };

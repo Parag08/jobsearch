@@ -36,6 +36,17 @@ export async function listContacts(db: DbClient, userId: string): Promise<Contac
   return rows.map((r) => toContact(r, []));
 }
 
+/** Every contact with their log, newest first: two queries, for the Network tab. */
+export async function listContactsWithInteractions(db: DbClient, userId: string): Promise<Contact[]> {
+  const [contacts, rows] = await Promise.all([
+    many(db.from("contacts").select().eq("user_id", userId), "contacts", "list"),
+    many(db.from("interactions").select().eq("user_id", userId).order("date", { ascending: false }), "interactions", "list all"),
+  ]);
+  const byContact = new Map<string, Interaction[]>();
+  for (const r of rows) byContact.set(r.contact_id, [...(byContact.get(r.contact_id) ?? []), toInteraction(r)]);
+  return contacts.map((r) => toContact(r, byContact.get(r.id) ?? []));
+}
+
 export async function updateContact(db: DbClient, userId: string, c: Contact): Promise<Contact> {
   const row = await one(
     db.from("contacts").update(contactPatch(c)).eq("user_id", userId).eq("id", c.id).select().single(),

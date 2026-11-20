@@ -142,6 +142,8 @@ export const ContactSchema = z.object({
   nextFollowup: z.string().nullable(),
   /** Id in the system the contact was imported from (migration 0009). */
   externalRef: z.string().nullable().optional(),
+  /** A pasted LinkedIn profile link, stored as a link only - never fetched (migration 0015). */
+  linkedinUrl: z.string().nullable().optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

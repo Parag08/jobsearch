@@ -192,6 +192,7 @@ create table contacts (
   next_followup date,
   rolling_summary text not null default '',          -- token rule: short summary in prompts, raw log below
   external_ref text,                                 -- id in the system it was imported from (0009)
+  linkedin_url text,                                 -- pasted profile link, never fetched (0015)
   created_at timestamptz not null default now()
 );
 create unique index contacts_user_external_ref on contacts (user_id, external_ref) where external_ref is not null;

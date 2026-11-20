@@ -42,7 +42,7 @@ const NETWORKING: Stage = {
     { name: "Find the people who work there", detail: "Alumni and contacts at the firms you are watching, in the office you want.", kind: "auto", coming: true },
     { name: "Draft the first message", detail: "Short and specific, in your voice, grounded in your record.", kind: "ai", coming: true },
     { name: "Have the conversation", detail: "A coffee chat before there is a posting is worth more than an application after it.", kind: "you" },
-    { name: "Keep every conversation", detail: "Who you spoke to, what you learned, and when to follow up.", kind: "auto", coming: true },
+    { name: "Keep every conversation", detail: "Who you spoke to, what you learned, and when to follow up.", kind: "auto" },
     { name: "Ask for the referral", detail: "When the role opens, you already know who to ask.", kind: "you" },
   ],
 };

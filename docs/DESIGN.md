@@ -609,15 +609,18 @@ the page has no animation.
 Decided 2026-11-19 (Parag: overview, then pipeline, then interview). The day's order first,
 then the tools that feed it:
 
-**Overview · Pipeline · Interview · Watchlist · Insights · Experience · Assistant**
+**Overview · Pipeline · Interview · Watchlist · Network · Insights · Experience · Assistant**
+
+Network joined after Watchlist on 2026-11-20 (ROADMAP N1): you find a firm, then the people
+in it, in the product loop's order (Sourcing -> Networking -> Applying).
 
 The Bank page is labelled **Experience** and Agent **Assistant** since 2026-11-19 (critique 0.2,
 1.4, 1.5: "Bank" read as finance; "Connections" would collide with contacts). URLs stay
 `/app/bank` and `/app/agent`. Items in Experience are **points** everywhere.
 
 On wide screens the JobSearch name is the Overview tab (its pill shows when you are there),
-so the row reads **JobSearch · Pipeline · Interview · Watchlist · Insights · Experience ·
-Assistant**; the phone menu lists all seven.
+so the row reads **JobSearch · Pipeline · Interview · Watchlist · Network · Insights ·
+Experience · Assistant**; the phone menu lists all eight.
 
 Overview says what to do next; Pipeline is the applications; Interview is practice. Then
 Watchlist finds roles, Insights says what they ask for, the Bank holds your evidence, and
@@ -759,12 +762,43 @@ Refined 2026-11-19 (docs/UI-CRITIQUE.md section 10, W1-W10).
   <Company> is in your pipeline, with a CV built for it" with **Open it**; orange when the
   board gave no text ("Open the posting, copy the text, and use Add a job") or it failed.
 - **Companies:** monogram, name (Paused tag, dimmed when paused), "Read from Greenhouse" or
-  "Check by hand" in orange, the careers URL as a soft link; **Pause / Resume / Remove**.
+  "Check by hand" in orange, the careers URL as a soft link, then "2 people you know" (or "Add
+  someone you know") opening the Network tab for that company; **Pause / Resume / Remove**.
   **Suggested companies**: directory companies with a readable board you don't watch, as
   "+ Name" pills and **Watch all N**; hidden when the directory has none.
 - **What to look for:** a collapsible panel, closed once set, whose head says what it does
   ("Singapore · 2 titles · 1 skipped"). Three equal boxes: Cities, Job titles to include, Job
   titles to skip.
+
+### Network (`/app/network`)
+
+Added 2026-11-20 (ROADMAP N1, the minimum CRM). Rules only; nothing on the page calls a model.
+
+- **Header:** people · to follow up (blue when any) · talking or met. No primary button: the
+  add form is a panel.
+- **Order:** **Follow up** (due today or overdue, oldest first) when any; then **People**
+  ("Everyone else" when Follow up shows), soonest follow-up first, then those without one by
+  name; then **Add a person**. With nobody yet, Add a person is the whole page.
+- **Row:** monogram of the name, the name (opens their LinkedIn when a link was given), a status
+  tag (in conversation blue, met green, awaiting reply teal, not contacted / dormant grey) and a
+  warmth tag (hot orange, warm teal, cold grey); "Role · Company · how you know them"; "Last:
+  <summary> (Channel, 18 Nov)" or "Nothing logged yet." On the right, the follow-up: blue "Follow
+  up in 3 days", orange when due or overdue ("2 days overdue"), grey "No follow-up set".
+- **Log a conversation** (a fold under each row, its count beside it): date (today), how
+  (LinkedIn, WhatsApp, Email, Coffee, Call), what was said, and an optional follow-up date
+  ("Empty: set from warmth": hot 3 days, warm 7, cold 14, `lib/outreach.ts`). Coffee or a call
+  marks them Met; a first message marks Awaiting reply. Under it the history as a thin timeline,
+  then Warmth / Where it stands / Next follow-up with **Save changes**.
+- **Add a person:** "Name or LinkedIn link" (a pasted profile link fills the name from its slug),
+  company, role, how you know them, warmth (the option says its cadence), an optional LinkedIn
+  link. The link is stored as a link and never opened (decided 2026-11-10). Adding someone
+  already there finds them instead. A bad link or no name answers in orange under the form, and
+  the form keeps what was typed.
+- **After an action:** a green strip names the person ("is in your network", "is logged. Follow
+  up on 4 Dec.") and the row glows once (`:target`; none with reduced motion).
+- **From elsewhere:** the Pipeline's "follow-ups due" fact and its Follow-ups due panel link
+  here; each Watchlist company row says "2 people you know" or "Add someone you know", opening
+  this page filtered to that company (`?company=`, with the add form's company filled in).
 
 ### Insights (`/app/insights`)
 

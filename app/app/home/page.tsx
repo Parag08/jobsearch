@@ -53,7 +53,7 @@ function headline(m: Momentum): { title: string; body: string } {
 function stepCopy(n: NextStep, savedCompany: string | undefined): { text: string; href: string } {
   switch (n.kind) {
     case "follow-up":
-      return { text: `Follow up with ${plural(n.count, "person", "people")}`, href: "/app" };
+      return { text: `Follow up with ${plural(n.count, "person", "people")}`, href: "/app/network" };
     case "chase":
       return { text: `Chase ${plural(n.count, "application")} with no reply`, href: "/app" };
     case "send":
