@@ -182,13 +182,22 @@ export function stopSpeaking(): void {
   done();
 }
 
-function browserSpeak(text: string, lang: string, rate: number, mine: number): Promise<void> {
+export type Speaker = "interviewer" | "candidate";
+
+function browserSpeak(text: string, lang: string, rate: number, mine: number, speaker: Speaker = "interviewer"): Promise<void> {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return Promise.resolve();
   return new Promise((resolve) => {
     settle = resolve;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
     u.rate = rate;
+    if (speaker === "candidate") {
+      // A different installed voice for the candidate in a role-play, so the two sides sound apart.
+      const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()));
+      const pick = voices[1] ?? voices[0];
+      if (pick) u.voice = pick;
+      u.pitch = 1.1;
+    }
     u.onstart = () => {
       if (mine !== generation) return;
       browserProgress = 0;
@@ -210,11 +219,13 @@ function browserSpeak(text: string, lang: string, rate: number, mine: number): P
 /**
  * Read text aloud, cancelling anything already being spoken. Resolves when the line has
  * finished (or was stopped), so a caller can start listening once the interviewer is done.
+ * The candidate's lines in a role-play use a browser voice only: ElevenLabs is the interviewer's.
  */
-export async function speak(text: string, lang: string, rate = 0.97): Promise<void> {
+export async function speak(text: string, lang: string, rate = 0.97, speaker: Speaker = "interviewer"): Promise<void> {
   if (typeof window === "undefined") return;
   stopSpeaking();
   const mine = generation;
+  if (speaker === "candidate") return browserSpeak(text, lang, rate, mine, speaker);
   if (serverVoice !== false) {
     try {
       const res = await fetch("/api/tts", {

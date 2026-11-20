@@ -12,3 +12,6 @@ export const questionBank: QuestionBank = parseQuestionBank(raw);
 export const companyTemplates = parseCompanyTemplates((raw as { companyQuestions?: unknown }).companyQuestions ?? []);
 /** The rubric shared by every question the user (or an agent) typed. */
 export const customTemplate = parseCustomTemplate((raw as { customQuestion?: unknown }).customQuestion);
+
+/** Firms the bank knows by name ("bcg": "BCG"): a company matching one gets a case-and-fit page. */
+export const firmLabels: Record<string, string> = (raw as { firmLabels?: Record<string, string> }).firmLabels ?? {};

@@ -34,9 +34,10 @@ warmth, status, how you know them (`network`), interests, next follow-up and Lin
 ## Interview prep
 | Tool | What it does |
 |---|---|
-| `upsert_interview_questions` / `remove_interview_questions` | One application's real interview round |
+| `upsert_interview_questions` / `remove_interview_questions` | One application's real interview round. In order: it is also the script of the app's full mock interview. Each question may carry `modelAnswer` and *(2026-11-20)* `rolePlay` |
 | `list_interview_questions` | Those questions; `includeAnswers: true` also returns `lookFor`, `context` and the model answer text *(2026-11-20)* |
-| `list_interview_practice` | Written answers and newest mock attempts per question; every kind of question now carries its text *(fixed 2026-11-20: bank questions came back `text: null`)* |
+| `list_interview_practice` | Written answers and newest mock attempts per question; every kind of question now carries its text *(fixed 2026-11-20: bank questions came back `text: null`)*. Also each question's `rolePlay`, and `fullInterviews`: whole mock interviews with the path taken, per-topic verdicts, weakest moments and transcript *(2026-11-20)* |
+| `set_role_play` | *(2026-11-20)* A sample interviewer-candidate exchange for any question. Candidate lines only from the model answer (a number not in it, or in the written answer, is refused); never over one the user built in the app unless `force` + `confirmedByUser` |
 | `set_model_answer` | The model answer for any question; never overwrites the user's own unless `force` + `confirmedByUser` |
 | `list_projects` | *(2026-11-20)* Projects with their CV points, to attach a story to |
 | `list_stories` | *(2026-11-20)* STAR stories with `source` and `provenance`; filter by project, competency or `externalRef` |

@@ -1647,3 +1647,50 @@
 .aidPanel > h3 { font-size: 0.9375rem; font-weight: 600; margin: 0; }
 .aidPanel > p { font-size: 0.9375rem; line-height: 1.6; margin: 0; max-width: 72ch; }
 .aidPanel .answerCard { border: 0; padding: 0; margin: 0; background: none; }
+
+/* ---- Interview: "Preparing for" strip (docs/FULL-INTERVIEW.md section 3) ----------------
+   Practice first (always there), then one entry per company you're applying to. A row of
+   cards that scrolls sideways on a phone. */
+.prepStrip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.prepItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 10.5rem;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: inherit;
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: box-shadow var(--motion);
+}
+.prepItem:hover { box-shadow: var(--shadow-card-hover); }
+.prepItem b { font-weight: 600; font-size: 0.9375rem; }
+.prepItem span { font-size: 0.8125rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prepItem[aria-current="page"] { box-shadow: 0 0 0 2px var(--accent); }
+.prepDivider { align-self: stretch; width: 1px; background: var(--line); flex: none; }
+
+/* The full mock interview, leading a company's page or General practice. */
+.fullLead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.fullLead > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fullLead b { font-size: 1rem; font-weight: 600; }
+.fullLead p { font-size: 0.875rem; color: var(--ink-soft); }
+@media (max-width: 640px) { .fullLead { flex-direction: column; align-items: stretch; } }
+.transcript .turn[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }

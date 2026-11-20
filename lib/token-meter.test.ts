@@ -32,3 +32,12 @@ describe("token meter", () => {
     expect(budgetStatus([e("x", 100, 0)], 10000).level).toBe("ok");
   });
 });
+
+describe("estimateTokens", () => {
+  it("is about four characters a token, rounded up, zero for nothing", async () => {
+    const { estimateTokens } = await import("./token-meter");
+    expect(estimateTokens("")).toBe(0);
+    expect(estimateTokens("abcd")).toBe(1);
+    expect(estimateTokens("abcde")).toBe(2);
+  });
+});

@@ -26,3 +26,11 @@ export function budgetStatus(ledger: TokenLedgerEntry[], budget: number): Budget
   const level = used > budget ? "exceeded" : used >= budget * 0.8 ? "warning" : "ok";
   return { used, budget, level };
 }
+
+/**
+ * A rough token count (about four characters a token) for calls whose provider does not report
+ * usage - the gateway's streaming endpoint. Good enough for budgets; not a bill.
+ */
+export function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}

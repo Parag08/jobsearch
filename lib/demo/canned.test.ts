@@ -5,6 +5,9 @@ import { parseFollowUp, parseMockDebrief, startMock } from "../interview/mock";
 import { guardRewrite } from "../interview/model-answer";
 import { SCORE_DIMENSIONS } from "../interview/score";
 import { JdExtractSchema } from "../types";
+import { applyFullTurn, closeFull, parseFullDebrief, parseFullReply, startFull } from "../interview/full-session";
+import { guardRolePlay, parseRolePlay } from "../interview/role-play";
+import type { FullPlan } from "../interview/full-plan";
 
 const json = (s: string) => JSON.parse(s) as unknown;
 
@@ -54,6 +57,31 @@ describe("cannedText", () => {
     expect(words).toBeLessThanOrEqual(450);
     expect(cannedText("role-plan", {})).toMatch(/week/i);
     expect(cannedText("probe", {}).split("\n").length).toBe(4);
+  });
+
+  it("full interview: follows code's first legal move, and the debrief parses with a real quote", () => {
+    const legal = ["probe:result", "deepen", "next:t2"];
+    expect(parseFullReply(json(cannedText("full-turn", { candidates: legal })), legal).move).toBe("probe:result");
+    const plan: FullPlan = {
+      applicationId: "a", company: "C", role: "R", source: "job", round: null, interviewer: null, contextLabel: "x",
+      topics: [
+        { id: "t1", kind: "opener", competency: "c", text: "Q1?", short: "Q1", lookFor: "l", context: null },
+        { id: "t2", kind: "topic", competency: "c", text: "Q2?", short: "Q2", lookFor: "l", context: null },
+      ],
+    };
+    const answer = "I ran the pilot with three clinics and I owned the rollout from start to finish, which taught me a lot.";
+    let s = startFull(plan, { maxTopics: 2, topicFollowUps: 1, totalFollowUps: 2 }, "neutral", "t");
+    s = closeFull(applyFullTurn(s, answer, { move: "next:t2", say: "" }, "t"), answer, "t");
+    const d = parseFullDebrief(json(cannedText("full-debrief", { topicIds: ["t1", "t2"], firstAnswer: answer })), s, {});
+    expect(d.perTopic.map((p) => p.topicId)).toEqual(["t1", "t2"]);
+    expect(d.moments).toHaveLength(1);
+  });
+
+  it("role-play: built only from the model answer, so the honesty guard passes", () => {
+    const modelAnswer = "I led the pilot in 3 clinics. Visits went up 25%. I would test with nurses earlier next time.";
+    const lines = parseRolePlay(json(cannedText("role-play", { modelAnswer, candidates: ["result", "depth"] })), "Tell me about a pilot.");
+    expect(lines.length).toBeGreaterThanOrEqual(4);
+    expect(guardRolePlay(lines, { modelAnswer, written: "" }).ok).toBe(true);
   });
 });
 

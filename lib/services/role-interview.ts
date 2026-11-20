@@ -4,6 +4,7 @@ import { listRoleQuestions, removeRoleQuestions, upsertRoleQuestions } from "../
 import { roleQuestionId, type RoleInterviewInput } from "../interview/role-questions";
 import { findApplication, type AgentDeps, type ApplicationRef } from "./agent-sync";
 import { setModelAnswer } from "./model-answers";
+import { saveAgentRolePlay } from "./role-plays";
 import { listModelAnswers } from "../repos/model-answers";
 
 /**
@@ -44,7 +45,19 @@ export async function saveRoleInterview(deps: AgentDeps, userId: string, input: 
     if (r.saved) modelAnswers.saved += 1;
     else modelAnswers.keptYours.push(q.externalRef);
   }
-  return { application: appBrief(app), ...counts, modelAnswers };
+  // Role-plays after the model answers, since each is checked against its question's model answer.
+  const rolePlays = { saved: 0, keptApp: [] as string[], refused: [] as { externalRef: string; reason: string }[] };
+  for (const q of input.questions) {
+    if (!q.rolePlay) continue;
+    try {
+      const r = await saveAgentRolePlay(deps, userId, { questionId: ids.get(q.externalRef)!, lines: q.rolePlay.map((l) => ({ who: l.who, say: l.say, ...(l.why ? { why: l.why } : {}) })) }, nowIso);
+      if (r.saved) rolePlays.saved += 1;
+      else rolePlays.keptApp.push(q.externalRef);
+    } catch (err) {
+      rolePlays.refused.push({ externalRef: q.externalRef, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return { application: appBrief(app), ...counts, modelAnswers, rolePlays };
 }
 
 /** One application's questions, or every application's when no ref is given. */
