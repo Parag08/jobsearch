@@ -696,6 +696,10 @@ notes are").
   1.65 line height, every line break its own paragraph with 12px between, a 72ch measure. The
   instruction ("Read it, close it, then answer in your own words") is a small soft line above
   the card, never inside it. **Edit model answer** is a text button under it.
+- **Scores always carry their scale:** every score on screen is out of 5 and says so ("3.0/5"
+  in lists and per skill, "3.0 / 5" as a heading), through `outOfFive` in
+  `lib/interview/score.ts`; tooltips and screen readers get "Best score 3.0 out of 5". Never
+  a bare number. Added 2026-11-19 (Parag: "3.0 out of how much?").
 - **Leaving a call:** two buttons at the right of the call bar. **Discard** (a room-glass
   button) asks once, on the bar itself: "Discard this interview? You won't get feedback and
   nothing is saved", with **Keep going** and a red **Discard**; the voice and mic stop while it

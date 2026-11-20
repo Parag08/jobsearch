@@ -188,6 +188,19 @@ export function parseScore(raw: unknown): ModelScore {
   };
 }
 
+/** Every score, behavioural and case, is on a 1-5 scale. */
+export const SCORE_MAX = 5;
+
+/** A score with its scale, so a bare "3.0" never leaves the reader guessing: "3.0/5". */
+export function outOfFive(n: number, opts: { whole?: boolean } = {}): string {
+  return `${opts.whole ? Math.round(n) : n.toFixed(1)}/${SCORE_MAX}`;
+}
+
+/** The same, for screen readers and tooltips: "3.0 out of 5". */
+export function outOfFiveLabel(n: number): string {
+  return `${n.toFixed(1)} out of ${SCORE_MAX}`;
+}
+
 export function overallScore(scores: Scores): number {
   const values = SCORE_DIMENSIONS.map((d) => scores[d]);
   return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;

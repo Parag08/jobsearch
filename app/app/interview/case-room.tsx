@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import type { CaseSheet, Exhibit, QuestionKind } from "@/lib/interview/case-sheet";
 import { CASE_DIMENSIONS, CASE_DIMENSION_HELP, type CaseSession } from "@/lib/interview/case-session";
+import { outOfFive } from "@/lib/interview/score";
 import { BARS, OPENING } from "@/lib/interview/case-method";
 import { caseElapsedSeconds } from "@/lib/interview/case-progress";
 import { LANGS, recognitionCtor, speak, stopSpeaking, type SpeechRecognitionLike } from "./speech";
@@ -428,7 +429,7 @@ function Debrief({ sheet, debrief, onAgain }: { sheet: CaseSheet; debrief: CaseD
             <span className={ui.scoreTrack}>
               <i style={{ width: `${((debrief.scores?.[d] ?? 0) / 5) * 100}%` }} />
             </span>
-            <span className={ui.mono}>{debrief.scores?.[d]}</span>
+            <span className={ui.mono}>{debrief.scores?.[d] !== undefined && outOfFive(debrief.scores[d], { whole: true })}</span>
           </div>
         ))}
       </div>

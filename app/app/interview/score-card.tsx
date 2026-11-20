@@ -1,7 +1,7 @@
 "use client";
 
 import type { ScoreResult } from "../actions";
-import { DIMENSION_HELP, SCORE_DIMENSIONS } from "@/lib/interview/score";
+import { DIMENSION_HELP, SCORE_DIMENSIONS, outOfFive } from "@/lib/interview/score";
 import ui from "../ui.module.css";
 
 /** The six scores, delivery signals and what to change - shown after an interview. */
@@ -26,7 +26,7 @@ export function ScoreCard({ result }: { result: ScoreResult }) {
             <span className={ui.scoreTrack}>
               <i style={{ width: `${((result.scores?.[d] ?? 0) / 5) * 100}%` }} />
             </span>
-            <span className={ui.sectionMeta}>{result.scores?.[d]}</span>
+            <span className={ui.sectionMeta}>{result.scores?.[d] !== undefined && outOfFive(result.scores[d], { whole: true })}</span>
           </div>
         ))}
       </div>

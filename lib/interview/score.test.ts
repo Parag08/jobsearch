@@ -137,3 +137,17 @@ describe("overallScore", () => {
     expect(overallScore({ structure: 4, ownership: 3, specificity: 5, impact: 4, reflection: 2, relevance: 5 })).toBe(3.8);
   });
 });
+
+describe("outOfFive", () => {
+  it("always says what the score is out of", async () => {
+    const { outOfFive, SCORE_MAX } = await import("./score");
+    expect(SCORE_MAX).toBe(5);
+    expect(outOfFive(3)).toBe("3.0/5");
+    expect(outOfFive(3.46)).toBe("3.5/5");
+    expect(outOfFive(4, { whole: true })).toBe("4/5");
+  });
+  it("reads aloud as 'out of 5'", async () => {
+    const { outOfFiveLabel } = await import("./score");
+    expect(outOfFiveLabel(3)).toBe("3.0 out of 5");
+  });
+});

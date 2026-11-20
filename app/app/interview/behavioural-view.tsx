@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { Answer, Attempt } from "@/lib/repos/answers";
 import type { Question, QuestionGroup } from "@/lib/interview/questions";
 import { behaviouralView } from "@/lib/interview/scope";
+import { outOfFive, outOfFiveLabel } from "@/lib/interview/score";
 import { addCustomQuestionAction, removeCustomQuestionAction, type AddQuestionState } from "../actions";
 import { AnswerEditor } from "./answer-editor";
 import { ModelAnswerPanel } from "./model-answer-panel";
@@ -228,7 +229,9 @@ export function BehaviouralView({
                         />
                         <span className={ui.qtext}>{q.short ?? q.text}</span>
                         {best !== undefined && (
-                          <span className={ui.qscore}>{best.toFixed(1)}</span>
+                          <span className={ui.qscore} title={`Best score ${outOfFiveLabel(best)}`} aria-label={`Best score ${outOfFiveLabel(best)}`}>
+                            {outOfFive(best)}
+                          </span>
                         )}
                       </a>
                     </div>
@@ -304,7 +307,7 @@ export function BehaviouralView({
                       )}
                     </div>
                     <span className={ui.mono}>
-                      {a.overall.toFixed(1)} · {a.createdAt.slice(0, 10)}
+                      {outOfFive(a.overall)} · {a.createdAt.slice(0, 10)}
                     </span>
                   </li>
                 ))}
