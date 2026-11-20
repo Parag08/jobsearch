@@ -17,6 +17,8 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists interview_role_plays cascade;
+drop table if exists interview_full_sessions cascade;
 drop table if exists interview_model_answers cascade;
 drop table if exists interview_role_questions cascade;
 drop table if exists interview_custom_questions cascade;
@@ -428,6 +430,38 @@ create table interview_model_answers (
   unique (user_id, question_id)
 );
 
+-- ---- full mock interviews and role-plays (0017, docs/FULL-INTERVIEW.md) ----------------
+create table interview_full_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  application_id uuid references applications (id) on delete cascade,
+  status text not null default 'running' check (status in ('running', 'done')),
+  session jsonb not null,
+  scores jsonb,
+  overall numeric(3, 1),
+  strengths text[] not null default '{}',
+  improvements text[] not null default '{}',
+  per_topic jsonb,
+  moments jsonb,
+  model text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index interview_full_sessions_user_app on interview_full_sessions (user_id, application_id, created_at desc);
+
+create table interview_role_plays (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  question_id text not null,
+  lines jsonb not null,
+  source text not null check (source in ('ai', 'agent')),
+  based_on text not null,
+  model text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, question_id)
+);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -450,6 +484,8 @@ alter table role_plans enable row level security;
 alter table interview_custom_questions enable row level security;
 alter table interview_role_questions enable row level security;
 alter table interview_model_answers enable row level security;
+alter table interview_full_sessions enable row level security;
+alter table interview_role_plays enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -471,7 +507,8 @@ begin
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
-                           'interview_custom_questions','interview_role_questions','interview_model_answers']
+                           'interview_custom_questions','interview_role_questions','interview_model_answers',
+                           'interview_full_sessions','interview_role_plays']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);

@@ -684,6 +684,43 @@ source of evidence, so every point is editable in place.
   that says how many CVs use the point and how many were sent, and that copies already made
   or sent keep it while those CVs leave it out from now on (export reads the bank).
 
+### Interview tab, company first (`/app/interview`)
+
+Rebuilt 2026-11-20 (Parag: "it should not be this difficult" - Behavioural / Technical / Cases
+tabs plus General / My own / Company choosers; then "it has to be company specific, but it
+doesn't have to be just company specific"). Full design: docs/FULL-INTERVIEW.md.
+
+- **"Preparing for" strip** under the title: white lifted cards in a row (scrolls sideways on a
+  phone, no scrollbar). **Practice** first, always ("Any interview, any day"), a hairline, then
+  one card per company you're applying to: the pushed round's name ("Technical interview, 24
+  Nov"), "Case and fit" for a consulting firm, or "From the job ad". The current one has a 2px
+  accent ring. Pushed rounds come first. URL `prep=<slug>|general`; old `company=` and `q=`
+  links still land (`lib/interview/prep.ts` `choosePrep`).
+- **Opens on** the next company with a pushed round, else Practice.
+- **A company's page:** "Company · Role" as h2 with the round in soft text; the **Full mock
+  interview** card (`ui.fullLead`: bold title, one sentence on what it is, "Best 3.5/5" or "One
+  in progress", **Open full interview** as the page's primary); then the questions split, its
+  list grouped by what each question tests (competency, case-insensitive), no chooser. A
+  consulting firm adds **Case interview** below with the case cards (the case room opens in
+  place).
+- **Practice:** underline tabs **Questions / Technical / Cases**. Questions leads with the
+  **Full practice interview** card, then the split with a two-pill chooser **Question bank /
+  Your own**.
+- **The full interview room** (`full=1`, "← Back to the questions" above it) is the mock room:
+  the orb stage, captions, mic and Type controls, **End and debrief**. The stage clock reads
+  "4:12 · topic 3 of up to 8"; the agenda is never shown during the call. Lobby: **Start full
+  interview** (or **Resume interview** + Start a new one), the interviewer line, tone, voice and
+  hands-free, and "See your last debrief".
+- **Full debrief:** the score card; **Your weakest moments, and a stronger version** (You said /
+  Stronger, both quoted); **The path the interview took** (open by default): each topic with a
+  verdict tag (Held up green, Partly teal, Did not hold orange), the moves made on it ("Probed:
+  What you did, Went deeper") and a link to practise it alone; Fillers and delivery folded.
+- **Role-play** is the third pill in the aid row ("· ready", "· build it", "· needs a model
+  answer"). Open: **Build the role-play** (primary), then the exchange as transcript bubbles
+  (Interviewer / Strong candidate, "Why it works: ..." in soft text under each candidate line),
+  **Play it** (the line being read gets an accent outline; Stop), **Rebuild**, and an orange
+  line when the model answer has changed since it was built.
+
 ### Interview question pane (`/app/interview`)
 
 Clarified 2026-11-19 (Parag: "I don't know where my answer starts, where it ends, and where the
@@ -970,6 +1007,11 @@ Two load-bearing joints:
   role?" and "Your first six months" are built per live application from templates in
   `data/interview/questions.json` (`companyQuestions`), ids `company:<slug>:<template>`. The
   interviewer's only context about the firm is what the job description said.
+- **Company first, practice always there** (2026-11-20, Parag; supersedes the next entry's
+  chooser). The tab opens on who you're preparing for; the company decides the kind of interview
+  (pushed round, case and fit, or from the job ad), so there is no type to pick. Practice holds
+  the bank, your own questions, technical and cases, and its own full interview for days with no
+  interview coming up.
 - **The behavioural tab opens on the generic bank; company questions and your own are one click
   away** (2026-11-16, Parag: the company questions were crowding out the questions he practises
   daily). A chooser - General / My own / Company - sits above the list; Company shows one entry

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Application } from "../types";
 import { COMPANY_GROUP, type CompanyQuestion } from "./company-questions";
+import { RolePlayInputSchema } from "./role-play";
 
 /**
  * Role interviews: questions prepared for one application's real interview, by an agent
@@ -50,6 +51,8 @@ export const RoleQuestionInputSchema = z.object({
   source: opt(L.source),
   /** A strong answer built only from the user's own evidence: read before answering, compared in the debrief. */
   modelAnswer: opt(L.modelAnswer),
+  /** A sample exchange for this question, built on the model answer (checked against it on save). */
+  rolePlay: RolePlayInputSchema.optional(),
 });
 export type RoleQuestionInput = z.infer<typeof RoleQuestionInputSchema>;
 

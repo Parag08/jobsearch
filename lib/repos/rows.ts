@@ -310,6 +310,39 @@ export interface RowMap {
   interview_custom_questions: InterviewCustomQuestionRow;
   interview_role_questions: InterviewRoleQuestionRow;
   interview_model_answers: InterviewModelAnswerRow;
+  interview_full_sessions: InterviewFullSessionRow;
+  interview_role_plays: InterviewRolePlayRow;
+}
+
+/** One full mock interview (migration 0017); `session` is the whole FullSession, saved every turn. */
+export interface InterviewFullSessionRow {
+  id: string;
+  user_id: string;
+  application_id: string | null;
+  status: "running" | "done";
+  session: unknown;
+  scores: Record<string, number> | null;
+  overall: number | string | null;
+  strengths: string[];
+  improvements: string[];
+  per_topic: unknown;
+  moments: unknown;
+  model: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** A role-play for one question id (migration 0017). */
+export interface InterviewRolePlayRow {
+  id: string;
+  user_id: string;
+  question_id: string;
+  lines: unknown;
+  source: "ai" | "agent";
+  based_on: string;
+  model: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /** A question the user typed for themselves (migration 0011); its question id is `custom:<id>`. */

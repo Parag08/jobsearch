@@ -4,17 +4,26 @@ import { getWorkspace } from "@/lib/db";
 import { listProjects } from "@/lib/repos/projects";
 import { getProfile } from "@/lib/repos/profiles";
 import { listAnswers, listAttempts, type Answer, type Attempt } from "@/lib/repos/answers";
+import { listApplications } from "@/lib/repos/applications";
 import { matchCompetencies } from "@/lib/stories/competencies";
 import { technicalSurface, type CvExtra } from "@/lib/interview/technical";
 import { caseTypeFits } from "@/lib/interview/casing";
 import { listCompanyQuestions, listCustomQuestions, questionBank } from "./bank";
+import { firmLabels } from "@/lib/interview/bank-data";
 import { listModelAnswers } from "@/lib/repos/model-answers";
+import { listRolePlays } from "@/lib/repos/role-plays";
 import type { ModelAnswer } from "@/lib/interview/model-answer";
+import type { RolePlay } from "@/lib/interview/role-play";
 import type { CompanyQuestion } from "@/lib/interview/company-questions";
 import type { RoleQuestion } from "@/lib/interview/role-questions";
 import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
 import type { Question } from "@/lib/interview/questions";
+import { fullInterviewSettingsFromEnv, type FullInterviewSettings } from "@/lib/interview/full-plan";
+import { GENERAL, choosePrep, prepEntries, type PrepEntry } from "@/lib/interview/prep";
+import { fullInterviewsFor, generalInterviewCard, type FullInterviewCard } from "@/lib/services/full-interview";
+import { outOfFive } from "@/lib/interview/score";
 import { BehaviouralView } from "./behavioural-view";
+import { FullInterview } from "./full-interview";
 import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
 import { caseProgress, type CaseProgress } from "@/lib/interview/case-progress";
@@ -22,52 +31,66 @@ import { CaseRoom } from "./case-room";
 import ui from "../ui.module.css";
 
 /**
- * Interview prep (DESIGN.md section 3), as three tabs.
+ * Interview prep (DESIGN.md section 3, docs/FULL-INTERVIEW.md section 3), company first.
  *
- * Behavioural is the working surface: the generic bank first, with "Why <company>?" questions
- * (built from your own applications) and questions you typed yourself one click away, each
- * practised in a mock interview with your notes alongside. Technical and casing are derived
- * from your record.
+ * A "Preparing for" strip leads the page: Practice (always there, for days with no interview
+ * coming up) and one entry per company you're applying to. The company decides the kind of
+ * interview - the round an agent pushed, case and fit at a consulting firm, or one built from
+ * the job ad - so there is no type to choose. Each page leads with a full mock interview; the
+ * same questions sit below for one-at-a-time practice, each with its model answer and role-play.
+ * Practice keeps the question bank, your own questions, technical and cases.
  *
- * Tab and question live in the URL: every question is linkable, and back works.
+ * Everything lives in the URL (`prep`, `tab`, `q`, `case`, `full`), so every state is linkable.
  */
 type Tab = "behavioural" | "casing" | "technical";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "behavioural", label: "Behavioural" },
+  { id: "behavioural", label: "Questions" },
   { id: "technical", label: "Technical" },
   { id: "casing", label: "Cases" },
 ];
 
-export default async function Interview({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string; q?: string; case?: string; type?: string }>;
-}) {
+type Params = { prep?: string; tab?: string; q?: string; case?: string; type?: string; company?: string; full?: string };
+
+const url = (p: Record<string, string | undefined>) => {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) if (v) sp.set(k, v);
+  return `/app/interview?${sp.toString()}`;
+};
+
+const KIND_LINE: Record<PrepEntry["kind"], string> = { round: "", consulting: "Case and fit", job: "From the job ad" };
+
+export default async function Interview({ searchParams }: { searchParams: Promise<Params> }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
-
   const params = await searchParams;
-  const tab: Tab = TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
+  const settings = fullInterviewSettingsFromEnv(process.env);
 
-  const [projects, profile, answers, attempts, caseSessions, companyQs, customQs, modelAnswers] = await Promise.all([
+  const [companyQs, apps] = await Promise.all([listCompanyQuestions(db, userId), listApplications(db, userId)]);
+  const entries = prepEntries(
+    companyQs.map((q) => ({ id: q.id, company: q.company, round: "round" in q ? (q as RoleQuestion).round : null })),
+    apps.filter((a) => a.closedReason === null).map((a) => ({ company: a.company, role: a.role, roleFamily: a.jdExtract?.roleFamily ?? null })),
+    firmLabels,
+  );
+  const prep = choosePrep(params, entries, (id) => companyQs.find((q) => q.id === id)?.company ?? null);
+  const entry = entries.find((e) => e.slug === prep) ?? null;
+  const tab: Tab = entry ? "behavioural" : TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
+
+  const needQuestions = tab === "behavioural";
+  const needCases = tab === "casing" || entry?.kind === "consulting";
+  const [projects, profile, answers, attempts, caseSessions, customQs, modelAnswers, rolePlays, fullCards, generalCard] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
     listAnswers(db, userId),
     listAttempts(db, userId),
-    tab === "casing" ? listCaseSessions(db, userId) : Promise.resolve([]),
-    tab === "behavioural" ? listCompanyQuestions(db, userId) : Promise.resolve([]),
-    tab === "behavioural" ? listCustomQuestions(db, userId) : Promise.resolve([]),
-    tab === "behavioural" ? listModelAnswers(db, userId).catch(() => []) : Promise.resolve([]),
+    needCases ? listCaseSessions(db, userId) : Promise.resolve([]),
+    needQuestions && !entry ? listCustomQuestions(db, userId) : Promise.resolve([]),
+    needQuestions ? listModelAnswers(db, userId).catch(() => []) : Promise.resolve([]),
+    needQuestions ? listRolePlays(db, userId).catch(() => []) : Promise.resolve([]),
+    settings && entry ? fullInterviewsFor(db, userId, settings).catch(() => []) : Promise.resolve([]),
+    settings && !entry && tab === "behavioural" ? generalInterviewCard(db, userId, settings).catch(() => null) : Promise.resolve(null),
   ]);
   const bullets = projects.flatMap((p) => p.bullets);
-
-  const href = (next: { tab?: Tab; q?: string }) => {
-    const sp = new URLSearchParams();
-    sp.set("tab", next.tab ?? tab);
-    if (next.q) sp.set("q", next.q);
-    return `/app/interview?${sp.toString()}`;
-  };
 
   return (
     <>
@@ -75,31 +98,205 @@ export default async function Interview({
         <h1>Interview prep</h1>
       </div>
 
-      <nav className={ui.tabs} aria-label="Interview prep">
-        {TABS.map((t) => (
-          <Link key={t.id} href={href({ tab: t.id })} scroll={false} className={ui.tab} aria-current={t.id === tab ? "page" : undefined}>
-            {t.label}
+      <nav className={ui.prepStrip} aria-label="Preparing for">
+        <Link href={url({ prep: GENERAL })} scroll={false} className={ui.prepItem} aria-current={prep === GENERAL ? "page" : undefined}>
+          <b>Practice</b>
+          <span>Any interview, any day</span>
+        </Link>
+        {entries.length > 0 && <span className={ui.prepDivider} aria-hidden="true" />}
+        {entries.map((e) => (
+          <Link key={e.slug} href={url({ prep: e.slug })} scroll={false} className={ui.prepItem} aria-current={prep === e.slug ? "page" : undefined}>
+            <b>{e.name}</b>
+            <span>{e.round ?? KIND_LINE[e.kind]}</span>
           </Link>
         ))}
       </nav>
 
-      {tab === "behavioural" && (
-        <Behavioural answers={answers} attempts={attempts} bullets={bullets} companyQuestions={companyQs} customQuestions={customQs} modelAnswers={modelAnswers} />
+      {entry ? (
+        <CompanyPrep
+          entry={entry}
+          card={fullCards.find((c) => c.slug === entry.slug) ?? null}
+          settings={settings}
+          full={params.full === "1"}
+          questions={companyQs.filter((q) => q.company && entries.find((e) => e.name === q.company)?.slug === entry.slug)}
+          answers={answers}
+          attempts={attempts}
+          bullets={bullets}
+          modelAnswers={modelAnswers}
+          rolePlays={rolePlays}
+          sessions={caseSessions}
+          caseId={params.case}
+          caseType={params.type}
+        />
+      ) : (
+        <>
+          <nav className={ui.tabs} aria-label="Practice">
+            {TABS.map((t) => (
+              <Link key={t.id} href={url({ prep: GENERAL, tab: t.id })} scroll={false} className={ui.tab} aria-current={t.id === tab ? "page" : undefined}>
+                {t.label}
+              </Link>
+            ))}
+          </nav>
+          {tab === "behavioural" && (
+            <>
+              <FullLead
+                card={generalCard}
+                settings={settings}
+                full={params.full === "1"}
+                base={{ prep: GENERAL, tab: "behavioural" }}
+                title="Full practice interview"
+                line={`A general behavioural interview, ${settings ? `up to ${settings.maxTopics} questions` : "several questions"}, starting with what you have practised least. It follows your answers and ends in one debrief.`}
+              />
+              {params.full !== "1" && (
+                <Behavioural
+                  answers={answers}
+                  attempts={attempts}
+                  bullets={bullets}
+                  companyQuestions={[]}
+                  customQuestions={customQs}
+                  modelAnswers={modelAnswers}
+                  rolePlays={rolePlays}
+                  base={{ prep: GENERAL, tab: "behavioural" }}
+                />
+              )}
+            </>
+          )}
+          {tab === "casing" && <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} base={{ prep: GENERAL, tab: "casing" }} />}
+          {tab === "technical" && <Technical bullets={bullets} extras={(profile?.cvExtras ?? []) as CvExtra[]} />}
+        </>
       )}
-      {tab === "casing" && (
-        <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} />
-      )}
-      {tab === "technical" && <Technical bullets={bullets} extras={(profile?.cvExtras ?? []) as CvExtra[]} />}
     </>
   );
 }
 
-// ---- behavioural ---------------------------------------------------------------------------
+// ---- the full mock interview, leading a page ---------------------------------------------
 
-/**
- * The server side of the behavioural tab: read everything once, hand it to the client
- * view. Question switching then happens in the browser with no round trip.
- */
+function FullLead({
+  card,
+  settings,
+  full,
+  base,
+  title,
+  line,
+}: {
+  card: FullInterviewCard | null;
+  settings: FullInterviewSettings | null;
+  full: boolean;
+  base: Record<string, string>;
+  title: string;
+  line: string;
+}) {
+  if (!settings) {
+    return (
+      <p className={ui.sub}>
+        The full mock interview is switched off on this deployment (INTERVIEW_FULL_* settings). Practise question by question below.
+      </p>
+    );
+  }
+  if (!card) return null;
+  if (full) {
+    return (
+      <section className={ui.stack} aria-label={title}>
+        <Link href={url(base)} scroll={false} className={ui.mono}>
+          ← Back to the questions
+        </Link>
+        <FullInterview card={card} maxTopics={settings.maxTopics} questionBase={base} />
+      </section>
+    );
+  }
+  const status = card.runningId ? "One in progress" : card.best !== null ? `Best ${outOfFive(card.best)}` : null;
+  return (
+    <div className={ui.fullLead}>
+      <div>
+        <b>{title}</b>
+        <p>{line}</p>
+        {status && <p>{status}</p>}
+      </div>
+      <Link href={url({ ...base, full: "1" })} className={ui.btn} data-primary="">
+        {card.runningId ? "Resume interview" : "Open full interview"}
+      </Link>
+    </div>
+  );
+}
+
+// ---- a company's page ---------------------------------------------------------------------
+
+function CompanyPrep({
+  entry,
+  card,
+  settings,
+  full,
+  questions,
+  answers,
+  attempts,
+  bullets,
+  modelAnswers,
+  rolePlays,
+  sessions,
+  caseId,
+  caseType,
+}: {
+  entry: PrepEntry;
+  card: FullInterviewCard | null;
+  settings: FullInterviewSettings | null;
+  full: boolean;
+  questions: (CompanyQuestion | RoleQuestion)[];
+  answers: Answer[];
+  attempts: Attempt[];
+  bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[];
+  modelAnswers: ModelAnswer[];
+  rolePlays: RolePlay[];
+  sessions: StoredCaseSession[];
+  caseId?: string;
+  caseType?: string;
+}) {
+  const base = { prep: entry.slug };
+  const n = card?.topics ?? questions.length;
+  const asked = settings && settings.maxTopics < n ? `, ${settings.maxTopics} of them asked` : "";
+  const line =
+    entry.kind === "round"
+      ? `The round your agent prepared: ${n} questions${asked}${card?.interviewer ? `, asked by ${card.interviewer}` : ""}. Weak answers get probed, strong ones get a deeper “why”.`
+      : entry.kind === "consulting"
+        ? "The fit part of the interview: why this firm, why you, and your stories. Practise a case below."
+        : "Built from the job ad. Ask your agent to push this round's questions for a more realistic interview.";
+  return (
+    <>
+      <div className={ui.head}>
+        <h2>
+          {entry.name}
+          {entry.role ? ` · ${entry.role}` : ""}
+        </h2>
+        <span className={ui.sectionMeta}>
+          {entry.round ?? (entry.kind === "consulting" ? "Case and fit" : "From the job ad")}
+        </span>
+      </div>
+      <FullLead card={card} settings={settings} full={full} base={base} title="Full mock interview" line={line} />
+      {!full && !caseId && (
+        <Behavioural
+          answers={answers}
+          attempts={attempts}
+          bullets={bullets}
+          companyQuestions={questions}
+          customQuestions={[]}
+          modelAnswers={modelAnswers}
+          rolePlays={rolePlays}
+          base={base}
+          lockedCompany={entry.slug}
+        />
+      )}
+      {!full && entry.kind === "consulting" && (
+        <section className={ui.stack} aria-label="Cases">
+          <h2>Case interview</h2>
+          <Casing bullets={bullets} sessions={sessions} selectedId={caseId} type={caseType} base={base} />
+        </section>
+      )}
+    </>
+  );
+}
+
+// ---- questions ------------------------------------------------------------------------------
+
+/** Read everything once and hand it to the client view; switching questions is then instant. */
 function Behavioural({
   answers,
   attempts,
@@ -107,6 +304,9 @@ function Behavioural({
   companyQuestions,
   customQuestions,
   modelAnswers,
+  rolePlays,
+  base,
+  lockedCompany,
 }: {
   answers: Answer[];
   attempts: Attempt[];
@@ -114,6 +314,9 @@ function Behavioural({
   companyQuestions: (CompanyQuestion | RoleQuestion)[];
   customQuestions: Question[];
   modelAnswers: ModelAnswer[];
+  rolePlays: RolePlay[];
+  base: Record<string, string>;
+  lockedCompany?: string;
 }) {
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
@@ -122,7 +325,7 @@ function Behavioural({
   return (
     <BehaviouralView
       groups={questionBank.groups}
-      generic={questionBank.questions}
+      generic={lockedCompany ? [] : questionBank.questions}
       company={companyQuestions}
       custom={customQuestions}
       customMaxChars={customQuestionMaxCharsFromEnv(process.env)}
@@ -130,6 +333,9 @@ function Behavioural({
       attempts={attempts}
       evidenced={[...evidenced]}
       modelAnswers={modelAnswers}
+      rolePlays={rolePlays}
+      base={base}
+      lockedCompany={lockedCompany}
     />
   );
 }
@@ -160,11 +366,14 @@ function Casing({
   sessions,
   selectedId,
   type,
+  base,
 }: {
   bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[];
   sessions: StoredCaseSession[];
   selectedId?: string;
   type?: string;
+  /** The page's own URL params (Practice > Cases, or a consulting firm's page). */
+  base: Record<string, string>;
 }) {
   const types = [...new Set(caseLibrary.cases.map((c) => c.caseType))];
   const activeType = type && types.includes(type) ? type : "all";
@@ -175,7 +384,7 @@ function Casing({
   const latest = selected ? sessions.find((s) => s.caseId === selected.id) : undefined; // newest first
 
   const link = (next: { case?: string; type?: string }) => {
-    const sp = new URLSearchParams({ tab: "casing" });
+    const sp = new URLSearchParams(base);
     const t = next.type ?? activeType;
     if (t !== "all") sp.set("type", t);
     if (next.case) sp.set("case", next.case);

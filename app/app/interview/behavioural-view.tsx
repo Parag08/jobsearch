@@ -11,6 +11,8 @@ import { AnswerEditor } from "./answer-editor";
 import { ModelAnswerPanel } from "./model-answer-panel";
 import { SOURCE_LABEL, type ModelAnswer } from "@/lib/interview/model-answer";
 import { MockInterview } from "./mock-interview";
+import { RolePlayPanel } from "./role-play-panel";
+import type { RolePlay } from "@/lib/interview/role-play";
 import ui from "../ui.module.css";
 
 /**
@@ -49,6 +51,9 @@ export function BehaviouralView({
   attempts,
   evidenced,
   modelAnswers,
+  rolePlays,
+  base = { tab: "behavioural" },
+  lockedCompany,
 }: {
   /** The generic bank's groups, in order. */
   groups: QuestionGroup[];
@@ -62,12 +67,18 @@ export function BehaviouralView({
   evidenced: string[];
   /** Model answers by question id, any source. */
   modelAnswers: ModelAnswer[];
+  rolePlays: RolePlay[];
+  /** The URL params every link keeps (which page of the Interview tab this is). */
+  base?: Record<string, string>;
+  /** On a company's page: its slug. The list is that company's questions only, with no chooser. */
+  lockedCompany?: string;
 }) {
   const params = useSearchParams();
   const detailRef = useRef<HTMLElement>(null);
 
   const byQuestion = new Map(answers.map((a) => [a.questionId, a]));
   const modelAnswerFor = new Map(modelAnswers.map((m) => [m.questionId, m]));
+  const rolePlayFor = new Map(rolePlays.map((p) => [p.questionId, p]));
   const bestScore = new Map<string, number>();
   for (const a of attempts)
     bestScore.set(
@@ -78,7 +89,7 @@ export function BehaviouralView({
   // The generic bank unless a company or "my own" was chosen (lib/interview/scope.ts).
   const view = behaviouralView(
     { generic, company, custom },
-    { q: params.get("q"), company: params.get("company"), scope: params.get("scope") },
+    { q: params.get("q"), company: lockedCompany ?? params.get("company"), scope: lockedCompany ? null : params.get("scope") },
     new Set(bestScore.keys()),
   );
   const { scope, companies, questions } = view;
@@ -94,9 +105,9 @@ export function BehaviouralView({
   const cvBacked = selected ? evidenced.includes(selected.competency) : false;
 
   const href = (next: { q?: string; company?: string; mine?: boolean }) => {
-    const sp = new URLSearchParams({ tab: "behavioural" });
+    const sp = new URLSearchParams(base);
     if (next.mine) sp.set("scope", "mine");
-    if (next.company) sp.set("company", next.company);
+    if (next.company && !lockedCompany) sp.set("company", next.company);
     if (next.q) sp.set("q", next.q);
     return `/app/interview?${sp.toString()}`;
   };
@@ -116,48 +127,35 @@ export function BehaviouralView({
     show(url);
   };
 
+  // Companies have their own page now (the "Preparing for" strip); here it is the bank or your own.
   const scopes = [
-    { id: "general", label: "General", url: href({}), on: scope.kind === "general" },
-    { id: "mine", label: "My own", url: href({ mine: true }), on: scope.kind === "mine" },
-    { id: "company", label: "Company", url: href({ company: companies[0]?.slug }), on: scope.kind === "company" },
+    { id: "general", label: "Question bank", url: href({}), on: scope.kind !== "mine" },
+    { id: "mine", label: "Your own", url: href({ mine: true }), on: scope.kind === "mine" },
   ];
-  const listGroups: QuestionGroup[] = scope.kind === "general" ? groups : [{ id: questions[0]?.group ?? "", label: "" }];
+  // A company's round reads like the interview: grouped by what each question tests.
+  const competencyKey = (c: string) => c.toLowerCase().replace(/-/g, " ").trim();
+  const competencyGroups = [...new Set(questions.map((q) => competencyKey(q.competency)))].map((c) => ({ id: c, label: c.charAt(0).toUpperCase() + c.slice(1) }));
+  const listGroups: QuestionGroup[] =
+    scope.kind === "general" ? groups : scope.kind === "company" ? competencyGroups : [{ id: questions[0]?.group ?? "", label: "" }];
+  const inGroup = (q: ViewQuestion, g: QuestionGroup) => (scope.kind === "company" ? competencyKey(q.competency) === g.id : q.group === g.id);
 
   return (
     <div className={ui.split}>
       <aside className={ui.qside} aria-label="Questions">
-        <div className={ui.qsideHead}>
-          <nav className={ui.segmented} aria-label="Which questions">
-            {scopes.map((sc) =>
-              sc.id === "company" && !companies.length ? (
-                <span key={sc.id} className={ui.pill} aria-disabled="true" title="Add an application to the pipeline first">
-                  {sc.label}
-                </span>
-              ) : (
+        {!lockedCompany && (
+          <div className={ui.qsideHead}>
+            <nav className={ui.segmented} aria-label="Which questions">
+              {scopes.map((sc) => (
                 <a key={sc.id} href={sc.url} onClick={(e) => go(e, sc.url)} className={ui.pill} aria-current={sc.on ? "true" : undefined}>
                   {sc.label}
                 </a>
-              ),
-            )}
-          </nav>
-          {scope.kind === "company" && (
-            <select
-              className={ui.input}
-              aria-label="Company"
-              value={scope.slug}
-              onChange={(e) => show(href({ company: e.target.value }))}
-            >
-              {companies.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
               ))}
-            </select>
-          )}
-          {scope.kind === "mine" && customMaxChars && (
-            <AddQuestion maxChars={customMaxChars} onAdded={(id) => show(href({ q: id, mine: true }))} />
-          )}
-        </div>
+            </nav>
+            {scope.kind === "mine" && customMaxChars && (
+              <AddQuestion maxChars={customMaxChars} onAdded={(id) => show(href({ q: id, mine: true }))} />
+            )}
+          </div>
+        )}
 
         {questions.length > 0 && (
           <div className={ui.progress}>
@@ -178,12 +176,6 @@ export function BehaviouralView({
         )}
 
         <div className={ui.qlist}>
-          {scope.kind === "general" && !companies.length && (
-            <p className={ui.sub}>
-              Add an application to the pipeline and its “Why …?” questions
-              appear under Company.
-            </p>
-          )}
           {scope.kind === "mine" && !questions.length && (
             <p className={ui.sub}>
               {customMaxChars
@@ -192,7 +184,7 @@ export function BehaviouralView({
             </p>
           )}
           {listGroups.map((group) => {
-            const qs = questions.filter((q) => q.group === group.id);
+            const qs = questions.filter((q) => inGroup(q, group));
             if (!qs.length) return null;
             return (
               <div key={group.id} className={ui.qgroup}>
@@ -263,6 +255,7 @@ export function BehaviouralView({
             context={selected.context ? { label: selected.contextLabel ?? "From the job description", text: selected.context } : null}
             cvBacked={cvBacked}
             answer={modelAnswerFor.get(selected.id) ?? null}
+            rolePlay={rolePlayFor.get(selected.id) ?? null}
           />
 
           <MockInterview questionId={selected.id} questionText={selected.text} />
@@ -331,6 +324,7 @@ function QuestionAids({
   context,
   cvBacked,
   answer,
+  rolePlay,
 }: {
   questionId: string;
   lookFor: string;
@@ -338,11 +332,13 @@ function QuestionAids({
   context: { label: string; text: string } | null;
   cvBacked: boolean;
   answer: ModelAnswer | null;
+  rolePlay: RolePlay | null;
 }) {
-  const [open, setOpen] = useState<{ look: boolean; model: boolean }>({ look: false, model: false });
-  const toggle = (k: "look" | "model") => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const [open, setOpen] = useState<{ look: boolean; model: boolean; play: boolean }>({ look: false, model: false, play: false });
+  const toggle = (k: "look" | "model" | "play") => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const lookId = `look-${questionId}`;
   const modelId = `model-${questionId}`;
+  const playId = `play-${questionId}`;
   return (
     <>
       <div className={ui.aidRow}>
@@ -356,6 +352,13 @@ function QuestionAids({
         <button type="button" className={ui.aidBtn} aria-expanded={open.model} aria-controls={modelId} onClick={() => toggle("model")}>
           Model answer
           <span className={ui.sectionMeta}>· {answer ? SOURCE_LABEL[answer.source] : "none yet"}</span>
+          <span className={ui.aidChevron} aria-hidden="true">
+            ›
+          </span>
+        </button>
+        <button type="button" className={ui.aidBtn} aria-expanded={open.play} aria-controls={playId} onClick={() => toggle("play")}>
+          Role-play
+          <span className={ui.sectionMeta}>· {rolePlay ? "ready" : answer ? "build it" : "needs a model answer"}</span>
           <span className={ui.aidChevron} aria-hidden="true">
             ›
           </span>
@@ -377,6 +380,12 @@ function QuestionAids({
         <div className={ui.aidPanel} id={modelId}>
           <h3>Model answer</h3>
           <ModelAnswerPanel questionId={questionId} answer={answer} />
+        </div>
+      )}
+      {open.play && (
+        <div className={ui.aidPanel} id={playId}>
+          <h3>Role-play</h3>
+          <RolePlayPanel questionId={questionId} initial={rolePlay} modelAnswer={answer?.text ?? null} />
         </div>
       )}
     </>

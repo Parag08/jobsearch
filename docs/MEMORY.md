@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-20 (late night) - Full mock interview, role-plays, company-first Interview tab (branch feat/full-interview)
+
+Parag: company practice felt generic; wanted one realistic adaptive interview per company (e.g. Cognition) with one debrief, and every question still practisable with a role-play. Mid-build: make the page simple and company-first, but keep general practice for days with no interview. Design and decisions: **docs/FULL-INTERVIEW.md** (code lists moves, model picks; MCP read-back + agent role-plays; interviewer model env).
+- Built: plan/session/role-play domain + tests, migration **0017** (not yet applied - `db.yml` applies on push to main), repos, services, actions, `full-interview.tsx`, `role-play-panel.tsx`, page rebuilt around the "Preparing for" strip, MCP `set_role_play` + `rolePlay` on upsert + `fullInterviews` in practice read-back. Demo has a Kestrel AI round with two model answers.
+- **Vercel:** `INTERVIEW_FULL_MAX_TOPICS=8`, `INTERVIEW_FULL_TOPIC_FOLLOW_UPS=3`, `INTERVIEW_FULL_TOTAL_FOLLOW_UPS=12` set on Production + Preview (2026-11-20). `AI_GATEWAY_INTERVIEWER_MODEL` not set (falls back to premium).
+- Checked in the browser on the demo (canned AI): company page, full interview (probe on a vague answer, debrief with path and moments), role-play build, Practice and its general interview start, Cases links, phone width. **Not checked:** a real model's turns and debrief (no live key used), voice playback of a role-play.
+- Next: fit-then-case full interview for consulting firms; number rules that read "nine days".
+
 ## 2026-11-20 (night) - Interview prep over MCP (branch feat/mcp-prep)
 
 From a prompt the findparagjob agent wrote (`$FINDPARAGJOB_DIR/tools/portal-sync/mcp-extension-prompt.md`). 11 new tools (26 in all), 2 fixes; listed in **docs/MCP.md**. Migration **0016** (stories external_ref/source/provenance/updated_at with an agent-provenance check; custom questions external_ref/competency/tag). `save_brief` deliberately not built (briefs are derived and overwritten). Interactions now carry ids everywhere (`Interaction.id`). Next: the agent adds matching portal-sync commands once this is merged and deployed.

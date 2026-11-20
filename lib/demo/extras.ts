@@ -117,6 +117,7 @@ export function seedDemoExtras(db: FakeDb, userId: string, today: string): void 
     "interview_answers",
     ANSWERS.map((a) => ({ user_id: userId, mode: "star" as const, body: "", ...a, updated_at: `${daysAgo(today, 3)}T10:00:00Z` })),
   );
+  seedDemoRound(db, userId, today);
   db.seed("interview_attempts", [
     {
       user_id: userId,
@@ -194,4 +195,58 @@ export function seedDemoExtras(db: FakeDb, userId: string, today: string): void 
     { user_id: userId, contact_id: "demo-contact-1", date: daysAgo(today, 2), channel: "coffee", summary: "Coffee: team is hiring in Q1; she will refer.", raw_text: null },
     { user_id: userId, contact_id: "demo-contact-2", date: daysAgo(today, 16), channel: "email", summary: "Asked how the checkout team thinks about payments risk.", raw_text: null },
   ]);
+}
+
+/**
+ * A round an agent would have pushed for the fictional Kestrel AI application (role questions
+ * over MCP, docs/FULL-INTERVIEW.md), so the demo shows a company page with a real round, a full
+ * mock interview and role-plays. Made-up company, made-up facts from Maya's own corpus.
+ */
+const ROUND = [
+  { ref: "kestrel:background", competency: "Motivation", short: "Your background", text: "Walk me through your background.", lookFor: "Ninety seconds, one arc from operations to product, one or two proof points, ending on why a developer platform now." },
+  { ref: "kestrel:impact", competency: "Product judgement", short: "A product you shipped", text: "Tell me about a product decision you made that you are proud of.", lookFor: "The decision, the alternatives, what you personally did, and a measured result." },
+  { ref: "kestrel:metric", competency: "Product judgement", short: "Picking the metric", text: "How did you decide what to measure for it, and what would you change?", lookFor: "A metric tied to the user's outcome, how it was measured, an honest view of its limits." },
+  { ref: "kestrel:developers", competency: "Customer insight", short: "Developers as users", text: "Developers ignore most product announcements. How would you find out what they actually need from our platform?", lookFor: "Goes to where developers already are, watches real usage, small experiments before big builds." },
+  { ref: "kestrel:questions", competency: "Motivation", short: "Your questions", text: "What questions do you have for me?", lookFor: "Two or three questions that show real interest in how the team works." },
+];
+
+const ROUND_MODEL_ANSWERS: Record<string, string> = {
+  "kestrel:background":
+    "I started in operations analytics at a regional logistics business, where I learned to sit with the people who use a tool before deciding what it should do. I moved into product in retail and payments. At Quillpay I owned refunds, and cut refund time from nine days to four in two months by giving three teams one shared queue. I am finishing my MBA and want to bring that habit to a platform developers rely on every day.",
+  "kestrel:impact":
+    "At Quillpay refunds took nine days because three teams each owned one step. I chose to fix the hand-offs rather than build a new tool. I mapped every hand-off with the people doing the work and ran a weekly fifteen-minute review of one shared queue. Refunds fell to four days within two months, and the queue is still how the teams work. Looking back I would have brought support in a month earlier.",
+};
+
+function seedDemoRound(db: FakeDb, userId: string, today: string): void {
+  const app = db.rows("applications").find((a) => /kestrel/i.test(a.company));
+  if (!app) return;
+  const at = `${daysAgo(today, 2)}T09:00:00Z`;
+  db.seed(
+    "interview_role_questions",
+    ROUND.map((q, i) => ({
+      id: `demo-round-${i}`,
+      user_id: userId,
+      application_id: app.id,
+      external_ref: q.ref,
+      round: "Product interview with a Group PM, Thursday",
+      interviewer: "a Group Product Manager at Kestrel AI, in a product interview for the developer platform team",
+      position: i,
+      competency: q.competency,
+      text: q.text,
+      short: q.short,
+      look_for: q.lookFor,
+      context: null,
+      source: "Sample round for the demo",
+      created_at: at,
+      updated_at: at,
+    })),
+  );
+  db.seed(
+    "interview_model_answers",
+    ROUND.flatMap((q, i) =>
+      ROUND_MODEL_ANSWERS[q.ref]
+        ? [{ user_id: userId, question_id: `role:demo-round-${i}`, text: ROUND_MODEL_ANSWERS[q.ref], source: "agent" as const, created_at: at, updated_at: at }]
+        : [],
+    ),
+  );
 }

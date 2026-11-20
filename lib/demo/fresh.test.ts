@@ -14,6 +14,14 @@ describe("freshVisitorDb", () => {
     expect(db.rows("interview_attempts").length).toBe(2);
   });
 
+  it("has one pushed round (Kestrel AI) with model answers, so the company page and role-plays show", () => {
+    const db = freshVisitorDb("2026-11-19");
+    const round = db.rows("interview_role_questions");
+    expect(round.length).toBe(5);
+    expect(db.rows("applications").find((a) => a.id === round[0].application_id)?.company).toMatch(/Kestrel/);
+    expect(db.rows("interview_model_answers").filter((m) => m.question_id.startsWith("role:demo-round-")).length).toBe(2);
+  });
+
   it("gives each visitor an independent copy", () => {
     const a = freshVisitorDb("2026-11-19");
     const b = freshVisitorDb("2026-11-19");

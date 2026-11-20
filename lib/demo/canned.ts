@@ -1,6 +1,7 @@
 import { detectTags } from "../import/cvbuilder";
 import { CASE_DIMENSIONS } from "../interview/case-session";
 import { FOLLOW_UP_FALLBACK, PROBE_KINDS, type ProbeKind } from "../interview/mock";
+import { fallbackReply } from "../interview/full-session";
 import { SCORE_DIMENSIONS } from "../interview/score";
 import type { JdExtract } from "../types";
 
@@ -18,6 +19,9 @@ export const CANNED_TASKS = [
   "mock-turn",
   "mock-feedback",
   "role-plan",
+  "full-turn",
+  "full-debrief",
+  "role-play",
 ] as const;
 export type CannedTask = (typeof CANNED_TASKS)[number];
 
@@ -32,6 +36,11 @@ export interface CannedContext {
   probes?: string[];
   hasModelAnswer?: boolean;
   words?: number;
+  /** full-debrief: the topics asked, and the candidate's first answer (a moment quotes it). */
+  topicIds?: string[];
+  firstAnswer?: string;
+  /** role-play: the model answer the play is built from (full-turn and role-play use `candidates` too). */
+  modelAnswer?: string;
   /** model-answer: the written draft (the rewrite only reflows it, so no number is added). */
   draft?: string;
 }
@@ -73,6 +82,31 @@ function reflow(draft: string): string {
   return parts.join("\n");
 }
 
+/** A model answer split into spoken sentences, for the canned role-play (its own words only). */
+function sentences(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean);
+}
+
+function cannedRolePlay(ctx: CannedContext): string {
+  const said = sentences(ctx.modelAnswer ?? "I would start from the problem, then what I did, then the result.");
+  const half = Math.max(1, Math.ceil(said.length / 2));
+  const probes = (ctx.candidates ?? ["depth"]).filter((p): p is ProbeKind => (PROBE_KINDS as readonly string[]).includes(p)).slice(0, 2);
+  const follow = probes.length ? probes : (["depth"] as ProbeKind[]);
+  const lines = [
+    { who: "interviewer", say: "(question)" },
+    { who: "candidate", say: said.slice(0, half).join(" "), why: "Opens with what happened and what you did, in your own words." },
+    ...follow.flatMap((p, i) => [
+      { who: "interviewer", say: FOLLOW_UP_FALLBACK[p] },
+      {
+        who: "candidate",
+        say: said.slice(half).join(" ") || (i === 0 ? "Let me be specific about my part." : "I would check that before claiming it."),
+        why: "Answers the follow-up directly and stays inside the evidence.",
+      },
+    ]),
+  ];
+  return JSON.stringify({ lines });
+}
+
 const score = (base: number, bump: number) => Math.max(1, Math.min(5, base + bump));
 
 export function cannedText(task: CannedTask, ctx: CannedContext): string {
@@ -94,6 +128,29 @@ export function cannedText(task: CannedTask, ctx: CannedContext): string {
         improvements: ["State your answer first, then the reasons.", "Sense-check each number out loud before moving on."],
         perQuestion: (ctx.questionIds ?? []).map((questionId) => ({ questionId, note: "Solid start; push for the so-what sooner." })),
       });
+    case "full-turn": {
+      const r = fallbackReply(ctx.candidates ?? ["close"]);
+      return JSON.stringify({ move: r.move, say: r.say, assessment: "adequate", note: "A fair answer; a number would make it land." });
+    }
+    case "full-debrief": {
+      const words = (ctx.firstAnswer ?? "").split(/\s+/).filter(Boolean);
+      return JSON.stringify({
+        scores: Object.fromEntries(SCORE_DIMENSIONS.map((d, i) => [d, i % 2 === 0 ? 4 : 3])),
+        strengths: ["You kept each answer to the question asked.", "Your opening gave the interviewer a clear thread to follow."],
+        improvements: ["Lead with the result, then explain how you got there.", "When asked why, give the alternative you rejected."],
+        perTopic: (ctx.topicIds ?? []).map((topicId, i) => ({
+          topicId,
+          verdict: i === 0 ? "held" : "partial",
+          note: i === 0 ? "A clear start." : "Solid, but stop at the result and let them ask.",
+        })),
+        moments:
+          words.length >= 6 && ctx.topicIds?.[0]
+            ? [{ topicId: ctx.topicIds[0], quote: words.slice(0, 6).join(" "), better: "Open with the outcome in one sentence, then say what you personally did." }]
+            : [],
+      });
+    }
+    case "role-play":
+      return cannedRolePlay(ctx);
     case "mock-turn": {
       const probe = (ctx.candidates?.[0] ?? "result") as ProbeKind;
       return JSON.stringify({ probe, say: FOLLOW_UP_FALLBACK[probe] ?? FOLLOW_UP_FALLBACK.result });
