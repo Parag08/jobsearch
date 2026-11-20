@@ -141,3 +141,30 @@ export function lexicalExtract(jd: string, taxonomy: unknown): JdExtract {
     location,
   };
 }
+
+/**
+ * A posting for a demo watchlist role. The sample boards are made up, so there is nothing to
+ * fetch; this reads like a real posting and names the role, company and city so the rules-only
+ * reader (lexicalExtract) finds them.
+ */
+export function cannedPosting(title: string, company: string, location: string | null): string {
+  const city = location ?? "Singapore";
+  return [
+    title,
+    `Company: ${company}`,
+    "",
+    `${company} is hiring a ${title} in ${city}. You will own a product area end to end: set the roadmap, run discovery with customers, and work cross-functional with engineering, design and operations to ship it.`,
+    "",
+    "What you will do",
+    "- Turn customer research and data analysis into a clear, prioritised roadmap",
+    "- Define the metrics and KPIs for your area and report on them every week",
+    "- Lead launches with go-to-market, support and operations teams",
+    "- Run experiments and decide what to scale from the results",
+    "",
+    "What you bring",
+    "- Product management experience in a fast-moving team",
+    "- Strong SQL and data analysis; comfortable building your own dashboards",
+    "- Stakeholder management across senior leaders and partners",
+    "- Experience mentoring others is a plus",
+  ].join("\n");
+}

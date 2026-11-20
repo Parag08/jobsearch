@@ -2,6 +2,12 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-20 - Apply flow designed; Save to pipeline built (branch feat/save-to-pipeline)
+
+Parag: no natural path from roles found -> shortlisted -> pipeline -> applied. Design in **docs/APPLY-FLOW.md** (six steps, build order of four).
+- **Built: Save to pipeline** replaces Shortlist on the Watchlist. `lib/watchlist/posting.ts` fetches one posting's text per board (Greenhouse/Lever/SmartRecruiters one-posting endpoints, Ashby whole board) and turns HTML into text; `lib/services/save-to-pipeline.ts` reads it once (processJd), opens the application at Saved with `external_ref = sourced:<job id>` and `apply_url`, marks the role tracked, builds the CV (rules only; a failure is reported, not fatal). Idempotent. No board text -> asks for a paste. Demo uses `cannedPosting`.
+- **Next (APPLY-FLOW build order 2):** the Send strip on the application page (Open the posting from `apply_url`, downloads, Mark as applied as primary, follow-up date).
+
 ## 2026-11-19 (after #21) - Live demo 500 and page speed (branch fix/live-demo-and-speed)
 
 - **Demo 500 on the live site:** `lib/db/demo.ts` read `data/demo/` with `fs`; Vercel's bundle did not include it (ENOENT `/var/task/data/demo/applications`). Now imported as modules (`lib/demo/corpus.ts`); the scratch production build carries it.

@@ -18,7 +18,7 @@ import { newWatchlistEntry } from "@/lib/watchlist/types";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
 import { parseTargetList } from "@/lib/watchlist/targets";
 import { getProfile, saveProfile } from "@/lib/repos/profiles";
-import { setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
+import { listSourcedJobs, setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
 import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { buildRewritePrompt, guardRewrite } from "@/lib/interview/model-answer";
@@ -69,6 +69,9 @@ import {
 } from "@/lib/interview/mock";
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
+import { saveToPipeline } from "@/lib/services/save-to-pipeline";
+import { postingEndpoint, postingText } from "@/lib/watchlist/posting";
+import { cannedPosting } from "@/lib/demo/canned";
 import { demoTaxonomy } from "@/lib/db/demo";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { withLedger } from "@/lib/adapters/llm-factory";
@@ -205,6 +208,62 @@ export async function refreshWatchlistAction(): Promise<void> {
   if (w.cannedAi) return;
   await refreshWatchlist({ db, fetcher: new HttpBoardFetcher(fetch) }, userId, today());
   revalidatePath("/app/watchlist");
+}
+
+/**
+ * Save a watchlist role to the pipeline (docs/APPLY-FLOW.md step 3): its posting is read from
+ * the board, opened as an application at Saved and given a CV. Stays on the Watchlist, where
+ * the row turns into "In pipeline · Open"; when the board has no text, the row asks for a paste.
+ */
+export async function saveToPipelineAction(jobId: string): Promise<void> {
+  const w = await ws();
+  const { db, userId } = w;
+  const base = aiLlm(w, demoTaxonomy);
+  if (!base) redirect(`/app/watchlist?role=${encodeURIComponent(jobId)}&note=no-ai#roles-h`);
+  const day = today();
+  const llm = withLedger(base, async (e) => {
+    await logTokens(db, userId, { date: day, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(() => undefined);
+  });
+  const jobs = w.cannedAi ? await listSourcedJobs(db, userId) : [];
+  let note: string;
+  try {
+    const r = await saveToPipeline(
+      {
+        db,
+        llm,
+        readPosting: async (q) => {
+          if (w.cannedAi) {
+            const job = jobs.find((j) => j.externalId === q.externalId && j.company === q.company);
+            return job ? cannedPosting(job.title, job.company, job.location) : null;
+          }
+          const res = await fetch(postingEndpoint(q.ats, q.token, q.externalId), {
+            headers: { accept: "application/json" },
+            signal: AbortSignal.timeout(8000),
+          }).catch(() => null);
+          if (!res?.ok) return null;
+          return postingText(q.ats, await res.json().catch(() => null), q.externalId, q.company);
+        },
+        buildCv: async (applicationId) => {
+          await tailorCv(
+            { db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) },
+            userId,
+            applicationId,
+            day,
+          );
+        },
+      },
+      userId,
+      jobId,
+      new Date().toISOString(),
+    );
+    note = "needsPosting" in r ? "paste" : r.cvError ? "no-cv" : "saved";
+  } catch (err) {
+    console.error("saveToPipelineAction", err);
+    note = "failed";
+  }
+  revalidatePath("/app");
+  revalidatePath("/app/watchlist");
+  redirect(`/app/watchlist?role=${encodeURIComponent(jobId)}&note=${note}#role-${encodeURIComponent(jobId)}`);
 }
 
 /** What the watchlist keeps: cities, title phrases, excluded phrases (lib/watchlist/targets.ts). */
