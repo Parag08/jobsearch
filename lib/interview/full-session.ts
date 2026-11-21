@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { canonicalNumber, extractNumbers } from "../stories/consistency";
+import { echoProbe, groundingProblems, MAX_FOLLOW_UP_WORDS, shortenFollowUp } from "./grounding";
 import { DIMENSION_HELP, SCORE_DIMENSIONS, parseScore, type Scores } from "./score";
 import {
   FOLLOW_UP_FALLBACK,
@@ -25,8 +26,11 @@ import type { FullInterviewSettings, FullPlan, PlanTopic } from "./full-plan";
  * topics, or end), the per-topic and total follow-up caps, and that the close comes last. The
  * MODEL (a stronger tier, since this is judgement) only picks one of the legal moves and
  * phrases it. Guards: an illegal move becomes code's first choice; a "next" always asks the
- * planned question verbatim (the model may only add a short bridge before it); a line stating
- * a number nobody said is replaced. When there is no real choice, no model is called.
+ * planned question verbatim (the model may only add a short bridge before it); a line that
+ * uses anything the candidate did not say in this interview (a number, a name, a quote, a
+ * "you mentioned ...") is replaced by a probe built from their own last answer (grounding.ts).
+ * The model answer never reaches the turn prompt - it is for the debrief only. When there is
+ * no real choice, no model is called.
  */
 
 export type Assessment = "strong" | "adequate" | "weak";
@@ -160,6 +164,7 @@ function stockLine(move: Move): string {
 
 const MAX_SAY = 400;
 const MAX_NOTE = 240;
+const MAX_BRIDGE_WORDS = 10;
 
 export function parseFullReply(raw: unknown, legal: Move[]): FullReply {
   const parsed = z
@@ -180,13 +185,44 @@ function candidateText(s: FullSession, latest = ""): string {
   return [...s.turns.filter((t) => t.role === "candidate").map((t) => t.text), latest].join(" ");
 }
 
-/** A line stating a number neither the candidate, their written answer nor a question gave is replaced. */
-export function guardFullReply(reply: FullReply, s: FullSession, latest: string, written: string): FullReply {
-  const known = new Set(
-    [candidateText(s, latest), written, ...s.plan.topics.map((t) => t.text)].flatMap((t) => extractNumbers(t).map(canonicalNumber)),
-  );
-  const invented = extractNumbers(reply.say).some((n) => !known.has(canonicalNumber(n)));
-  return invented ? { ...reply, say: stockLine(reply.move) } : reply;
+/** Code's own line for a follow-up: the candidate's last words echoed, else the stock line. */
+function safeFollowUp(move: Move, latest: string): string {
+  const probe = probeOf(move);
+  const echo = probe ? echoProbe(latest, probe) : move === "deepen" ? echoProbe(latest, "deepen") : null;
+  return echo ?? stockLine(move);
+}
+
+/**
+ * The interviewer may only use what the candidate said in this interview (plus the questions
+ * asked). A follow-up that breaks that, or cannot be cut to one short question, is replaced by a
+ * probe from the candidate's own last answer; a bridge that breaks it is dropped.
+ */
+export function guardFullReply(reply: FullReply, s: FullSession, latest: string): FullReply {
+  if (!reply.say) return reply;
+  const grounds = {
+    said: [candidateText(s, latest)],
+    questions: [...s.plan.topics.map((t) => t.text), s.plan.company, s.plan.role],
+  };
+  if (reply.move.startsWith("next:")) {
+    const bridge = shortenFollowUp(reply.say, MAX_BRIDGE_WORDS);
+    return { ...reply, say: bridge && !groundingProblems(bridge, grounds).length ? bridge : "" };
+  }
+  if (reply.move === "close") return reply;
+  const line = shortenFollowUp(reply.say, MAX_FOLLOW_UP_WORDS);
+  return line && !groundingProblems(line, grounds).length ? { ...reply, say: line } : { ...reply, say: safeFollowUp(reply.move, latest) };
+}
+
+/**
+ * Why a turn must not be applied: "stale" when the client answered an older copy of the session
+ * (a retry or a second tab), "duplicate" when the answer is word for word the last one recorded
+ * (a double submit). The 20 Nov mock recorded one answer twice and then closed.
+ */
+export function turnConflict(s: FullSession, clientTurns: number | undefined, answer: string): "stale" | "duplicate" | null {
+  if (clientTurns !== undefined && clientTurns !== s.turns.length) return "stale";
+  const last = [...s.turns].reverse().find((t) => t.role === "candidate");
+  const same = (a: string) => a.replace(/\s+/g, " ").trim().toLowerCase();
+  if (last && same(last.text) === same(answer)) return "duplicate";
+  return null;
 }
 
 /** What the interviewer actually says: a "next" always ends on the planned question, verbatim. */
@@ -266,60 +302,59 @@ function persona(plan: FullPlan): string {
 /** "for the PM role at Grab", or nothing for a general interview. */
 const forRole = (plan: FullPlan) => (plan.source === "general" ? "" : ` for the ${plan.role} role at ${plan.company}`);
 
-const PROMPT_TURNS = 8;
+/** The last few lines are enough to pick up the candidate's words; a short prompt is a fast one. */
+const PROMPT_TURNS = 6;
 const YARDSTICK_MAX = 1500;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 function moveHelp(move: Move, plan: FullPlan): string {
   const probe = probeOf(move);
   if (probe) return `${move}: ${PROBE_HELP[probe]}`;
-  if (move === "deepen") return `${move}: the answer holds up - go one level deeper on it: why that decision, what alternative was rejected, what broke, or how it worked underneath`;
+  if (move === "deepen") return `${move}: ask "why" about the most interesting or weakest thing they just said - a decision, a trade-off, what broke`;
   if (move === "close") return `${move}: end the interview`;
   const topic = topicOf(plan, move.slice("next:".length));
   return `${move}: move on; the planned question "${topic?.text ?? ""}" is asked after your bridge`;
 }
 
-export function buildFullTurnPrompt(input: { session: FullSession; latest: string; legal: Move[]; modelAnswer: string | null }): string {
+/**
+ * The turn prompt carries only the question, what a strong answer shows, the context and the
+ * transcript. Never the model answer: a model told to keep a private yardstick secret still
+ * quoted it (20 Nov, "stuck for two years").
+ */
+export function buildFullTurnPrompt(input: { session: FullSession; latest: string; legal: Move[]; cutIn?: boolean }): string {
   const s = input.session;
   const cur = topicOf(s.plan, currentTopicId(s))!;
   const asked = topicsAsked(s).length;
   const recent = s.turns.slice(-PROMPT_TURNS).map((t) => `${t.role === "interviewer" ? "Interviewer" : "Candidate"}: ${t.text}`);
   return [
-    `You are ${persona(s.plan)}, running a real interview${s.plan.round ? ` (${s.plan.round})` : ""} with a candidate${forRole(s.plan)}.`,
+    `You are ${persona(s.plan)}, running a real interview${s.plan.round ? ` (${s.plan.round})` : ""} with a candidate${forRole(s.plan)}. You are sharp and slightly sceptical.`,
     `Your manner: ${TONE_HELP[s.tone]}`,
     `You have asked ${asked} of at most ${s.settings.maxTopics} topics.`,
     "",
     `Current topic: ${cur.text}`,
     `A strong answer shows: ${cur.lookFor}`,
     cur.context ? `Context (${s.plan.contextLabel}): ${cur.context}` : "",
-    ...(input.modelAnswer
-      ? [
-          "A strong answer from this candidate's own record, as your private yardstick (never quote it, never reveal it, never feed them its facts):",
-          clip(input.modelAnswer, YARDSTICK_MAX),
-        ]
-      : []),
     "",
     "The conversation so far:",
     ...recent,
     `Candidate: ${input.latest}`,
+    input.cutIn ? "(You cut in: the answer was running long. Ask about the one thing in it that matters most.)" : "",
     "",
-    "Decide what a sharp interviewer does next. Choose exactly ONE of these moves:",
+    "Choose exactly ONE move:",
     ...input.legal.map((m) => `- ${moveHelp(m, s.plan)}`),
     "",
-    "How to choose:",
-    "- A vague, 'we'-heavy or number-free answer: probe the weakness that matters most.",
-    "- A solid answer on a topic that matters for this role: go one 'why' deeper until they reach the edge of what they know.",
-    "- Enough heard on this topic, or the candidate already covered a later topic: move on. Pick the next topic that follows most naturally from what they just said.",
+    "How a real interviewer chooses: chase the most interesting or weakest thing just said - a decision with no reason, a 'we' with no 'I', a claim with no number, a contradiction with something said earlier. Ask 'why' a few times in a row until they reach the edge of what they know, then move on.",
     "",
-    "Rules:",
-    "- probe/deepen: at most two sentences - an optional short pushback quoting their words, then exactly one question.",
-    "- next: 'say' is an optional one-sentence bridge (may be empty); the planned question is added after it automatically. Do not ask it yourself.",
-    "- Never state a fact or number the candidate did not say. Never answer for them, hint, praise or give feedback.",
+    "Rules for 'say':",
+    `- probe/deepen: ONE question, at most ${MAX_FOLLOW_UP_WORDS} words, no preamble, no praise, no hints. Pick up their exact words: "You said X. Why X?"`,
+    "- next: an optional bridge of a few words, or empty. The planned question is added after it; do not ask it yourself.",
+    "- Use ONLY what the candidate said in this conversation. Never mention a fact, number, name, project detail or phrase they did not say.",
+    'Good: "You said you picked mutex locks. What else did you consider?" / "You keep saying \'we\'. What did you personally build?" / "How do you know it worked?"',
     REFERENCE_RULE,
-    "- It is a speech-to-text transcript, so ignore transcription typos.",
-    "- assessment: your private read of the answer just given (strong, adequate or weak); note: one short private line on why. The candidate never sees these.",
+    "- It is a speech-to-text transcript: ignore typos, and an answer may stop mid-sentence.",
+    "- assessment: strong, adequate or weak; note: a few private words why. The candidate never sees these.",
     "",
-    "Reply with JSON only, exactly this shape:",
+    "Reply with JSON only:",
     `{"move":"${input.legal[0]}","say":"...","assessment":"adequate","note":"..."}`,
   ]
     .filter((l) => l !== "")

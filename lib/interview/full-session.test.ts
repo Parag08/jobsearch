@@ -19,6 +19,7 @@ import {
   parseFullSession,
   startFull,
   topicsAsked,
+  turnConflict,
   type FullSession,
 } from "./full-session";
 import { FOLLOW_UP_FALLBACK } from "./mock";
@@ -143,17 +144,55 @@ describe("parseFullReply", () => {
 });
 
 describe("guardFullReply", () => {
-  it("replaces a follow-up that states a number nobody said", () => {
+  it("replaces a follow-up that states a number nobody said with a probe from the candidate's own words", () => {
     const s = start();
-    expect(guardFullReply({ move: "deepen", say: "Was it 50 engineers?" }, s, VAGUE, "").say).toBe(DEEPEN_FALLBACK);
-    expect(guardFullReply({ move: "probe:result", say: "Did revenue grow 20%?" }, s, VAGUE, "").say).toBe(FOLLOW_UP_FALLBACK.result);
+    const deepen = guardFullReply({ move: "deepen", say: "Was it 50 engineers?" }, s, VAGUE);
+    expect(deepen.say).toMatch(/^You said "/);
+    expect(deepen.say).not.toContain("50");
+    expect(guardFullReply({ move: "probe:result", say: "Did revenue grow 20%?" }, s, "Yes.").say).toBe(FOLLOW_UP_FALLBACK.result);
   });
   it("drops a bridge with an invented number but keeps the move", () => {
-    expect(guardFullReply({ move: "next:role:impact", say: "You grew it 3x." }, start(), VAGUE, "")).toEqual({ move: "next:role:impact", say: "" });
+    expect(guardFullReply({ move: "next:role:impact", say: "You grew it 3x." }, start(), VAGUE)).toEqual({ move: "next:role:impact", say: "" });
   });
   it("keeps numbers the candidate said", () => {
     const r = { move: "deepen", say: "You said 300 bugs in six weeks - how?" };
-    expect(guardFullReply(r, start(), STRONG, "")).toEqual(r);
+    expect(guardFullReply(r, start(), STRONG)).toEqual(r);
+  });
+
+  // The 20 Nov leak: "stuck for two years" was only in the private model answer.
+  const BACKGROUND = "I was a backend engineer at Nutanix and then moved into product. I led the files migration and owned the cut-over plan.";
+  const LEAK = "You mentioned the files-migration feature was stuck for two years. What was the blocker?";
+
+  it("blocks the 'stuck for two years' leak: numbers in words and claims the candidate never made", () => {
+    const out = guardFullReply({ move: "deepen", say: LEAK }, start(), BACKGROUND);
+    expect(out.say).not.toMatch(/two years|stuck/i);
+    expect(out.say).toMatch(/^You said "/);
+  });
+  it("blocks a project name the candidate never said", () => {
+    expect(guardFullReply({ move: "deepen", say: "Why did Atlas need a rewrite?" }, start(), BACKGROUND).say).not.toContain("Atlas");
+  });
+  it("keeps a sharp follow-up made of the candidate's words", () => {
+    const r = { move: "deepen", say: "You said you owned the cut-over plan. What else did you consider?" };
+    expect(guardFullReply(r, start(), BACKGROUND)).toEqual(r);
+  });
+  it("cuts a long line down to its question", () => {
+    const r = { move: "deepen", say: "That is a very interesting point and thank you for walking me through all of the background in such detail just now. Why the files migration?" };
+    expect(guardFullReply(r, start(), BACKGROUND).say).toBe("Why the files migration?");
+  });
+});
+
+describe("turnConflict", () => {
+  it("flags an answer sent against an older copy of the session", () => {
+    const s = applyFullTurn(start(), STRONG, { move: "deepen", say: "Why?" }, NOW);
+    expect(turnConflict(s, 1, "Another answer")).toBe("stale");
+    expect(turnConflict(s, 3, "Another answer")).toBeNull();
+  });
+  it("flags the same answer sent twice (the 20 Nov double submit)", () => {
+    const s = applyFullTurn(start(), STRONG, { move: "deepen", say: "Why?" }, NOW);
+    expect(turnConflict(s, 3, `  ${STRONG} `)).toBe("duplicate");
+  });
+  it("accepts any answer when the client sends no turn count", () => {
+    expect(turnConflict(start(), undefined, STRONG)).toBeNull();
   });
 });
 
@@ -189,16 +228,26 @@ describe("composeLine and applyFullTurn", () => {
 });
 
 describe("buildFullTurnPrompt", () => {
-  it("carries the persona, the yardstick privately, the legal moves and the next topics' questions", () => {
+  it("carries the persona, the legal moves, the next topics' questions and the transcript", () => {
     const s = start();
-    const p = buildFullTurnPrompt({ session: s, latest: VAGUE, legal: legalMoves(s, VAGUE, ""), modelAnswer: "MODEL ANSWER TEXT" });
+    const p = buildFullTurnPrompt({ session: s, latest: VAGUE, legal: legalMoves(s, VAGUE, "") });
     expect(p).toContain("You are a Deployed Engineer at Cognition");
-    expect(p).toContain("MODEL ANSWER TEXT");
-    expect(p).toMatch(/never (quote|reveal)/i);
     expect(p).toContain("next:role:impact");
     expect(p).toContain("Walk me through something impactful you built.");
     expect(p).toContain(VAGUE);
     expect(p).toContain('"assessment"');
+    expect(p).toMatch(/25 words/);
+  });
+  it("never carries a model answer: the yardstick is for the debrief only", () => {
+    const s = start();
+    // @ts-expect-error - the turn prompt no longer accepts a model answer
+    const p = buildFullTurnPrompt({ session: s, latest: VAGUE, legal: legalMoves(s, VAGUE, ""), modelAnswer: "stuck for two years" });
+    expect(p).not.toContain("stuck for two years");
+    expect(p).not.toMatch(/yardstick|strong answer from this candidate/i);
+  });
+  it("is told when it cut in on a long answer", () => {
+    const s = start();
+    expect(buildFullTurnPrompt({ session: s, latest: STRONG, legal: legalMoves(s, STRONG, ""), cutIn: true })).toMatch(/cut in/i);
   });
 });
 

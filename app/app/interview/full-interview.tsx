@@ -14,6 +14,7 @@ import { PROBE_KINDS, TONES, type ProbeKind, type Tone, type Verdict } from "@/l
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
 import { combineVoice, deliveryNotes, FILLERS_PER_100_LIMIT, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
 import { outOfFive } from "@/lib/interview/score";
+import { endOfTurnMs, shouldCutIn, type TurnSettings } from "@/lib/interview/turn-taking";
 import type { FullInterviewCard } from "@/lib/services/full-interview";
 import { AgentAvatar } from "./agent-avatar";
 import { ScoreCard } from "./score-card";
@@ -28,9 +29,13 @@ import ui from "../ui.module.css";
  * real interviewer does not show it); the debrief shows the path taken.
  *
  * The session is saved on the server after every turn, so a refresh can resume it.
+ *
+ * Turn-taking (lib/interview/turn-taking.ts): hands-free ends an answer on a silence whose length
+ * depends on whether it sounds finished, and only once the mic is quiet too; a long ramble gets
+ * cut in on. Each turn logs "[interview-latency]" to the console: from your last word to the
+ * interviewer's voice, split into the end-of-turn wait, the server and the voice.
  */
 
-const SILENCE_MS = 2500;
 const VOICE_FRAME_MS = 50;
 const SETTINGS_KEY = "jobsearch.mock-interview";
 const GREETING = "Hi, thanks for making the time. Let's get started.";
@@ -62,7 +67,18 @@ function moveLabel(move: string | undefined): string | null {
   return null;
 }
 
-export function FullInterview({ card, maxTopics, questionBase }: { card: FullInterviewCard; maxTopics: number; questionBase: Record<string, string> }) {
+export function FullInterview({
+  card,
+  maxTopics,
+  questionBase,
+  turn,
+}: {
+  card: FullInterviewCard;
+  maxTopics: number;
+  questionBase: Record<string, string>;
+  /** Hands-free end-of-turn settings (INTERVIEW_TURN_*); null = the candidate presses "Done answering". */
+  turn: TurnSettings | null;
+}) {
   const questionHref = (id: string) => `/app/interview?${new URLSearchParams({ ...questionBase, q: id }).toString()}`;
   const [tone, setTone] = useState<Tone>("neutral");
   const [voice, setVoice] = useState(true);
@@ -85,6 +101,8 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
   const [micLevel, setMicLevel] = useState(0);
   const [clock, setClock] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  /** A past report being opened from the list. */
+  const [viewing, setViewing] = useState<string | null>(null);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -101,6 +119,9 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
   const spoken = useRef<VoiceSummary[]>([]);
   const gen = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
+  /** For the latency log: when the last word was heard, when the answer went, when the reply came. */
+  const lastWordAt = useRef(0);
+  const latency = useRef<{ lastWord: number; sent: number; replied: number } | null>(null);
 
   draftRef.current = draft;
   interimRef.current = interim;
@@ -120,7 +141,17 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
     } catch {
       /* defaults are fine */
     }
-    const off = onSpeakingChange(setSpeaking);
+    const off = onSpeakingChange((on) => {
+      setSpeaking(on);
+      const l = latency.current;
+      if (!on || !l) return;
+      latency.current = null;
+      const now = performance.now();
+      const ms = (a: number, b: number) => Math.round(b - a);
+      console.info(
+        `[interview-latency] total=${ms(l.lastWord, now)}ms wait=${ms(l.lastWord, l.sent)}ms server=${ms(l.sent, l.replied)}ms voice=${ms(l.replied, now)}ms`,
+      );
+    });
     return () => {
       off();
       gen.current += 1;
@@ -172,16 +203,37 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
     listeningRef.current = false;
     setListening(false);
     setInterim("");
-    try {
-      recognition.current?.stop();
-    } catch {
-      /* already stopped */
+    interimRef.current = "";
+    // Detach first: a stopped recognition still delivers its last results, and those landed in
+    // the next answer's draft (20 Nov: one answer recorded twice).
+    const r = recognition.current;
+    recognition.current = null;
+    if (r) {
+      r.onresult = null;
+      r.onend = null;
+      r.onerror = null;
+      try {
+        r.stop();
+      } catch {
+        /* already stopped */
+      }
     }
     if (voiceClock.current.timer) clearInterval(voiceClock.current.timer);
     voiceClock.current.timer = null;
     mic.current?.close();
     mic.current = null;
     setMicLevel(0);
+  }
+
+  /** End the answer after `ms` of silence - but only if the microphone is quiet too. */
+  function armEndOfTurn(ms: number) {
+    clearSilence();
+    if (!turn) return;
+    silence.current = setTimeout(() => {
+      if (!listeningRef.current || !`${draftRef.current}${interimRef.current}`.trim()) return;
+      if (mic.current && mic.current.level() > turn.quietLevel) return armEndOfTurn(turn.silenceMs);
+      void send();
+    }, ms);
   }
 
   function startListening() {
@@ -193,6 +245,7 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
     r.continuous = true;
     r.interimResults = true;
     r.onresult = (e) => {
+      if (recognition.current !== r) return;
       let add = "";
       let live = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -200,14 +253,18 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
         if (res.isFinal) add += res[0].transcript;
         else live += res[0].transcript;
       }
-      if (add.trim()) setDraft((d) => (d ? `${d.trimEnd()} ${add.trim()}` : add.trim()));
+      const d = draftRef.current;
+      const next = add.trim() ? (d ? `${d.trimEnd()} ${add.trim()}` : add.trim()) : d;
+      draftRef.current = next;
+      interimRef.current = live;
+      setDraft(next);
       setInterim(live);
+      lastWordAt.current = performance.now();
       clearSilence();
-      if (handsFreeRef.current) {
-        silence.current = setTimeout(() => {
-          if (draftRef.current.trim()) void send();
-        }, SILENCE_MS);
-      }
+      if (!handsFreeRef.current || !turn) return;
+      const said = `${next} ${live}`.trim();
+      if (add.trim() && !live.trim() && shouldCutIn(next, turn)) return void send({ cutIn: true });
+      armEndOfTurn(endOfTurnMs(said, turn));
     };
     r.onerror = (e) => {
       if (e.error !== "no-speech" && e.error !== "aborted") setError(`Transcription stopped: ${e.error}.`);
@@ -282,6 +339,7 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
 
   async function showLast(id: string) {
     setError(null);
+    setViewing(id);
     setBusy("feedback");
     const r = await fullDebriefAction(id);
     setBusy(null);
@@ -291,36 +349,55 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
     setDebrief(r);
   }
 
-  async function send() {
+  async function send(opts: { cutIn?: boolean } = {}) {
     const id = idRef.current;
     const s = sessionRef.current;
     const answer = `${draftRef.current} ${interimRef.current}`.trim();
     if (!id || !s || !answer || s.status === "done" || busyRef.current) return;
+    // Taken at once, before any await: a second send (a late timer, a double click) finds no answer.
+    busyRef.current = "turn";
+    draftRef.current = "";
+    interimRef.current = "";
     stopListening();
     const v = voiceFor(answer);
     setBusy("turn");
-    busyRef.current = "turn";
+    setDraft("");
     setError(null);
     const g = gen.current;
-    const r = await fullTurnAction({ sessionId: id, answer });
+    const sent = performance.now();
+    const r = await fullTurnAction({ sessionId: id, answer, turns: s.turns.length, cutIn: opts.cutIn });
     if (g !== gen.current) return;
+    const restore = () => {
+      draftRef.current = answer;
+      setDraft(answer);
+    };
     if (r.retryAfter) {
+      restore();
       setError(r.error ?? null);
       setBusy(null);
       busyRef.current = null;
       setTimeout(() => {
-        if (g === gen.current) void send();
+        if (g === gen.current) void send(opts);
       }, r.retryAfter * 1000);
       return;
     }
     setBusy(null);
     busyRef.current = null;
-    if (r.error || !r.session) return setError(r.error ?? "The interviewer lost the thread.");
-    if (v) spoken.current.push(v);
-    voiceFrames.current = [];
-    setDraft("");
+    if (r.error || !r.session) {
+      restore();
+      return setError(r.error ?? "The interviewer lost the thread.");
+    }
     setSession(r.session);
     sessionRef.current = r.session;
+    if (r.ignored) {
+      // Already recorded (a double submit): carry on from the saved session, say nothing twice.
+      if (r.session.status === "running" && handsFreeRef.current && canListen && !typing) startListening();
+      return;
+    }
+    if (v) spoken.current.push(v);
+    voiceFrames.current = [];
+    latency.current = voice ? { lastWord: lastWordAt.current || sent, sent, replied: performance.now() } : null;
+    if (r.timing) console.info(`[full-turn] server load=${r.timing.load}ms model=${r.timing.model}ms save=${r.timing.save}ms`);
     const last = r.session.turns[r.session.turns.length - 1];
     if (r.session.status === "done") {
       if (voice) void speak(last.text, lang);
@@ -415,13 +492,32 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
               <input type="checkbox" checked={handsFree} onChange={(e) => setHandsFree(e.target.checked)} /> Hands-free
             </label>
           )}
-          {card.lastDoneId && (
-            <button className={ui.textBtn} type="button" onClick={() => void showLast(card.lastDoneId!)} disabled={busy !== null}>
-              See your last debrief{card.best !== null ? ` (best ${outOfFive(card.best)})` : ""}
-            </button>
-          )}
         </div>
         {error && <p className={ui.warn}>{error}</p>}
+        {card.history.length > 0 && (
+          <details className={ui.reveal} open={card.history.length <= 3}>
+            <summary>
+              Past interviews <span className={ui.sectionMeta}>{card.history.length}{card.best !== null ? ` · best ${outOfFive(card.best)}` : ""}</span>
+            </summary>
+            <ul className={ui.rows}>
+              {card.history.map((h) => (
+                <li key={h.id} className={ui.row}>
+                  <div>
+                    <p>
+                      {h.at.slice(0, 10)} · {h.topics} {h.topics === 1 ? "topic" : "topics"}
+                    </p>
+                  </div>
+                  <span className={ui.mono}>
+                    {outOfFive(h.overall)}{" "}
+                    <button className={ui.textBtn} type="button" onClick={() => void showLast(h.id)} disabled={busy !== null}>
+                      {busy === "feedback" && viewing === h.id ? "Opening…" : "Open report"}
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
     );
   }
@@ -474,7 +570,7 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
             <button className={ui.iconBtn} type="button" aria-pressed={typing} data-on={typing ? "" : undefined} onClick={() => setTyping((t) => !t)}>
               {typing ? "Hide keyboard" : "Type"}
             </button>
-            {(typing || !handsFree || !canListen) && hasAnswer && (
+            {(typing || !handsFree || !canListen || !turn) && hasAnswer && (
               <button className={ui.btn} data-primary="" type="button" onClick={() => void send()} disabled={busy !== null}>
                 {busy === "turn" ? "Waiting…" : "Done answering"}
               </button>
@@ -514,6 +610,21 @@ export function FullInterview({ card, maxTopics, questionBase }: { card: FullInt
           {showTranscript ? "Hide transcript" : "Read transcript"}
         </button>
         <span className={ui.callBarGap} />
+        {done && (
+          <button
+            className={ui.textBtn}
+            type="button"
+            onClick={() => {
+              setSession(null);
+              setDebrief(null);
+              setViewing(null);
+              setShowTranscript(false);
+            }}
+            disabled={busy !== null}
+          >
+            Past interviews
+          </button>
+        )}
         {done && (
           <button className={ui.textBtn} type="button" onClick={() => void start()} disabled={busy !== null}>
             Start a new interview

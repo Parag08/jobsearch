@@ -9,6 +9,7 @@ import { companyTemplates, questionBank } from "../interview/bank-data";
 import { inferCompetencies } from "../stories/competencies";
 import { planFromBank, planFromJob, planFromRoleQuestions, type FullInterviewSettings, type FullPlan } from "../interview/full-plan";
 import type { DbClient } from "../repos/db";
+import { topicsAsked } from "../interview/full-session";
 
 /**
  * Plans and cards for the full mock interview (docs/FULL-INTERVIEW.md). An application's plan
@@ -61,6 +62,17 @@ export interface FullInterviewCard {
   /** The newest finished session, and the best overall so far. */
   lastDoneId: string | null;
   best: number | null;
+  /** Every finished, scored interview, newest first: the reports you can open again. */
+  history: PastInterview[];
+}
+
+export interface PastInterview {
+  id: string;
+  /** When it was finished (ISO). */
+  at: string;
+  overall: number;
+  /** How many topics it covered. */
+  topics: number;
 }
 
 /** One card per live application with a plan, for the Company view of the Interview tab. */
@@ -93,6 +105,7 @@ function card(plan: FullPlan, mine: StoredFullSession[], slug: string): FullInte
     runningId: mine.find((s) => s.status === "running")?.id ?? null,
     lastDoneId: done[0]?.id ?? null,
     best: done.length ? Math.max(...done.map((s) => s.overall!)) : null,
+    history: done.map((s) => ({ id: s.id, at: s.updatedAt || s.createdAt, overall: s.overall!, topics: topicsAsked(s.session).length })),
   };
 }
 

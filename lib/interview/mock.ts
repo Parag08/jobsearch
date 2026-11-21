@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { canonicalNumber, extractNumbers } from "../stories/consistency";
+import { echoProbe, groundingProblems, MAX_FOLLOW_UP_WORDS, numberValues, shortenFollowUp } from "./grounding";
 import { DIMENSION_HELP, SCORE_DIMENSIONS, deliverySignals, numberDrift, parseScore, TextListSchema, type Scores } from "./score";
 
 /**
@@ -121,7 +122,7 @@ export function probeCandidates(s: MockSession, latest: string, writtenAnswer: s
   const gaps: ProbeKind[] = [];
   if (numberDrift(latest, writtenAnswer).saidNotWritten.length > 0) gaps.push("numbers");
   if (signals.ownershipRatio !== null && signals.ownershipRatio < 0.5) gaps.push("ownership");
-  if (extractNumbers(all).length === 0) gaps.push("result");
+  if (numberValues(all).length === 0) gaps.push("result");
   if (latestWords < SHORT_ANSWER_WORDS) gaps.push("specificity");
   if (!REFLECTION_RE.test(all)) gaps.push("reflection");
   gaps.push("depth");
@@ -192,8 +193,8 @@ export function buildFollowUpPrompt(input: {
     ...input.candidates.map((c) => `- ${c}: ${PROBE_HELP[c]}`),
     "",
     "Rules:",
-    "- Say at most two sentences: an optional short pushback naming what was missing, then exactly one question.",
-    "- Never state a fact or number the candidate did not say. Quote their own words where it helps.",
+    `- ONE question, at most ${MAX_FOLLOW_UP_WORDS} words, no preamble. Pick up their exact words: "You said X. Why X?"`,
+    "- Use ONLY what the candidate said in this conversation. Never mention a fact, number, name or phrase they did not say.",
     "- Never answer for them, suggest what they could have said, or give feedback yet - feedback comes at the end.",
     "- Stay on this question; do not move to a new topic.",
     input.questionFromCandidate ? TYPED_QUESTION_RULE : "",
@@ -218,13 +219,17 @@ export function parseFollowUp(raw: unknown, candidates: ProbeKind[]): FollowUp {
   return { probe, say };
 }
 
-/** A line stating a number neither the candidate nor their written answer gave is replaced. */
-export function guardFollowUp(reply: FollowUp, s: MockSession, latest: string, writtenAnswer: string): FollowUp {
-  const known = new Set(
-    [candidateSoFar(s, latest), writtenAnswer, s.turns[0]?.text ?? ""].flatMap((t) => extractNumbers(t).map(canonicalNumber)),
-  );
-  const invented = extractNumbers(reply.say).some((n) => !known.has(canonicalNumber(n)));
-  return invented ? { probe: reply.probe, say: FOLLOW_UP_FALLBACK[reply.probe] } : reply;
+/**
+ * A follow-up may only use what the candidate said in this interview (and the question): a line
+ * with any other number, name, quote or "you mentioned ..." claim, or one that cannot be cut to
+ * one short question, is replaced by a probe from the candidate's own last words (grounding.ts).
+ * The written answer is not in scope - the candidate did not say it.
+ */
+export function guardFollowUp(reply: FollowUp, s: MockSession, latest: string): FollowUp {
+  const line = shortenFollowUp(reply.say, MAX_FOLLOW_UP_WORDS);
+  const grounds = { said: [candidateSoFar(s, latest)], questions: [s.turns[0]?.text ?? ""] };
+  if (line && !groundingProblems(line, grounds).length) return { probe: reply.probe, say: line };
+  return { probe: reply.probe, say: echoProbe(latest, reply.probe) ?? FOLLOW_UP_FALLBACK[reply.probe] };
 }
 
 function assertRunning(s: MockSession): void {

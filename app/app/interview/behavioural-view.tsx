@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import type { TurnSettings } from "@/lib/interview/turn-taking";
+import { ScoreCard } from "./score-card";
 import { useSearchParams } from "next/navigation";
 import type { Answer, Attempt } from "@/lib/repos/answers";
 import type { Question, QuestionGroup } from "@/lib/interview/questions";
@@ -54,7 +56,10 @@ export function BehaviouralView({
   rolePlays,
   base = { tab: "behavioural" },
   lockedCompany,
+  turn = null,
 }: {
+  /** Hands-free end-of-turn settings (INTERVIEW_TURN_*); null = press "Done answering". */
+  turn?: TurnSettings | null;
   /** The generic bank's groups, in order. */
   groups: QuestionGroup[];
   generic: ViewQuestion[];
@@ -258,7 +263,7 @@ export function BehaviouralView({
             rolePlay={rolePlayFor.get(selected.id) ?? null}
           />
 
-          <MockInterview questionId={selected.id} questionText={selected.text} />
+          <MockInterview questionId={selected.id} questionText={selected.text} turn={turn} />
 
           <NotesDisclosure openFirst={!modelAnswerFor.has(selected.id)}>
             <summary>
@@ -286,22 +291,40 @@ export function BehaviouralView({
               </summary>
               <ul className={ui.rows}>
                 {history.map((a) => (
-                  <li key={a.id} className={ui.row}>
-                    <div>
-                      <p>
-                        {a.transcript.length > 140
-                          ? `${a.transcript.slice(0, 140)}…`
-                          : a.transcript}
-                      </p>
-                      {a.improvements[0] && (
-                        <span className={ui.sub}>
-                          Next time: {a.improvements[0]}
+                  <li key={a.id}>
+                    {/* Each attempt opens into its full report: scores, feedback, the whole transcript. */}
+                    <details className={ui.reveal}>
+                      <summary className={ui.row}>
+                        <div>
+                          <p>
+                            {a.transcript.length > 140
+                              ? `${a.transcript.slice(0, 140)}…`
+                              : a.transcript}
+                          </p>
+                          {a.improvements[0] && (
+                            <span className={ui.sub}>
+                              Next time: {a.improvements[0]}
+                            </span>
+                          )}
+                        </div>
+                        <span className={ui.mono}>
+                          {outOfFive(a.overall)} · {a.createdAt.slice(0, 10)}
                         </span>
-                      )}
-                    </div>
-                    <span className={ui.mono}>
-                      {outOfFive(a.overall)} · {a.createdAt.slice(0, 10)}
-                    </span>
+                      </summary>
+                      <ScoreCard
+                        result={{
+                          overall: a.overall,
+                          scores: a.scores,
+                          strengths: a.strengths,
+                          improvements: a.improvements,
+                          model: a.model,
+                        }}
+                      />
+                      <h4>Transcript</h4>
+                      <p className={ui.sub} style={{ whiteSpace: "pre-wrap" }}>
+                        {a.transcript}
+                      </p>
+                    </details>
                   </li>
                 ))}
               </ul>

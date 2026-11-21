@@ -25,6 +25,7 @@ import {
   parseFullSession,
   startFull,
   topicsAsked,
+  turnConflict,
   type FullReply,
   type FullSession,
   type Moment,
@@ -83,6 +84,10 @@ export interface FullTurnResult {
   retryAfter?: number;
   sessionId?: string;
   session?: FullSession;
+  /** Set when the answer was not applied because the session had already moved on (a double submit). */
+  ignored?: "stale" | "duplicate";
+  /** Where the time went on the server, in ms, for the latency check (docs/FULL-INTERVIEW.md). */
+  timing?: { load: number; model: number; save: number; total: number };
 }
 
 /** Start a full interview for one application. The first question is asked by code - no model call. */
@@ -110,7 +115,8 @@ export async function resumeFullAction(sessionId: string): Promise<FullTurnResul
  * one and phrases it only when there is a real choice; guards replace anything illegal or
  * invented; a failed call falls back to code's first choice. Saved every turn.
  */
-export async function fullTurnAction(input: { sessionId: string; answer: string }): Promise<FullTurnResult> {
+export async function fullTurnAction(input: { sessionId: string; answer: string; turns?: number; cutIn?: boolean }): Promise<FullTurnResult> {
+  const t0 = Date.now();
   const w = await ws();
   const stored = await getFullSession(w.db, w.userId, input.sessionId);
   if (!stored) return { error: "That interview could not be found." };
@@ -118,30 +124,39 @@ export async function fullTurnAction(input: { sessionId: string; answer: string 
   if (s.status === "done") return { error: "This interview has finished." };
   const answer = input.answer.trim();
   if (!answer) return { error: "Say or type something first." };
+  // A retry or a second send of the same answer must not be recorded twice (20 Nov).
+  const conflict = turnConflict(s, input.turns, answer);
+  if (conflict) return { sessionId: stored.id, session: s, ignored: conflict };
 
   const topicId = currentTopicId(s);
   const written = await writtenAnswerText(w.db, w.userId, topicId);
   const legal = legalMoves(s, answer, written);
   let reply: FullReply = fallbackReply(legal);
+  const t1 = Date.now();
 
   if (needsModel(legal)) {
     if (!aiReady(w)) return { error: NO_AI };
     const model = interviewerModel();
-    const prompt = buildFullTurnPrompt({ session: s, latest: answer, legal, modelAnswer: (await modelAnswersFor(w, s))[topicId] ?? null });
+    // Never the model answer here: it is the debrief's yardstick only.
+    const prompt = buildFullTurnPrompt({ session: s, latest: answer, legal, cutIn: input.cutIn });
     try {
-      const out = await aiWrite(w, "full-turn", { model, prompt, json: true, maxOutputTokens: 300 }, { candidates: legal });
-      await ledger(w, "interview-full-turn", model, prompt, out);
-      reply = guardFullReply(parseFullReply(parseJsonLoose(out), legal), s, answer, written);
+      const out = await aiWrite(w, "full-turn", { model, prompt, json: true, maxOutputTokens: 160 }, { candidates: legal });
+      void ledger(w, "interview-full-turn", model, prompt, out);
+      reply = guardFullReply(parseFullReply(parseJsonLoose(out), legal), s, answer);
     } catch (err) {
       const wait = retryAfterSeconds(err);
       if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
-      reply = fallbackReply(legal);
+      reply = guardFullReply(fallbackReply(legal), s, answer);
     }
   }
+  const t2 = Date.now();
 
   const next = applyFullTurn(s, answer, reply, new Date().toISOString());
   await saveFullSession(w.db, w.userId, stored.id, next);
-  return { sessionId: stored.id, session: next };
+  const t3 = Date.now();
+  const timing = { load: t1 - t0, model: t2 - t1, save: t3 - t2, total: t3 - t0 };
+  console.info(`[full-turn] load=${timing.load}ms model=${timing.model}ms save=${timing.save}ms total=${timing.total}ms move=${reply.move}`);
+  return { sessionId: stored.id, session: next, timing };
 }
 
 export interface FullDebriefResult {
