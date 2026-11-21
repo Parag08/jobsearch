@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { createFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
+import { createFullSession, discardFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
 import { startFull } from "../interview/full-session";
 import type { FullPlan } from "../interview/full-plan";
 
@@ -43,5 +43,19 @@ describe("full sessions repo", () => {
     expect(await getFullSession(db, "u2", s.id)).toBeNull();
     expect(await listFullSessions(db, "u1", "app1")).toHaveLength(1);
     expect(await listFullSessions(db, "u2")).toHaveLength(0);
+  });
+
+  it("discards a running interview, but never a finished one or another user's", async () => {
+    const db = new FakeDb();
+    const running = await createFullSession(db, "u1", session);
+    expect(await discardFullSession(db, "u2", running.id)).toBe(false);
+    expect(await getFullSession(db, "u1", running.id)).not.toBeNull();
+    expect(await discardFullSession(db, "u1", running.id)).toBe(true);
+    expect(await getFullSession(db, "u1", running.id)).toBeNull();
+
+    const done = await createFullSession(db, "u1", session);
+    await finishFullSession(db, "u1", done.id, { session: { ...session, status: "done" }, scores, overall: 3, strengths: [], improvements: [], perTopic: [], moments: [], model: "m" });
+    expect(await discardFullSession(db, "u1", done.id)).toBe(false);
+    expect(await getFullSession(db, "u1", done.id)).not.toBeNull();
   });
 });

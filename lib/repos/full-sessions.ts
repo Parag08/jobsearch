@@ -1,6 +1,6 @@
 import type { FullSession, Moment, TopicVerdict } from "../interview/full-session";
 import type { Scores } from "../interview/score";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewFullSessionRow } from "./rows";
 
 /**
@@ -110,4 +110,16 @@ export async function listFullSessions(db: DbClient, userId: string, application
   if (applicationId) q = q.eq("application_id", applicationId);
   const all = (await many(q.order("created_at", { ascending: false }), TABLE, "list")).map(toStored);
   return applicationId === null ? all.filter((s) => s.applicationId === null) : all;
+}
+
+/**
+ * Throw away an interview that is still running ("Discard"): no debrief, nothing kept. A
+ * finished interview is a report and is never removed this way. True when a row was removed.
+ */
+export async function discardFullSession(db: DbClient, userId: string, id: string): Promise<boolean> {
+  const found = await getFullSession(db, userId, id);
+  if (!found || found.status !== "running") return false;
+  const { error } = await db.from(TABLE).delete().eq("user_id", userId).eq("id", id).eq("status", "running");
+  if (error) throw new RepoError(TABLE, "discard", error.message);
+  return true;
 }

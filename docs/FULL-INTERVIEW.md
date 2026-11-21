@@ -183,6 +183,18 @@ and an answer cut off mid-sentence. What changed:
 - **Past reports**: the lobby lists every finished interview (`FullInterviewCard.history`), and each
   opens its debrief. Single-question attempts open into their full report and transcript.
 
+## Pause and Discard (2026-11-21, branch feat/interview-pause-discard)
+
+Both rooms (full interview and single-question mock) have **Pause** right next to **Discard** on
+the call bar.
+- **Pause** stops the mic, the voice, the hands-free end-of-turn timer and the clock, and keeps
+  what you had said so far. A reply that arrives while paused, or a line cut off by the pause, is
+  said again on Resume.
+- **Discard** in the full interview asks once, then deletes the running interview
+  (`discardFullAction` → `discardFullSession`, which removes only a running session of that user).
+  It never shows as a report, and the lobby no longer offers to resume it. A finished interview is
+  never deleted this way.
+
 ## Known limits / next
 
 - Number rules see digits only, so "nine days to four" reads as no result and gets probed.

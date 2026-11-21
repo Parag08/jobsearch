@@ -37,7 +37,7 @@ import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLi
 import { buildRolePlayPrompt, guardRolePlay, likelyFollowUps, parseRolePlay, rolePlayBasis, type RolePlay } from "@/lib/interview/role-play";
 import { fullPlanFor } from "@/lib/services/full-interview";
 import { writtenAnswerText } from "@/lib/services/role-plays";
-import { createFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
+import { createFullSession, discardFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
 import { listModelAnswers } from "@/lib/repos/model-answers";
 import { putRolePlay } from "@/lib/repos/role-plays";
 import { findQuestion } from "./bank";
@@ -157,6 +157,14 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
   const timing = { load: t1 - t0, model: t2 - t1, save: t3 - t2, total: t3 - t0 };
   console.info(`[full-turn] load=${timing.load}ms model=${timing.model}ms save=${timing.save}ms total=${timing.total}ms move=${reply.move}`);
   return { sessionId: stored.id, session: next, timing };
+}
+
+/** Discard a running interview: no debrief, nothing kept. A finished one stays a report. */
+export async function discardFullAction(sessionId: string): Promise<{ error?: string }> {
+  const w = await ws();
+  const removed = await discardFullSession(w.db, w.userId, sessionId);
+  revalidatePath("/app/interview");
+  return removed ? {} : { error: "That interview has already finished, so it was kept." };
 }
 
 export interface FullDebriefResult {
