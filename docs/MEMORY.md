@@ -6,7 +6,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 From `$FINDPARAGJOB_DIR/tools/portal-sync/interviewer-realism-prompt.md`. Details: docs/FULL-INTERVIEW.md "Realism fixes".
 - The model answer is out of the turn prompt. A grounding guard (`lib/interview/grounding.ts`) blocks numbers (digits or words), names, quotes and "you mentioned" claims the candidate didn't say, falling back to an echo of their own words. It also applies to the single mock; the written notes are no longer in scope.
-- Double submit fixed on both sides (`turnConflict`; client drops results from a stopped recognition). Turn-taking moved to `lib/interview/turn-taking.ts`, with **new env `INTERVIEW_TURN_*` (five keys): set them on Vercel, or hands-free never ends an answer by itself**.
+- Double submit fixed on both sides (`turnConflict`; client drops results from a stopped recognition). Turn-taking moved to `lib/interview/turn-taking.ts`, with new env `INTERVIEW_TURN_*` (five keys; unset = hands-free never ends an answer by itself). **Set on Vercel Production + Preview 2026-11-21** (1200 / 4000 / 40 / 280 / 0.05).
 - Streaming TTS; `[full-turn]` server and `[interview-latency]` browser timing logs.
 - Past reports: full-interview lobby lists every finished interview (Open report); single-question attempts expand to the full report.
 - Not done: the choice of a faster `AI_GATEWAY_INTERVIEWER_MODEL` (needs a quality check with a live key).
