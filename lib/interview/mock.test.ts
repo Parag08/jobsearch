@@ -146,7 +146,7 @@ describe("buildFollowUpPrompt", () => {
   });
 
   it("forbids inventing facts or answering for the candidate", () => {
-    expect(prompt).toMatch(/never state a fact or number the candidate did not say/i);
+    expect(prompt).toMatch(/never mention a fact, number, name or phrase they did not say/i);
   });
 });
 
@@ -171,15 +171,40 @@ describe("parseFollowUp", () => {
   });
 });
 
+describe("probeCandidates and numbers in words", () => {
+  it("does not ask for a number when the candidate said one in words", () => {
+    const said = "I owned the cut-over plan and we moved ten petabytes without downtime, which I measured.";
+    expect(probeCandidates(running(), said, "")).not.toContain("result");
+  });
+});
+
 describe("guardFollowUp", () => {
-  it("keeps a line whose numbers the candidate or the written answer supplied", () => {
-    const reply = { probe: "numbers" as const, say: "You said 40% but wrote 30%. Which is it?" };
-    expect(guardFollowUp(reply, running(), "It cut overtime by 40%.", "Overtime fell 30%.")).toEqual(reply);
+  it("keeps a line whose numbers the candidate said", () => {
+    const reply = { probe: "numbers" as const, say: "You said 40%. How was that measured?" };
+    expect(guardFollowUp(reply, running(), "It cut overtime by 40%.")).toEqual(reply);
   });
 
   it("replaces a line that states a number nobody said", () => {
     const reply = { probe: "result" as const, say: "So revenue grew 25%, right?" };
-    expect(guardFollowUp(reply, running(), vagueWe, "")).toEqual({ probe: "result", say: FOLLOW_UP_FALLBACK.result });
+    expect(guardFollowUp(reply, running(), "Yes.")).toEqual({ probe: "result", say: FOLLOW_UP_FALLBACK.result });
+  });
+
+  it("does not let the written notes in: the candidate did not say them in this interview", () => {
+    const reply = { probe: "numbers" as const, say: "Your notes say 30%. Which is right?" };
+    expect(guardFollowUp(reply, running(), "It cut overtime a lot.").say).not.toContain("30%");
+  });
+
+  it("blocks a fact in words the candidate never said, echoing their own words instead", () => {
+    const latest = "I owned the migration plan and I chose a phased cut-over for the teams.";
+    const out = guardFollowUp({ probe: "depth", say: "You mentioned it was stuck for two years. Why?" }, running(), latest);
+    expect(out.say).not.toMatch(/two years|stuck/);
+    expect(out.say).toContain("chose a phased cut-over");
+  });
+
+  it("cuts a long follow-up down to its question", () => {
+    const latest = "We worked on the migration together across three teams for a while.";
+    const say = "Thanks, that is helpful context about the migration and the teams and how they worked together over that period. What did you personally do?";
+    expect(guardFollowUp({ probe: "ownership", say }, running(), latest).say).toBe("What did you personally do?");
   });
 });
 

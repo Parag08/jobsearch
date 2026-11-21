@@ -4,8 +4,8 @@ import { upsertApplication } from "./agent-sync";
 import { saveRoleInterview } from "./role-interview";
 import { RoleInterviewInputSchema } from "../interview/role-questions";
 import { fullInterviewsFor, fullPlanFor, generalInterviewCard } from "./full-interview";
-import { createFullSession } from "../repos/full-sessions";
-import { startFull } from "../interview/full-session";
+import { createFullSession, finishFullSession } from "../repos/full-sessions";
+import { closeFull, startFull } from "../interview/full-session";
 
 const NOW = "2026-11-20T09:00:00.000Z";
 const settings = { maxTopics: 6, topicFollowUps: 2, totalFollowUps: 6 };
@@ -77,5 +77,25 @@ describe("general practice interview", () => {
     const card = await generalInterviewCard(db, "u1", settings);
     expect(card).toMatchObject({ applicationId: null, slug: "general", runningId: s.id });
     expect((await fullInterviewsFor(db, "u1", settings)).every((c) => c.runningId !== s.id)).toBe(true);
+  });
+});
+
+describe("past interview reports", () => {
+  it("lists every finished interview with a score, newest first, for browsing the reports", async () => {
+    const { db, cogId } = await setup();
+    const plan = (await fullPlanFor(db, "u1", cogId, settings))!;
+    const scores = { structure: 3, ownership: 3, specificity: 3, impact: 3, reflection: 3, relevance: 3 };
+    const ids: string[] = [];
+    for (const overall of [2.5, 3.5]) {
+      const st = await createFullSession(db, "u1", startFull(plan, settings, "neutral", NOW));
+      const done = closeFull(st.session, "I led the migration and it worked.", NOW);
+      await finishFullSession(db, "u1", st.id, { session: done, scores, overall, strengths: [], improvements: [], perTopic: [], moments: [], model: "m" });
+      ids.push(st.id);
+    }
+    await createFullSession(db, "u1", startFull(plan, settings, "neutral", NOW)); // running: not a report
+    const cog = (await fullInterviewsFor(db, "u1", settings)).find((c) => c.applicationId === cogId)!;
+    expect(cog.history.map((h) => h.id).sort()).toEqual([...ids].sort());
+    expect(cog.history.every((h) => h.topics === 1 && h.overall !== null)).toBe(true);
+    expect(cog.best).toBe(3.5);
   });
 });

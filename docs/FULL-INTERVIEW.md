@@ -153,6 +153,36 @@ The gateway's streaming endpoint reports no usage, so these rows carry an **esti
 characters a token, `estimateTokens`); the older interview calls still log zeros. The demo logs
 zero with model "demo". A turn with only one legal move makes no call at all.
 
+## Realism fixes (2026-11-21, branch fix/interviewer-realism)
+
+Two full mocks on 20 Nov showed the interviewer leaking a fact from the private model answer
+("You mentioned the files-migration feature was stuck for two years"), one answer recorded twice,
+and an answer cut off mid-sentence. What changed:
+
+- **The model answer is out of the turn prompt** (`buildFullTurnPrompt` no longer accepts it). It
+  stays the debrief's yardstick only. Being told to keep it secret did not stop the model quoting it.
+- **Grounding guard** (`lib/interview/grounding.ts`, used by `guardFullReply` and the single mock's
+  `guardFollowUp`). A follow-up may only use what the candidate said in this interview, plus the
+  questions asked. That covers numbers in digits or words, names, quoted spans, and "you said /
+  you mentioned ..." claims. The written notes are out of scope too. A line that fails the check,
+  or can't be cut to one question of at most 25 words, is replaced by `echoProbe`: the candidate's
+  own last words plus a short question.
+- **Prompt** asks for one question of at most 25 words with no preamble, and for the interviewer
+  to chase the weakest thing said. It now carries 6 recent turns, down from 8; the reply is capped at
+  160 tokens, down from 300.
+- **Double submit**: the client clears its answer before any `await` and drops results from a
+  stopped recognition. The server's `turnConflict` rejects a stale turn count or a word-for-word
+  repeat of the last answer.
+- **Turn-taking** (`lib/interview/turn-taking.ts`, env `INTERVIEW_TURN_*`). The silence that ends an
+  answer depends on whether it sounds finished: an answer ending on "as" or "and", or one still
+  short, gets the long wait. The mic must be quiet too. A ramble is cut in on at a finished phrase.
+  Unset env means hands-free waits for "Done answering".
+- **Speed**: ElevenLabs audio plays as it streams in (Media Source Extensions); before, the client
+  downloaded the whole clip first. Each turn logs `[full-turn]` on the server and
+  `[interview-latency]` in the browser (wait / server / voice).
+- **Past reports**: the lobby lists every finished interview (`FullInterviewCard.history`), and each
+  opens its debrief. Single-question attempts open into their full report and transcript.
+
 ## Known limits / next
 
 - Number rules see digits only, so "nine days to four" reads as no result and gets probed.

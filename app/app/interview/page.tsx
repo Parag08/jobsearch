@@ -19,6 +19,7 @@ import type { RoleQuestion } from "@/lib/interview/role-questions";
 import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
 import type { Question } from "@/lib/interview/questions";
 import { fullInterviewSettingsFromEnv, type FullInterviewSettings } from "@/lib/interview/full-plan";
+import { turnSettingsFromEnv } from "@/lib/interview/turn-taking";
 import { GENERAL, choosePrep, prepEntries, type PrepEntry } from "@/lib/interview/prep";
 import { fullInterviewsFor, generalInterviewCard, type FullInterviewCard } from "@/lib/services/full-interview";
 import { outOfFive } from "@/lib/interview/score";
@@ -200,7 +201,7 @@ function FullLead({
         <Link href={url(base)} scroll={false} className={ui.mono}>
           ← Back to the questions
         </Link>
-        <FullInterview card={card} maxTopics={settings.maxTopics} questionBase={base} />
+        <FullInterview card={card} maxTopics={settings.maxTopics} questionBase={base} turn={turnSettingsFromEnv(process.env)} />
       </section>
     );
   }
@@ -324,6 +325,7 @@ function Behavioural({
 
   return (
     <BehaviouralView
+      turn={turnSettingsFromEnv(process.env)}
       groups={questionBank.groups}
       generic={lockedCompany ? [] : questionBank.questions}
       company={companyQuestions}

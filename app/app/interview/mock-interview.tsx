@@ -1,5 +1,6 @@
 "use client";
 
+import { endOfTurnMs, type TurnSettings } from "@/lib/interview/turn-taking";
 import { useEffect, useRef, useState } from "react";
 import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
@@ -36,8 +37,6 @@ import ui from "../ui.module.css";
  * The mic meter reads loudness in the page; that audio goes nowhere.
  */
 
-/** How long a pause counts as "finished answering" in hands-free mode. */
-const SILENCE_MS = 2500;
 /** Said once when you join, before the question - a meeting opens with a hello. */
 const GREETING = "Hi, thanks for joining. Let's get started.";
 
@@ -93,7 +92,7 @@ function Icon({ name }: { name: keyof typeof ICON }) {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export function MockInterview({ questionId, questionText }: { questionId: string; questionText: string }) {
+export function MockInterview({ questionId, questionText, turn }: { questionId: string; questionText: string; turn: TurnSettings | null }) {
   const [tone, setTone] = useState<Tone>("neutral");
   const [maxFollowUps, setMaxFollowUps] = useState(3);
   const [voice, setVoice] = useState(true);
@@ -255,10 +254,19 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     listeningRef.current = false;
     setListening(false);
     setInterim("");
-    try {
-      recognition.current?.stop();
-    } catch {
-      /* already stopped */
+    interimRef.current = "";
+    // Detach first: a stopped recognition still delivers its last results into the next answer.
+    const r = recognition.current;
+    recognition.current = null;
+    if (r) {
+      r.onresult = null;
+      r.onend = null;
+      r.onerror = null;
+      try {
+        r.stop();
+      } catch {
+        /* already stopped */
+      }
     }
     if (voiceClock.current.timer) clearInterval(voiceClock.current.timer);
     voiceClock.current.timer = null;
@@ -273,6 +281,17 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     return summarizeVoice(voiceFrames.current, VOICE_FRAME_MS, words);
   }
 
+  /** End the answer after `ms` of silence - but only if the microphone is quiet too. */
+  function armEndOfTurn(ms: number) {
+    clearSilence();
+    if (!turn) return;
+    silence.current = setTimeout(() => {
+      if (!listeningRef.current || !`${draftRef.current}${interimRef.current}`.trim()) return;
+      if (mic.current && mic.current.level() > turn.quietLevel) return armEndOfTurn(turn.silenceMs);
+      void send();
+    }, ms);
+  }
+
   function startListening() {
     const Ctor = recognitionCtor();
     if (!Ctor || listeningRef.current) return;
@@ -282,6 +301,7 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     r.continuous = true;
     r.interimResults = true;
     r.onresult = (e) => {
+      if (recognition.current !== r) return;
       let add = "";
       let live = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -289,15 +309,15 @@ export function MockInterview({ questionId, questionText }: { questionId: string
         if (res.isFinal) add += res[0].transcript;
         else live += res[0].transcript;
       }
-      if (add.trim()) setDraft((d) => (d ? `${d.trimEnd()} ${add.trim()}` : add.trim()));
+      const d = draftRef.current;
+      const next = add.trim() ? (d ? `${d.trimEnd()} ${add.trim()}` : add.trim()) : d;
+      draftRef.current = next;
+      interimRef.current = live;
+      setDraft(next);
       setInterim(live);
-      // Every bit of speech pushes the "you've finished" moment back.
+      // Every bit of speech pushes the "you've finished" moment back (lib/interview/turn-taking.ts).
       clearSilence();
-      if (handsFreeRef.current) {
-        silence.current = setTimeout(() => {
-          if (draftRef.current.trim()) void send();
-        }, SILENCE_MS);
-      }
+      if (handsFreeRef.current && turn) armEndOfTurn(endOfTurnMs(`${next} ${live}`.trim(), turn));
     };
     r.onerror = (e) => {
       if (e.error !== "no-speech" && e.error !== "aborted") setError(`Transcription stopped: ${e.error}.`);
@@ -355,15 +375,24 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     const s = sessionRef.current;
     const answer = `${draftRef.current} ${interimRef.current}`.trim();
     if (!s || !answer || s.status === "done" || busyRef.current) return;
+    // Taken at once, before any await: a second send (a late timer, a double click) finds no answer.
+    busyRef.current = "turn";
+    draftRef.current = "";
+    interimRef.current = "";
     stopListening();
     const v = voiceFor(answer);
     setBusy("turn");
-    busyRef.current = "turn";
+    setDraft("");
     setError(null);
     const g = gen.current;
     const r = await mockTurnAction({ session: s, answer });
     if (endedRef.current || g !== gen.current) return; // you left the call while it was thinking
+    const restore = () => {
+      draftRef.current = answer;
+      setDraft(answer);
+    };
     if (r.retryAfter) {
+      restore();
       setError(r.error ?? null);
       setBusy(null);
       busyRef.current = null;
@@ -374,10 +403,12 @@ export function MockInterview({ questionId, questionText }: { questionId: string
     }
     setBusy(null);
     busyRef.current = null;
-    if (r.error || !r.session) return setError(r.error ?? "The interviewer lost the thread.");
+    if (r.error || !r.session) {
+      restore();
+      return setError(r.error ?? "The interviewer lost the thread.");
+    }
     if (v) spoken.current.push(v);
     voiceFrames.current = [];
-    setDraft("");
     setSession(r.session);
     sessionRef.current = r.session;
     const last = r.session.turns[r.session.turns.length - 1];
@@ -620,7 +651,7 @@ export function MockInterview({ questionId, questionText }: { questionId: string
   const followUps = session.turns.filter((t) => t.probe).length;
   const bars = [0.15, 0.35, 0.6, 0.85];
   const hasAnswer = Boolean(`${draft}${interim}`.trim());
-  const showDone = !done && (typing || !handsFree || !canListen) && hasAnswer;
+  const showDone = !done && (typing || !handsFree || !canListen || !turn) && hasAnswer;
 
   return (
     <div className={ui.meeting}>

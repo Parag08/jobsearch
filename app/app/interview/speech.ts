@@ -217,6 +217,44 @@ function browserSpeak(text: string, lang: string, rate: number, mine: number, sp
 }
 
 /**
+ * An object URL that plays an MP3 response as it streams in (Media Source Extensions), or null
+ * where the browser cannot (then the caller downloads the clip first).
+ */
+function streamingUrl(res: Response): string | null {
+  const body = res.body;
+  if (!body || typeof MediaSource === "undefined" || !MediaSource.isTypeSupported("audio/mpeg")) return null;
+  const source = new MediaSource();
+  const url = URL.createObjectURL(source);
+  source.addEventListener(
+    "sourceopen",
+    () => {
+      const buffer = source.addSourceBuffer("audio/mpeg");
+      const reader = body.getReader();
+      const append = (chunk: Uint8Array) =>
+        new Promise<void>((resolve) => {
+          buffer.addEventListener("updateend", () => resolve(), { once: true });
+          buffer.appendBuffer(chunk as BufferSource);
+        });
+      void (async () => {
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (source.readyState !== "open") return void reader.cancel();
+            await append(value);
+          }
+          if (source.readyState === "open") source.endOfStream();
+        } catch {
+          if (source.readyState === "open") source.endOfStream("network");
+        }
+      })();
+    },
+    { once: true },
+  );
+  return url;
+}
+
+/**
  * Read text aloud, cancelling anything already being spoken. Resolves when the line has
  * finished (or was stopped), so a caller can start listening once the interviewer is done.
  * The candidate's lines in a role-play use a browser voice only: ElevenLabs is the interviewer's.
@@ -236,9 +274,16 @@ export async function speak(text: string, lang: string, rate = 0.97, speaker: Sp
       if (res.status === 501) serverVoice = false;
       if (res.ok) {
         serverVoice = true;
-        const blob = await res.blob();
-        if (mine !== generation) return; // stopped or replaced while loading
-        currentUrl = URL.createObjectURL(blob);
+        // Play while the audio is still arriving (the reply's first word ~instantly), where the
+        // browser can; otherwise wait for the whole clip.
+        const streamed = streamingUrl(res);
+        if (streamed) currentUrl = streamed;
+        else {
+          const blob = await res.blob();
+          if (mine !== generation) return; // stopped or replaced while loading
+          currentUrl = URL.createObjectURL(blob);
+        }
+        if (mine !== generation) return;
         const audio = new Audio(currentUrl);
         current = audio;
         // Route through an analyser when we can, so the avatar moves with the voice. Only into

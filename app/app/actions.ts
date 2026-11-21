@@ -831,7 +831,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
   let reply;
   try {
     const out = await aiWrite(w, "mock-turn", { model, prompt, json: true, maxOutputTokens: 200 }, { candidates: step.candidates });
-    reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer, written);
+    reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
   } catch (err) {
     const wait = retryAfterSeconds(err);
     if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
