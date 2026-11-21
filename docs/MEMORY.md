@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-21 (later) - Pause and Discard (branch feat/interview-pause-discard)
+
+PR #29 merged and live. Parag wanted more time to finish answers: **Vercel now has `INTERVIEW_TURN_SILENCE_MS=2500`, `INTERVIEW_TURN_UNFINISHED_MS=6000`** (Production + Preview, redeployed); `.env.example` matches. Added **Pause** (beside Discard) to both interview rooms and **Discard** to the full interview (deletes only a running session). Details: docs/FULL-INTERVIEW.md "Pause and Discard". Checked in the local demo; not on a real mic.
+
 ## 2026-11-21 - Interviewer realism + past reports (branch fix/interviewer-realism)
 
 From `$FINDPARAGJOB_DIR/tools/portal-sync/interviewer-realism-prompt.md`. Details: docs/FULL-INTERVIEW.md "Realism fixes".

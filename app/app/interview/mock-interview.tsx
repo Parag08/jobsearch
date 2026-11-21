@@ -120,6 +120,12 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
   const [endedEarly, setEndedEarly] = useState(false);
   /** Discard asks once, on the call bar itself, before throwing the interview away. */
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  /** Paused: mic and voice off, clock stopped, the half-said answer kept. */
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const pausedAt = useRef(0);
+  /** A line the interviewer could not finish (or had not started) because you paused: said on Resume. */
+  const pendingLine = useRef<string | null>(null);
 
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
@@ -201,7 +207,7 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
         setCaption(last ? { who: "Interviewer", text: last.text } : null);
       }
       setMicLevel(mic.current ? mic.current.level() : 0);
-      if (startedAt && sessionRef.current?.status === "running") setClock((Date.now() - startedAt) / 1000);
+      if (startedAt && sessionRef.current?.status === "running" && !pausedRef.current) setClock((Date.now() - startedAt) / 1000);
     }, 100);
     return () => clearInterval(id);
   }, [session, startedAt]);
@@ -233,6 +239,9 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     endedRef.current = false;
     setEndedEarly(false);
     setConfirmDiscard(false);
+    pausedRef.current = false;
+    setPaused(false);
+    pendingLine.current = null;
     setSession(null);
     setDraft("");
     setInterim("");
@@ -350,9 +359,18 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
 
   /** Say the interviewer's new line; in hands-free mode, listen once it has finished. */
   async function interviewerSays(text: string) {
+    if (pausedRef.current) {
+      pendingLine.current = text;
+      return;
+    }
     const g = gen.current;
     if (voice) await speak(text, lang);
     if (g !== gen.current) return;
+    if (pausedRef.current) {
+      // Paused mid-sentence: say the whole line again on Resume.
+      pendingLine.current = text;
+      return;
+    }
     if (handsFreeRef.current && canListen && !typing && sessionRef.current?.status === "running") startListening();
   }
 
@@ -446,12 +464,43 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     setFeedback(r);
   }
 
-  /** First press of Discard: hold the call still (no voice, no mic, no auto-send) and ask. */
-  function askDiscard() {
+  /** Hold everything still: no voice, no mic, no auto-send, no clock. What you had said is kept. */
+  function pause() {
+    if (pausedRef.current || sessionRef.current?.status !== "running") return;
+    pausedRef.current = true;
+    setPaused(true);
+    pausedAt.current = Date.now();
+    const keep = `${draftRef.current} ${interimRef.current}`.trim();
+    draftRef.current = keep;
+    setDraft(keep);
     stopListening();
     stopSpeaking();
     clearSilence();
+  }
+
+  /** Carry on: the interviewer repeats a line you paused over, else listening starts again. */
+  function unpause() {
+    if (!pausedRef.current) return;
+    pausedRef.current = false;
+    setPaused(false);
+    const away = Date.now() - pausedAt.current;
+    setStartedAt((t) => (t === null ? t : t + away));
+    primeAudio();
+    const line = pendingLine.current;
+    pendingLine.current = null;
+    if (line) void interviewerSays(line);
+    else if (handsFreeRef.current && canListen && !typing && sessionRef.current?.status === "running") startListening();
+  }
+
+  /** First press of Discard: hold the call still (paused) and ask. */
+  function askDiscard() {
+    pause();
     setConfirmDiscard(true);
+  }
+
+  function keepGoing() {
+    setConfirmDiscard(false);
+    unpause();
   }
 
   /**
@@ -470,6 +519,9 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     const s = sessionRef.current;
     if (!s || busyRef.current === "feedback") return;
     endedRef.current = true;
+    pausedRef.current = false;
+    setPaused(false);
+    pendingLine.current = null;
     stopListening();
     stopSpeaking();
     clearSilence();
@@ -661,7 +713,7 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
         <div className={ui.stageTop}>
           <span className={ui.agentName}>AI interviewer</span>
           <span className={ui.status} data-state={live} aria-live="polite">
-            {busy === "feedback" ? "Writing your feedback…" : STATE_LABEL[live]}
+            {busy === "feedback" ? "Writing your feedback…" : paused ? "Paused" : STATE_LABEL[live]}
           </span>
           <span className={ui.stageClock}>
             {fmt(clock)}
@@ -679,7 +731,7 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
           <div className={ui.callBar} role="group" aria-label="Discard this interview?">
             <span className={ui.callBarNote}>Discard this interview? You won&apos;t get feedback and nothing is saved.</span>
             <span className={ui.callBarGap} />
-            <button className={ui.iconBtn} type="button" onClick={() => setConfirmDiscard(false)} autoFocus>
+            <button className={ui.iconBtn} type="button" onClick={keepGoing} autoFocus>
               Keep going
             </button>
             <button className={ui.btn} data-danger="" type="button" onClick={discard}>
@@ -690,7 +742,8 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
 
         {!done && !confirmDiscard && (
           <div className={ui.callBar}>
-            {canListen && (
+            {paused && <span className={ui.callBarNote}>Paused - take your time. Your answer so far is kept.</span>}
+            {!paused && canListen && (
               <button
                 className={ui.iconBtn}
                 type="button"
@@ -742,12 +795,23 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
             >
               <Icon name="transcript" />
             </button>
-            {showDone && (
+            {!paused && showDone && (
               <button className={ui.btn} data-primary="" type="button" onClick={() => void send()} disabled={busy !== null}>
                 {busy === "turn" ? "Waiting…" : "Done answering"}
               </button>
             )}
             <span className={ui.callBarGap} />
+            <button
+              className={ui.iconBtn}
+              type="button"
+              data-on={paused ? "" : undefined}
+              aria-pressed={paused}
+              onClick={paused ? unpause : pause}
+              disabled={busy === "feedback"}
+              title={paused ? "Carry on with the interview" : "Pause the interview"}
+            >
+              {paused ? "Resume" : "Pause"}
+            </button>
             <button
               className={ui.iconBtn}
               type="button"
