@@ -1,0 +1,33 @@
+{
+  "_note": "Best first, per job on the Settings page (lib/settings/models.ts). The first model your AI Gateway plan allows is marked recommended. Data, not code: edit freely; ids from https://ai-gateway.vercel.sh/v1/models.",
+  "AI_GATEWAY_INTERVIEWER_MODEL": [
+    "anthropic/claude-opus-5.5",
+    "anthropic/claude-sonnet-5.5",
+    "openai/gpt-6.2-sol",
+    "google/gemini-3.1-pro-preview",
+    "google/gemini-3.8-flash",
+    "deepseek/deepseek-v4-pro",
+    "moonshotai/kimi-k3.1-pro",
+    "mistral/mistral-medium-3.5"
+  ],
+  "AI_GATEWAY_PREMIUM_MODEL": [
+    "anthropic/claude-opus-5.5",
+    "anthropic/claude-sonnet-5.5",
+    "openai/gpt-6.2-sol",
+    "google/gemini-3.1-pro-preview",
+    "deepseek/deepseek-v4-pro",
+    "mistral/mistral-medium-3.5"
+  ],
+  "AI_GATEWAY_SMALL_MODEL": [
+    "google/gemini-2.5-flash-lite",
+    "google/gemini-3.5-flash-lite",
+    "deepseek/deepseek-v4-flash",
+    "openai/gpt-6-luna"
+  ],
+  "AI_GATEWAY_CASE_MODEL": [
+    "anthropic/claude-sonnet-5.5",
+    "google/gemini-3.8-flash",
+    "openai/gpt-6-sol",
+    "google/gemini-2.5-flash-lite"
+  ]
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { envFor } from "@/lib/services/settings";
 import { notFound, redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { getApplication, getJdRaw } from "@/lib/repos/applications";
@@ -71,7 +72,7 @@ export default async function ApplicationPage({
     app.jdExtract ? null : getJdRaw(db, userId, id),
   ]);
   const today = new Date().toISOString().slice(0, 10);
-  const followUpDays = applyFollowUpDaysFromEnv(process.env);
+  const followUpDays = applyFollowUpDaysFromEnv(await envFor(db, userId));
   const letterFrozen = app.appliedAt !== null;
   const bullets = projects.flatMap((p) => p.bullets);
   const bank: Record<string, Bullet> = Object.fromEntries(bullets.map((b) => [b.id, b]));

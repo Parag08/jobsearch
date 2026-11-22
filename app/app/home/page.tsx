@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { envFor } from "@/lib/services/settings";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
@@ -152,7 +153,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     openRoles,
     followupsDue: followupsDue(contacts, today).length,
     stale: staleApplications(apps, today).length,
-    goals: homeGoalsFromEnv(process.env),
+    goals: homeGoalsFromEnv(await envFor(db, userId)),
   });
 
   const { title, body } = headline(m);

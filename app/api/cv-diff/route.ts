@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { envFor } from "@/lib/services/settings";
 import { getWorkspace } from "@/lib/db";
 import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "@/lib/cv-page-settings";
 import { tailorCv } from "@/lib/services/tailor-cv";
@@ -17,7 +18,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!applicationId) return NextResponse.json({ error: "Send { applicationId: string }." }, { status: 400 });
 
   try {
-    const result = await tailorCv({ db: w.db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) }, w.userId, applicationId, new Date().toISOString().slice(0, 10));
+    const result = await tailorCv({ db: w.db, page: cvPageSettingsFromEnv(await envFor(w.db, w.userId)), select: cvSelectionSettingsFromEnv(await envFor(w.db, w.userId)) }, w.userId, applicationId, new Date().toISOString().slice(0, 10));
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "tailorCv failed" }, { status: 422 });

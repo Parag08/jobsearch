@@ -1,5 +1,6 @@
 "use server";
 
+import { envFor } from "@/lib/services/settings";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
@@ -61,7 +62,7 @@ const NO_AI = "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.examp
 const OFF = "The full interview is off. Set INTERVIEW_FULL_MAX_TOPICS, INTERVIEW_FULL_TOPIC_FOLLOW_UPS and INTERVIEW_FULL_TOTAL_FOLLOW_UPS (see .env.example).";
 
 /** Choosing the next branch is judgement: its own tier, else premium (token rule #5). */
-const premiumModel = () => process.env.AI_GATEWAY_PREMIUM_MODEL || GATEWAY_PREMIUM_MODEL;
+const premiumModel = (env: Record<string, string | undefined>) => env.AI_GATEWAY_PREMIUM_MODEL || GATEWAY_PREMIUM_MODEL;
 
 type W = Awaited<ReturnType<typeof ws>>;
 async function ledger(w: W, module: string, model: string, prompt: string, out: string) {
@@ -94,7 +95,7 @@ export interface FullTurnResult {
 /** Start a full interview for one application. The first question is asked by code - no model call. */
 export async function startFullAction(input: { applicationId: string | null; tone: Tone }): Promise<FullTurnResult> {
   const w = await ws();
-  const settings = fullInterviewSettingsFromEnv(process.env);
+  const settings = fullInterviewSettingsFromEnv(await envFor(w.db, w.userId));
   if (!settings) return { error: OFF };
   if (!TONES.includes(input.tone)) return { error: "Unknown tone." };
   const plan = await fullPlanFor(w.db, w.userId, input.applicationId, settings);
@@ -142,7 +143,7 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
     const prompt = buildFullTurnPrompt({ session: s, latest: answer, legal, cutIn: input.cutIn });
     let got: FullReply | null = null;
     // The interviewer model first (its own effort and cap), then premium once if it fails.
-    for (const m of interviewerModels(process.env)) {
+    for (const m of interviewerModels(await envFor(w.db, w.userId))) {
       try {
         const out = await aiWrite(
           w,
@@ -221,7 +222,7 @@ export async function finishFullAction(input: { sessionId: string; answer?: stri
   const fillers = fillerReport(said);
   const voice = parseVoiceSummary(input.voice);
   const hedges = hedgeCounts(said);
-  const model = w.cannedAi ? "demo" : premiumModel();
+  const model = w.cannedAi ? "demo" : premiumModel(await envFor(w.db, w.userId));
   const prompt = buildFullDebriefPrompt({ session: s, modelAnswers, delivery: voicePromptLine(voice, hedges), fillers: fillerLine(fillers) });
 
   let debrief;
@@ -286,7 +287,7 @@ export async function buildRolePlayAction(questionId: string): Promise<RolePlayR
 
   const { question } = found;
   const followUps = likelyFollowUps(modelAnswer);
-  const model = premiumModel();
+  const model = premiumModel(await envFor(w.db, w.userId));
   const prompt = buildRolePlayPrompt({
     question: question.text,
     lookFor: question.lookFor,
