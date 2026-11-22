@@ -195,6 +195,24 @@ the call bar.
   It never shows as a report, and the lobby no longer offers to resume it. A finished interview is
   never deleted this way.
 
+## No asking the same point twice; a stronger interviewer (2026-11-22, branch fix/interviewer-loops)
+
+On 21 Nov the interviewer asked "why 10%?" three times on one topic after it had been justified.
+Production logs showed `deepen` chosen every turn up to the per-topic cap of 3.
+- `samePoint` (grounding.ts): two follow-ups press the same point when they share a number or most
+  content words. `guardFullReply` checks each new follow-up against this topic's earlier ones (the
+  model's own line, before any rewording); a repeat moves on to the next topic when allowed, else a
+  line on another point is used.
+- The turn prompt lists the follow-ups already asked on the topic, says an explained point or number
+  is settled, and that one or two follow-ups per topic is usually enough.
+- A failed model call no longer means a canned "why": `safeDefault` moves on once the topic has had
+  a follow-up, and the failure is logged (`[full-turn] <model> failed: ...`).
+- Interviewer model (`lib/interview/interviewer-model.ts`): `AI_GATEWAY_INTERVIEWER_MODEL`, with
+  `_EFFORT` and `_MAX_TOKENS` for a thinking model (sent as the gateway's `reasoning.effort`), then
+  premium once as a fallback. The single-question mock uses it too (it used the small model).
+- Gateway usage, last 30 days: 233 of 410 requests got 429 (free-tier rate limit), and no Claude call
+  has ever run on the team. Claude may need paid AI Gateway credits.
+
 ## Known limits / next
 
 - Number rules see digits only, so "nine days to four" reads as no result and gets probed.

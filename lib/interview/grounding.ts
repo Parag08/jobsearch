@@ -223,3 +223,28 @@ export function echoProbe(latest: string, move: ProbeKind | "deepen"): string | 
   if (wordCount(q) < MIN_SENTENCE_WORDS - 1) return null;
   return `You said "${q}". ${ECHO_ASK[move]}`;
 }
+
+// ---- the same point twice -------------------------------------------------------------------
+
+/** Words every follow-up uses; they say nothing about which point is being pressed. */
+const QUESTION_WORDS = new Set(
+  "why how what which exactly again choose chose chosen pick picked decide decided reason reasons approach alternative alternatives consider considered rule ruled instead rather personally specific specifically".split(" "),
+);
+const MIN_SHARED_WORDS = 2;
+const SAME_POINT_SHARE = 0.6;
+
+/**
+ * True when two follow-ups press the same point: they share a number ("why 10%?" then "why
+ * exactly 10%?"), or most of the smaller one's content words. A real interviewer who has had an
+ * answer to a point moves on; asking it again in other words is the loop Parag hit on 21 Nov.
+ */
+export function samePoint(a: string, b: string): boolean {
+  const numsA = new Set(numberValues(a));
+  if (numberValues(b).some((n) => numsA.has(n))) return true;
+  const words = (t: string) => new Set(contentWords(t).filter((w) => !QUESTION_WORDS.has(w)).map(stem));
+  const wa = words(a);
+  const wb = words(b);
+  const shared = [...wa].filter((w) => wb.has(w)).length;
+  const smaller = Math.min(wa.size, wb.size);
+  return shared >= MIN_SHARED_WORDS && smaller > 0 && shared / smaller >= SAME_POINT_SHARE;
+}

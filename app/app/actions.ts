@@ -1,5 +1,6 @@
 "use server";
 
+import { interviewerModels } from "@/lib/interview/interviewer-model";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
@@ -815,8 +816,8 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
 
   if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
-  // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
-  const model = process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL;
+  // The interviewer's judgement is the product: the same model as the full interview
+  // (lib/interview/interviewer-model.ts), with premium as its fallback.
   const prompt = buildFollowUpPrompt({
     question: question.text,
     lookFor: question.lookFor,
@@ -828,15 +829,26 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
     candidates: step.candidates,
     questionFromCandidate: found.typed,
   });
-  let reply;
-  try {
-    const out = await aiWrite(w, "mock-turn", { model, prompt, json: true, maxOutputTokens: 200 }, { candidates: step.candidates });
-    reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
-  } catch (err) {
-    const wait = retryAfterSeconds(err);
-    if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
-    reply = { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
+  let reply = null;
+  let model = "code";
+  for (const m of interviewerModels(process.env)) {
+    try {
+      const out = await aiWrite(
+        w,
+        "mock-turn",
+        { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
+        { candidates: step.candidates },
+      );
+      reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
+      model = m.model;
+      break;
+    } catch (err) {
+      const wait = retryAfterSeconds(err);
+      if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+      console.error(`[mock-turn] ${m.model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
+    }
   }
+  reply ??= { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
 
   await logTokens(db, userId, { date: today(), module: "interview-follow-up", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
   return { session: applyFollowUp(s, answer, reply, now) };

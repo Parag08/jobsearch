@@ -18,6 +18,7 @@ import {
   parseFullReply,
   parseFullSession,
   startFull,
+  safeDefault,
   topicsAsked,
   turnConflict,
   type FullSession,
@@ -311,5 +312,54 @@ describe("parseFullSession", () => {
     const s = applyFullTurn(start(), STRONG, { move: "deepen", say: "Why?", assessment: "adequate" }, NOW);
     expect(parseFullSession(JSON.parse(JSON.stringify(s)))).toEqual(s);
     expect(() => parseFullSession({ turns: [] })).toThrow();
+  });
+});
+
+// 21 Nov: the interviewer asked "why 10%?" three times on one topic, after it was already justified.
+describe("no asking about the same point twice", () => {
+  const TEN = "We set a 10% churn target because the pilot cohort showed 10% was realistic, and I chose to launch in two markets first.";
+  const JUSTIFIED = "Because the pilot data showed 10% held for two quarters, so it was the honest number to commit to.";
+  const legalAfter = ["deepen", "next:role:impact", "next:role:fail"];
+  const afterOneWhy = () => applyFullTurn(start(), TEN, { move: "deepen", say: "You said 10%. Why 10%?" }, NOW);
+
+  it("moves on instead of asking about the same number again", () => {
+    const out = guardFullReply({ move: "deepen", say: "Why exactly 10% and not 15%?" }, afterOneWhy(), JUSTIFIED, legalAfter);
+    expect(out.move).toBe("next:role:impact");
+    expect(out.say).toBe("");
+  });
+
+  it("moves on instead of rephrasing the same question", () => {
+    const s = applyFullTurn(start(), TEN, { move: "deepen", say: "Why did you choose the pilot cohort to set the churn target?" }, NOW);
+    const out = guardFullReply({ move: "deepen", say: "How did the pilot cohort set your churn target?" }, s, JUSTIFIED, legalAfter);
+    expect(out.move).toBe("next:role:impact");
+  });
+
+  it("keeps a follow-up on a different point", () => {
+    const r = { move: "deepen", say: "Why two markets first, and not all at once?" };
+    expect(guardFullReply(r, afterOneWhy(), JUSTIFIED, legalAfter)).toEqual(r);
+  });
+
+  it("when moving on is not allowed, falls back to a line that is not a repeat", () => {
+    const out = guardFullReply({ move: "deepen", say: "Why 10% again?" }, afterOneWhy(), JUSTIFIED, ["deepen"]);
+    expect(out.move).toBe("deepen");
+    expect(out.say).not.toMatch(/10%/);
+  });
+
+  it("the prompt lists what was already asked on this topic and says a justified number is settled", () => {
+    const s = afterOneWhy();
+    const p = buildFullTurnPrompt({ session: s, latest: JUSTIFIED, legal: legalAfter });
+    expect(p).toMatch(/already asked on this topic/i);
+    expect(p).toContain("You said 10%. Why 10%?");
+    expect(p).toMatch(/settled/i);
+  });
+});
+
+describe("safeDefault (when the model call fails)", () => {
+  it("moves on once the topic has had a follow-up, rather than another canned why", () => {
+    const s = applyFullTurn(start(), STRONG, { move: "deepen", say: "Why?" }, NOW);
+    expect(safeDefault(["deepen", "next:role:impact"], s)).toBe("next:role:impact");
+  });
+  it("keeps code's first choice on a fresh topic", () => {
+    expect(safeDefault(["deepen", "next:role:impact"], start())).toBe("deepen");
   });
 });
