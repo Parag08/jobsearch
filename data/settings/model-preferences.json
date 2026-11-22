@@ -1,11 +1,11 @@
 {
-  "_note": "Best first, per job on the Settings page (lib/settings/models.ts). The first model your AI Gateway plan allows is marked recommended. Data, not code: edit freely; ids from https://ai-gateway.vercel.sh/v1/models.",
+  "_note": "Best first, per job on the Settings page (lib/settings/models.ts). The first model your AI Gateway plan allows is marked recommended. Data, not code: edit freely; ids from https://ai-gateway.vercel.sh/v1/models. Interviewer: Gemini 3.8 Flash first by Parag's choice (2026-11-22): quick, cheap (~$0.07 an interview), thinking at low effort.",
   "AI_GATEWAY_INTERVIEWER_MODEL": [
+    "google/gemini-3.8-flash",
     "anthropic/claude-opus-5.5",
     "anthropic/claude-sonnet-5.5",
     "openai/gpt-6.2-sol",
     "google/gemini-3.1-pro-preview",
-    "google/gemini-3.8-flash",
     "deepseek/deepseek-v4-pro",
     "moonshotai/kimi-k3.1-pro",
     "mistral/mistral-medium-3.5"
