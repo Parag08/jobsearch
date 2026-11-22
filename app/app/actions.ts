@@ -1,5 +1,7 @@
 "use server";
 
+import { envFor } from "@/lib/services/settings";
+import { interviewerModels } from "@/lib/interview/interviewer-model";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
@@ -95,7 +97,7 @@ export async function moveStage(applicationId: string, to: Stage, closedReason?:
   if (to === "applied") {
     const { application } = await markApplied({ db }, userId, applicationId, new Date().toISOString());
     // Applied: the next step is the follow-up (docs/APPLY-FLOW.md step 5), unless one is set.
-    const days = applyFollowUpDaysFromEnv(process.env);
+    const days = applyFollowUpDaysFromEnv((await envFor(db, userId)));
     if (days && !application.nextAction) {
       await updateApplication(db, userId, { ...application, nextAction: followUpAfterApplying(today(), days) });
     }
@@ -123,7 +125,7 @@ export async function tailorCvAction(applicationId: string): Promise<void> {
   let failure: string | null = null;
   try {
     await tailorCv(
-      { db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) },
+      { db, page: cvPageSettingsFromEnv((await envFor(db, userId))), select: cvSelectionSettingsFromEnv((await envFor(db, userId))) },
       userId,
       applicationId,
       today(),
@@ -154,7 +156,7 @@ export async function draftCoverLetterAction(applicationId: string, formData: Fo
     teamName: String(formData.get("teamName") ?? ""),
   };
   if (!aiReady(w)) letterError(applicationId, "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).");
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const model = (await envFor(db, userId)).AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const write = (prompt: string) => aiWrite(w, "cover-letter", { model, prompt, json: false, maxOutputTokens: 1200 });
 
   let message: string | null = null;
@@ -224,14 +226,14 @@ const NO_AI = { extractJd: async () => { throw new Error("AI is not set up"); } 
 async function applyDeps(w: NonNullable<Awaited<ReturnType<typeof getWorkspace>>>) {
   const { db, userId } = w;
   const day = today();
-  const base = aiLlm(w, demoTaxonomy);
+  const base = aiLlm(w, demoTaxonomy, await envFor(db, userId));
   const llm = base
     ? withLedger(base, async (e) => {
         await logTokens(db, userId, { date: day, module: e.module, model: e.model, tokensIn: e.tokensIn, tokensOut: e.tokensOut }).catch(() => undefined);
       })
     : NO_AI;
   const buildCv = async (applicationId: string) => {
-    await tailorCv({ db, page: cvPageSettingsFromEnv(process.env), select: cvSelectionSettingsFromEnv(process.env) }, userId, applicationId, day);
+    await tailorCv({ db, page: cvPageSettingsFromEnv((await envFor(db, userId))), select: cvSelectionSettingsFromEnv((await envFor(db, userId))) }, userId, applicationId, day);
   };
   return { db, llm, buildCv };
 }
@@ -326,7 +328,7 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
   const jd = String(formData.get("jd") ?? "").trim();
   if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
 
-  const base = aiLlm(w, demoTaxonomy);
+  const base = aiLlm(w, demoTaxonomy, await envFor(db, userId));
   if (!base) return "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY.";
 
   const day = today();
@@ -440,7 +442,7 @@ export interface AddQuestionState {
  */
 export async function addCustomQuestionAction(_prev: AddQuestionState | null, formData: FormData): Promise<AddQuestionState> {
   const { db, userId } = await ws();
-  const maxChars = customQuestionMaxCharsFromEnv(process.env);
+  const maxChars = customQuestionMaxCharsFromEnv((await envFor(db, userId)));
   if (!maxChars) return { error: "Adding your own questions is switched off (INTERVIEW_CUSTOM_QUESTION_MAX_CHARS is not set)." };
   const cleaned = cleanQuestionText(String(formData.get("text") ?? ""), maxChars);
   if ("error" in cleaned) return { error: cleaned.error };
@@ -507,7 +509,7 @@ export async function rewriteModelAnswerAction(_prev: ModelAnswerState | null, f
   if (saved.error) return { error: saved.error };
 
   if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const model = (await envFor(db, userId)).AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const prompt = buildRewritePrompt({
     question: found.question.text,
     lookFor: found.question.lookFor,
@@ -588,7 +590,7 @@ export async function probeStoryAction(_prev: ProbeState | null, formData: FormD
 
   let text = "";
   try {
-    text = await aiWrite(w, "probe", { model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL, prompt, maxOutputTokens: 300 });
+    text = await aiWrite(w, "probe", { model: (await envFor(db, userId)).AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL, prompt, maxOutputTokens: 300 });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not reach the model." };
   }
@@ -598,7 +600,7 @@ export async function probeStoryAction(_prev: ProbeState | null, formData: FormD
   await logTokens(db, userId, {
     date: today(),
     module: "interview-probe",
-    model: process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL,
+    model: (await envFor(db, userId)).AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL,
     tokensIn: 0,
     tokensOut: 0,
   }).catch(() => undefined);
@@ -669,7 +671,7 @@ export async function caseTurnAction(input: { sessionId: string; text: string })
   const forced = forcedAdvance(sheet, s, check);
 
   // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
-  const model = process.env.AI_GATEWAY_CASE_MODEL || GATEWAY_SMALL_MODEL;
+  const model = (await envFor(db, userId)).AI_GATEWAY_CASE_MODEL || GATEWAY_SMALL_MODEL;
   let reply;
   try {
     const out = await aiWrite(
@@ -729,7 +731,7 @@ export async function finishCaseAction(sessionId: string): Promise<CaseDebriefRe
   if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
   const signals = caseSignals(sheet, stored.session);
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const model = (await envFor(db, userId)).AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   let debrief;
   try {
     const out = await aiWrite(
@@ -815,8 +817,8 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
 
   if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
-  // Conversation, not polish: the small tier keeps each turn quick (token rule #5).
-  const model = process.env.AI_GATEWAY_SMALL_MODEL ?? GATEWAY_SMALL_MODEL;
+  // The interviewer's judgement is the product: the same model as the full interview
+  // (lib/interview/interviewer-model.ts), with premium as its fallback.
   const prompt = buildFollowUpPrompt({
     question: question.text,
     lookFor: question.lookFor,
@@ -828,15 +830,26 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
     candidates: step.candidates,
     questionFromCandidate: found.typed,
   });
-  let reply;
-  try {
-    const out = await aiWrite(w, "mock-turn", { model, prompt, json: true, maxOutputTokens: 200 }, { candidates: step.candidates });
-    reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
-  } catch (err) {
-    const wait = retryAfterSeconds(err);
-    if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
-    reply = { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
+  let reply = null;
+  let model = "code";
+  for (const m of interviewerModels((await envFor(db, userId)))) {
+    try {
+      const out = await aiWrite(
+        w,
+        "mock-turn",
+        { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
+        { candidates: step.candidates },
+      );
+      reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
+      model = m.model;
+      break;
+    } catch (err) {
+      const wait = retryAfterSeconds(err);
+      if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+      console.error(`[mock-turn] ${m.model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
+    }
   }
+  reply ??= { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
 
   await logTokens(db, userId, { date: today(), module: "interview-follow-up", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
   return { session: applyFollowUp(s, answer, reply, now) };
@@ -890,7 +903,7 @@ export async function mockFeedbackAction(input: {
   // Numbers said aloud are checked against the written answer and the model answer together.
   const { saidNotWritten } = numberDrift(said, [await writtenAnswerFor(question.id), found.modelAnswer ?? ""].join(" "));
   const fillers = fillerReport(said);
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const model = (await envFor(db, userId)).AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const voice = parseVoiceSummary(input.voice);
   const hedges = hedgeCounts(said);
   const prompt = buildMockDebriefPrompt({

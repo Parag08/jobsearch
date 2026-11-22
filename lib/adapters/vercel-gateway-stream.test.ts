@@ -73,6 +73,16 @@ describe("streamGatewayText", () => {
     expect(calls[0].url).not.toContain("vck_test");
   });
 
+  it("asks for a reasoning effort only when one is given, and keeps the reasoning text out", async () => {
+    const one = stubFetch(sseResponse([delta("hi"), "data: [DONE]\n\n"]));
+    await collect(streamGatewayText({ apiKey: "k", model: "anthropic/claude-opus-5.5", prompt: "go", reasoningEffort: "low", fetch: one.fetch }));
+    expect(JSON.parse(String(one.calls[0].init.body)).reasoning).toEqual({ effort: "low", exclude: true });
+
+    const two = stubFetch(sseResponse([delta("hi"), "data: [DONE]\n\n"]));
+    await collect(streamGatewayText({ apiKey: "k", model: "openai/gpt-6-astra", prompt: "go", fetch: two.fetch }));
+    expect(JSON.parse(String(two.calls[0].init.body))).not.toHaveProperty("reasoning");
+  });
+
   it("yields each delta as it arrives, in order", async () => {
     const { fetch } = stubFetch(sseResponse([delta("Hel"), delta("lo "), delta("world"), "data: [DONE]\n\n"]));
     const out = await collect(streamGatewayText({ apiKey: "k", model: "openai/gpt-6-astra", prompt: "go", fetch }));

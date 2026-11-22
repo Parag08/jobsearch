@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { envFor } from "@/lib/services/settings";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listProjects } from "@/lib/repos/projects";
@@ -65,7 +66,8 @@ export default async function Interview({ searchParams }: { searchParams: Promis
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const params = await searchParams;
-  const settings = fullInterviewSettingsFromEnv(process.env);
+  const env = await envFor(db, userId);
+  const settings = fullInterviewSettingsFromEnv(env);
 
   const [companyQs, apps] = await Promise.all([listCompanyQuestions(db, userId), listApplications(db, userId)]);
   const entries = prepEntries(
@@ -115,6 +117,7 @@ export default async function Interview({ searchParams }: { searchParams: Promis
 
       {entry ? (
         <CompanyPrep
+          env={env}
           entry={entry}
           card={fullCards.find((c) => c.slug === entry.slug) ?? null}
           settings={settings}
@@ -141,6 +144,7 @@ export default async function Interview({ searchParams }: { searchParams: Promis
           {tab === "behavioural" && (
             <>
               <FullLead
+                env={env}
                 card={generalCard}
                 settings={settings}
                 full={params.full === "1"}
@@ -150,6 +154,7 @@ export default async function Interview({ searchParams }: { searchParams: Promis
               />
               {params.full !== "1" && (
                 <Behavioural
+                  env={env}
                   answers={answers}
                   attempts={attempts}
                   bullets={bullets}
@@ -179,7 +184,9 @@ function FullLead({
   base,
   title,
   line,
+  env,
 }: {
+  env: Record<string, string | undefined>;
   card: FullInterviewCard | null;
   settings: FullInterviewSettings | null;
   full: boolean;
@@ -201,7 +208,7 @@ function FullLead({
         <Link href={url(base)} scroll={false} className={ui.mono}>
           ← Back to the questions
         </Link>
-        <FullInterview card={card} maxTopics={settings.maxTopics} questionBase={base} turn={turnSettingsFromEnv(process.env)} />
+        <FullInterview card={card} maxTopics={settings.maxTopics} questionBase={base} turn={turnSettingsFromEnv(env)} />
       </section>
     );
   }
@@ -223,6 +230,7 @@ function FullLead({
 // ---- a company's page ---------------------------------------------------------------------
 
 function CompanyPrep({
+  env,
   entry,
   card,
   settings,
@@ -237,6 +245,7 @@ function CompanyPrep({
   caseId,
   caseType,
 }: {
+  env: Record<string, string | undefined>;
   entry: PrepEntry;
   card: FullInterviewCard | null;
   settings: FullInterviewSettings | null;
@@ -271,9 +280,10 @@ function CompanyPrep({
           {entry.round ?? (entry.kind === "consulting" ? "Case and fit" : "From the job ad")}
         </span>
       </div>
-      <FullLead card={card} settings={settings} full={full} base={base} title="Full mock interview" line={line} />
+      <FullLead env={env} card={card} settings={settings} full={full} base={base} title="Full mock interview" line={line} />
       {!full && !caseId && (
         <Behavioural
+          env={env}
           answers={answers}
           attempts={attempts}
           bullets={bullets}
@@ -308,6 +318,7 @@ function Behavioural({
   rolePlays,
   base,
   lockedCompany,
+  env,
 }: {
   answers: Answer[];
   attempts: Attempt[];
@@ -318,6 +329,8 @@ function Behavioural({
   rolePlays: RolePlay[];
   base: Record<string, string>;
   lockedCompany?: string;
+  /** This user's env (deployment env + their Settings). */
+  env: Record<string, string | undefined>;
 }) {
   // What your CV bullets already evidence, before you have written anything.
   const evidenced = new Set<string>();
@@ -325,12 +338,12 @@ function Behavioural({
 
   return (
     <BehaviouralView
-      turn={turnSettingsFromEnv(process.env)}
+      turn={turnSettingsFromEnv(env)}
       groups={questionBank.groups}
       generic={lockedCompany ? [] : questionBank.questions}
       company={companyQuestions}
       custom={customQuestions}
-      customMaxChars={customQuestionMaxCharsFromEnv(process.env)}
+      customMaxChars={customQuestionMaxCharsFromEnv(env)}
       answers={answers}
       attempts={attempts}
       evidenced={[...evidenced]}

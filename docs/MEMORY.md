@@ -2,6 +2,14 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-22 (later) - Settings page (same branch, fix/interviewer-loops)
+
+Parag has the free $5 AI Gateway credit and wanted the best model for it, and every setting (models, interviews, the rest) on one page. Built `/app/settings` (nav, last): registry-driven (`lib/settings/registry.ts`), saved in `user_settings` (migration **0018**, applied by db.yml on push to main), read through `envFor`; all model/interview/pipeline/goal/CV reads now go through it. Model pickers show price, ~cost per interview and "on your plan / needs credits" from the gateway's `include_availability` (key stays server-side); "Use the best for my plan" picks per job from `data/settings/model-preferences.json`. Interviewer: **Gemini 3.8 Flash** by Parag's choice (top of the interviewer preferences; Vercel `AI_GATEWAY_INTERVIEWER_MODEL=google/gemini-3.8-flash`, `_EFFORT=low`, `_MAX_TOKENS=2000` once merged). Checked in the local demo (pickers, use best, save + reload, refused combination). **Not checked: the live plan marks** (needs the real key; the page shows "could not ask" if that call fails).
+
+## 2026-11-22 - Interviewer loops + stronger model (branch fix/interviewer-loops)
+
+Parag: the interviewer asked "why 10%" over and over. Logs: `deepen` every turn to the cap. Fixed in code (`samePoint`, repeat check in `guardFullReply`, `safeDefault`, prompt lists asked points) and the interviewer model is now `AI_GATEWAY_INTERVIEWER_MODEL` (+ `_EFFORT`, `_MAX_TOKENS`) for both mocks, premium as fallback, failures logged. **Gateway is on the free tier: 57% of requests got 429 in 30 days, and Claude may be refused (403) until credits are bought.** Details: docs/FULL-INTERVIEW.md.
+
 ## 2026-11-21 (later) - Pause and Discard (branch feat/interview-pause-discard)
 
 PR #29 merged and live. Parag wanted more time to finish answers: **Vercel now has `INTERVIEW_TURN_SILENCE_MS=2500`, `INTERVIEW_TURN_UNFINISHED_MS=6000`** (Production + Preview, redeployed); `.env.example` matches. Added **Pause** (beside Discard) to both interview rooms and **Discard** to the full interview (deletes only a running session). Details: docs/FULL-INTERVIEW.md "Pause and Discard". Checked in the local demo; not on a real mic.

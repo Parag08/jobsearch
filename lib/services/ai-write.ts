@@ -28,6 +28,8 @@ export interface WriteOptions {
   prompt: string;
   json?: boolean;
   maxOutputTokens: number;
+  /** A thinking model's effort (gateway `reasoning.effort`); unset = the model's default. */
+  reasoningEffort?: string;
 }
 
 /** Stream one completion to a string - or, for a demo visitor, return the canned reply for `task`. */

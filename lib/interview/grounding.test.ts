@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { echoProbe, groundingProblems, numberValues, shortenFollowUp } from "./grounding";
+import { echoProbe, groundingProblems, numberValues, samePoint, shortenFollowUp } from "./grounding";
 
 // The 20 Nov leak: the background answer never said "stuck for two years"; only the model answer did.
 const BACKGROUND =
@@ -88,5 +88,18 @@ describe("echoProbe", () => {
   });
   it("returns null when there is nothing to echo", () => {
     expect(echoProbe("Yes.", "deepen")).toBeNull();
+  });
+});
+
+describe("samePoint", () => {
+  it("the same number is the same point, however it is asked", () => {
+    expect(samePoint("You said 10%. Why 10%?", "Why exactly ten percent?")).toBe(true);
+  });
+  it("a reworded question on the same thing is the same point", () => {
+    expect(samePoint("Why did you pick the pilot cohort for the churn target?", "How did the pilot cohort shape the churn target?")).toBe(true);
+  });
+  it("a new thread is not", () => {
+    expect(samePoint("You said 10%. Why 10%?", "Why two markets first?")).toBe(false);
+    expect(samePoint("What did you personally build?", "How do you know it worked?")).toBe(false);
   });
 });

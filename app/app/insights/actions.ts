@@ -1,5 +1,6 @@
 "use server";
 
+import { envFor } from "@/lib/services/settings";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
@@ -40,9 +41,10 @@ export async function readUnreadRolesAction(formData?: FormData): Promise<void> 
   const w = await ws();
   const { db, userId } = w;
   const by = formData ? selection(formData) : {};
-  const batch = roleReadBatchFromEnv(process.env);
+  const env = await envFor(db, userId);
+  const batch = roleReadBatchFromEnv(env);
   if (batch === undefined) redirect(back(by, { error: "Set ROLE_READ_BATCH to read saved roles." }));
-  const base = aiLlm(w, demoTaxonomy);
+  const base = aiLlm(w, demoTaxonomy, env);
   if (!base) {
     redirect(back(by, { error: "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY." }));
   }
@@ -68,10 +70,11 @@ export async function draftRolePlanAction(formData: FormData): Promise<void> {
   const w = await ws();
   const { db, userId } = w;
   const by = selection(formData);
-  const maxGaps = rolePlanMaxGapsFromEnv(process.env);
+  const env = await envFor(db, userId);
+  const maxGaps = rolePlanMaxGapsFromEnv(env);
   if (maxGaps === undefined) redirect(back(by, { error: "Set ROLE_PLAN_MAX_GAPS to enable plan drafting." }, "#plan"));
   if (!aiReady(w)) redirect(back(by, { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." }, "#plan"));
-  const model = process.env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
+  const model = env.AI_GATEWAY_PREMIUM_MODEL ?? GATEWAY_PREMIUM_MODEL;
   const write = (prompt: string) => aiWrite(w, "role-plan", { model, prompt, json: false, maxOutputTokens: 1200 });
 
   let message: string | null = null;

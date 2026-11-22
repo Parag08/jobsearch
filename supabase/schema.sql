@@ -17,6 +17,7 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists user_settings cascade;
 drop table if exists interview_role_plays cascade;
 drop table if exists interview_full_sessions cascade;
 drop table if exists interview_model_answers cascade;
@@ -462,6 +463,13 @@ create table interview_role_plays (
   unique (user_id, question_id)
 );
 
+-- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count.
+create table user_settings (
+  user_id uuid primary key references profiles (user_id) on delete cascade,
+  values jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -486,6 +494,7 @@ alter table interview_role_questions enable row level security;
 alter table interview_model_answers enable row level security;
 alter table interview_full_sessions enable row level security;
 alter table interview_role_plays enable row level security;
+alter table user_settings enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -508,7 +517,7 @@ begin
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
                            'interview_custom_questions','interview_role_questions','interview_model_answers',
-                           'interview_full_sessions','interview_role_plays']
+                           'interview_full_sessions','interview_role_plays','user_settings']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);

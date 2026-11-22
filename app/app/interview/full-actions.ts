@@ -1,5 +1,6 @@
 "use server";
 
+import { envFor } from "@/lib/services/settings";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
@@ -25,6 +26,7 @@ import {
   parseFullSession,
   startFull,
   topicsAsked,
+  safeDefault,
   turnConflict,
   type FullReply,
   type FullSession,
@@ -36,6 +38,7 @@ import { deliverySignals, numberDrift, overallScore, type DeliverySignals, type 
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { buildRolePlayPrompt, guardRolePlay, likelyFollowUps, parseRolePlay, rolePlayBasis, type RolePlay } from "@/lib/interview/role-play";
 import { fullPlanFor } from "@/lib/services/full-interview";
+import { interviewerModels } from "@/lib/interview/interviewer-model";
 import { writtenAnswerText } from "@/lib/services/role-plays";
 import { createFullSession, discardFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
 import { listModelAnswers } from "@/lib/repos/model-answers";
@@ -59,8 +62,7 @@ const NO_AI = "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.examp
 const OFF = "The full interview is off. Set INTERVIEW_FULL_MAX_TOPICS, INTERVIEW_FULL_TOPIC_FOLLOW_UPS and INTERVIEW_FULL_TOTAL_FOLLOW_UPS (see .env.example).";
 
 /** Choosing the next branch is judgement: its own tier, else premium (token rule #5). */
-const interviewerModel = () => process.env.AI_GATEWAY_INTERVIEWER_MODEL || process.env.AI_GATEWAY_PREMIUM_MODEL || GATEWAY_PREMIUM_MODEL;
-const premiumModel = () => process.env.AI_GATEWAY_PREMIUM_MODEL || GATEWAY_PREMIUM_MODEL;
+const premiumModel = (env: Record<string, string | undefined>) => env.AI_GATEWAY_PREMIUM_MODEL || GATEWAY_PREMIUM_MODEL;
 
 type W = Awaited<ReturnType<typeof ws>>;
 async function ledger(w: W, module: string, model: string, prompt: string, out: string) {
@@ -93,7 +95,7 @@ export interface FullTurnResult {
 /** Start a full interview for one application. The first question is asked by code - no model call. */
 export async function startFullAction(input: { applicationId: string | null; tone: Tone }): Promise<FullTurnResult> {
   const w = await ws();
-  const settings = fullInterviewSettingsFromEnv(process.env);
+  const settings = fullInterviewSettingsFromEnv(await envFor(w.db, w.userId));
   if (!settings) return { error: OFF };
   if (!TONES.includes(input.tone)) return { error: "Unknown tone." };
   const plan = await fullPlanFor(w.db, w.userId, input.applicationId, settings);
@@ -134,20 +136,34 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
   let reply: FullReply = fallbackReply(legal);
   const t1 = Date.now();
 
+  let usedModel = "code";
   if (needsModel(legal)) {
     if (!aiReady(w)) return { error: NO_AI };
-    const model = interviewerModel();
     // Never the model answer here: it is the debrief's yardstick only.
     const prompt = buildFullTurnPrompt({ session: s, latest: answer, legal, cutIn: input.cutIn });
-    try {
-      const out = await aiWrite(w, "full-turn", { model, prompt, json: true, maxOutputTokens: 160 }, { candidates: legal });
-      void ledger(w, "interview-full-turn", model, prompt, out);
-      reply = guardFullReply(parseFullReply(parseJsonLoose(out), legal), s, answer);
-    } catch (err) {
-      const wait = retryAfterSeconds(err);
-      if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
-      reply = guardFullReply(fallbackReply(legal), s, answer);
+    let got: FullReply | null = null;
+    // The interviewer model first (its own effort and cap), then premium once if it fails.
+    for (const m of interviewerModels(await envFor(w.db, w.userId))) {
+      try {
+        const out = await aiWrite(
+          w,
+          "full-turn",
+          { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
+          { candidates: legal },
+        );
+        void ledger(w, "interview-full-turn", m.model, prompt, out);
+        got = guardFullReply(parseFullReply(parseJsonLoose(out), legal), s, answer, legal);
+        usedModel = w.cannedAi ? "demo" : m.model;
+        break;
+      } catch (err) {
+        const wait = retryAfterSeconds(err);
+        if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+        // Logged so a failing model is visible, not silently replaced by code's stock line.
+        console.error(`[full-turn] ${m.model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
+      }
     }
+    // Nothing usable: move on if the topic has had a follow-up, rather than a canned "why".
+    reply = got ?? guardFullReply(fallbackReply([safeDefault(legal, s), ...legal]), s, answer, legal);
   }
   const t2 = Date.now();
 
@@ -155,7 +171,7 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
   await saveFullSession(w.db, w.userId, stored.id, next);
   const t3 = Date.now();
   const timing = { load: t1 - t0, model: t2 - t1, save: t3 - t2, total: t3 - t0 };
-  console.info(`[full-turn] load=${timing.load}ms model=${timing.model}ms save=${timing.save}ms total=${timing.total}ms move=${reply.move}`);
+  console.info(`[full-turn] load=${timing.load}ms model=${timing.model}ms save=${timing.save}ms total=${timing.total}ms move=${reply.move} model=${usedModel}`);
   return { sessionId: stored.id, session: next, timing };
 }
 
@@ -206,7 +222,7 @@ export async function finishFullAction(input: { sessionId: string; answer?: stri
   const fillers = fillerReport(said);
   const voice = parseVoiceSummary(input.voice);
   const hedges = hedgeCounts(said);
-  const model = w.cannedAi ? "demo" : premiumModel();
+  const model = w.cannedAi ? "demo" : premiumModel(await envFor(w.db, w.userId));
   const prompt = buildFullDebriefPrompt({ session: s, modelAnswers, delivery: voicePromptLine(voice, hedges), fillers: fillerLine(fillers) });
 
   let debrief;
@@ -271,7 +287,7 @@ export async function buildRolePlayAction(questionId: string): Promise<RolePlayR
 
   const { question } = found;
   const followUps = likelyFollowUps(modelAnswer);
-  const model = premiumModel();
+  const model = premiumModel(await envFor(w.db, w.userId));
   const prompt = buildRolePlayPrompt({
     question: question.text,
     lookFor: question.lookFor,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { envFor } from "@/lib/services/settings";
 import { getAgentWorkspace } from "@/lib/db/agent";
 import { capReads, handleBody, MAX_READS_PER_REQUEST } from "@/lib/mcp/server";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
@@ -49,8 +50,9 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     // The small-tier reader for postings; absent (undefined) when no provider is configured.
-    const base = createLlm(process.env);
     const { db, userId } = auth.workspace;
+    const env = await envFor(db, userId);
+    const base = createLlm(env);
     const date = nowIso.slice(0, 10);
     const llm = base
       ? capReads(
@@ -66,7 +68,7 @@ export async function POST(request: Request): Promise<Response> {
       ...auth.workspace,
       nowIso,
       llm,
-      customQuestionMaxChars: customQuestionMaxCharsFromEnv(process.env),
+      customQuestionMaxChars: customQuestionMaxCharsFromEnv(env),
     });
     return reply === null ? new Response(null, { status: 202 }) : NextResponse.json(reply);
   } catch {

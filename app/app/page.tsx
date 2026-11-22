@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { envFor } from "@/lib/services/settings";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
@@ -45,11 +46,12 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const active = apps.filter((a) => a.stage !== "closed").length;
 
   const byStage = Object.fromEntries(STAGES.map((s) => [s, [] as Application[]])) as Record<Stage, Application[]>;
-  const recentDays = pipelineRecentDaysFromEnv(process.env);
+  const env = await envFor(db, userId);
+  const recentDays = pipelineRecentDaysFromEnv(env);
   const showAll = recentDays === undefined || show !== "recent";
   const shown = showAll ? apps : recentApplications(apps, today, recentDays);
   for (const a of byRecentActivity(shown)) byStage[a.stage].push(a);
-  const columnMax = pipelineColumnMaxFromEnv(process.env);
+  const columnMax = pipelineColumnMaxFromEnv(env);
   // Negotiation only earns a column once something reaches it; closed is a count, not a column.
   const columns = byStage.negotiation.length ? [...ACTIVE, "negotiation" as Stage] : ACTIVE;
   const closed = byStage.closed.length;

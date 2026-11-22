@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { envFor } from "@/lib/services/settings";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { listApplications } from "@/lib/repos/applications";
@@ -37,8 +38,9 @@ export default async function Insights({ searchParams }: { searchParams: Promise
   const unread = (await unreadRoleIds(db, userId)).length;
   const families = roleFamilies(apps);
   const readTotal = families.reduce((n, f) => n + f.roles, 0);
-  const readBatch = roleReadBatchFromEnv(process.env);
-  const planEnabled = rolePlanMaxGapsFromEnv(process.env) !== undefined;
+  const env = await envFor(db, userId);
+  const readBatch = roleReadBatchFromEnv(env);
+  const planEnabled = rolePlanMaxGapsFromEnv(env) !== undefined;
 
   const family = sp.family?.trim() || undefined;
   const title = sp.title?.trim() || undefined;

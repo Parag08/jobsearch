@@ -1032,3 +1032,8 @@ Two load-bearing joints:
   transcript is one click away.
 - **Red is reserved for destructive confirmations only.** Rejection states are never red; closed is
   neutral taupe whatever the reason.
+- **Settings is one page of grouped panels, one field per row** (`/app/settings`, 2026-11-22): label,
+  the control, then a muted help line that also says what blank means. A sticky glass save bar at the
+  bottom; errors sit under their field in the page's own words, never env names. Model pickers list
+  the job's ranked models first (★ = best your plan allows), then the rest of your plan, cheapest
+  first, each with an estimated cost per interview; "needs credits" is a tag, not a disabled option.

@@ -312,6 +312,7 @@ export interface RowMap {
   interview_model_answers: InterviewModelAnswerRow;
   interview_full_sessions: InterviewFullSessionRow;
   interview_role_plays: InterviewRolePlayRow;
+  user_settings: UserSettingsRow;
 }
 
 /** One full mock interview (migration 0017); `session` is the whole FullSession, saved every turn. */
@@ -815,4 +816,11 @@ export function profileRow(p: Profile): ProfileRow {
     org_caps: p.orgCaps ?? {},
     taxonomy: p.taxonomy ?? {},
   };
+}
+
+/** One user's settings (migration 0018): env key -> value, as text. */
+export interface UserSettingsRow {
+  user_id: string;
+  values: Record<string, string>;
+  updated_at?: string;
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { canonicalNumber, extractNumbers } from "../stories/consistency";
-import { echoProbe, groundingProblems, MAX_FOLLOW_UP_WORDS, shortenFollowUp } from "./grounding";
+import { echoProbe, groundingProblems, MAX_FOLLOW_UP_WORDS, samePoint, shortenFollowUp } from "./grounding";
 import { DIMENSION_HELP, SCORE_DIMENSIONS, parseScore, type Scores } from "./score";
 import {
   FOLLOW_UP_FALLBACK,
@@ -192,12 +192,32 @@ function safeFollowUp(move: Move, latest: string): string {
   return echo ?? stockLine(move);
 }
 
+/** The follow-ups already asked on the current topic, oldest first. */
+function followUpsOnTopic(s: FullSession): string[] {
+  const cur = currentTopicId(s);
+  return s.turns.filter((t) => t.topicId === cur && isFollowUp(t)).map((t) => t.text);
+}
+
+const isEnd = (m: Move) => m === "close" || m.startsWith("next:");
+
+/**
+ * Code's move when the model gives nothing usable (a failed call, a repeat): once the topic has
+ * had a follow-up, move on rather than ask another canned "why"; on a fresh topic, code's first choice.
+ */
+export function safeDefault(legal: Move[], s: FullSession): Move {
+  const end = legal.find(isEnd);
+  if (end && followUpsOnTopic(s).length > 0) return end;
+  return legal[0] ?? "close";
+}
+
 /**
  * The interviewer may only use what the candidate said in this interview (plus the questions
  * asked). A follow-up that breaks that, or cannot be cut to one short question, is replaced by a
- * probe from the candidate's own last answer; a bridge that breaks it is dropped.
+ * probe from the candidate's own last answer; a bridge that breaks it is dropped. A follow-up
+ * that presses a point already asked on this topic is not asked: the interview moves on when it
+ * may, else a line on a different point is used.
  */
-export function guardFullReply(reply: FullReply, s: FullSession, latest: string): FullReply {
+export function guardFullReply(reply: FullReply, s: FullSession, latest: string, legal: Move[] = []): FullReply {
   if (!reply.say) return reply;
   const grounds = {
     said: [candidateText(s, latest)],
@@ -208,8 +228,16 @@ export function guardFullReply(reply: FullReply, s: FullSession, latest: string)
     return { ...reply, say: bridge && !groundingProblems(bridge, grounds).length ? bridge : "" };
   }
   if (reply.move === "close") return reply;
-  const line = shortenFollowUp(reply.say, MAX_FOLLOW_UP_WORDS);
-  return line && !groundingProblems(line, grounds).length ? { ...reply, say: line } : { ...reply, say: safeFollowUp(reply.move, latest) };
+  const earlier = followUpsOnTopic(s);
+  const repeats = (line: string) => earlier.some((e) => samePoint(e, line));
+  const shortened = shortenFollowUp(reply.say, MAX_FOLLOW_UP_WORDS);
+  const line = shortened && !groundingProblems(shortened, grounds).length ? shortened : safeFollowUp(reply.move, latest);
+  // The model's own intent counts: a repeat stays a repeat even if its wording is replaced.
+  if (!repeats(reply.say) && !repeats(line)) return { ...reply, say: line };
+  const end = legal.find(isEnd);
+  if (end) return { ...reply, move: end, say: "" };
+  const echo = safeFollowUp(reply.move, latest);
+  return { ...reply, say: repeats(echo) ? stockLine(reply.move) : echo };
 }
 
 /**
@@ -324,12 +352,13 @@ function moveHelp(move: Move, plan: FullPlan): string {
 export function buildFullTurnPrompt(input: { session: FullSession; latest: string; legal: Move[]; cutIn?: boolean }): string {
   const s = input.session;
   const cur = topicOf(s.plan, currentTopicId(s))!;
-  const asked = topicsAsked(s).length;
+  const topicCount = topicsAsked(s).length;
+  const asked = followUpsOnTopic(s);
   const recent = s.turns.slice(-PROMPT_TURNS).map((t) => `${t.role === "interviewer" ? "Interviewer" : "Candidate"}: ${t.text}`);
   return [
     `You are ${persona(s.plan)}, running a real interview${s.plan.round ? ` (${s.plan.round})` : ""} with a candidate${forRole(s.plan)}. You are sharp and slightly sceptical.`,
     `Your manner: ${TONE_HELP[s.tone]}`,
-    `You have asked ${asked} of at most ${s.settings.maxTopics} topics.`,
+    `You have asked ${topicCount} of at most ${s.settings.maxTopics} topics.`,
     "",
     `Current topic: ${cur.text}`,
     `A strong answer shows: ${cur.lookFor}`,
@@ -343,7 +372,10 @@ export function buildFullTurnPrompt(input: { session: FullSession; latest: strin
     "Choose exactly ONE move:",
     ...input.legal.map((m) => `- ${moveHelp(m, s.plan)}`),
     "",
-    "How a real interviewer chooses: chase the most interesting or weakest thing just said - a decision with no reason, a 'we' with no 'I', a claim with no number, a contradiction with something said earlier. Ask 'why' a few times in a row until they reach the edge of what they know, then move on.",
+    ...(asked.length ? ["Already asked on this topic (never ask these points again, in any words):", ...asked.map((q) => `- ${q}`)] : []),
+    "How a real interviewer chooses: chase the most interesting or weakest thing just said - a decision with no reason, a 'we' with no 'I', a claim with no number, a contradiction with something said earlier. Each follow-up must open a NEW thread; go deeper down a thread only while each answer reveals something new, and stop when they reach the edge of what they know.",
+    "Once they have explained a point or a number, it is settled: do not ask about it again. Numbers are not interesting in themselves - ask about the decision, the trade-off, what broke, or what they personally did.",
+    "Usually one or two follow-ups per topic is enough; move on when the topic has been covered or the answer holds up.",
     "",
     "Rules for 'say':",
     `- probe/deepen: ONE question, at most ${MAX_FOLLOW_UP_WORDS} words, no preamble, no praise, no hints. Pick up their exact words: "You said X. Why X?"`,

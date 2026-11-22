@@ -25,6 +25,12 @@ export interface StreamOptions {
   maxOutputTokens?: number;
   /** Ask for a JSON object (OpenAI-compatible JSON mode). The prompt must mention JSON. */
   json?: boolean;
+  /**
+   * For a thinking model: the gateway's `reasoning.effort` extension, mapped to the provider's
+   * own setting (Claude's adaptive-thinking effort). The reasoning text is excluded from the
+   * stream; only the answer comes back.
+   */
+  reasoningEffort?: string;
 }
 
 export interface SseParseResult {
@@ -92,6 +98,7 @@ export async function* streamGatewayText(opts: StreamOptions): AsyncGenerator<st
       stream: true,
       max_tokens: opts.maxOutputTokens,
       ...(opts.json ? { response_format: { type: "json_object" } } : {}),
+      ...(opts.reasoningEffort ? { reasoning: { effort: opts.reasoningEffort, exclude: true } } : {}),
     }),
   });
 

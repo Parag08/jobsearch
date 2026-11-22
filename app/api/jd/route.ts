@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { envFor } from "@/lib/services/settings";
 import { getWorkspace } from "@/lib/db";
 import { withLedger } from "@/lib/adapters/llm-factory";
 import { aiLlm } from "@/lib/services/ai-write";
@@ -20,7 +21,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const jd = typeof body?.jd === "string" ? body.jd.trim() : "";
   if (jd.length < 40) return NextResponse.json({ error: "Send { jd: string } with the full posting." }, { status: 400 });
 
-  const base = aiLlm(w, demoTaxonomy);
+  const base = aiLlm(w, demoTaxonomy, await envFor(w.db, w.userId));
   if (!base) {
     return NextResponse.json(
       { error: "No LLM configured. Set GEMINI_API_KEY or GROQ_API_KEY (free tiers) - see .env.example." },
