@@ -753,6 +753,13 @@ notes are").
   Missed / Said differently tags), How you handled the follow-ups, Fillers and delivery.
   **Try again** last. Model-written list items always read as text (`asText`): an object the
   model sends is turned into a sentence, never "[object Object]".
+- **Rating the interviewer (full interview, finished):** in **Read transcript**, every interviewer
+  line after your first answer (not the close) ends with a quiet row: "Good question?" and two
+  pill buttons, **Good** / **Bad** (`aria-pressed`; the pressed one takes the accent wash; press
+  again to clear). **Bad** opens a one-line field, "What should it have asked instead?
+  (optional)", saved on Enter or blur. A short note above the transcript says why, with a
+  **Download the eval set** link. Saved at once, "Saving…" / "Saved" beside it. Added
+  2026-11-23 (Parag: measure the interviewer before fine-tuning it).
 
 ### Application (`/app/applications/[id]`)
 

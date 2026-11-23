@@ -313,6 +313,7 @@ export interface RowMap {
   interview_full_sessions: InterviewFullSessionRow;
   interview_role_plays: InterviewRolePlayRow;
   user_settings: UserSettingsRow;
+  interviewer_ratings: InterviewerRatingRow;
 }
 
 /** One full mock interview (migration 0017); `session` is the whole FullSession, saved every turn. */
@@ -822,5 +823,16 @@ export function profileRow(p: Profile): ProfileRow {
 export interface UserSettingsRow {
   user_id: string;
   values: Record<string, string>;
+  updated_at?: string;
+}
+
+/** Your verdict on one interviewer line of a full interview (migration 0019). */
+export interface InterviewerRatingRow {
+  id: string;
+  user_id: string;
+  session_id: string;
+  turn_index: number;
+  rating: "good" | "bad";
+  better: string | null;
   updated_at?: string;
 }

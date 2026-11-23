@@ -13,20 +13,16 @@ import { fullInterviewSettingsFromEnv } from "@/lib/interview/full-plan";
 import {
   applyFullTurn,
   buildFullDebriefPrompt,
-  buildFullTurnPrompt,
   canScoreFull,
   closeFull,
   currentTopicId,
   fallbackReply,
-  guardFullReply,
   legalMoves,
   needsModel,
   parseFullDebrief,
-  parseFullReply,
   parseFullSession,
   startFull,
   topicsAsked,
-  safeDefault,
   turnConflict,
   type FullReply,
   type FullSession,
@@ -39,7 +35,10 @@ import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLi
 import { buildRolePlayPrompt, guardRolePlay, likelyFollowUps, parseRolePlay, rolePlayBasis, type RolePlay } from "@/lib/interview/role-play";
 import { fullPlanFor } from "@/lib/services/full-interview";
 import { interviewerModels } from "@/lib/interview/interviewer-model";
+import { chooseFullReply, type CallModel } from "@/lib/interview/full-turn";
 import { writtenAnswerText } from "@/lib/services/role-plays";
+import { listInterviewerRatings, type LineRating } from "@/lib/repos/interviewer-ratings";
+import { rateLine } from "@/lib/services/interviewer-eval";
 import { createFullSession, discardFullSession, finishFullSession, getFullSession, saveFullSession } from "@/lib/repos/full-sessions";
 import { listModelAnswers } from "@/lib/repos/model-answers";
 import { putRolePlay } from "@/lib/repos/role-plays";
@@ -139,31 +138,29 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
   let usedModel = "code";
   if (needsModel(legal)) {
     if (!aiReady(w)) return { error: NO_AI };
-    // Never the model answer here: it is the debrief's yardstick only.
-    const prompt = buildFullTurnPrompt({ session: s, latest: answer, legal, cutIn: input.cutIn });
-    let got: FullReply | null = null;
     // The interviewer model first (its own effort and cap), then premium once if it fails.
-    for (const m of interviewerModels(await envFor(w.db, w.userId))) {
-      try {
-        const out = await aiWrite(
-          w,
-          "full-turn",
-          { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
-          { candidates: legal },
-        );
-        void ledger(w, "interview-full-turn", m.model, prompt, out);
-        got = guardFullReply(parseFullReply(parseJsonLoose(out), legal), s, answer, legal);
-        usedModel = w.cannedAi ? "demo" : m.model;
-        break;
-      } catch (err) {
-        const wait = retryAfterSeconds(err);
-        if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
-        // Logged so a failing model is visible, not silently replaced by code's stock line.
-        console.error(`[full-turn] ${m.model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
-      }
+    const call: CallModel = async (m, prompt) => {
+      const out = await aiWrite(
+        w,
+        "full-turn",
+        { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
+        { candidates: legal },
+      );
+      void ledger(w, "interview-full-turn", m.model, prompt, out);
+      return out;
+    };
+    // Logged so a failing model is visible, not silently replaced by code's stock line.
+    const onFail = (model: string, err: unknown) =>
+      console.error(`[full-turn] ${model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
+    try {
+      const choice = await chooseFullReply({ session: s, latest: answer, legal, cutIn: input.cutIn }, interviewerModels(await envFor(w.db, w.userId)), call, onFail);
+      reply = choice.reply;
+      usedModel = w.cannedAi && choice.model !== "code" ? "demo" : choice.model;
+    } catch (err) {
+      const wait = retryAfterSeconds(err);
+      if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
+      throw err;
     }
-    // Nothing usable: move on if the topic has had a follow-up, rather than a canned "why".
-    reply = got ?? guardFullReply(fallbackReply([safeDefault(legal, s), ...legal]), s, answer, legal);
   }
   const t2 = Date.now();
 
@@ -199,6 +196,8 @@ export interface FullDebriefResult {
   voice?: VoiceSummary | null;
   hedges?: Record<string, number>;
   model?: string;
+  /** Your ratings of the interviewer's lines, by turn index. */
+  ratings?: Record<number, { rating: LineRating; better: string | null }>;
 }
 
 /** End (if still running) and score the whole interview: one premium call. */
@@ -266,7 +265,21 @@ export async function fullDebriefAction(sessionId: string): Promise<FullDebriefR
     perTopic: stored.perTopic,
     moments: stored.moments,
     model: stored.model,
+    ratings: Object.fromEntries(
+      (await listInterviewerRatings(w.db, w.userId, stored.id).catch(() => [])).map((r) => [r.turnIndex, { rating: r.rating, better: r.better }]),
+    ),
   };
+}
+
+/**
+ * Rate one interviewer line good or bad (null clears it), with what it should have asked. The
+ * labels of the interviewer eval set: GET /api/interview-eval, then `npm run interview:eval`.
+ */
+export async function rateLineAction(input: { sessionId: string; turnIndex: number; rating: LineRating | null; better?: string | null }): Promise<{ error?: string }> {
+  const w = await ws();
+  if (input.rating !== null && input.rating !== "good" && input.rating !== "bad") return { error: "Unknown rating." };
+  const r = await rateLine(w.db, w.userId, input);
+  return r.ok ? {} : { error: r.error };
 }
 
 // ---- role-plays ----------------------------------------------------------------------------

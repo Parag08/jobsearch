@@ -240,6 +240,28 @@ export function guardFullReply(reply: FullReply, s: FullSession, latest: string,
   return { ...reply, say: repeats(echo) ? stockLine(reply.move) : echo };
 }
 
+export type LineProblem = "too-long" | "two-questions" | "ungrounded" | "repeat";
+
+/**
+ * What is wrong with an interviewer line, by the same rules the guards enforce: the
+ * interviewer eval (lib/interview/eval.ts) scores a model's raw lines with it, before any guard
+ * repairs them. `line` is what would be said; for a "next" it includes the planned question,
+ * so only grounding is checked there.
+ */
+export function lineProblems(s: FullSession, latest: string, move: Move, line: string): LineProblem[] {
+  const grounds = {
+    said: [candidateText(s, latest)],
+    questions: [...s.plan.topics.map((t) => t.text), s.plan.company, s.plan.role],
+  };
+  const out: LineProblem[] = [];
+  const followUp = move === "deepen" || move.startsWith("probe:");
+  if (followUp && line.split(/\s+/).filter(Boolean).length > MAX_FOLLOW_UP_WORDS) out.push("too-long");
+  if (followUp && (line.match(/\?/g) ?? []).length > 1) out.push("two-questions");
+  if (groundingProblems(line, grounds).length) out.push("ungrounded");
+  if (followUp && followUpsOnTopic(s).some((e) => samePoint(e, line))) out.push("repeat");
+  return out;
+}
+
 /**
  * Why a turn must not be applied: "stale" when the client answered an older copy of the session
  * (a retry or a second tab), "duplicate" when the answer is word for word the last one recorded

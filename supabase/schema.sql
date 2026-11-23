@@ -17,6 +17,7 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists interviewer_ratings cascade;
 drop table if exists user_settings cascade;
 drop table if exists interview_role_plays cascade;
 drop table if exists interview_full_sessions cascade;
@@ -470,6 +471,19 @@ create table user_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Your verdict on the interviewer's lines (0019): good / bad, and what it should have asked.
+create table interviewer_ratings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles (user_id) on delete cascade,
+  session_id uuid not null references interview_full_sessions (id) on delete cascade,
+  turn_index integer not null check (turn_index >= 0),
+  rating text not null check (rating in ('good', 'bad')),
+  better text,
+  updated_at timestamptz not null default now(),
+  unique (session_id, turn_index)
+);
+create index interviewer_ratings_user on interviewer_ratings (user_id);
+
 -- ---- row-level security: each user sees only their workspace -------------------------
 alter table profiles enable row level security;
 alter table sectors enable row level security;
@@ -495,6 +509,7 @@ alter table interview_model_answers enable row level security;
 alter table interview_full_sessions enable row level security;
 alter table interview_role_plays enable row level security;
 alter table user_settings enable row level security;
+alter table interviewer_ratings enable row level security;
 alter table token_ledger enable row level security;
 
 create policy "own profile" on profiles for all
@@ -517,7 +532,7 @@ begin
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
                            'interview_custom_questions','interview_role_questions','interview_model_answers',
-                           'interview_full_sessions','interview_role_plays','user_settings']
+                           'interview_full_sessions','interview_role_plays','user_settings','interviewer_ratings']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
