@@ -13,6 +13,7 @@ import {
   fallbackReply,
   guardFullReply,
   legalMoves,
+  lineProblems,
   needsModel,
   parseFullDebrief,
   parseFullReply,
@@ -361,5 +362,34 @@ describe("safeDefault (when the model call fails)", () => {
   });
   it("keeps code's first choice on a fresh topic", () => {
     expect(safeDefault(["deepen", "next:role:impact"], start())).toBe("deepen");
+  });
+});
+
+describe("lineProblems (the eval's rules)", () => {
+  // The interview just after the candidate's first impact answer, with one follow-up asked.
+  const s: FullSession = {
+    ...start(),
+    turns: [
+      { role: "interviewer", text: "Walk me through something impactful you built.", topicId: "role:impact", at: NOW },
+      { role: "candidate", text: "We cut churn by 10% with a new onboarding flow.", topicId: "role:impact", at: NOW },
+      { role: "interviewer", text: "Why 10%?", topicId: "role:impact", move: "deepen", at: NOW },
+    ],
+  };
+  const latest = "Because the pilot showed 10% and finance agreed.";
+
+  it("passes a short, grounded follow-up on a new point", () => {
+    expect(lineProblems(s, latest, "deepen", "You said finance agreed. What did you personally do to convince them?")).toEqual([]);
+  });
+
+  it("flags a repeat, a long line, two questions, and a number nobody said", () => {
+    expect(lineProblems(s, latest, "deepen", "Why exactly 10% and not more?")).toContain("repeat");
+    expect(lineProblems(s, latest, "probe:metric", `${"word ".repeat(30)}?`)).toContain("too-long");
+    expect(lineProblems(s, latest, "deepen", "Who agreed? And when?")).toContain("two-questions");
+    expect(lineProblems(s, latest, "deepen", "How did the 25% retention lift happen?")).toContain("ungrounded");
+  });
+
+  it("checks only grounding on a move to the next topic, whose planned question is long", () => {
+    expect(lineProblems(s, latest, "next:role:fail", "Thanks. What happens when it fails halfway?")).toEqual([]);
+    expect(lineProblems(s, latest, "next:role:fail", "On your $5M deal - what happens when it fails halfway?")).toEqual(["ungrounded"]);
   });
 });

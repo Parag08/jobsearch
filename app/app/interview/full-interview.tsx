@@ -20,6 +20,7 @@ import type { FullInterviewCard } from "@/lib/services/full-interview";
 import { AgentAvatar } from "./agent-avatar";
 import { ScoreCard } from "./score-card";
 import { LANGS, onSpeakingChange, openMicLevel, primeAudio, recognitionCtor, speak, speechActivity, stopSpeaking, type MicMeter, type SpeechRecognitionLike } from "./speech";
+import { RateLine } from "./rate-line";
 import ui from "../ui.module.css";
 
 /**
@@ -745,16 +746,27 @@ export function FullInterview({
         )}
       </div>
 
+      {showTranscript && done && sessionId && (
+        <p className={ui.sub}>
+          Rate the interviewer&apos;s questions below: your ratings, and what it should have asked, are how we measure and improve it.{" "}
+          <a href="/api/interview-eval" download>
+            Download the eval set
+          </a>
+        </p>
+      )}
       {showTranscript && (
         <ol className={ui.transcript} aria-label="Transcript">
           {session.turns.map((t, i) => (
-            <li key={i} className={ui.turn} data-role={t.role}>
+            <li key={`${sessionId}:${i}`} className={ui.turn} data-role={t.role}>
               <span className={ui.turnWho}>
                 {t.role === "interviewer" ? "Interviewer" : "You"}
                 {t.role === "interviewer" && ` · ${topicTitle(t.topicId)}`}
                 {moveLabel(t.move) ? ` · ${moveLabel(t.move)}` : ""}
               </span>
               <p>{t.text}</p>
+              {done && sessionId && t.role === "interviewer" && i > 0 && t.move !== "close" && (
+                <RateLine sessionId={sessionId} turnIndex={i} initial={debrief?.ratings?.[i]} />
+              )}
             </li>
           ))}
         </ol>

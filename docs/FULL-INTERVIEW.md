@@ -213,6 +213,34 @@ Production logs showed `deepen` chosen every turn up to the per-topic cap of 3.
 - Gateway usage, last 30 days: 233 of 410 requests got 429 (free-tier rate limit), and no Claude call
   has ever run on the team. Claude may need paid AI Gateway credits.
 
+## Rating and measuring the interviewer (2026-11-23, branch feat/interviewer-ratings-eval)
+
+Parag still found the interviewer below the bar and wants to try fine-tuning. Fine-tuning needs
+labelled examples, and any change (a prompt, a model, a fine-tune) needs a fixed test to tell
+better from different. So, first:
+- **Ratings.** A finished full interview's transcript has **Good / Bad** on each interviewer line
+  after the first answer, and for a bad one "What should it have asked instead?". Table
+  `interviewer_ratings` (migration **0019**: session, turn index, rating, better line; one per
+  line; cascades with the interview, which is never changed). `rateLineAction` ->
+  `lib/services/interviewer-eval.ts#rateLine` (only interviewer lines of your own interview,
+  not the opener). `fullDebriefAction` returns the saved ratings.
+- **The eval set.** `GET /api/interview-eval` (the "Download the eval set" link) exports one case
+  per interviewer decision in your finished interviews (`lib/interview/eval.ts#buildEvalSet`):
+  the interview just before the answer (what the interviewer could see), the answer, your
+  written notes for the topic, what it said, and your rating. Not the opener or the close.
+- **The eval.** `npm run interview:eval -- <set.json>` scores what the interviewer said then (free):
+  the guards' own rules (`lineProblems`: too long, two questions, ungrounded, repeat) plus
+  `same-as-bad` (it says again what you marked bad). `--live` replays every case through today's
+  interviewer - the same code as the app (`lib/interview/full-turn.ts#chooseFullReply`, which
+  `fullTurnAction` now calls) - with the models in `.env.local`, and scores the model's own line
+  before the guards repair it. `--judge` (needs `EVAL_JUDGE_MODEL`) grades each line 1-5 against
+  your labels and better line; it is the only check that sees judgement, and it is billed.
+  `--limit N`, `--out file`. Results JSON is written next to the set.
+- To compare models: set `AI_GATEWAY_INTERVIEWER_MODEL` (and `_EFFORT`, `_MAX_TOKENS`) in
+  `.env.local`, run `--live --judge`, change it, run again on the same set.
+- Next: few-shot examples from the best-rated lines in the turn prompt, scored on this set; then,
+  only if that falls short, distil into a fine-tuned fast model and score it the same way.
+
 ## Known limits / next
 
 - Number rules see digits only, so "nine days to four" reads as no result and gets probed.
