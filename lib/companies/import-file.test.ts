@@ -13,10 +13,17 @@ describe("company import files", () => {
     ]);
   });
 
-  it("prefers the consistent wider delimiter when ignored fields contain commas", () => {
-    const data = new TextEncoder().encode("Company name;Website;Notes, unused\nAcme;acme.com;One, two\nBeta;beta.com;Three, four\n");
+  it("uses the semicolon header when ignored fields contain commas", () => {
+    const data = new TextEncoder().encode("Company name;Website;Notes\nAcme;acme.com;One, two\nBeta;beta.com;Three, four\n");
     expect(parseCompanyFile("list.csv", data)[0].rows[1].cells).toEqual({
       0: { text: "Acme" }, 1: { text: "acme.com" }, 2: { text: "One, two" },
+    });
+  });
+
+  it("prefers comma when both headers match equally despite extra semicolons", () => {
+    const data = new TextEncoder().encode("Company name,Notes;ref;owner\nAcme,One;two;three\nBeta,Four;five;six\n");
+    expect(parseCompanyFile("list.csv", data)[0].rows[1].cells).toEqual({
+      0: { text: "Acme" }, 1: { text: "One;two;three" },
     });
   });
 
