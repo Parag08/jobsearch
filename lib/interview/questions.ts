@@ -52,25 +52,3 @@ export function parseQuestionBank(raw: unknown): QuestionBank {
   return { groups: parsed.groups, questions: parsed.questions };
 }
 
-/** Questions for one firm, or every question for "all". Keeps bank order. */
-export function questionsForFirm(bank: QuestionBank, firm: string): Question[] {
-  if (firm === "all") return bank.questions;
-  return bank.questions.filter((q) => q.firms.includes(firm));
-}
-
-/** Arrange questions under their groups, in the bank's group order, dropping empty groups. */
-export function groupQuestions(
-  bank: QuestionBank,
-  questions: Question[],
-): { group: QuestionGroup; questions: Question[] }[] {
-  return bank.groups
-    .map((group) => ({ group, questions: questions.filter((q) => q.group === group.id) }))
-    .filter((g) => g.questions.length > 0);
-}
-
-/** Firm-specific advice for a question, or null - never invented. */
-export function firmNote(q: Question, firm: string): string | null {
-  if (firm === "all") return null;
-  const note = (q as Record<string, unknown>)[firm];
-  return typeof note === "string" && note.trim() ? note : null;
-}
