@@ -108,24 +108,31 @@ const clean = (s: string) => s.replace(/\s+/g, " ").trim();
 
 const ModelRolePlaySchema = z.object({
   lines: z.array(
-    z.object({ who: LineSchema.shape.who, say: z.coerce.string().default(""), why: z.unknown().optional() }).nullable().catch(null),
+    z.object({
+      who: LineSchema.shape.who,
+      say: z.coerce.string().transform((s) => clean(s).slice(0, ROLE_PLAY_LIMITS.say)).default(""),
+      why: z.unknown().optional(),
+    }).nullable().catch(null),
   ),
 });
 
 /** The model's play, validated. The first line is replaced by the real question. */
 export function parseRolePlay(raw: unknown, question: string): RolePlayLine[] {
-  const loose = ModelRolePlaySchema.parse(raw).lines.filter((line) => line !== null);
+  // A blank interviewer line still marks the boundary of its answer.
+  const loose = ModelRolePlaySchema.parse(raw).lines
+    .filter((line) => line !== null)
+    .filter((line) => line.who === "interviewer" || line.say !== "");
   if (loose[0]?.who !== "interviewer") throw new Error("A role-play opens with the interviewer asking the question.");
   const lines: RolePlayLine[] = [];
   for (let i = 0; i < loose.length - 1; i++) {
-    const [ask, reply] = [loose[i], loose[i + 1]];
-    const prompt = i === 0 ? question : clean(ask.say).slice(0, ROLE_PLAY_LIMITS.say);
-    const answer = clean(reply.say).slice(0, ROLE_PLAY_LIMITS.say);
-    if (ask.who !== "interviewer" || reply.who !== "candidate" || !prompt || !answer) {
+    const ask = loose[i];
+    const reply = loose[i + 1];
+    const prompt = i === 0 ? question : ask.say;
+    if (ask.who !== "interviewer" || reply.who !== "candidate" || !prompt) {
       if (i === 0) throw new Error("A role-play needs an answer to its opening question.");
       continue;
     }
-    const line: RolePlayLine = { who: "candidate", say: answer };
+    const line: RolePlayLine = { who: "candidate", say: reply.say };
     if (typeof reply.why === "string" && clean(reply.why)) line.why = clean(reply.why).slice(0, ROLE_PLAY_LIMITS.why);
     lines.push({ who: "interviewer", say: prompt }, line);
   }

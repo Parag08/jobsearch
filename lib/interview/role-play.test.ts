@@ -67,6 +67,12 @@ describe("parseRolePlay", () => {
     expect(parseRolePlay({ lines: [lines[0], lines[1], ...incomplete, ...lines.slice(2)] }, Q))
       .toEqual([{ who: "interviewer", say: Q }, ...lines.slice(1)]);
   });
+
+  it("keeps complete exchanges when blank candidate lines precede their answers", () => {
+    const blank = { who: "candidate", say: " " };
+    expect(parseRolePlay({ lines: [lines[0], blank, lines[1], lines[2], blank, lines[3]] }, Q))
+      .toEqual([{ who: "interviewer", say: Q }, ...lines.slice(1)]);
+  });
 });
 
 describe("guardRolePlay", () => {
