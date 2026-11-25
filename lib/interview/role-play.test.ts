@@ -61,6 +61,12 @@ describe("parseRolePlay", () => {
     expect(parseRolePlay({ lines: [lines[0], { say: "No speaker." }, lines[1], { who: "candidate" }, ...lines.slice(2)] }, Q))
       .toEqual([{ who: "interviewer", say: Q }, ...lines.slice(1)]);
   });
+
+  it("drops the answer to an incomplete follow-up question", () => {
+    const incomplete = [{ who: "interviewer" }, { who: "candidate", say: "An answer with no question." }];
+    expect(parseRolePlay({ lines: [lines[0], lines[1], ...incomplete, ...lines.slice(2)] }, Q))
+      .toEqual([{ who: "interviewer", say: Q }, ...lines.slice(1)]);
+  });
 });
 
 describe("guardRolePlay", () => {
