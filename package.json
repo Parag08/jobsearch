@@ -29,13 +29,13 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "docx": "^9.5.1",
-    "next": "15.5.25",
+    "next": "15.5.29",
     "pdf-lib": "^1.17.1",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "server-only": "^0.0.1",
     "three": "^0.187.0",
-    "zod": "3.25.76"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",

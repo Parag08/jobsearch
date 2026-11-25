@@ -119,7 +119,11 @@ describe("MCP tools", () => {
     expect(r.data.contact.linkedinUrl).toBe("https://www.linkedin.com/in/jane-tan");
     const kept = await call(ctx, "upsert_contact", { externalRef: "li:jane", name: "Jane Tan", company: "Grab" });
     expect(kept.data.contact.linkedinUrl).toBe("https://www.linkedin.com/in/jane-tan");
-    expect((await call(ctx, "upsert_contact", { name: "X", linkedinUrl: "https://example.com/x" })).isError).toBe(true);
+    const invalid = await call(ctx, "upsert_contact", { name: "X", linkedinUrl: "https://example.com/x" });
+    expect(invalid).toMatchObject({
+      isError: true,
+      text: "Invalid arguments: linkedinUrl: linkedinUrl must be a linkedin.com/in/ profile link",
+    });
   });
 });
 

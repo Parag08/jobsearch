@@ -136,6 +136,7 @@ describe("parseFullReply", () => {
     expect(r.move).toBe("probe:ownership");
     expect(r.say).toBe(FOLLOW_UP_FALLBACK.ownership);
     expect(r.assessment).toBeUndefined();
+    expect(parseFullReply({ say: "Any questions?" }, legal)).toEqual(r);
   });
   it("a next move may have an empty bridge", () => {
     expect(parseFullReply({ move: "next:role:impact", say: "" }, legal).say).toBe("");
@@ -289,11 +290,13 @@ describe("debrief", () => {
         strengths: ["a"],
         improvements: ["b"],
         perTopic: [
+          { topicId: "role:impact", verdict: "partial" },
           { topicId: "role:bg", verdict: "held", note: "good" },
           { topicId: "role:agents", verdict: "weak", note: "never asked" },
           { topicId: "role:impact", verdict: "nonsense", note: "x" },
         ],
         moments: [
+          { topicId: "role:impact", quote: "the team worked hard" },
           { topicId: "role:impact", quote: "the team worked hard", better: "Say what you led: the files migration." },
           { topicId: "role:impact", quote: "I invented this", better: "x" },
           { topicId: "role:impact", quote: "we did a lot", better: "Say you cut costs 70%." },

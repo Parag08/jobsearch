@@ -380,15 +380,18 @@ export function buildMockDebriefPrompt(input: {
     .join("\n");
 }
 
-const VerdictSchema = z.object({ probe: z.coerce.string(), verdict: z.coerce.string(), note: z.coerce.string() });
+const FollowUpVerdictsSchema = z.array(
+  z.object({ probe: z.coerce.string(), verdict: z.coerce.string(), note: z.coerce.string() }).nullable().catch(null),
+).catch([]);
 
 /** Scores validated as in parseScore (missing dimension throws); verdicts kept only for probes asked. */
 export function parseMockDebrief(raw: unknown, s: MockSession): MockDebrief {
   const base = parseScore(raw);
   const asked = probesAsked(s);
-  const list = z.array(VerdictSchema).catch([]).parse((raw as { followUps?: unknown } | null)?.followUps ?? []);
+  const list = FollowUpVerdictsSchema.parse((raw as { followUps?: unknown } | null)?.followUps);
   const followUps: FollowUpVerdict[] = [];
   for (const v of list) {
+    if (!v) continue;
     const probe = PROBE_KINDS.find((k) => k === v.probe);
     const verdict = VERDICTS.find((k) => k === v.verdict);
     if (!probe || !verdict || !asked.has(probe) || followUps.some((f) => f.probe === probe)) continue;

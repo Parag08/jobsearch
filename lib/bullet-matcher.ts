@@ -1,4 +1,4 @@
-import { norm, type Bullet, type JdExtract, type Project } from "./types";
+import { norm, type Bullet, type JdExtract } from "./types";
 
 const SKILL_WEIGHT = 3;
 const KEYWORD_WEIGHT = 1;
@@ -26,17 +26,3 @@ export function scoreBullet(bullet: Bullet, jd: JdExtract): number {
   return bullet.roleFamily === jd.roleFamily ? score * ROLE_FAMILY_BOOST : score;
 }
 
-/** Top-k bullets across the whole repository for this JD, best first; zero scores excluded. */
-export function selectBullets(projects: Project[], jd: JdExtract, k: number): Bullet[] {
-  const scored: { b: Bullet; s: number }[] = [];
-  for (const p of projects) {
-    for (const b of p.bullets) {
-      const s = scoreBullet(b, jd);
-      if (s > 0) scored.push({ b, s });
-    }
-  }
-  return scored
-    .sort((x, y) => y.s - x.s || x.b.id.localeCompare(y.b.id))
-    .slice(0, k)
-    .map((x) => x.b);
-}
