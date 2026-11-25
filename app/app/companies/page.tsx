@@ -29,6 +29,16 @@ export default async function Companies({ searchParams }: { searchParams: Promis
     research: c.research_version > 0 ? "Available" : c.research_requested ? "Requested" : "Not requested",
     connections: contacts.filter((p) => p.companyId ? p.companyId === c.id : norm(p.company ?? "") === c.identity).length,
   }));
+  const targets = <>
+    {removed && <div className={ui.panel + " " + s.inlineHead}>
+      <p className={s.notice} role="status"><strong>{removed.name}</strong> was removed from your targets. Saved roles, research and people are unchanged.</p>
+      <form action={toggleTargetCompany.bind(null, removed.id, true)}><PendingButton label="Undo" /></form>
+    </div>}
+    {(params.added || params.restored || params.error) && <p className={ui.panel} role="status">
+      {params.error ? "The target could not be updated. Try again." : params.restored ? "Target restored." : "Company added."}
+    </p>}
+    <CompanyList companies={companies} />
+  </>;
   return (
     <>
       <div className={ui.head}>
@@ -47,15 +57,7 @@ export default async function Companies({ searchParams }: { searchParams: Promis
           <SourcingDialog trigger="Add company" title="Add a target company" primary><AddTargetForm /></SourcingDialog>
         </div>
       </div>
-      {receipt && <ImportReceipt receipt={receipt} compact />}
-      {removed && <div className={ui.panel + " " + s.inlineHead}>
-        <p className={s.notice} role="status"><strong>{removed.name}</strong> was removed from your targets. Saved roles, research and people are unchanged.</p>
-        <form action={toggleTargetCompany.bind(null, removed.id, true)}><PendingButton label="Undo" /></form>
-      </div>}
-      {(params.added || params.restored || params.error) && <p className={ui.panel} role="status">
-        {params.error ? "The target could not be updated. Try again." : params.restored ? "Target restored." : "Company added."}
-      </p>}
-      <CompanyList companies={companies} />
+      {receipt ? <ImportReceipt receipt={receipt} compact>{targets}</ImportReceipt> : targets}
     </>
   );
 }
