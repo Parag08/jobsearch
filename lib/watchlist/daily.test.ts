@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companyWebsite, dailyShortlist, parseDailyTarget } from "./daily";
+import { companyWebsite, dailyShortlist, parseDailyTarget, safePostingUrl } from "./daily";
 import type { SourcedJob } from "../types";
 
 const job = (id: string, patch: Partial<SourcedJob> = {}): SourcedJob => ({
@@ -36,5 +36,11 @@ describe("daily shortlist", () => {
     expect(companyWebsite("www.example.com/careers?email=name@example.com")).toBe("https://example.com");
     expect(companyWebsite("https://user:secret@example.com")).toBeNull();
     expect(companyWebsite("https://127.0.0.1")).toBeNull();
+  });
+
+  it("turns an existing SmartRecruiters API reference into a candidate posting link", () => {
+    expect(safePostingUrl("https://api.smartrecruiters.com/v1/companies/AcmeGroup/postings/743999912345678"))
+      .toBe("https://jobs.smartrecruiters.com/AcmeGroup/743999912345678");
+    expect(safePostingUrl("https://api.smartrecruiters.com/v1/companies/AcmeGroup")).toBeNull();
   });
 });

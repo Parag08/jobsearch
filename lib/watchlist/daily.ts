@@ -36,6 +36,10 @@ export function safePostingUrl(raw: string | null): string | null {
   try {
     const url = new URL(raw);
     if (!companyWebsite(raw) || url.pathname.length > 400 || !/^\/[a-z0-9/_-]*$/i.test(url.pathname)) return null;
+    if (url.hostname === "api.smartrecruiters.com") {
+      const posting = /^\/v1\/companies\/([a-z0-9_-]+)\/postings\/(\d+)\/?$/i.exec(url.pathname);
+      return posting ? "https://jobs.smartrecruiters.com/" + posting[1] + "/" + posting[2] : null;
+    }
     const id = url.searchParams.get("gh_jid");
     url.search = id && /^\d{1,16}$/.test(id) ? "?gh_jid=" + id : "";
     url.hash = "";
