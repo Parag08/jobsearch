@@ -101,7 +101,7 @@ test("a stale company import refreshes the review without saving a partial batch
   await expect(targets.getByRole("link", { name: "Beacon Labs", exact: true })).toBeVisible();
 
   await confirm.click();
-  await expect(page.getByRole("alert")).toContainText("Check the updated company matches");
+  await expect(page.getByRole("alert").filter({ hasText: "Check the updated company matches" })).toBeVisible();
   const review = page.getByRole("table", { name: "Company row review" });
   await expect(review.getByRole("row").filter({ hasText: "Beacon Labs" })).toContainText("Already a target · kept as is");
   await other.reload();
