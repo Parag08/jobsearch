@@ -106,12 +106,10 @@ export async function connectSourcingBoard(db: DbClient, userId: string, company
       careers_url: careersUrl, ats: board.ats, token: board.token, company_id: company.id,
       last_attempt_at: null, last_success_at: null, last_check_failed: null,
     }).eq("id", replaceId).eq("user_id", userId).select().single(), "watchlist", "replace board");
-    if (!boards.some((entry) => entry.id !== replaceId && entry.ats === existing.ats)) {
-      for (const status of ["new", "shortlisted"] as const) {
-        await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId)
-          .eq("company_id", company.id).eq("source", existing.ats).eq("status", status).select(),
-        "sourced_jobs", "close roles from replaced board");
-      }
+    for (const status of ["new", "shortlisted"] as const) {
+      await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId)
+        .eq("company", existing.company).eq("source", existing.ats).eq("status", status)
+        .is("sourcing_board_url", null).select(), "sourced_jobs", "close unattributed roles until rechecked");
     }
     return true;
   }

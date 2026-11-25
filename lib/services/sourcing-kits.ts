@@ -5,7 +5,7 @@ import { oneOrNull, type DbClient } from "../repos/db";
 import type { ApplicationRow } from "../repos/rows";
 import { getSafeEvidence, getSourcingCompany, publicCompanyName } from "../repos/sourcing";
 import { norm } from "../types";
-import { loadDailySourcing } from "./daily-sourcing";
+import { boardForRole, loadDailySourcing } from "./daily-sourcing";
 import { envFor } from "./settings";
 import { safeRoleLabel } from "../watchlist/daily";
 import { sourcedRef } from "./save-to-pipeline";
@@ -22,7 +22,7 @@ export async function prepareSourcingBatch(db: DbClient, userId: string, date: s
     try {
       const company = source.companyByName.get(norm(job.company));
       if (!company?.active || !publicCompanyName(company.name) || !safeRoleLabel(job.title)) throw new Error("Invalid role");
-      const last = source.configured.find((b) => b.companyId === company.id && b.ats === job.source)?.lastSuccessAt;
+      const last = boardForRole(source.configured, job)?.lastSuccessAt;
       const kit: SafeKit = {
         formatVersion: 1, jobId: job.id, location: job.location,
         postedAt: z.iso.date().safeParse(job.postedAt).data ?? null,

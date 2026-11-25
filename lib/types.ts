@@ -154,6 +154,7 @@ export type Contact = z.infer<typeof ContactSchema>;
 
 export const SourcedJobSchema = z.object({
   companyId: z.string().nullable().optional(),
+  sourcingBoardUrl: z.string().nullable().optional(),
   id: z.string(),
   source: z.string(), // "adzuna" | "jooble" | "manual" | ...
   externalId: z.string().nullable(),

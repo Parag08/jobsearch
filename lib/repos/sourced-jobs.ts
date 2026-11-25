@@ -1,6 +1,6 @@
 import type { SourcedJob } from "../types";
 import type { RetirementUpdate, TrackedJob } from "../watchlist/retire";
-import { many, one, type DbClient } from "./db";
+import { many, one, oneOrNull, type DbClient } from "./db";
 import { sourcedJobRow, toSourcedJob } from "./rows";
 
 /**
@@ -57,6 +57,7 @@ export async function listTrackedJobs(db: DbClient, userId: string): Promise<Tra
     source: r.source,
     externalId: r.external_id,
     company: r.company,
+    sourcingBoardUrl: r.sourcing_board_url ?? null,
     status: r.status,
     missedRefreshes: r.missed_refreshes ?? 0,
   }));
@@ -65,16 +66,13 @@ export async function listTrackedJobs(db: DbClient, userId: string): Promise<Tra
 /** Write planRetirement's updates: miss counts and any status change. */
 export async function applyRetirement(db: DbClient, userId: string, updates: RetirementUpdate[]): Promise<void> {
   for (const u of updates) {
-    await one(
-      db
+    const row = db
         .from("sourced_jobs")
         .update({ missed_refreshes: u.missedRefreshes, status: u.status })
         .eq("user_id", userId)
-        .eq("id", u.id)
-        .select()
-        .single(),
-      "sourced_jobs",
-      "retire",
-    );
+        .eq("id", u.id);
+    const current = u.sourcingBoardUrl ? row.eq("sourcing_board_url", u.sourcingBoardUrl)
+      : row.is("sourcing_board_url", null);
+    await oneOrNull(current.select().maybeSingle(), "sourced_jobs", "retire");
   }
 }

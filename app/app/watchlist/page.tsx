@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
-import { loadDailySourcing } from "@/lib/services/daily-sourcing";
+import { boardForRole, loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { norm } from "@/lib/types";
 import { atsLabel } from "@/lib/watchlist/display";
 import { EVIDENCE_TEXT, UNCERTAINTY } from "@/lib/watchlist/safe-kit";
@@ -88,7 +88,7 @@ export default async function Watchlist({ searchParams }: { searchParams: Promis
           </div>}
           {roles.map((job, i) => {
             const company = source.companyByName.get(norm(job.company));
-            const board = configured.find((b) => norm(b.company) === norm(job.company) && b.ats === job.source);
+            const board = boardForRole(configured, job);
             const review = source.reviews[job.id];
             return (
               <article className={ui.panel + " " + s.role} key={job.id} id={"role-" + job.id}>

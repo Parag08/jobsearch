@@ -241,6 +241,7 @@ export interface InteractionRow {
 
 export interface SourcedJobRow {
   sourcing_review?: unknown;
+  sourcing_board_url?: string | null;
   company_id?: string | null;
   sourcing_decision?: "picked" | "later" | "dismissed" | "available" | null;
   id: string;
@@ -617,6 +618,7 @@ export function toContact(r: ContactRow, interactions: Interaction[] = []): Cont
 export function toSourcedJob(r: SourcedJobRow): SourcedJob {
   return SourcedJobSchema.parse({
     ...(r.company_id !== undefined && { companyId: r.company_id }),
+    ...(r.sourcing_board_url !== undefined && { sourcingBoardUrl: r.sourcing_board_url }),
     id: r.id,
     source: r.source,
     externalId: r.external_id,
@@ -804,6 +806,8 @@ export function interactionRow(
 export function sourcedJobRow(userId: string, j: Omit<SourcedJob, "id">): Omit<SourcedJobRow, "id"> {
   return {
     user_id: userId,
+    ...(j.companyId !== undefined && { company_id: j.companyId }),
+    ...(j.sourcingBoardUrl !== undefined && { sourcing_board_url: j.sourcingBoardUrl, missed_refreshes: 0 }),
     source: j.source,
     external_id: j.externalId,
     title: j.title,

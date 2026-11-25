@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getSourcingCompany } from "../repos/sourcing";
-import { loadDailySourcing } from "../services/daily-sourcing";
+import { boardForRole, loadDailySourcing } from "../services/daily-sourcing";
 import {
   confirmWithWorkspaceSettings, getUsableSourcingKit, prepareSourcingBatch, saveCompanyResearch, saveKitDraft, saveRankReview,
 } from "../services/sourcing-kits";
@@ -49,7 +49,7 @@ export const SOURCING_TOOLS: Tool[] = [
           roleId: job.id,
           companyId: source.companyByName.get(norm(job.company))?.id ?? null,
           company: job.company, title: job.title, location: job.location, postingUrl: job.url, postedAt: job.postedAt,
-          checkedAt: source.configured.find((b) => norm(b.company) === norm(job.company) && b.ats === job.source)?.lastSuccessAt ?? null,
+          checkedAt: boardForRole(source.configured, job)?.lastSuccessAt ?? null,
           picked: pickedIds.has(job.id), review: source.reviews[job.id] ?? null,
         })),
       };

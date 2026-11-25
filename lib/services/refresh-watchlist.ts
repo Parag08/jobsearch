@@ -8,7 +8,7 @@ import { listSectors } from "../repos/sectors";
 import { applyRetirement, listTrackedJobs, upsertSourcedJobs } from "../repos/sourced-jobs";
 import { listWatchlist } from "../repos/watchlist";
 import { listSourcingCompanies } from "../repos/sourcing";
-import { one } from "../repos/db";
+import { oneOrNull } from "../repos/db";
 import { safePostingUrl, safeRoleLabel } from "../watchlist/daily";
 import type { BoardFetcher } from "../watchlist/fetcher";
 import { dedupeJobs, excludeAlreadyInPipeline } from "../watchlist/identity";
@@ -90,14 +90,18 @@ export async function refreshWatchlist(
   const configured = watchlist.filter((entry) => entry.ats !== "unknown" && entry.token);
   const attemptedAt = new Date().toISOString();
   const settled = await Promise.allSettled(configured.map((entry) => fetchAndMap(fetcher, entry)));
+  const current = new Map((await listWatchlist(db, userId, { active: true })).map((entry) => [entry.id, entry.careersUrl]));
+  const checks = settled.flatMap((result, index) => {
+    const entry = configured[index]!;
+    return current.get(entry.id) === entry.careersUrl ? [{ entry, result }] : [];
+  });
   const failures: BoardFailure[] = [];
   const fetched: SourcedJob[] = [];
   const answered: AnsweredBoard[] = [];
-  settled.forEach((r, i) => {
-    const entry = configured[i]!;
+  checks.forEach(({ entry, result: r }) => {
     if (r.status === "fulfilled") {
       fetched.push(...r.value);
-      answered.push({ source: entry.ats, company: entry.company });
+      answered.push({ source: entry.ats, company: entry.company, url: entry.careersUrl });
     } else failures.push({ entryId: entry.id, company: entry.company, error: errorMessage(r.reason) });
   });
 
@@ -132,11 +136,12 @@ export async function refreshWatchlist(
   // answered board counts a miss (closed roles, and roles that no longer match).
   const updates = planRetirement(tracked, wanted, answered);
   await applyRetirement(db, userId, updates);
-  await Promise.all(settled.map((result, index) => one(db.from("watchlist").update({
+  await Promise.all(checks.map(({ entry, result }) => oneOrNull(db.from("watchlist").update({
     last_attempt_at: attemptedAt,
     last_check_failed: result.status === "rejected",
     ...(result.status === "fulfilled" && { last_success_at: attemptedAt }),
-  }).eq("user_id", userId).eq("id", configured[index]!.id).select().single(), "watchlist", "record check")));
+  }).eq("user_id", userId).eq("id", entry.id).eq("careers_url", entry.careersUrl).eq("active", true)
+    .select().maybeSingle(), "watchlist", "record check")));
 
   return {
     fetched: fetched.length,
@@ -153,7 +158,8 @@ async function fetchAndMap(fetcher: BoardFetcher, entry: WatchlistEntry): Promis
   const payload = await fetcher.fetchBoard(entry);
   return mapBoardPayload(entry.ats, payload, entry.company)
     .filter((job) => safeRoleLabel(job.title))
-    .map((job) => ({ ...job, location: safeRoleLabel(job.location, true), url: safePostingUrl(job.url) }));
+    .map((job) => ({ ...job, companyId: entry.companyId, sourcingBoardUrl: entry.careersUrl,
+      location: safeRoleLabel(job.location, true), url: safePostingUrl(job.url) }));
 }
 
 /** Skills the bullet bank evidences: bullet skill tags plus project skill tags, deduped via norm(). */
