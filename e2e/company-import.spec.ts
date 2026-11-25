@@ -70,6 +70,8 @@ test("dismisses the banner for one import and keeps its result and Undo below th
 
   await latest.getByRole("link", { name: "View result" }).click();
   await expect(bannerHeading).toBeVisible();
+  await expect(page.getByRole("link", { name: "Aperture Robotics", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "View Companies" }).click();
   await latest.getByRole("button", { name: "Undo import" }).click();
   await expect(latest).toContainText("Import undone");
@@ -79,6 +81,31 @@ test("dismisses the banner for one import and keeps its result and Undo below th
   await importTarget("Second Example");
   await expect(bannerHeading).toBeVisible();
   await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toBeVisible();
+});
+
+test("can still dismiss the Last import banner when browser storage is unavailable", async ({ demo: page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get: () => { throw new DOMException("Browser storage is unavailable", "SecurityError"); },
+    });
+  });
+  await appLink(page, "Companies").click();
+  await page.getByRole("link", { name: "Import list" }).click();
+  await page.getByRole("button", { name: "Sample CSV", exact: true }).click();
+  await page.getByRole("button", { name: "Review rows" }).click();
+  await page.getByRole("button", { name: "Import 1 company", exact: true }).click();
+  await page.getByRole("link", { name: "View Companies" }).click();
+
+  const dismiss = page.getByRole("button", { name: "Dismiss", exact: true });
+  const footer = page.getByRole("region", { name: "Last import", exact: true });
+  await dismiss.click();
+  await expect(dismiss).toHaveCount(0);
+  await expect(footer.getByRole("button", { name: "Undo import" })).toBeVisible();
+  await expect(footer.getByRole("link", { name: "View result" })).toBeVisible();
+  await page.reload();
+  await expect(dismiss).toBeVisible();
+  await expect(footer).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "All target companies" }).getByRole("link", { name: "Example Company" })).toBeVisible();
 });
 
 test("chooses a visible XLSX worksheet and explicitly links a company identity on mobile", async ({ demo: page }, testInfo) => {

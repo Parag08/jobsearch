@@ -10,6 +10,8 @@ Import review follow-up: CSV delimiter selection favors consistent multi-column 
 
 The Companies page's Last import banner can be dismissed in this browser. The receipt ID scopes the local preference, so the next import still shows its banner. After dismissal, Undo import and View result are below the target list.
 
+PR #48 QA checks that the full result is unaffected by dismissal and that blocked browser storage allows dismissal for the current page without saving it across reload.
+
 Today ranks active target-company postings, with saved triage and an editable daily maximum. Companies owns public research and links to private Network. Picked roles can become Saved safe kits; optional drafts/research wait for the user's Claude, and only explicit confirmation records Applied. Apply additive migration 0020 before live use. The pilot stores structured evidence/answer categories and official citations, not arbitrary prose or full posting snapshots.
 
 Board replacements keep saved applications, reject checks from the previous configuration, and hide postings from the disconnected board. Confirming submission with different materials does not preserve withdrawn evidence in the kit.

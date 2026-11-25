@@ -12,6 +12,20 @@ const company = (id: string, active: boolean) => ({
 const row = (name: string, number: number) => ({ name, number, website: "", formula: false });
 
 describe("company import persistence", () => {
+  it("keeps the latest receipt identity stable through reads and undo until a new import succeeds", async () => {
+    const db = new FakeDb();
+    const review = (name: string) => buildImportPlan(analyzeImport([row(name, 1)], db.rows("sourcing_companies")));
+    await commitCompanyImport(db, "user", first, review("First Company"), 0);
+    await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: first, undone_count: null });
+    await undoCompanyImport(db, "user", first);
+    await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: first, undone_count: 1 });
+
+    await expect(commitCompanyImport(db, "user", second, [], 0)).resolves.toBeNull();
+    await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: first });
+    await commitCompanyImport(db, "user", second, review("Second Company"), 0);
+    await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: second, undone_count: null });
+  });
+
   it("is atomic on a stale plan and idempotent across confirmation and undo", async () => {
     const db = new FakeDb();
     db.seed("sourcing_companies", [company("prior", true), company("removed", false)]);
