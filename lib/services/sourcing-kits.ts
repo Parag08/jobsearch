@@ -60,7 +60,7 @@ export async function getSourcingKit(db: DbClient, userId: string, id: string) {
 type KitRecord = NonNullable<Awaited<ReturnType<typeof getSourcingKit>>>;
 
 export function usableKit(kit: SafeKit, verified: readonly EvidenceCode[]): SafeKit {
-  if (kit.submission) return kit;
+  if (kit.submission?.materials === "reviewed") return kit;
   const evidence = kit.evidence.filter((code) => verified.includes(code));
   const letter = kit.letter?.draft && !evidence.includes(kit.letter.draft.evidence)
     ? { draft: null, approved: false } : kit.letter;
@@ -151,14 +151,14 @@ export async function confirmSourcingSubmission(
   if (current.value.submission) return current.value.submission;
   if (date > today) throw new Error("Use the date you submitted, not a future date.");
   if (current.row.stage !== "saved" || current.revision !== revision) throw new Error("This kit changed. Review it and try again.");
-  const verified = materials === "reviewed" ? await getSafeEvidence(db, userId) : [];
+  const verified = await getSafeEvidence(db, userId);
   if (materials === "reviewed" && (!current.value.cvReviewed || !current.value.evidence.length ||
     current.value.evidence.some((code) => !verified.includes(code)))) {
     throw new Error("Review the exact safe CV content before choosing this option, or select different materials.");
   }
   const submission = { date, materials, version: materials === "reviewed" ? revision : null };
   const next = current.row.next_action || (followUpDays ? followUpAfterApplying(date, followUpDays) : null);
-  if (!await writeKit(db, userId, current, { ...current.value, submission }, {
+  if (!await writeKit(db, userId, current, { ...usableKit(current.value, verified), submission }, {
     stage: "applied", applied_at: date, next_action: next, updated_at: today,
   })) {
     const raced = await getSourcingKit(db, userId, id);

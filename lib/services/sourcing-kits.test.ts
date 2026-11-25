@@ -131,6 +131,14 @@ describe("daily sourcing kits", () => {
     });
     await expect(saveKitDraft(db, "u", id, "letter", draft, 2)).rejects.toThrow(/verified/i);
     await expect(approveKitDraft(db, "u", id, "letter", 2)).rejects.toThrow(/verified/i);
+    const submission = await confirmSourcingSubmission(db, "u", id, {
+      date: today, confirmedByUser: true, materials: "different", revision: 2,
+    }, today);
+    expect(submission.version).toBeNull();
+    expect((await getSourcingKit(db, "u", id))?.value).toMatchObject({
+      evidence: [], cvReviewed: false, letter: { draft: null, approved: false },
+    });
+    expect((await getUsableSourcingKit(db, "u", id))?.value.evidence).toEqual([]);
   });
 
   it("renders the requested portal question using the same verified claim", () => {
