@@ -9,6 +9,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "db:apply": "node scripts/db-apply.mjs",
     "db:seed": "node scripts/db-apply.mjs supabase/seed.sql",
@@ -37,6 +38,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@types/node": "22.15.0",
     "@types/react": "19.1.9",
     "@types/three": "^0.187.0",
