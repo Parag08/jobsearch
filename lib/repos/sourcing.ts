@@ -1,4 +1,5 @@
 import { norm } from "../types";
+import { publicCompanyName } from "../companies/public-company";
 import { companyWebsite, DEFAULT_DAILY_TARGET, type Decision, type SourcingRecipe } from "../watchlist/daily";
 import { detectAts } from "../watchlist/ats";
 import { Evidence, RankReview, type EvidenceCode } from "../watchlist/safe-kit";
@@ -28,8 +29,15 @@ export function sourcingTerms(raw: string): string[] | null {
     terms.every((t) => /^[\p{L}\p{M} .()&+/-]{1,100}$/u.test(t)) ? terms : null;
 }
 
-export function listSourcingCompanies(db: DbClient, userId: string) {
-  return many(db.from("sourcing_companies").select().eq("user_id", userId).order("name"), "sourcing_companies", "list");
+export async function listSourcingCompanies(db: DbClient, userId: string) {
+  const companies: SourcingCompanyRow[] = [];
+  const size = 500;
+  for (let start = 0; ; start += size) {
+    const page = await many(db.from("sourcing_companies").select().eq("user_id", userId)
+      .order("id").range(start, start + size - 1), "sourcing_companies", "list");
+    companies.push(...page);
+    if (page.length < size) return companies.sort((a, b) => a.name.localeCompare(b.name));
+  }
 }
 
 export function getSourcingCompany(db: DbClient, userId: string, id: string) {
@@ -37,10 +45,7 @@ export function getSourcingCompany(db: DbClient, userId: string, id: string) {
     "sourcing_companies", "get");
 }
 
-export function publicCompanyName(raw: string): string | null {
-  const name = raw.trim().replace(/\s+/g, " ");
-  return /^(?=.{1,160}$)(?=.*\p{L})[\p{L}\p{M}\p{N} .&'’()+,-]+$/u.test(name) && !/\d{4,}/.test(name) ? name : null;
-}
+export { publicCompanyName };
 
 export async function addSourcingCompany(db: DbClient, userId: string, rawName: string, rawWebsite: string, date: string) {
   const name = publicCompanyName(rawName);
@@ -78,7 +83,7 @@ export async function setCompanyWebsite(db: DbClient, userId: string, id: string
 }
 
 export async function setSourcingCompanyActive(db: DbClient, userId: string, id: string, active: boolean) {
-  const company = await one(db.from("sourcing_companies").update({ active }).eq("user_id", userId).eq("id", id)
+  const company = await one(db.from("sourcing_companies").update({ active, import_id: null }).eq("user_id", userId).eq("id", id)
     .select().single(), "sourcing_companies", "set target");
   if (!active) {
     const jobs = await many(db.from("sourced_jobs").select().eq("user_id", userId).eq("company_id", id),

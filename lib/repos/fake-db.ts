@@ -1,6 +1,7 @@
 import { pgArray } from "./db";
-import type { DbClient, DbResult, DbTable } from "./db";
-import type { RowOf, TableName } from "./rows";
+import type { CompanyImportRpc, DbClient, DbResult, DbTable } from "./db";
+import type { CompanyImportRow, RowOf, TableName } from "./rows";
+import { norm } from "../types";
 
 type Row = Record<string, unknown>;
 
@@ -25,6 +26,62 @@ export class FakeDb implements DbClient {
 
   from<T extends TableName>(table: T): DbTable<RowOf<T>> {
     return new FakeTable(this.tableRows(table), () => this.nextId()) as unknown as DbTable<RowOf<T>>;
+  }
+
+  async rpc(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
+    Promise<DbResult<CompanyImportRow>> {
+    const receipts = this.tableRows("company_imports");
+    const companies = this.tableRows("sourcing_companies");
+    const latest = receipts.filter((r) => r.user_id === user).at(-1);
+    const prior = receipts.find((r) => r.user_id === user && r.id === id);
+    const result = (row?: Row) => ({ data: row ? structuredClone(row) as unknown as CompanyImportRow : null, error: null });
+    if (!plan) {
+      if (!latest || latest !== prior) return result();
+      if (latest.undone_count !== null) return result(latest);
+      const removals = companies.filter((c) => c.user_id === user && c.active && c.import_id === id);
+      const removedIds = new Set(removals.map((c) => c.id));
+      for (const c of removals) Object.assign(c, { active: false, import_id: null });
+      const prepared = new Set(this.tableRows("applications").filter((a) => a.user_id === user).map((a) => a.external_ref));
+      for (const job of this.tableRows("sourced_jobs")) {
+        if (job.user_id === user && removedIds.has(job.company_id) && !prepared.has(`sourced:${job.id}`) &&
+          (job.sourcing_decision === "picked" || (!job.sourcing_decision && job.status === "shortlisted"))) {
+          job.sourcing_decision = "available";
+        }
+      }
+      latest.undone_count = removals.length;
+      return result(latest);
+    }
+    if (prior) return result(prior);
+    const existing = companies.filter((c) => c.user_id === user);
+    const newWebsites = plan.filter((r) => r.id === null && r.website).map((r) => r.website);
+    if (new Set(newWebsites).size !== newWebsites.length || plan.some((r) => r.id
+      ? !existing.some((c) => c.id === r.id && c.identity === r.identity && c.active === r.active && (c.website ?? null) === r.website)
+      : existing.some((c) => c.identity === r.identity || (r.website && c.website === r.website)))) return result();
+
+    const receipt = {
+      id, user_id: user, created_at: new Date(Math.max(Date.now(), (latest ? Date.parse(String(latest.created_at)) : 0) + 1)).toISOString(),
+      new_count: 0, reused_count: 0, skipped_count: skipped, undone_count: null, company_ids: [] as string[],
+    };
+    for (const r of plan) {
+      if (r.id === null) {
+        const companyId = this.nextId();
+        companies.push({ id: companyId, user_id: user, name: r.name, identity: r.identity, website: r.website,
+          active: true, import_id: id, research: [], research_version: 0, research_requested: false });
+        for (const table of ["watchlist", "sourced_jobs", "applications", "contacts"]) {
+          for (const row of this.tableRows(table)) {
+            if (row.user_id === user && typeof row.company === "string" && norm(row.company) === r.identity) row.company_id = companyId;
+          }
+        }
+        receipt.new_count++;
+        receipt.company_ids.push(companyId);
+      } else if (!r.active) {
+        Object.assign(existing.find((c) => c.id === r.id)!, { active: true, import_id: id });
+        receipt.reused_count++;
+        receipt.company_ids.push(r.id);
+      }
+    }
+    receipts.push(receipt);
+    return result(receipt);
   }
 
   private tableRows(table: string): Row[] {
@@ -70,6 +127,7 @@ class FakeQuery {
   private filterError: string | null = null;
   private orderBy: { col: string; ascending: boolean } | null = null;
   private limitN: number | null = null;
+  private rangeN: [number, number] | null = null;
   private returning: boolean;
   private mode: "many" | "single" | "maybeSingle" = "many";
 
@@ -103,6 +161,10 @@ class FakeQuery {
   }
   limit(count: number): this {
     this.limitN = count;
+    return this;
+  }
+  range(from: number, to: number): this {
+    this.rangeN = [from, to + 1];
     return this;
   }
   select(): this {
@@ -165,6 +227,7 @@ class FakeQuery {
       });
     }
     if (this.limitN != null) affected = affected.slice(0, this.limitN);
+    if (this.rangeN) affected = affected.slice(...this.rangeN);
 
     if (!this.returning) return { data: null, error: null };
     const out = structuredClone(affected);

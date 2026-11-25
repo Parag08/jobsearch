@@ -300,6 +300,7 @@ export interface CompanyRow {
 }
 
 export interface RowMap {
+  company_imports: CompanyImportRow;
   sourcing_companies: SourcingCompanyRow;
   profiles: ProfileRow;
   sectors: SectorRow;
@@ -337,9 +338,21 @@ export interface SourcingCompanyRow {
   identity: string;
   website: string | null;
   active: boolean;
+  import_id?: string | null;
   research: unknown;
   research_version: number;
   research_requested: boolean;
+}
+
+export interface CompanyImportRow {
+  id: string;
+  user_id: string;
+  created_at: string;
+  new_count: number;
+  reused_count: number;
+  skipped_count: number;
+  undone_count: number | null;
+  company_ids: string[];
 }
 
 /** One full mock interview (migration 0017); `session` is the whole FullSession, saved every turn. */

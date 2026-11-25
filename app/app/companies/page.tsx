@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getWorkspace } from "@/lib/db";
+import { latestCompanyImport } from "@/lib/repos/company-import";
 import { listContacts } from "@/lib/repos/contacts";
 import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { norm } from "@/lib/types";
@@ -7,14 +9,17 @@ import { toggleTargetCompany } from "../sourcing-actions";
 import { PendingButton, SourcingDialog } from "../sourcing-controls";
 import { AddTargetForm } from "../sourcing-forms";
 import { CompanyList } from "./company-list";
+import { importPath } from "./import/paths";
+import { ImportReceipt } from "./import/receipt";
+import styles from "./import/import.module.css";
 import ui from "../ui.module.css";
 import s from "../sourcing.module.css";
 
 export default async function Companies({ searchParams }: { searchParams: Promise<{ removed?: string; restored?: string; added?: string; error?: string }> }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
-  const [source, contacts, params] = await Promise.all([
-    loadDailySourcing(w.db, w.userId), listContacts(w.db, w.userId), searchParams,
+  const [source, contacts, params, receipt] = await Promise.all([
+    loadDailySourcing(w.db, w.userId), listContacts(w.db, w.userId), searchParams, latestCompanyImport(w.db, w.userId),
   ]);
   const active = source.companies.filter((c) => c.active);
   const removed = source.companies.find((c) => !c.active && c.id === params.removed);
@@ -37,8 +42,12 @@ export default async function Companies({ searchParams }: { searchParams: Promis
             <span><b>{companies.reduce((n, c) => n + c.connections, 0)}</b> connections</span>
           </p>
         </div>
-        <SourcingDialog trigger="Add company" title="Add a target company" primary><AddTargetForm /></SourcingDialog>
+        <div className={styles.actions}>
+          <Link className={styles.button} href={importPath}>Import list</Link>
+          <SourcingDialog trigger="Add company" title="Add a target company" primary><AddTargetForm /></SourcingDialog>
+        </div>
       </div>
+      {receipt && <ImportReceipt receipt={receipt} compact />}
       {removed && <div className={ui.panel + " " + s.inlineHead}>
         <p className={s.notice} role="status"><strong>{removed.name}</strong> was removed from your targets. Saved roles, research and people are unchanged.</p>
         <form action={toggleTargetCompany.bind(null, removed.id, true)}><PendingButton label="Undo" /></form>

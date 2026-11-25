@@ -1,4 +1,13 @@
 import type { RowOf, TableName } from "./rows";
+import type { ImportPlanRow } from "../companies/import-review";
+import type { CompanyImportRow } from "./rows";
+
+export type CompanyImportRpc = {
+  p_user_id: string;
+  p_id: string;
+  p_plan?: ImportPlanRow[];
+  p_skipped?: number;
+};
 
 /**
  * Structural subset of the supabase-js query-builder chain that the repos use.
@@ -17,6 +26,7 @@ export interface DbSelect<R> extends PromiseLike<DbResult<R[]>> {
   in(column: keyof R & string, values: unknown[]): DbSelect<R>;
   order(column: keyof R & string, opts?: { ascending?: boolean }): DbSelect<R>;
   limit(count: number): DbSelect<R>;
+  range(from: number, to: number): DbSelect<R>;
   single(): PromiseLike<DbResult<R>>;
   maybeSingle(): PromiseLike<DbResult<R | null>>;
 }
@@ -45,6 +55,7 @@ export interface DbTable<R> {
 
 export interface DbClient {
   from<T extends TableName>(table: T): DbTable<RowOf<T>>;
+  rpc(name: "apply_company_import", args: CompanyImportRpc): PromiseLike<DbResult<CompanyImportRow>>;
 }
 
 /** Every repo call either returns typed data or throws this - raw {data,error} never leaks upward. */
