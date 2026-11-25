@@ -78,3 +78,41 @@ test("chooses a visible XLSX worksheet and explicitly links a company identity o
   await expect(targets.getByRole("link", { name: "Northstar Studio" })).toBeVisible();
   await expect(targets.getByRole("link", { name: "Northstar Group" })).toHaveCount(0);
 });
+
+test("a stale company import refreshes the review without saving a partial batch", async ({ demo: page, context }) => {
+  await appLink(page, "Companies").click();
+  await page.getByRole("link", { name: "Import list" }).click();
+  await page.getByLabel("Choose file").setInputFiles({
+    name: "targets.csv", mimeType: "text/csv",
+    buffer: Buffer.from("Company name,Website\nMeridian Robotics,meridian.com\nBeacon Labs,beacon.com\n"),
+  });
+  await page.getByRole("button", { name: "Review rows" }).click();
+  const confirm = page.getByRole("button", { name: "Import 2 companies", exact: true });
+  await expect(confirm).toBeEnabled();
+
+  const other = await context.newPage();
+  await other.goto("/app/companies");
+  await other.getByRole("button", { name: "Add company" }).click();
+  const add = other.getByRole("dialog", { name: "Add a target company" });
+  await add.getByRole("textbox", { name: "Company name" }).fill("Beacon Labs");
+  await add.getByRole("textbox", { name: "Company website (optional)" }).fill("beacon.com");
+  await add.getByRole("button", { name: "Add company" }).click();
+  const targets = other.getByRole("region", { name: "All target companies" });
+  await expect(targets.getByRole("link", { name: "Beacon Labs", exact: true })).toBeVisible();
+
+  await confirm.click();
+  await expect(page.getByRole("alert")).toContainText("Check the updated company matches");
+  const review = page.getByRole("table", { name: "Company row review" });
+  await expect(review.getByRole("row").filter({ hasText: "Beacon Labs" })).toContainText("Already a target · kept as is");
+  await other.reload();
+  await expect(targets.getByRole("link", { name: "Meridian Robotics", exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Import 1 company", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "1 company added to your targets." })).toBeVisible();
+  await page.getByRole("button", { name: "Undo import" }).click();
+  await expect(page.getByRole("heading", { name: "Import undone." })).toBeVisible();
+  await page.getByRole("link", { name: "View Companies" }).click();
+  const updatedTargets = page.getByRole("region", { name: "All target companies" });
+  await expect(updatedTargets.getByRole("link", { name: "Beacon Labs", exact: true })).toBeVisible();
+  await expect(updatedTargets.getByRole("link", { name: "Meridian Robotics", exact: true })).toHaveCount(0);
+});
