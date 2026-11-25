@@ -42,6 +42,18 @@ export function SafeKitView({ application: app, record, verified, today, error }
       {(["screening", "interview", "case", "offer", "negotiation"] as const).filter((stage) => canTransition(app.stage, stage)).map((stage) =>
         <form key={stage} action={moveStage.bind(null, id, stage, undefined)}><PendingButton label={"Move to " + stage} /></form>)}
     </section>}
+    {canTransition(app.stage, "closed") && <details className={ui.panel}>
+      <summary>Close application…</summary>
+      <div className={s.formFoot} role="group" aria-label="Why it closed">
+        <form action={moveStage.bind(null, id, "closed", "withdrawn")}><PendingButton label={kit.submission ? "I withdrew" : "I’m not applying"} /></form>
+        {kit.submission && <>
+          <form action={moveStage.bind(null, id, "closed", "lost")}><PendingButton label="They said no" /></form>
+          <form action={moveStage.bind(null, id, "closed", "ghosted")}><PendingButton label="No reply" /></form>
+        </>}
+        {(app.stage === "offer" || app.stage === "negotiation") &&
+          <form action={moveStage.bind(null, id, "closed", "won")}><PendingButton label="I accepted an offer" /></form>}
+      </div>
+    </details>}
     <div className={s.split}>
       <div className={s.stack}>
         <section className={ui.panel}>

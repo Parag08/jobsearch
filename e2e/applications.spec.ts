@@ -72,7 +72,14 @@ test("a picked role becomes a safe kit and only confirmation moves it to Applied
   await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
 
   await appLink(page, "Pipeline").click();
-  await expect(page.getByRole("region", { name: "Applied", exact: true }).getByRole("link", { name: /Product Manager, Growth Orchard Commerce/ })).toBeVisible();
+  const applied = page.getByRole("region", { name: "Applied", exact: true }).getByRole("link", { name: /Product Manager, Growth Orchard Commerce/ });
+  await expect(applied).toBeVisible();
+  await applied.click();
+  await page.getByText("Close application…", { exact: true }).click();
+  await page.getByRole("button", { name: "They said no" }).click();
+  await expect(page.getByText("Application kit · closed")).toBeVisible();
+  await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
+
 });
 
 test("a missing application offers a pipeline recovery link", async ({ demo: page }) => {
