@@ -122,9 +122,3 @@ export function parseCaseLibrary(raw: unknown): CaseLibrary {
   return { cases };
 }
 
-/** Filter by firm and case type; "all" (or omitted) means no filter. */
-export function casesFor(lib: CaseLibrary, f: { firm?: string; caseType?: string }): CaseSheet[] {
-  return lib.cases.filter(
-    (c) => (!f.firm || f.firm === "all" || c.firm === f.firm) && (!f.caseType || f.caseType === "all" || c.caseType === f.caseType),
-  );
-}
