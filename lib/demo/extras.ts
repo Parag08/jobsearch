@@ -83,22 +83,31 @@ const ANSWERS = [
 
 /** Seed the tables the corpus import leaves empty. */
 export function seedDemoExtras(db: FakeDb, userId: string, today: string): void {
+  const companyId = (name: string) => "sourcing-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  db.seed("sourcing_companies", WATCH.map((w) => ({
+    id: companyId(w.company), user_id: userId, name: w.company, identity: w.company.toLowerCase(),
+    website: "https://" + w.company.toLowerCase().replace(/\W+/g, "-") + ".example.com",
+    active: true, research: [], research_version: 0, research_requested: false,
+  })));
   db.seed(
     "watchlist",
     WATCH.map((w, i) => ({
       user_id: userId,
+      company_id: companyId(w.company),
       company: w.company,
       careers_url: w.url,
       ats: w.ats,
       token: w.ats === "unknown" ? null : w.company.toLowerCase().replace(/\W+/g, "-"),
       active: true,
       added_at: daysAgo(today, 20 - i * 3),
+      last_success_at: w.ats === "unknown" ? null : `${today}T00:00:00Z`,
     })),
   );
   db.seed(
     "sourced_jobs",
     ROLES.map((r, i) => ({
       user_id: userId,
+      company_id: companyId(r.company),
       // The company's board type, so Save to pipeline treats it as readable (lib/demo/canned.ts cannedPosting).
       source: ((ats) => (!ats || ats === "unknown" ? "careers page" : ats))(WATCH.find((w) => w.company === r.company)?.ats),
       external_id: `demo-${i}`,

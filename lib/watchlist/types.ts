@@ -11,6 +11,10 @@ export const AtsKindSchema = z.enum(ATS_KINDS);
 
 export const WatchlistEntrySchema = z.object({
   id: z.string(),
+  companyId: z.string().nullable().optional(),
+  lastSuccessAt: z.string().nullable().optional(),
+  lastAttemptAt: z.string().nullable().optional(),
+  lastCheckFailed: z.boolean().nullable().optional(),
   company: z.string().min(1),
   careersUrl: z.string().min(1),
   ats: AtsKindSchema,

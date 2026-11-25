@@ -56,6 +56,34 @@ describe("MCP protocol", () => {
 });
 
 describe("MCP tools", () => {
+  it("prepares and confirms only the caller’s picked safe kit; refuses private draft fields and legacy stage changes", async () => {
+    const db = new FakeDb();
+    const ctx = ctxFor(db);
+    db.seed("profiles", [{ user_id: ctx.userId, sourcing_evidence: ["discovery"] }]);
+    db.seed("sourcing_companies", [{ id: "co", user_id: ctx.userId, name: "Acme", active: true, identity: "acme" }]);
+    db.seed("sourced_jobs", [{ id: "role-a", user_id: ctx.userId, source: "lever", external_id: "a", company: "Acme",
+      title: "Product Manager", url: "https://jobs.lever.co/acme/a?email=private@example.org", location: null,
+      posted_at: null, score: null, status: "new", sourcing_decision: "picked" }]);
+    const listed = await call(ctx, "list_daily_sourcing_matches");
+    expect(listed.data.roles).toHaveLength(1);
+    expect(listed.text).not.toContain("private@example.org");
+    expect((await call(ctxFor(db, "user-1", "read"), "prepare_sourcing_batch")).isError).toBe(true);
+    const batch = await call(ctx, "prepare_sourcing_batch");
+    expect(batch.data.applicationIds).toHaveLength(1);
+    const applicationId = batch.data.applicationIds[0];
+    const kit = await call(ctx, "get_sourcing_kit", { applicationId });
+    expect(kit.data).toMatchObject({ stage: "saved", role: "Product Manager", kit: { letter: null, answer: null } });
+    expect((await call(ctxFor(db, "another-user"), "get_sourcing_kit", { applicationId })).isError).toBe(true);
+    expect((await call(ctx, "save_sourcing_draft", {
+      applicationId, revision: 0, section: "letter", draft: { evidence: "discovery", tone: "direct", candidateName: "Private Name" },
+    })).isError).toBe(true);
+    expect((await call(ctx, "set_stage", { id: applicationId, stage: "applied", date: "2026-11-11", evidence: "sent" })).isError).toBe(true);
+    const fields = { applicationId, revision: 0, date: "2026-11-11", materials: "different" };
+    expect((await call(ctx, "confirm_sourcing_submission", fields)).isError).toBe(true);
+    expect((await call(ctx, "confirm_sourcing_submission", { ...fields, confirmedByUser: true })).data)
+      .toEqual({ date: "2026-11-11", materials: "different", version: null });
+  });
+
   it("runs the whole loop: upsert, list, stage with evidence, summary", async () => {
     const ctx = ctxFor(new FakeDb());
     const made = await call(ctx, "upsert_application", { externalRef: "acme-pm", company: "Acme", role: "PM", jdRaw: "JD text", savedAt: "2026-10-20" });

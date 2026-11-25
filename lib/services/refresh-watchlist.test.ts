@@ -10,6 +10,8 @@ import { addWatchlistEntry } from "../repos/watchlist";
 import { FakeBoardFetcher } from "../watchlist/fetcher";
 import { newWatchlistEntry } from "../watchlist/types";
 import { refreshWatchlist } from "./refresh-watchlist";
+import { connectSourcingBoard } from "../repos/sourcing";
+import { loadDailySourcing } from "./daily-sourcing";
 
 const TODAY = "2026-09-10";
 
@@ -44,6 +46,9 @@ const betaBoard = [
 ];
 
 async function seed(db: FakeDb) {
+  db.seed("sourcing_companies", ["Acme Corp", "Beta Labs", "Gamma Inc", "Paused Co"].map((name) => ({
+    name, user_id: "u1", active: name !== "Paused Co", identity: name.toLowerCase(),
+  })));
   const acme = await addWatchlistEntry(db, "u1", newWatchlistEntry("Acme Corp", "https://boards.greenhouse.io/acmecorp", TODAY));
   const beta = await addWatchlistEntry(db, "u1", newWatchlistEntry("Beta Labs", "https://jobs.lever.co/beta-labs", TODAY));
   const broken = await addWatchlistEntry(db, "u1", newWatchlistEntry("Gamma Inc", "https://jobs.ashbyhq.com/gamma", TODAY));
@@ -56,6 +61,42 @@ async function seed(db: FakeDb) {
 }
 
 describe("refreshWatchlist", () => {
+  it("replaces just the selected board, ignoring responses from an in-flight check of it", async () => {
+    const db = new FakeDb();
+    const { acme } = await seed(db);
+    const sibling = await addWatchlistEntry(db, "u1", newWatchlistEntry("Acme Corp", "https://boards.greenhouse.io/acme-sibling", TODAY));
+    const siblingBoard = { jobs: [{ ...acmeBoard.jobs[0]!, id: 44, title: "Product Lead, Growth",
+      absolute_url: "https://boards.greenhouse.io/acme-sibling/jobs/44" }] };
+    await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard, [sibling.id]: siblingBoard }) }, "u1", TODAY);
+    const company = db.rows("sourcing_companies").find((row) => row.name === "Acme Corp")!;
+    await upsertSourcedJobs(db, "u1", [{
+      source: "greenhouse", externalId: "legacy", title: "Product Director", company: " ACME   CORP ", companyId: company.id,
+      location: "Singapore", url: null, postedAt: null, score: 0, status: "new",
+    }]);
+    expect((await loadDailySourcing(db, "u1")).available.map((job) => job.externalId)).toEqual(expect.arrayContaining(["1", "legacy"]));
+    const oldCheck = {
+      async fetchBoard(entry: typeof acme) {
+        if (entry.id === acme.id) {
+          await connectSourcingBoard(db, "u1", company, "https://jobs.lever.co/acme-new", TODAY, acme.id);
+          return acmeBoard;
+        }
+        if (entry.id === sibling.id) return siblingBoard;
+        throw new Error("No fixture for this board");
+      },
+    };
+    await refreshWatchlist({ db, fetcher: oldCheck }, "u1", TODAY);
+    expect(db.rows("watchlist").find((row) => row.id === acme.id)).toMatchObject({
+      token: "acme-new", last_success_at: null, last_attempt_at: null,
+    });
+    const available = (await loadDailySourcing(db, "u1")).available.map((job) => job.externalId);
+    expect(available).not.toContain("1");
+    expect(available).not.toContain("legacy");
+    expect(available).toContain("44");
+    const stored = await listSourcedJobs(db, "u1");
+    expect(stored.filter((job) => ["1", "legacy"].includes(job.externalId ?? "")).map((job) => job.status))
+      .toEqual(["closed", "closed"]);
+  });
+
   it("fetches every active board, dedupes across sources, skips the pipeline, scores and upserts", async () => {
     const db = new FakeDb();
     const { acme, beta, broken, paused } = await seed(db);
@@ -135,15 +176,21 @@ describe("refreshWatchlist", () => {
     const db = new FakeDb();
     const { acme } = await seed(db);
     await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard }) }, "u1", TODAY);
+    const success = db.rows("watchlist").find((b) => b.id === acme.id)?.last_success_at;
+    expect(success).toBeTruthy();
     const failing = new FakeBoardFetcher({}, { [acme.id]: "HTTP 503" });
     await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
     const last = await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
     expect(last.retired).toBe(0);
+    expect(db.rows("watchlist").find((b) => b.id === acme.id)).toMatchObject({
+      last_success_at: success, last_attempt_at: expect.any(String), last_check_failed: true,
+    });
     expect((await listSourcedJobs(db, "u1")).every((j) => j.status === "new")).toBe(true);
   });
 
   it("boosts with the network signal too, and works with no sector node (neutral node)", async () => {
     const db = new FakeDb();
+    db.seed("sourcing_companies", [{ name: "Acme Corp", user_id: "u1", active: true, identity: "acme corp" }]);
     const acme = await addWatchlistEntry(db, "u1", newWatchlistEntry("Acme Corp", "https://boards.greenhouse.io/acmecorp", TODAY));
     await insertContact(db, "u1", { name: "Friend", network: null, company: "Acme Corp", role: null, location: null, warmth: "warm", status: "met", interests: [], nextFollowup: null });
     const fetcher = new FakeBoardFetcher({ [acme.id]: { jobs: [acmeBoard.jobs[2]] } });

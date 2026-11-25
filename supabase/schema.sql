@@ -17,6 +17,8 @@
 -- ============================================================================
 
 -- ---- teardown (full replace, no live data yet) -----------------------------
+drop table if exists company_imports cascade;
+drop table if exists sourcing_companies cascade;
 drop table if exists interviewer_ratings cascade;
 drop table if exists user_settings cascade;
 drop table if exists interview_role_plays cascade;
@@ -592,3 +594,246 @@ insert into public.profiles (user_id, display_name)
 select u.id, coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name', '')
 from auth.users u
 on conflict (user_id) do nothing;
+
+-- ---- daily sourcing (migration 0020) ----------------------------------------------
+alter table profiles add column if not exists daily_sourcing_target integer not null default 20
+  check (daily_sourcing_target > 0);
+alter table profiles add column if not exists sourcing_evidence text[] not null default '{}'
+  check (sourcing_evidence <@ array['discovery','prioritization','delivery','measurement','experimentation','stakeholders','operations','technical-design']);
+
+create table if not exists sourcing_companies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(user_id) on delete cascade,
+  name text not null check (length(name) between 1 and 160),
+  identity text not null,
+  website text,
+  active boolean not null default true,
+  research jsonb not null default '[]',
+  research_version integer not null default 0,
+  research_requested boolean not null default false,
+  unique (user_id, identity),
+  unique (user_id, website),
+  unique (user_id, id)
+);
+
+alter table sourcing_companies enable row level security;
+drop policy if exists "own rows" on sourcing_companies;
+create policy "own rows" on sourcing_companies
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create or replace function public.sourcing_company_identity(name text)
+returns text language sql immutable set search_path = '' as $$
+  select lower(btrim(regexp_replace(name, '[[:space:]]+', ' ', 'g')))
+$$;
+
+insert into sourcing_companies(user_id, name, identity, active)
+select user_id, min(company), public.sourcing_company_identity(company), bool_or(active)
+from watchlist
+where length(btrim(company)) between 1 and 160
+group by user_id, public.sourcing_company_identity(company)
+on conflict (user_id, identity) do nothing;
+
+alter table watchlist add column if not exists company_id uuid;
+alter table watchlist add column if not exists last_attempt_at timestamptz;
+alter table watchlist add column if not exists last_success_at timestamptz;
+alter table watchlist add column if not exists last_check_failed boolean;
+alter table sourced_jobs add column if not exists company_id uuid;
+alter table sourced_jobs add column if not exists sourcing_board_url text;
+alter table sourced_jobs add column if not exists sourcing_decision text
+  check (sourcing_decision in ('picked', 'later', 'dismissed', 'available'));
+update sourced_jobs set status = 'new', sourcing_decision = coalesce(sourcing_decision, 'dismissed')
+where status = 'dismissed';
+alter table sourced_jobs add column if not exists sourcing_review jsonb;
+alter table applications add column if not exists company_id uuid;
+alter table applications add column if not exists sourcing_kit jsonb;
+alter table applications add column if not exists sourcing_revision integer not null default 0;
+alter table contacts add column if not exists company_id uuid;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.applications'::regclass and conname = 'safe_sourcing_fields') then
+    alter table public.applications add constraint safe_sourcing_fields check (
+      sourcing_kit is null or (
+        jd_raw is null and jd_extract is null and cv_id is null and cover_letter is null and status_note is null and
+        ((sourcing_kit ->> 'submission' is null and applied_at is null and stage in ('saved', 'closed')) or
+         (sourcing_kit ->> 'submission' is not null and applied_at is not null and
+          (sourcing_kit -> 'submission' ->> 'date') is not distinct from applied_at::text and stage <> 'saved'))
+      )
+    );
+  end if;
+end $$;
+
+create or replace function public.keep_sourcing_submission()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if old.sourcing_kit is not null and (
+    new.sourcing_kit is null or old.company is distinct from new.company or
+    old.role is distinct from new.role or old.external_ref is distinct from new.external_ref or
+    old.apply_url is distinct from new.apply_url or
+    (old.sourcing_kit ->> 'submission' is not null and
+      (old.sourcing_kit is distinct from new.sourcing_kit or old.sourcing_revision is distinct from new.sourcing_revision))
+  ) then
+    raise exception 'Safe application identity and submitted content cannot change.';
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists keep_sourcing_submission on applications;
+create trigger keep_sourcing_submission before update on applications
+  for each row execute function public.keep_sourcing_submission();
+
+create or replace function public.link_sourcing_company()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  select c.id into new.company_id
+  from public.sourcing_companies c
+  where c.user_id = new.user_id and c.identity = public.sourcing_company_identity(new.company);
+  return new;
+end
+$$;
+
+create or replace function public.relink_sourcing_company()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  update public.watchlist set company_id = new.id where user_id = new.user_id
+    and public.sourcing_company_identity(company) = new.identity;
+  update public.sourced_jobs set company_id = new.id where user_id = new.user_id
+    and public.sourcing_company_identity(company) = new.identity;
+  update public.applications set company_id = new.id where user_id = new.user_id
+    and public.sourcing_company_identity(company) = new.identity;
+  update public.contacts set company_id = new.id where user_id = new.user_id
+    and public.sourcing_company_identity(company) = new.identity;
+  return new;
+end
+$$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['watchlist','sourced_jobs','applications','contacts'] loop
+    if not exists (select 1 from pg_constraint where conrelid = format('public.%I', t)::regclass and conname = 'sourcing_company_fk') then
+      execute format('alter table public.%I add constraint sourcing_company_fk foreign key (user_id, company_id) references public.sourcing_companies(user_id, id)', t);
+    end if;
+    execute format('create index if not exists %I on public.%I (user_id, company_id)', t || '_sourcing_company', t);
+    execute format('drop trigger if exists link_sourcing_company on public.%I', t);
+    execute format('create trigger link_sourcing_company before insert or update of company, user_id on public.%I for each row execute function public.link_sourcing_company()', t);
+    execute format('update public.%I x set company_id = c.id from public.sourcing_companies c where x.company_id is null and x.user_id = c.user_id and public.sourcing_company_identity(x.company) = c.identity', t);
+  end loop;
+end $$;
+
+drop trigger if exists relink_sourcing_company on sourcing_companies;
+create trigger relink_sourcing_company after insert on sourcing_companies
+  for each row execute function public.relink_sourcing_company();
+
+create table if not exists public.company_imports (
+  id uuid not null,
+  user_id uuid not null references public.profiles(user_id) on delete cascade,
+  created_at timestamptz not null,
+  new_count integer not null check (new_count >= 0),
+  reused_count integer not null check (reused_count >= 0),
+  skipped_count integer not null check (skipped_count >= 0),
+  undone_count integer check (undone_count between 0 and new_count + reused_count),
+  company_ids uuid[] not null default '{}',
+  primary key (user_id, id)
+);
+
+create index if not exists company_imports_latest on public.company_imports (user_id, created_at desc);
+alter table public.company_imports enable row level security;
+drop policy if exists "read own imports" on public.company_imports;
+create policy "read own imports" on public.company_imports for select using (user_id = auth.uid());
+revoke all on public.company_imports from anon, authenticated;
+grant select on public.company_imports to authenticated;
+
+alter table public.sourcing_companies add column if not exists import_id uuid;
+
+create or replace function public.apply_company_import(
+  p_user_id uuid, p_id uuid, p_plan jsonb default null, p_skipped integer default null
+) returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  receipt public.company_imports;
+  r record;
+  newest timestamptz;
+  n_new integer := 0;
+  n_reused integer := 0;
+  removed uuid[];
+begin
+  if p_user_id is null or p_user_id is distinct from auth.uid() or p_id is null then return null; end if;
+  perform 1 from public.profiles where user_id = p_user_id for no key update;
+  if not found then return null; end if;
+
+  select * into receipt from public.company_imports where user_id = p_user_id and id = p_id;
+  select max(created_at) into newest from public.company_imports where user_id = p_user_id;
+  if p_plan is null then
+    if receipt.id is null or receipt.created_at <> newest then return null; end if;
+    if receipt.undone_count is not null then return to_jsonb(receipt); end if;
+
+    with changed as (
+      update public.sourcing_companies set active = false, import_id = null
+      where user_id = p_user_id and active and import_id = p_id returning id
+    ) select coalesce(array_agg(id), '{}') into removed from changed;
+
+    update public.sourced_jobs j set sourcing_decision = 'available'
+    where j.user_id = p_user_id and j.company_id = any(removed)
+      and (j.sourcing_decision = 'picked' or (j.sourcing_decision is null and j.status = 'shortlisted'))
+      and not exists (
+        select 1 from public.applications a where a.user_id = p_user_id and a.external_ref = 'sourced:' || j.id
+      );
+
+    update public.company_imports set undone_count = cardinality(removed)
+    where user_id = p_user_id and id = p_id returning * into receipt;
+    return to_jsonb(receipt);
+  end if;
+
+  if receipt.id is not null then return to_jsonb(receipt); end if;
+  if jsonb_typeof(p_plan) <> 'array' then return null; end if;
+  if p_skipped is null or p_skipped < 0 or p_skipped > 1000 or
+     jsonb_array_length(p_plan) not between 1 and 1000 - p_skipped then return null; end if;
+  if (select count(distinct x ->> 'identity') from jsonb_array_elements(p_plan) x) <> jsonb_array_length(p_plan) then return null; end if;
+
+  for r in select * from jsonb_to_recordset(p_plan) as x(id uuid, name text, identity text, website text, active boolean) order by id loop
+    if r.id is not null then
+      if r.name is not null or r.active is null then return null; end if;
+      perform 1 from public.sourcing_companies c where c.user_id = p_user_id and c.id = r.id
+        and c.identity = r.identity and c.website is not distinct from r.website and c.active = r.active for update;
+      if not found then return null; end if;
+      if not r.active then n_reused := n_reused + 1; end if;
+    else
+      if r.active is not null or r.name is null or length(r.name) not between 1 and 160
+        or r.name !~ '[[:alpha:]]' or r.name ~ '([0-9]{4,}|[[:cntrl:]])'
+        or r.name collate pg_catalog."C" !~ U&'^[[:alnum:] .&''()+,\0080-\D7FF\E000-\+10FFFF-]+$'
+        or r.name <> btrim(regexp_replace(r.name, '[[:space:]]+', ' ', 'g'))
+        or r.identity <> lower(r.name collate pg_catalog."und-x-icu") then return null; end if;
+      if r.website is not null and (length(r.website) > 261 or
+        r.website !~ '^https://([a-z0-9-]+\.)+[a-z]{2,63}$' or r.website ~ '^https://www\.'
+        or r.website ~ '\.(local|localhost|internal|test|invalid|example)$') then return null; end if;
+      if exists (select 1 from public.sourcing_companies c where c.user_id = p_user_id and
+        (c.identity = r.identity or c.website = r.website)) then return null; end if;
+      n_new := n_new + 1;
+    end if;
+  end loop;
+  if n_new + n_reused = 0 then return null; end if;
+
+  insert into public.company_imports (id, user_id, created_at, new_count, reused_count, skipped_count)
+  values (p_id, p_user_id, greatest(clock_timestamp(), newest + interval '1 microsecond'), n_new, n_reused, p_skipped)
+  returning * into receipt;
+
+  with created as (
+    insert into public.sourcing_companies (user_id, name, identity, website, active, import_id)
+    select p_user_id, x.name, x.identity, x.website, true, p_id
+    from jsonb_to_recordset(p_plan) as x(id uuid, name text, identity text, website text) where x.id is null returning id
+  ), reactivated as (
+    update public.sourcing_companies c set active = true, import_id = p_id
+    from jsonb_to_recordset(p_plan) as x(id uuid, active boolean)
+    where c.user_id = p_user_id and c.id = x.id and not x.active returning c.id
+  )
+  update public.company_imports set company_ids = array(select id from created union all select id from reactivated)
+  where user_id = p_user_id and id = p_id returning * into receipt;
+  return to_jsonb(receipt);
+exception when unique_violation or invalid_text_representation then
+  return null;
+end
+$$;
+
+revoke all on function public.apply_company_import(uuid, uuid, jsonb, integer) from public, anon;
+grant execute on function public.apply_company_import(uuid, uuid, jsonb, integer) to authenticated;

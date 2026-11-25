@@ -33,6 +33,8 @@ import type { CvDiff } from "../cv-diff";
  */
 
 export interface ProfileRow {
+  sourcing_evidence?: string[];
+  daily_sourcing_target?: number;
   user_id: string;
   display_name: string;
   target_geos: string[];
@@ -121,6 +123,10 @@ export interface SentSnapshot {
 }
 
 export interface WatchlistRow {
+  company_id?: string | null;
+  last_attempt_at?: string | null;
+  last_success_at?: string | null;
+  last_check_failed?: boolean | null;
   id: string;
   user_id: string;
   company: string;
@@ -152,6 +158,9 @@ export interface StoryRow {
 }
 
 export interface ApplicationRow {
+  sourcing_revision?: number;
+  company_id?: string | null;
+  sourcing_kit?: unknown;
   id: string;
   user_id: string;
   company: string;
@@ -176,6 +185,7 @@ export interface ApplicationRow {
 }
 
 export interface ContactRow {
+  company_id?: string | null;
   id: string;
   user_id: string;
   name: string;
@@ -230,6 +240,10 @@ export interface InteractionRow {
 }
 
 export interface SourcedJobRow {
+  sourcing_review?: unknown;
+  sourcing_board_url?: string | null;
+  company_id?: string | null;
+  sourcing_decision?: "picked" | "later" | "dismissed" | "available" | null;
   id: string;
   user_id: string;
   source: string;
@@ -287,6 +301,8 @@ export interface CompanyRow {
 }
 
 export interface RowMap {
+  company_imports: CompanyImportRow;
+  sourcing_companies: SourcingCompanyRow;
   profiles: ProfileRow;
   sectors: SectorRow;
   projects: ProjectRow;
@@ -314,6 +330,30 @@ export interface RowMap {
   interview_role_plays: InterviewRolePlayRow;
   user_settings: UserSettingsRow;
   interviewer_ratings: InterviewerRatingRow;
+}
+
+export interface SourcingCompanyRow {
+  id: string;
+  user_id: string;
+  name: string;
+  identity: string;
+  website: string | null;
+  active: boolean;
+  import_id?: string | null;
+  research: unknown;
+  research_version: number;
+  research_requested: boolean;
+}
+
+export interface CompanyImportRow {
+  id: string;
+  user_id: string;
+  created_at: string;
+  new_count: number;
+  reused_count: number;
+  skipped_count: number;
+  undone_count: number | null;
+  company_ids: string[];
 }
 
 /** One full mock interview (migration 0017); `session` is the whole FullSession, saved every turn. */
@@ -494,6 +534,8 @@ export function toSectorNode(r: SectorRow): SectorNode {
 
 export function toApplication(r: ApplicationRow): Application {
   return ApplicationSchema.parse({
+    ...(r.company_id !== undefined && { companyId: r.company_id }),
+    ...(r.sourcing_kit != null && { hasSourcingKit: true }),
     id: r.id,
     company: r.company,
     role: r.role,
@@ -569,6 +611,7 @@ export function toInteraction(r: InteractionRow): Interaction {
 
 export function toContact(r: ContactRow, interactions: Interaction[] = []): Contact {
   return ContactSchema.parse({
+    ...(r.company_id !== undefined && { companyId: r.company_id }),
     id: r.id,
     name: r.name,
     network: r.network,
@@ -587,6 +630,8 @@ export function toContact(r: ContactRow, interactions: Interaction[] = []): Cont
 
 export function toSourcedJob(r: SourcedJobRow): SourcedJob {
   return SourcedJobSchema.parse({
+    ...(r.company_id !== undefined && { companyId: r.company_id }),
+    ...(r.sourcing_board_url !== undefined && { sourcingBoardUrl: r.sourcing_board_url }),
     id: r.id,
     source: r.source,
     externalId: r.external_id,
@@ -774,6 +819,8 @@ export function interactionRow(
 export function sourcedJobRow(userId: string, j: Omit<SourcedJob, "id">): Omit<SourcedJobRow, "id"> {
   return {
     user_id: userId,
+    ...(j.companyId !== undefined && { company_id: j.companyId }),
+    ...(j.sourcingBoardUrl !== undefined && { sourcing_board_url: j.sourcingBoardUrl, missed_refreshes: 0 }),
     source: j.source,
     external_id: j.externalId,
     title: j.title,

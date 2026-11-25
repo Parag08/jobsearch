@@ -1,6 +1,6 @@
 import type { LlmProvider } from "../adapters/llm";
 import type { DbClient } from "../repos/db";
-import { findApplicationByExternalRef, getJdRaw, insertApplication, setSyncFields } from "../repos/applications";
+import { findApplicationByExternalRef, getApplication, getJdRaw, insertApplication, setSyncFields } from "../repos/applications";
 import { listCompanies } from "../repos/companies";
 import { listSourcedJobs, setSourcedJobStatus } from "../repos/sourced-jobs";
 import { listWatchlist } from "../repos/watchlist";
@@ -138,6 +138,8 @@ export async function readPostingInto(
   pasted: string,
 ): Promise<{ read: true; cvError?: string } | { read: false; error: string }> {
   const { db } = deps;
+  const application = await getApplication(db, userId, applicationId);
+  if (application?.hasSourcingKit) return { read: false, error: "Safe kits do not store raw posting text." };
   const text = pasted.trim();
   if (text) await setSyncFields(db, userId, applicationId, { jdRaw: text });
   else if (!(await getJdRaw(db, userId, applicationId))?.trim()) return { read: false, error: "Paste the posting's text first." };

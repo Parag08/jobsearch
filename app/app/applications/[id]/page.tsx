@@ -19,6 +19,9 @@ import ui from "../../ui.module.css";
 import s from "./application.module.css";
 import { ReadPosting } from "./read-posting";
 import { applyFollowUpDaysFromEnv } from "@/lib/apply/follow-up";
+import { getSourcingKit } from "@/lib/services/sourcing-kits";
+import { getSafeEvidence } from "@/lib/repos/sourcing";
+import { SafeKitView } from "./safe-kit-view";
 
 /**
  * One application (DESIGN.md section 5, Application): where it stands and what to do next,
@@ -54,16 +57,21 @@ export default async function ApplicationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ letterError?: string; cvError?: string; applied?: string }>;
+  searchParams: Promise<{ letterError?: string; cvError?: string; applied?: string; kitError?: string }>;
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const { id } = await params;
-  const { letterError, cvError, applied } = await searchParams;
+  const { letterError, cvError, applied, kitError } = await searchParams;
 
   const app = await getApplication(db, userId, id);
   if (!app) notFound();
+  if (app.hasSourcingKit) {
+    const [record, verified] = await Promise.all([getSourcingKit(db, userId, id), getSafeEvidence(db, userId)]);
+    if (!record) notFound();
+    return <SafeKitView application={app} record={record} verified={verified} today={new Date().toISOString().slice(0, 10)} error={kitError} />;
+  }
   const [cv, projects, stories, letter, jdRaw] = await Promise.all([
     app.cvVersionId ? getApplicationCv(db, userId, app.cvVersionId) : null,
     listProjects(db, userId),

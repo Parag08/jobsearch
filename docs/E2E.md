@@ -23,14 +23,16 @@ Run a file or filter by behavior with `npm run test:e2e -- e2e/interview.spec.ts
 | Not found | Recover from an invalid link or missing record | Follow the recovery links from an unknown route and a missing application. |
 | Overview `/app/home` | See priorities, progress, streaks and market evidence | Switch Progress and Insights, then follow the Pipeline shortcut. |
 | Pipeline `/app` | Track jobs by stage | Paste a job; verify its stage and that closed and applied jobs land in the right groups. |
-| Application `/app/applications/[id]` | Review a posting, prepare documents, record status and find interview prep | Save a next step, close a record, prepare a CV and cover letter, download the PDF, and verify sent documents lock. |
-| Watchlist `/app/watchlist` | Monitor companies and triage sourced roles | Add, pause, resume and remove a company; dismiss a role or turn it into a saved application. |
+| Application `/app/applications/[id]` | Manage pipeline records and prepare safe kits for picked roles | Save a next step and close a record; download PII-free content, request a letter or a limited portal answer, confirm manual submission with reviewed or different materials, and verify a frozen version survives closing. |
+| Today `/app/watchlist` | Rank and triage sourced roles | Persist and reverse Pick, Later and Dismiss; change the daily maximum and prepare a kit only after picking. |
+| Companies `/app/companies` and `/app/companies/[id]` | Manage targets, job boards and shared public research | Validate target details, remove and restore a target, replace a board, and explicitly request research. |
 | Network `/app/network` | Manage contacts, conversations and follow-ups | Add a contact, log a conversation, verify the follow-up and history, and check visitor isolation. |
-| Insights `/app/insights` | Find recurring requirements and compare them with existing evidence | Filter by role title, check the filtered evidence summary, and clear the filter. |
+| Role insights `/app?view=insights` | Find recurring requirements and compare them with existing evidence | Filter by role title, check the filtered evidence summary, and clear the filter. |
 | Experience `/app/bank` | Maintain the evidence bank used for CVs and interviews | Add, edit, reload and delete a quantified point. |
 | Interview `/app/interview` | Prepare for a company, practise questions and cases, and review feedback | Switch company and practice views; save notes, rehearse a custom question, open Technical, finish a case and a full mock, reopen reports, and download ratings. |
 | Assistant `/app/agent` | Explain the MCP connection and manage access keys | Open setup details and verify key creation is unavailable in the demo. |
 | Settings `/app/settings` | Set preferences for the job search workspace | Change a Pipeline preference and check it after a reload. |
+| Sourcing preferences `/app/settings/sourcing` | Set the daily shortlist recipe and verify safe claims | Lower the daily maximum and verify the number of ranked roles on Today. |
 | Mobile workspace navigation | Reach the same screens on small displays | Open the menu, navigate, and dismiss the menu with Escape. |
 
 ## Limits

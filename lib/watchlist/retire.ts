@@ -14,6 +14,7 @@ export interface TrackedJob {
   company: string;
   status: SourcedJob["status"];
   missedRefreshes: number;
+  sourcingBoardUrl?: string | null;
 }
 
 export interface SeenPosting {
@@ -25,12 +26,14 @@ export interface SeenPosting {
 export interface AnsweredBoard {
   source: string;
   company: string;
+  url?: string;
 }
 
 export interface RetirementUpdate {
   id: string;
   missedRefreshes: number;
   status: SourcedJob["status"];
+  sourcingBoardUrl?: string;
 }
 
 /** Statuses a refresh may change. `tracked` and `dismissed` are the user's decisions. */
@@ -51,6 +54,7 @@ export function planRetirement(
   answered: readonly AnsweredBoard[],
 ): RetirementUpdate[] {
   const boards = new Set(answered.map((b) => boardKey(b.source, b.company)));
+  const urls = new Set(answered.map((b) => b.url));
   const seenKeys = new Set(
     seen.filter((s) => s.externalId !== null).map((s) => postingKey(s.source, s.externalId as string)),
   );
@@ -58,12 +62,13 @@ export function planRetirement(
 
   for (const row of existing) {
     if (!MANAGED.has(row.status) || row.externalId === null) continue;
-    if (!boards.has(boardKey(row.source, row.company))) continue;
+    if (row.sourcingBoardUrl ? !urls.has(row.sourcingBoardUrl) : !boards.has(boardKey(row.source, row.company))) continue;
+    const origin = row.sourcingBoardUrl ? { sourcingBoardUrl: row.sourcingBoardUrl } : {};
 
     if (seenKeys.has(postingKey(row.source, row.externalId))) {
       const status = row.status === "closed" ? "new" : row.status;
       if (row.missedRefreshes !== 0 || status !== row.status) {
-        updates.push({ id: row.id, missedRefreshes: 0, status });
+        updates.push({ id: row.id, missedRefreshes: 0, status, ...origin });
       }
       continue;
     }
@@ -74,6 +79,7 @@ export function planRetirement(
       id: row.id,
       missedRefreshes,
       status: missedRefreshes >= RETIRE_AFTER_MISSES ? "closed" : row.status,
+      ...origin,
     });
   }
   return updates;

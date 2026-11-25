@@ -72,7 +72,9 @@ export function demoTaxonomy(): unknown {
 /** A fresh sample workspace: the fictional corpus, staged along the pipeline, plus watchlist and practice. */
 export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): FakeDb {
   const db = new FakeDb();
-  seedFakeDb(db, stageDemoApplications(structuredClone(demoCorpus()), today));
+  seedFakeDb(db, stageDemoApplications(structuredClone(demoCorpus()), today), {
+    sourcing_evidence: ["discovery", "delivery", "measurement"],
+  });
   seedDemoExtras(db, DEMO_USER_ID, today);
   return db;
 }

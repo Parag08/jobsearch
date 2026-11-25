@@ -12,25 +12,84 @@ test("Overview switches between progress and market insights and links to Pipeli
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
 });
 
-test("Watchlist manages a company and removes a dismissed role from results", async ({ demo: page }) => {
+test("Today persists triage, and Companies adds, removes, and restores a target", async ({ demo: page }, testInfo) => {
   await appLink(page, "Watchlist").click();
-  await expect(page.getByRole("heading", { name: "Watchlist" })).toBeVisible();
-  const role = page.getByRole("button", { name: "Dismiss Product Operations Manager at Kestrel AI" });
+  await expect(page.getByRole("heading", { name: "Your next good move." })).toBeVisible();
+  await testInfo.attach("Today shortlist", { body: await page.screenshot({ path: testInfo.outputPath("today-shortlist.png") }), contentType: "image/png" });
+  const role = page.getByRole("button", { name: "Dismiss Program Manager, Platform" });
   await role.click();
   await expect(role).toBeHidden();
-
-  const companies = page.getByRole("region", { name: "Companies you watch" });
-  await companies.getByRole("textbox", { name: "Company", exact: true }).fill("Example Labs");
-  await companies.getByRole("textbox", { name: "Careers page" }).fill("https://example.com/careers/example-labs");
-  await companies.getByRole("button", { name: "Add company" }).click();
-  await companies.getByRole("button", { name: "Pause Example Labs" }).click();
-  await expect(companies.getByRole("button", { name: "Resume Example Labs" })).toBeVisible();
+  await page.getByRole("link", { name: /^Dismissed · / }).click();
+  await expect(page).toHaveURL(/view=dismissed/);
   await page.reload();
-  await companies.getByRole("button", { name: "Resume Example Labs" }).click();
-  await expect(companies.getByRole("button", { name: "Pause Example Labs" })).toBeVisible();
+  await page.getByRole("button", { name: "Restore Program Manager, Platform" }).click();
+  await expect(page.getByRole("button", { name: "Restore Program Manager, Platform" })).toBeHidden();
+
+  await appLink(page, "Companies").click();
+  await page.getByRole("button", { name: "Add company" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add a target company" });
+  await dialog.getByRole("textbox", { name: "Company name" }).fill("Example Labs");
+  const website = dialog.getByRole("textbox", { name: "Company website (optional)" });
+  await website.fill("https://127.0.0.1");
+  await dialog.getByRole("button", { name: "Add company" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("public HTTPS");
+  await expect(dialog.getByRole("textbox", { name: "Company name" })).toHaveValue("Example Labs");
+  await website.fill("https://example.com");
+  await dialog.getByRole("button", { name: "Add company" }).click();
+  const companies = page.getByRole("region", { name: "All target companies" });
+  await expect(companies.getByRole("link", { name: "Example Labs" })).toBeVisible();
+  await testInfo.attach("Target companies", { body: await page.screenshot({ path: testInfo.outputPath("target-companies.png") }), contentType: "image/png" });
   await companies.getByRole("button", { name: "Remove Example Labs" }).click();
-  await expect(companies.getByRole("button", { name: "Remove Example Labs" })).toBeHidden();
-  await expect(role).toBeHidden();
+  await expect(companies.getByRole("link", { name: "Example Labs" })).toBeHidden();
+  await page.reload();
+  await page.getByRole("button", { name: "Undo" }).click();
+  await companies.getByRole("link", { name: "Example Labs" }).click();
+  await page.getByRole("textbox", { name: "Public ATS board URL" }).fill("https://jobs.lever.co/example-typo");
+  await page.getByRole("button", { name: "Connect board" }).click();
+  await page.getByText("Replace board", { exact: true }).click();
+  await page.getByRole("textbox", { name: "Public ATS board URL" }).fill("https://jobs.lever.co/example-labs");
+  await page.getByRole("button", { name: "Save replacement" }).click();
+  await expect(page.getByRole("link", { name: "lever board" })).toHaveAttribute("href", "https://jobs.lever.co/example-labs");
+  await page.getByRole("navigation", { name: "Company views" }).getByRole("link", { name: "Company research" }).click();
+  await page.getByRole("button", { name: "Ask my Claude for company research" }).click();
+  await expect(page.getByRole("button", { name: "Copy Claude request" })).toBeVisible();
+});
+
+test("sourcing preferences control the shortlist maximum without padding", async ({ demo: page }) => {
+  await appLink(page, "Watchlist").click();
+  await page.getByRole("link", { name: "Sourcing preferences" }).click();
+  await page.getByRole("spinbutton", { name: "Daily target number" }).fill("1");
+  await page.getByRole("button", { name: "Save preferences" }).click();
+  await page.getByRole("link", { name: "Back to Today" }).click();
+  await expect(page.getByText("Your target: 1 maximum")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ranked roles" }).getByRole("article")).toHaveCount(1);
+});
+
+test("Today persists Later and unpicking without preparing a kit", async ({ demo: page }) => {
+  await appLink(page, "Watchlist").click();
+  const title = "Product Manager, Growth";
+  const pick = page.getByRole("button", { name: "Pick " + title, exact: true });
+  const prepare = page.getByRole("button", { name: "Prepare your kits", exact: true });
+  const views = page.getByRole("navigation", { name: "Shortlist view" });
+  await pick.click();
+  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await pick.click();
+  await expect(pick).toHaveAttribute("aria-pressed", "false");
+  await expect(prepare).toBeDisabled();
+
+  await page.getByRole("button", { name: "Later: " + title, exact: true }).click();
+  await expect(pick).toHaveCount(0);
+  await views.getByRole("link", { name: /^Later · / }).click();
+  await expect(page).toHaveURL(/view=later$/);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Later", exact: true }).getByRole("heading", { name: title })).toBeVisible();
+  await page.getByRole("button", { name: "Restore " + title, exact: true }).click();
+  await expect(page.getByRole("heading", { name: "No roles in this view" })).toBeVisible();
+  await views.getByRole("link", { name: /^Ranked roles · / }).click();
+  await expect(pick).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByText("Your unfinished kits will stay here until you apply.")).toBeVisible();
 });
 
 test("Network adds a contact and logs a conversation without leaking it into another demo", async ({ demo: page, browser, baseURL }) => {
@@ -64,7 +123,8 @@ test("Network adds a contact and logs a conversation without leaking it into ano
 });
 
 test("Insights filters the evidence summary by job title and clears the filter", async ({ demo: page }) => {
-  await appLink(page, "Insights").click();
+  await appLink(page, "Pipeline").click();
+  await page.getByRole("link", { name: "Role insights", exact: true }).click();
   await page.getByRole("navigation", { name: "Role families" }).getByRole("link", { name: /^Product management/ }).click();
   await expect(page).toHaveURL(/family=product-management$/);
   const search = page.getByRole("search");

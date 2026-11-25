@@ -277,7 +277,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
               ))}
             </ul>
             <p>
-              <Link href="/app/insights">See every requirement and make a plan for the gaps</Link>
+              <Link href="/app?view=insights">See every requirement and make a plan for the gaps</Link>
             </p>
           </section>
         </>

@@ -102,6 +102,7 @@ async function saveApplication(
   };
 
   if (existing) {
+    if (existing.hasSourcingKit) throw new Error("Use the sourcing tools for this application kit.");
     let record = existing;
     const changed =
       existing.company !== input.company ||
@@ -179,6 +180,7 @@ export async function setStage(deps: AgentDeps, userId: string, input: SetStageI
   if (!input.evidence.trim()) throw new Error("evidence is required: say where this stage is known from");
 
   const app = await findApplication(deps, userId, input);
+  if (app.hasSourcingKit) throw new Error("Manage stages for a sourcing kit on its application page.");
   const note = `${input.stage} ${input.date}: ${input.evidence.trim()}`;
 
   if (app.stage === input.stage) {

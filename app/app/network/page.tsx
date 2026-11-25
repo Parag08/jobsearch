@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getSourcingCompany } from "@/lib/repos/sourcing";
 import { getWorkspace } from "@/lib/db";
 import { listContactsWithInteractions } from "@/lib/repos/contacts";
+import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { followupLabel, networkSections } from "@/lib/networking/contacts";
 import { monogram, shortDate, toneFor } from "@/lib/pipeline-display";
 import { norm, type Contact } from "@/lib/types";
@@ -26,16 +28,26 @@ const CHANNEL_LABEL = { linkedin: "LinkedIn", whatsapp: "WhatsApp", email: "Emai
  * name or pasted LinkedIn link; logging a conversation sets when to follow up, from how warm
  * they are. Follow-ups due lead the page; everyone else follows, soonest first.
  */
-export default async function Network({ searchParams }: { searchParams: Promise<{ company?: string; added?: string; found?: string; logged?: string }> }) {
+export default async function Network({ searchParams }: { searchParams: Promise<{ company?: string; companyId?: string; role?: string; added?: string; found?: string; logged?: string }> }) {
   const params = await searchParams;
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const all = await listContactsWithInteractions(db, userId);
-  const company = params.company?.trim();
-  const contacts = company ? all.filter((c) => c.company && norm(c.company) === norm(company)) : all;
+  if (params.companyId && w.mode === "live" && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(params.companyId)) notFound();
+  const [all, companyRecord, sourcing] = await Promise.all([
+    listContactsWithInteractions(db, userId),
+    params.companyId ? getSourcingCompany(db, userId, params.companyId) : null,
+    params.companyId && params.role ? loadDailySourcing(db, userId) : null,
+  ]);
+  if (params.companyId && !companyRecord) notFound();
+  const company = companyRecord?.name ?? params.company?.trim();
+  const contacts = company ? all.filter((c) => companyRecord && c.companyId ? c.companyId === companyRecord.id :
+    c.company && norm(c.company) === norm(company)) : all;
+  const isReferralRole = (r: { id: string; company: string; companyId?: string | null }) => companyRecord && r.id === params.role &&
+    (r.companyId ? r.companyId === companyRecord.id : norm(r.company) === companyRecord.identity);
+  const referralTitle = sourcing?.available.find(isReferralRole)?.title ?? sourcing?.apps.find(isReferralRole)?.role;
   const { due, upcoming, rest } = networkSections(contacts, today);
   const dueAll = networkSections(all, today).due.length;
   const met = all.filter((c) => c.status === "met" || c.status === "in-conversation").length;
@@ -232,6 +244,10 @@ export default async function Network({ searchParams }: { searchParams: Promise<
           </Link>
         </p>
       )}
+      {referralTitle && companyRecord && <p className={ui.panel}>
+        Referral context: <strong>{referralTitle}</strong> · {companyRecord.name}. No message is sent from here.{" "}
+        <Link href={"/app/companies/" + companyRecord.id + "?view=network&role=" + encodeURIComponent(params.role ?? "")}>View exact role</Link>
+      </p>}
 
       {due.length > 0 && (
         <section className={ui.panel} aria-labelledby="due-h">

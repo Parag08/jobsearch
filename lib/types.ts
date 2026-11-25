@@ -98,6 +98,8 @@ export const MasterCvSchema = z.object({
 export type MasterCv = z.infer<typeof MasterCvSchema>;
 
 export const ApplicationSchema = z.object({
+  companyId: z.string().nullable().optional(),
+  hasSourcingKit: z.boolean().optional(),
   id: z.string(),
   company: z.string(),
   role: z.string(),
@@ -131,6 +133,7 @@ export const WarmthSchema = z.enum(["cold", "warm", "hot"]);
 export type Warmth = z.infer<typeof WarmthSchema>;
 
 export const ContactSchema = z.object({
+  companyId: z.string().nullable().optional(),
   id: z.string(),
   name: z.string(),
   network: z.object({ name: z.string(), class: z.string().nullable(), campus: z.string().nullable() }).nullable(),
@@ -150,6 +153,8 @@ export const ContactSchema = z.object({
 export type Contact = z.infer<typeof ContactSchema>;
 
 export const SourcedJobSchema = z.object({
+  companyId: z.string().nullable().optional(),
+  sourcingBoardUrl: z.string().nullable().optional(),
   id: z.string(),
   source: z.string(), // "adzuna" | "jooble" | "manual" | ...
   externalId: z.string().nullable(),
