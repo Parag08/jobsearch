@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import shipped from "../../data/interview/cases.json";
-import { casesFor, parseCaseLibrary, type CaseSheet } from "./case-sheet";
+import { parseCaseLibrary, type CaseSheet } from "./case-sheet";
 
 /** The smallest valid case: structure first, recommendation last, math with an answer, chart with an exhibit. */
 function sheet(over: Partial<CaseSheet> = {}): CaseSheet {
@@ -89,20 +89,11 @@ describe("parseCaseLibrary", () => {
   });
 });
 
-describe("casesFor", () => {
-  it("filters by firm and case type, with 'all' meaning no filter", () => {
-    const l = parseCaseLibrary(lib([sheet(), sheet({ id: "c2", firm: "bcg", caseType: "pe-due-diligence" })]));
-    expect(casesFor(l, { firm: "bain" }).map((c) => c.id)).toEqual(["c1"]);
-    expect(casesFor(l, { caseType: "pe-due-diligence" }).map((c) => c.id)).toEqual(["c2"]);
-    expect(casesFor(l, { firm: "all", caseType: "all" })).toHaveLength(2);
-  });
-});
-
 describe("the shipped case library (data/interview/cases.json)", () => {
   const l = parseCaseLibrary(shipped);
 
   it("has ten Bain cases, all candidate-led as Bain runs them", () => {
-    const bain = casesFor(l, { firm: "bain" });
+    const bain = l.cases.filter((c) => c.firm === "bain");
     expect(bain).toHaveLength(10);
     expect(bain.every((c) => c.style === "candidate-led")).toBe(true);
   });
