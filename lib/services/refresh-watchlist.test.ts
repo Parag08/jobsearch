@@ -44,6 +44,9 @@ const betaBoard = [
 ];
 
 async function seed(db: FakeDb) {
+  db.seed("sourcing_companies", ["Acme Corp", "Beta Labs", "Gamma Inc", "Paused Co"].map((name) => ({
+    name, user_id: "u1", active: name !== "Paused Co", identity: name.toLowerCase(),
+  })));
   const acme = await addWatchlistEntry(db, "u1", newWatchlistEntry("Acme Corp", "https://boards.greenhouse.io/acmecorp", TODAY));
   const beta = await addWatchlistEntry(db, "u1", newWatchlistEntry("Beta Labs", "https://jobs.lever.co/beta-labs", TODAY));
   const broken = await addWatchlistEntry(db, "u1", newWatchlistEntry("Gamma Inc", "https://jobs.ashbyhq.com/gamma", TODAY));
@@ -135,15 +138,21 @@ describe("refreshWatchlist", () => {
     const db = new FakeDb();
     const { acme } = await seed(db);
     await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard }) }, "u1", TODAY);
+    const success = db.rows("watchlist").find((b) => b.id === acme.id)?.last_success_at;
+    expect(success).toBeTruthy();
     const failing = new FakeBoardFetcher({}, { [acme.id]: "HTTP 503" });
     await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
     const last = await refreshWatchlist({ db, fetcher: failing }, "u1", TODAY);
     expect(last.retired).toBe(0);
+    expect(db.rows("watchlist").find((b) => b.id === acme.id)).toMatchObject({
+      last_success_at: success, last_attempt_at: expect.any(String), last_check_failed: true,
+    });
     expect((await listSourcedJobs(db, "u1")).every((j) => j.status === "new")).toBe(true);
   });
 
   it("boosts with the network signal too, and works with no sector node (neutral node)", async () => {
     const db = new FakeDb();
+    db.seed("sourcing_companies", [{ name: "Acme Corp", user_id: "u1", active: true, identity: "acme corp" }]);
     const acme = await addWatchlistEntry(db, "u1", newWatchlistEntry("Acme Corp", "https://boards.greenhouse.io/acmecorp", TODAY));
     await insertContact(db, "u1", { name: "Friend", network: null, company: "Acme Corp", role: null, location: null, warmth: "warm", status: "met", interests: [], nextFollowup: null });
     const fetcher = new FakeBoardFetcher({ [acme.id]: { jobs: [acmeBoard.jobs[2]] } });

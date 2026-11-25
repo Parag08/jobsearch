@@ -27,6 +27,7 @@ export interface DbWrite<R> extends PromiseLike<DbResult<null>> {
 
 export interface DbUpdate<R> extends PromiseLike<DbResult<null>> {
   eq(column: keyof R & string, value: unknown): DbUpdate<R>;
+  is(column: keyof R & string, value: boolean | null): DbUpdate<R>;
   select(): DbSelect<R>;
 }
 

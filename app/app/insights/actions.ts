@@ -33,7 +33,7 @@ function selection(formData: FormData): RoleSelector {
 function back(by: RoleSelector, extra: Record<string, string> = {}, hash = ""): string {
   const q = new URLSearchParams({ ...(by.family ? { family: by.family } : {}), ...(by.title ? { title: by.title } : {}), ...extra });
   const s = q.toString();
-  return `/app/insights${s ? `?${s}` : ""}${hash}`;
+  return `/app?view=insights${s ? `&${s}` : ""}${hash}`;
 }
 
 /** Read the saved roles that have a posting and no extract yet, one batch (ROLE_READ_BATCH). */
@@ -61,7 +61,7 @@ export async function readUnreadRolesAction(formData?: FormData): Promise<void> 
   });
 
   const result = await readUnreadRoles({ db, llm }, userId, batch);
-  revalidatePath("/app/insights");
+  revalidatePath("/app");
   redirect(back(by, { read: String(result.read), failed: String(result.failed) }));
 }
 
@@ -87,6 +87,6 @@ export async function draftRolePlanAction(formData: FormData): Promise<void> {
     message = wait !== null ? `The writer is busy - try again in ${wait}s.` : err instanceof Error ? err.message : "Drafting failed.";
   }
   if (message) redirect(back(by, { error: message }, "#plan"));
-  revalidatePath("/app/insights");
+  revalidatePath("/app");
   redirect(back(by, {}, "#plan"));
 }

@@ -31,6 +31,7 @@ export async function markApplied(
 ): Promise<MarkAppliedResult> {
   const app = await getApplication(db, userId, applicationId);
   if (!app) throw new Error(`markApplied: application ${applicationId} not found`);
+  if (app.hasSourcingKit) throw new Error("Use the safe kit’s submission confirmation.");
 
   const today = nowIso.slice(0, 10);
   const advanced = advance(app, "applied", today);

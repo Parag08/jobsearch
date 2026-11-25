@@ -41,7 +41,7 @@ const db = supabase as unknown as DbClient;
 const fetcher = new HttpBoardFetcher(fetch);
 const today = new Date().toISOString().slice(0, 10);
 
-const { data: profiles, error } = await supabase.from("profiles").select("user_id, display_name");
+const { data: profiles, error } = await supabase.from("profiles").select("user_id");
 if (error) {
   console.error("Could not read profiles:", error.message);
   process.exit(1);
@@ -49,17 +49,15 @@ if (error) {
 
 let failedUsers = 0;
 for (const p of profiles ?? []) {
-  const who = (p.display_name as string) || (p.user_id as string);
   try {
     const r = await refreshWatchlist({ db, fetcher }, p.user_id as string, today);
     console.log(
-      `${who}: fetched ${r.fetched}, filtered ${r.filtered}, deduped ${r.deduped}, in pipeline ${r.excluded}, ` +
+      `Workspace refresh: fetched ${r.fetched}, filtered ${r.filtered}, deduped ${r.deduped}, in pipeline ${r.excluded}, ` +
         `upserted ${r.upserted}, retired ${r.retired}, board failures ${r.failures.length}`,
     );
-    for (const f of r.failures) console.log(`  ! ${f.company}: ${f.error}`);
-  } catch (e) {
+  } catch {
     failedUsers++;
-    console.error(`${who}: refresh failed - ${e instanceof Error ? e.message : String(e)}`);
+    console.error("A workspace refresh failed.");
   }
 }
 // A board failing is routine (logged above); a whole refresh failing is worth a red run.

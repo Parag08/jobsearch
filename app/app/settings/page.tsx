@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { getUserSettings } from "@/lib/repos/user-settings";
@@ -67,6 +68,10 @@ export default async function SettingsPage() {
           </p>
         </div>
       </div>
+      <section className={ui.panel}>
+        <h2>Sourcing</h2>
+        <Link href="/app/settings/sourcing" className={ui.btn}>Sourcing preferences</Link>
+      </section>
       <SettingsForm
         groups={[...SETTING_GROUPS]}
         fields={fields}

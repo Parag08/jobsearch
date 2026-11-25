@@ -14,14 +14,6 @@ import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "@/lib/cv-page
 import { draftCoverLetter, editCoverLetter } from "@/lib/services/cover-letter";
 import { parseLetterBank } from "@/lib/cover-letter";
 import letterBank from "@/data/cvbuilder/letter-bank.json";
-import { refreshWatchlist } from "@/lib/services/refresh-watchlist";
-import { addWatchlistEntry, removeWatchlistEntry, setWatchlistActive } from "@/lib/repos/watchlist";
-import { newWatchlistEntry } from "@/lib/watchlist/types";
-import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
-import { parseTargetList } from "@/lib/watchlist/targets";
-import { getProfile, saveProfile } from "@/lib/repos/profiles";
-import { listSourcedJobs, setSourcedJobStatus } from "@/lib/repos/sourced-jobs";
-import { listCompanies, watchableCompanies } from "@/lib/repos/companies";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { buildRewritePrompt, guardRewrite } from "@/lib/interview/model-answer";
 import { setModelAnswer } from "@/lib/services/model-answers";
@@ -71,10 +63,8 @@ import {
 } from "@/lib/interview/mock";
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
 import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
-import { readPostingInto, saveToPipeline } from "@/lib/services/save-to-pipeline";
+import { readPostingInto } from "@/lib/services/save-to-pipeline";
 import { applyFollowUpDaysFromEnv, followUpAfterApplying } from "@/lib/apply/follow-up";
-import { postingEndpoint, postingText } from "@/lib/watchlist/posting";
-import { cannedPosting } from "@/lib/demo/canned";
 import { demoTaxonomy } from "@/lib/db/demo";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "@/lib/adapters/vercel-gateway";
 import { withLedger } from "@/lib/adapters/llm-factory";
@@ -104,6 +94,7 @@ export async function moveStage(applicationId: string, to: Stage, closedReason?:
   } else {
     const app = await getApplication(db, userId, applicationId);
     if (!app) return;
+    if (app.hasSourcingKit && !app.appliedAt && to !== "closed") return;
     await updateApplication(db, userId, advance(app, to, today(), closedReason));
   }
   revalidatePath("/app");
@@ -113,7 +104,7 @@ export async function moveStage(applicationId: string, to: Stage, closedReason?:
 export async function setNextAction(applicationId: string, formData: FormData): Promise<void> {
   const { db, userId } = await ws();
   const app = await getApplication(db, userId, applicationId);
-  if (!app) return;
+  if (!app || app.hasSourcingKit) return;
   const nextAction = String(formData.get("nextAction") ?? "").trim();
   await updateApplication(db, userId, { ...app, nextAction: nextAction || null, updatedAt: today() });
   revalidatePath("/app");
@@ -189,35 +180,6 @@ export async function editCoverLetterAction(applicationId: string, formData: For
   revalidatePath(`/app/applications/${applicationId}`);
 }
 
-export async function addWatchlist(formData: FormData): Promise<void> {
-  const { db, userId } = await ws();
-  const company = String(formData.get("company") ?? "").trim();
-  const careersUrl = String(formData.get("careersUrl") ?? "").trim();
-  if (!company || !careersUrl) return;
-  await addWatchlistEntry(db, userId, newWatchlistEntry(company, careersUrl, today()));
-  revalidatePath("/app/watchlist");
-}
-
-export async function toggleWatchlist(id: string, active: boolean): Promise<void> {
-  const { db, userId } = await ws();
-  await setWatchlistActive(db, userId, id, active);
-  revalidatePath("/app/watchlist");
-}
-
-export async function removeWatchlist(id: string): Promise<void> {
-  const { db, userId } = await ws();
-  await removeWatchlistEntry(db, userId, id);
-  revalidatePath("/app/watchlist");
-}
-
-export async function refreshWatchlistAction(): Promise<void> {
-  const w = await ws();
-  const { db, userId } = w;
-  // The sample watchlist's boards are fictional; the demo shows its stored roles instead.
-  if (w.cannedAi) return;
-  await refreshWatchlist({ db, fetcher: new HttpBoardFetcher(fetch) }, userId, today());
-  revalidatePath("/app/watchlist");
-}
 
 /** A model that always fails: with no AI configured, Apply still opens the application and keeps the text. */
 const NO_AI = { extractJd: async () => { throw new Error("AI is not set up"); } } as unknown as LlmProvider;
@@ -238,51 +200,6 @@ async function applyDeps(w: NonNullable<Awaited<ReturnType<typeof getWorkspace>>
   return { db, llm, buildCv };
 }
 
-/**
- * Apply to a watchlist role (docs/APPLY-FLOW.md steps 3-5): the posting is read from its board,
- * an application opens at Saved with its CV, and you land on it to send. When the posting
- * can't be read, you still land there and paste it. Only a real failure stays on the Watchlist.
- */
-export async function saveToPipelineAction(jobId: string): Promise<void> {
-  const w = await ws();
-  const { db, userId } = w;
-  const deps = await applyDeps(w);
-  const jobs = w.cannedAi ? await listSourcedJobs(db, userId) : [];
-  let target: string;
-  try {
-    const r = await saveToPipeline(
-      {
-        ...deps,
-        readPosting: async (q) => {
-          if (w.cannedAi) {
-            const job = jobs.find((j) => j.externalId === q.externalId && j.company === q.company);
-            return job ? cannedPosting(job.title, job.company, job.location) : null;
-          }
-          const res = await fetch(postingEndpoint(q.ats, q.token, q.externalId), {
-            headers: { accept: "application/json" },
-            signal: AbortSignal.timeout(8000),
-          });
-          if (!res.ok) {
-            console.error("saveToPipelineAction: board answered", res.status, q.ats, q.token, q.externalId);
-            return null;
-          }
-          return postingText(q.ats, await res.json().catch(() => null), q.externalId, q.company);
-        },
-      },
-      userId,
-      jobId,
-      new Date().toISOString(),
-    );
-    const note = r.read !== "read" ? r.read : r.cvError ? "no-cv" : r.created ? "ready" : "";
-    target = `/app/applications/${r.applicationId}${note ? `?applied=${note}` : ""}`;
-  } catch (err) {
-    console.error("saveToPipelineAction", err);
-    target = `/app/watchlist?role=${encodeURIComponent(jobId)}&note=failed#roles-h`;
-  }
-  revalidatePath("/app");
-  revalidatePath("/app/watchlist");
-  redirect(target);
-}
 
 /** The paste box on an unread application: read the posting (or the kept text), then build the CV. */
 export async function readPostingAction(applicationId: string, _prev: string | null, form: FormData): Promise<string | null> {
@@ -294,26 +211,6 @@ export async function readPostingAction(applicationId: string, _prev: string | n
   redirect(`/app/applications/${applicationId}?applied=${r.cvError ? "no-cv" : "ready"}`);
 }
 
-/** What the watchlist keeps: cities, title phrases, excluded phrases (lib/watchlist/targets.ts). */
-export async function saveJobTargets(form: FormData): Promise<void> {
-  const { db, userId } = await ws();
-  const profile = await getProfile(db, userId);
-  if (!profile) return;
-  const list = (name: string) => parseTargetList(String(form.get(name) ?? ""));
-  await saveProfile(db, {
-    ...profile,
-    targetGeos: list("geos"),
-    targetTitles: list("titles"),
-    excludedTitles: list("excluded"),
-  });
-  revalidatePath("/app/watchlist");
-}
-
-export async function setJobStatus(id: string, status: "shortlisted" | "dismissed" | "tracked"): Promise<void> {
-  const { db, userId } = await ws();
-  await setSourcedJobStatus(db, userId, id, status);
-  revalidatePath("/app/watchlist");
-}
 
 /**
  * Open an application from a pasted JD (DESIGN.md section 2). Runs the same
@@ -354,47 +251,6 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
   redirect(`/app/applications/${applicationId}`);
 }
 
-/**
- * Watch a company from the central directory (DESIGN.md section 4).
- *
- * Carries the directory's VERIFIED ats and token across rather than re-deriving
- * them from the careers URL: probing checked them against the live board, and most
- * verified boards sit behind a vanity domain that detectAts would call "unknown"
- * (grab.careers is a SmartRecruiters board; nothing in the URL says so).
- */
-export async function watchCompany(companyId: string): Promise<void> {
-  const { db, userId } = await ws();
-  const directory = await listCompanies(db);
-  const c = directory.find((x) => x.id === companyId);
-  if (!c) return;
-
-  await addWatchlistEntry(db, userId, {
-    company: c.name,
-    careersUrl: c.careersUrl,
-    ats: c.ats,
-    token: c.token,
-    active: true,
-    addedAt: today(),
-  });
-  revalidatePath("/app/watchlist");
-}
-
-/** Watch every directory company whose board can actually be read today. */
-export async function watchAllReadable(): Promise<void> {
-  const { db, userId } = await ws();
-  const readable = await watchableCompanies(db);
-  for (const c of readable) {
-    await addWatchlistEntry(db, userId, {
-      company: c.name,
-      careersUrl: c.careersUrl,
-      ats: c.ats,
-      token: c.token,
-      active: true,
-      addedAt: today(),
-    });
-  }
-  revalidatePath("/app/watchlist");
-}
 
 export interface SaveState {
   saved?: boolean;

@@ -41,6 +41,7 @@
     "@playwright/test": "1.61.1",
     "@types/node": "22.15.0",
     "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.6",
     "@types/three": "^0.187.0",
     "jszip": "^3.10.2",
     "pg": "^8.23.0",

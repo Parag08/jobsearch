@@ -93,6 +93,10 @@ class FakeQuery {
     this.filters.push({ col, values });
     return this;
   }
+  is(col: string, value: boolean | null): this {
+    this.filters.push({ col, values: value === null ? [null, undefined] : [value] });
+    return this;
+  }
   order(col: string, opts?: { ascending?: boolean }): this {
     this.orderBy = { col, ascending: opts?.ascending ?? true };
     return this;

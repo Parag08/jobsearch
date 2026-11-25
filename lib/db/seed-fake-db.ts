@@ -6,6 +6,7 @@ import {
   bulletRow,
   masterCvRow,
   profileRow,
+  type ProfileRow,
   projectRow,
   sectorRow,
 } from "../repos/rows";
@@ -16,9 +17,9 @@ import {
  * it whenever Supabase is not configured, and it is the in-memory twin of
  * what supabase/seed.sql writes to the live database.
  */
-export function seedFakeDb(db: FakeDb, ws: ImportedWorkspace): void {
+export function seedFakeDb(db: FakeDb, ws: ImportedWorkspace, profileExtras?: Pick<ProfileRow, "sourcing_evidence">): void {
   const userId = ws.profile.userId;
-  db.seed("profiles", [profileRow(ws.profile)]);
+  db.seed("profiles", [{ ...profileRow(ws.profile), ...profileExtras }]);
   db.seed("sectors", ws.sectors.map((s) => ({ id: s.id, ...sectorRow(userId, s) })));
   db.seed("projects", ws.projects.map((p) => ({ id: p.id, ...projectRow(userId, p) })));
   db.seed(

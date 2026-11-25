@@ -1,0 +1,108 @@
+import { describe, expect, it, vi } from "vitest";
+import { FakeDb } from "../repos/fake-db";
+import { approveKitDraft, confirmSourcingSubmission, getSourcingKit, prepareSourcingBatch, requestKitDraft,
+  saveKitDraft, setSafeKitEvidence, saveCompanyResearch } from "./sourcing-kits";
+import { SafeDraft, draftText, fitsAnswer, sourceForCompany } from "../watchlist/safe-kit";
+import { setSourcingCompanyActive } from "../repos/sourcing";
+
+const today = "2026-11-26";
+function setup(db = new FakeDb()) {
+  db.seed("profiles", [{ user_id: "u", sourcing_evidence: ["discovery"] }]);
+  db.seed("sourcing_companies", [{
+    id: "company", user_id: "u", active: true, name: "Harbour", identity: "harbour", website: "https://harbour.example.com",
+    research_requested: true, research_version: 0,
+  }]);
+  db.seed("sourced_jobs", [
+    { id: "a", user_id: "u", company_id: "company", source: "lever", external_id: "a", title: "Product Manager",
+      company: "Harbour", location: "Singapore", url: "https://jobs.lever.co/harbour/a?email=candidate@example.com",
+      posted_at: today, score: 80, status: "new", sourcing_decision: "picked" },
+    { id: "b", user_id: "u", company_id: "company", source: "lever", external_id: "b", title: "Product Lead",
+      company: "Harbour", location: null, url: null, posted_at: null, score: null, status: "new" },
+  ]);
+  return db;
+}
+
+describe("daily sourcing kits", () => {
+  it("creates only selected roles as Saved, without a raw JD, personal CV or automatic drafts", async () => {
+    const db = setup();
+    const result = await prepareSourcingBatch(db, "u", today);
+    expect(result.applicationIds).toHaveLength(1);
+    expect(result.failedRoleIds).toEqual([]);
+    const row = db.rows("applications")[0]!;
+    expect(row).toMatchObject({ stage: "saved", jd_raw: null, cv_id: null, applied_at: null, external_ref: "sourced:a",
+      apply_url: "https://jobs.lever.co/harbour/a", sourcing_kit: { evidence: ["discovery"], letter: null, answer: null } });
+    expect((await prepareSourcingBatch(db, "u", today)).applicationIds).toEqual([]);
+    expect(db.rows("applications")).toHaveLength(1);
+  });
+
+  it("keeps preparing other picked roles when one cannot be saved", async () => {
+    const db = setup();
+    await db.from("sourced_jobs").update({ sourcing_decision: "picked" }).eq("id", "b");
+    const applications = db.from("applications");
+    const insert = applications.insert.bind(applications);
+    vi.spyOn(applications, "insert").mockImplementation((row) => {
+      if (!Array.isArray(row) && row.external_ref === "sourced:a") throw new Error("Test write failure");
+      return insert(row);
+    });
+    const from = db.from.bind(db);
+    const failingDb = { from: (table: Parameters<typeof from>[0]) => table === "applications" ? applications : from(table) } as typeof db;
+    const result = await prepareSourcingBatch(failingDb, "u", today);
+    expect(result.failedRoleIds).toEqual(["a"]);
+    expect(result.applicationIds).toHaveLength(1);
+    expect(db.rows("applications")[0]?.external_ref).toBe("sourced:b");
+  });
+
+  it("only confirms the exact owned kit; retries cannot rewrite the date, material choice, or version", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    if (!id) throw new Error("missing kit");
+    const submitted = { date: today, confirmedByUser: true as const, materials: "reviewed" as const, revision: 0 };
+    await expect(confirmSourcingSubmission(db, "other", id, submitted, today, 7)).rejects.toThrow();
+    await expect(confirmSourcingSubmission(db, "u", id, submitted, today, 7)).rejects.toThrow(/review/i);
+    await setSafeKitEvidence(db, "u", id, ["discovery"], true);
+    const first = await confirmSourcingSubmission(db, "u", id, { ...submitted, revision: 1 }, today, 7);
+    const second = await confirmSourcingSubmission(db, "u", id, { ...submitted, date: "2026-11-10", materials: "different" }, today, 7);
+    expect(first).toEqual(second);
+    expect(first).toMatchObject({ date: today, materials: "reviewed", version: 1 });
+    expect(db.rows("applications")[0]).toMatchObject({ stage: "applied", applied_at: today, next_action: expect.stringContaining("Follow up") });
+    await expect(setSafeKitEvidence(db, "u", id, [], false)).rejects.toThrow(/Saved/);
+  });
+
+  it("retains shared research and saved roles when target membership changes", async () => {
+    const db = setup();
+    await prepareSourcingBatch(db, "u", today);
+    await saveCompanyResearch(db, "u", "company", 0, [{
+      kind: "product-documentation", url: "https://harbour.example.com/docs/platform", checkedAt: today,
+    }], today);
+    await setSourcingCompanyActive(db, "u", "company", false);
+    expect(db.rows("sourcing_companies")[0]).toMatchObject({ active: false, research_version: 1 });
+    expect(db.rows("applications")).toHaveLength(1);
+    expect(db.rows("sourced_jobs")[0]?.sourcing_decision).toBe("available");
+    await setSourcingCompanyActive(db, "u", "company", true);
+    expect((await prepareSourcingBatch(db, "u", today)).applicationIds).toEqual([]);
+  });
+
+  it("rejects unstructured draft fields and private research links, and enforces answer limits", () => {
+    expect(SafeDraft.safeParse({ evidence: "discovery", tone: "direct", text: "Candidate name" }).success).toBe(false);
+    expect(sourceForCompany("https://attacker.example.com/docs", "https://harbour.example.com")).toBeNull();
+    expect(sourceForCompany("https://harbour.example.com/docs?email=name@example.com", "https://harbour.example.com")).toBeNull();
+    expect(sourceForCompany("https://harbour.example.com/docs/people/some-person", "https://harbour.example.com")).toBeNull();
+    expect(fitsAnswer(draftText({ evidence: "discovery", tone: "direct" }), { unit: "words", limit: 2, prompt: "related-experience" })).toBe(false);
+  });
+
+  it("only saves requested drafts, checks limits and revokes approval when edited", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    const draft = { evidence: "discovery", tone: "direct" } as const;
+    await expect(saveKitDraft(db, "u", id, "answer", draft, 0)).rejects.toThrow(/requested/);
+    await requestKitDraft(db, "u", id, "answer", { limit: 2, unit: "words", prompt: "related-experience" });
+    await saveKitDraft(db, "u", id, "answer", draft, 1);
+    await expect(approveKitDraft(db, "u", id, "answer", 2)).rejects.toThrow(/Shorten/);
+    await requestKitDraft(db, "u", id, "answer", { limit: 60, unit: "words", prompt: "related-experience" });
+    await saveKitDraft(db, "u", id, "answer", draft, 3);
+    await approveKitDraft(db, "u", id, "answer", 4);
+    await expect(saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 4)).rejects.toThrow(/changed/);
+    await saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5);
+    expect((await getSourcingKit(db, "u", id))?.value.answer?.approved).toBe(false);
+  });
+});

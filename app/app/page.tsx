@@ -11,6 +11,8 @@ import { STAGES, type Application, type Stage } from "@/lib/types";
 import { AddJob, AddJobGhost } from "./jd-form";
 import { familyLabel, monogram, toneFor } from "@/lib/pipeline-display";
 import ui from "./ui.module.css";
+import sourcing from "./sourcing.module.css";
+import { Insights } from "./insights/insights-view";
 
 /** What an empty column is waiting for, so an empty track still says what goes there. */
 const EMPTY_HINT: Partial<Record<Stage, string>> = {
@@ -32,8 +34,16 @@ const ACTIVE: Stage[] = ["saved", "applied", "screening", "interview", "case", "
  * whenever nothing had moved that week. With PIPELINE_RECENT_DAYS set, ?show=recent
  * narrows it to that window of activity; the stats always count everything.
  */
-export default async function Pipeline({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
-  const { show } = await searchParams;
+export default async function Pipeline({ searchParams }: { searchParams: Promise<{ show?: string; view?: string; family?: string; title?: string; error?: string; read?: string; failed?: string }> }) {
+  const params = await searchParams;
+  const { show, view } = params;
+  const tabs = (
+    <nav aria-label="Pipeline views" className={sourcing.tabs}>
+      <Link href="/app" aria-current={view !== "insights" ? "page" : undefined}>Applications</Link>
+      <Link href="/app?view=insights" aria-current={view === "insights" ? "page" : undefined}>Role insights</Link>
+    </nav>
+  );
+  if (view === "insights") return <>{tabs}<Insights params={params} /></>;
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const { db, userId } = w;
@@ -83,6 +93,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
 
   return (
     <>
+      {tabs}
       <div className={ui.head}>
         <div className={ui.headText}>
           <h1>Pipeline</h1>

@@ -15,6 +15,10 @@ export type { WatchlistRow };
 export function toWatchlistEntry(r: WatchlistRow): WatchlistEntry {
   return WatchlistEntrySchema.parse({
     id: r.id,
+    ...(r.company_id !== undefined && { companyId: r.company_id }),
+    ...(r.last_success_at !== undefined && { lastSuccessAt: r.last_success_at }),
+    ...(r.last_attempt_at !== undefined && { lastAttemptAt: r.last_attempt_at }),
+    ...(r.last_check_failed !== undefined && { lastCheckFailed: r.last_check_failed }),
     company: r.company,
     careersUrl: r.careers_url,
     ats: r.ats,
@@ -27,6 +31,7 @@ export function toWatchlistEntry(r: WatchlistRow): WatchlistEntry {
 export function watchlistRow(userId: string, e: NewWatchlistEntry): Omit<WatchlistRow, "id"> {
   return {
     user_id: userId,
+    ...(e.companyId !== undefined && { company_id: e.companyId }),
     company: e.company,
     careers_url: e.careersUrl,
     ats: e.ats,

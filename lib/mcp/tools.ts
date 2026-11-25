@@ -43,6 +43,7 @@ import {
   upsertStoryForAgent,
 } from "../services/agent-prep";
 import { DEFAULT_COMPETENCIES } from "../stories/types";
+import { SOURCING_TOOLS } from "./sourcing-tools";
 
 /** Who is calling and when - resolved from the bearer token by the route, never from tool input. */
 export interface ToolContext {
@@ -283,6 +284,7 @@ const roleQuestionProps = {
 } as const;
 
 export const TOOLS: Tool[] = [
+  ...SOURCING_TOOLS,
   {
     name: "pipeline_summary",
     annotations: READ_ONLY,

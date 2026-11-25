@@ -64,6 +64,8 @@ JobSearch: a personal job-search operating system, built first for Parag (target
 - Data flow contract: JD raw text -> LlmProvider.extractJd -> JdExtract (stored) -> everything downstream reads the extract only.
 
 ## Conventions
+
+- Daily sourcing uses `sourcing_companies` for each user's canonical target identity; role and Network links are separate from public company research. `lib/services/sourcing-kits.ts` and the [sourcing MCP tools](docs/MCP.md#daily-sourcing) use structured allowlists, not the legacy CV/AI pipeline. Company removal changes membership, not the records linked to it.
 - Domain functions pure; prefer immutable returns (pipeline.advance) - sector-graph mutates its node deliberately (documented).
 - Dates as ISO strings (YYYY-MM-DD) in the domain layer; timestamptz only at the DB edge.
 - Commit style: conventional-ish prefixes (chore/feat/test/docs), imperative subject.

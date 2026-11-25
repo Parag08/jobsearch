@@ -34,31 +34,42 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
   await expect(page.getByRole("link", { name: /Product Operations Lead Example Labs/ })).toBeVisible();
 });
 
-test("Watchlist role becomes an application, exports its CV, and freezes the sent documents", async ({ demo: page }) => {
+test("a picked role becomes a safe kit and only confirmation moves it to Applied", async ({ demo: page }, testInfo) => {
   await appLink(page, "Watchlist").click();
-  await page.getByRole("button", { name: "Apply to Product Manager, Growth at Orchard Commerce" }).click();
-  await expect(page.getByRole("heading", { name: "Orchard Commerce", exact: true })).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("the posting is read and your CV is built");
+  await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
+  await expect(page.getByText("1 role picked")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Product Manager, Growth · Orchard Commerce" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Product Manager, Growth", exact: true })).toBeVisible();
+  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await expect(page.getByText("Not requested", { exact: true })).toHaveCount(2);
+  await testInfo.attach("Saved application kit", { body: await page.screenshot({ path: testInfo.outputPath("saved-kit.png") }), contentType: "image/png" });
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
 
-  const cv = page.getByRole("region", { name: "CV", exact: true });
   const downloadEvent = page.waitForEvent("download");
-  await cv.getByRole("link", { name: "Download PDF" }).click();
+  await page.getByRole("link", { name: "Download PII-free content" }).click();
   const download = await downloadEvent;
-  expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-  const pdf = await readFile(await download.path());
-  expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
+  expect(download.suggestedFilename()).toBe("safe-cv-content.txt");
+  const content = await readFile(await download.path(), "utf8");
+  expect(content).toMatch(/Conducted|Coordinated|Defined/);
+  expect(content).not.toMatch(/Maya|@|Orchard Commerce/);
+  await expect(page.getByText("Application kit · saved")).toBeVisible();
 
-  const letter = page.getByRole("region", { name: "Cover letter" });
-  await letter.getByRole("textbox", { name: /What caught your eye/ }).fill("I saw the team share its checkout research with small retailers at a local meetup.");
-  await letter.getByRole("button", { name: "Write cover letter" }).click();
-  await expect(letter.getByRole("textbox", { name: /The letter/ })).not.toHaveValue("");
+  await page.getByRole("button", { name: "Ask my Claude for a letter" }).click();
+  await expect(page.getByRole("button", { name: "Copy Claude request" })).toBeVisible();
+  await page.getByRole("checkbox", { name: "I reviewed the exact safe CV content shown above." }).check();
+  await page.getByRole("button", { name: "Save CV review" }).click();
+  await expect(page.getByText("Reviewed", { exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "Mark as applied" }).click();
-  await expect(page.getByRole("region", { name: "Stage" }).locator('[aria-current="step"]')).toHaveText("Applied");
-  await expect(cv.getByText(/This is exactly what you sent/)).toBeVisible();
-  await expect(cv.getByRole("button", { name: "Rebuild CV" })).toHaveCount(0);
-  await expect(letter.getByRole("button", { name: "Save edits" })).toHaveCount(0);
+  await page.getByRole("button", { name: "I submitted this application" }).click();
+  const confirm = page.getByRole("dialog", { name: "Confirm actual submission" });
+  await expect(confirm.getByRole("radio", { name: /Reviewed PII-free content/ })).not.toBeChecked();
+  await confirm.getByLabel("Submission date").fill(new Date().toISOString().slice(0, 10));
+  await confirm.getByRole("radio", { name: /Reviewed PII-free content/ }).check();
+  await confirm.getByRole("checkbox", { name: "The employer portal showed submission confirmation." }).check();
+  await confirm.getByRole("button", { name: "Confirm and mark Applied" }).click();
+  await expect(page.getByRole("heading", { name: "Submission confirmed" })).toBeVisible();
+  await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
 
   await appLink(page, "Pipeline").click();
   await expect(page.getByRole("region", { name: "Applied", exact: true }).getByRole("link", { name: /Product Manager, Growth Orchard Commerce/ })).toBeVisible();
