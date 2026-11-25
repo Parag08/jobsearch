@@ -158,8 +158,12 @@ describe("parseFollowUp", () => {
     });
   });
 
-  it("falls back to the first candidate when the model names another probe", () => {
+  it("falls back to the first candidate when the model omits or names another probe", () => {
     expect(parseFollowUp({ probe: "reflection", say: "What would you change?" }, ["ownership", "result"]).probe).toBe("ownership");
+    expect(parseFollowUp({ say: "What would you change?" }, ["ownership", "result"])).toEqual({
+      probe: "ownership",
+      say: "What would you change?",
+    });
   });
 
   it("throws on an empty line", () => {
@@ -296,6 +300,7 @@ describe("debrief", () => {
         strengths: ["Answered the question"],
         improvements: ["Say what you did"],
         followUps: [
+          { probe: "ownership", verdict: "partial" },
           { probe: "ownership", verdict: "weak", note: "Still 'we'." },
           { probe: "result", verdict: "held", note: "Never asked." },
         ],

@@ -4,7 +4,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-25 - Zod 4 security upgrade
 
-Pinned Zod to 4.6.7 for [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). The interview-question and MCP contact validators keep their custom errors. Other dependency advisories are outside this change.
+Pinned Zod to 4.6.7 for [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). Custom validation messages stay the same. Interview parsers skip incomplete feedback and role-play entries, keeping usable model output.
 
 ## 2026-11-23 - Interviewer ratings + eval set (branch feat/interviewer-ratings-eval)
 

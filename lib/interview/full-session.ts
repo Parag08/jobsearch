@@ -168,7 +168,7 @@ const MAX_BRIDGE_WORDS = 10;
 
 export function parseFullReply(raw: unknown, legal: Move[]): FullReply {
   const parsed = z
-    .object({ move: z.coerce.string(), say: z.coerce.string().default(""), assessment: z.unknown().optional(), note: z.unknown().optional() })
+    .object({ move: z.coerce.string().default(""), say: z.coerce.string().default(""), assessment: z.unknown().optional(), note: z.unknown().optional() })
     .parse(raw);
   if (!legal.includes(parsed.move)) return fallbackReply(legal);
   const say = parsed.say.replace(/\s+/g, " ").trim().slice(0, MAX_SAY);
@@ -489,14 +489,22 @@ export function buildFullDebriefPrompt(input: {
 
 const plain = (t: string) => t.toLowerCase().replace(/[^a-z0-9%$.]+/g, " ").replace(/\s+/g, " ").trim();
 
+const DebriefTopicsSchema = z.array(
+  z.object({ topicId: z.coerce.string(), verdict: z.coerce.string(), note: z.coerce.string() }).nullable().catch(null),
+).catch([]);
+const DebriefMomentsSchema = z.array(
+  z.object({ topicId: z.coerce.string(), quote: z.coerce.string(), better: z.coerce.string() }).nullable().catch(null),
+).catch([]);
+
 export function parseFullDebrief(raw: unknown, s: FullSession, modelAnswers: Record<string, string>): FullDebrief {
   const base = parseScore(raw);
   const asked = new Set(topicsAsked(s));
   const obj = (raw ?? {}) as { perTopic?: unknown; moments?: unknown };
 
   const perTopic: TopicVerdict[] = [];
-  const topics = z.array(z.object({ topicId: z.coerce.string(), verdict: z.coerce.string(), note: z.coerce.string() })).catch([]).parse(obj.perTopic ?? []);
+  const topics = DebriefTopicsSchema.parse(obj.perTopic);
   for (const t of topics) {
+    if (!t) continue;
     const verdict = VERDICTS.find((v) => v === t.verdict);
     if (!verdict || !asked.has(t.topicId) || perTopic.some((p) => p.topicId === t.topicId)) continue;
     perTopic.push({ topicId: t.topicId, verdict, note: t.note.trim() });
@@ -505,8 +513,9 @@ export function parseFullDebrief(raw: unknown, s: FullSession, modelAnswers: Rec
   const said = candidateText(s);
   const saidPlain = plain(said);
   const moments: Moment[] = [];
-  const list = z.array(z.object({ topicId: z.coerce.string(), quote: z.coerce.string(), better: z.coerce.string() })).catch([]).parse(obj.moments ?? []);
+  const list = DebriefMomentsSchema.parse(obj.moments);
   for (const m of list) {
+    if (!m) continue;
     const quote = m.quote.trim().replace(/^["“]|["”]$/g, "");
     const better = m.better.trim();
     if (!asked.has(m.topicId) || !quote || !better || !saidPlain.includes(plain(quote))) continue;
