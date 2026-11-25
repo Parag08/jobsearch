@@ -5,7 +5,7 @@ import { Evidence, RankReview, type EvidenceCode } from "../watchlist/safe-kit";
 import { parseTargetList } from "../watchlist/targets";
 import { listCompanies } from "./companies";
 import { many, one, oneOrNull, type DbClient } from "./db";
-import { addWatchlistEntry } from "./watchlist";
+import { addWatchlistEntry, listWatchlist } from "./watchlist";
 import type { SourcingCompanyRow } from "./rows";
 
 export async function getSourcingRecipe(db: DbClient, userId: string): Promise<SourcingRecipe> {
@@ -90,13 +90,33 @@ export async function setSourcingCompanyActive(db: DbClient, userId: string, id:
   return company;
 }
 
-export async function connectSourcingBoard(db: DbClient, userId: string, company: SourcingCompanyRow, raw: string, date: string) {
+export async function connectSourcingBoard(db: DbClient, userId: string, company: SourcingCompanyRow, raw: string, date: string, replaceId?: string) {
   const board = detectAts(raw.trim());
-  if (board.ats === "unknown" || !board.token || !/^[a-z0-9_-]{1,100}$/i.test(board.token) ||
+  if (!company.active || board.ats === "unknown" || !board.token || !/^[a-z0-9_-]{1,100}$/i.test(board.token) ||
     !companyWebsite(raw.trim())) return false;
   const url = new URL(raw.includes("://") ? raw.trim() : "https://" + raw.trim());
+  const careersUrl = url.origin + "/" + board.token;
+  if (replaceId) {
+    const boards = (await listWatchlist(db, userId, { active: true })).filter((entry) =>
+      entry.companyId ? entry.companyId === company.id : norm(entry.company) === company.identity);
+    const existing = boards.find((entry) => entry.id === replaceId);
+    if (!existing) return false;
+    if (existing.careersUrl === careersUrl) return true;
+    await one(db.from("watchlist").update({
+      careers_url: careersUrl, ats: board.ats, token: board.token, company_id: company.id,
+      last_attempt_at: null, last_success_at: null, last_check_failed: null,
+    }).eq("id", replaceId).eq("user_id", userId).select().single(), "watchlist", "replace board");
+    if (!boards.some((entry) => entry.id !== replaceId && entry.ats === existing.ats)) {
+      for (const status of ["new", "shortlisted"] as const) {
+        await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId)
+          .eq("company_id", company.id).eq("source", existing.ats).eq("status", status).select(),
+        "sourced_jobs", "close roles from replaced board");
+      }
+    }
+    return true;
+  }
   await addWatchlistEntry(db, userId, { company: company.name, companyId: company.id,
-    careersUrl: url.origin + "/" + board.token, ats: board.ats, token: board.token, active: true, addedAt: date });
+    careersUrl, ats: board.ats, token: board.token, active: true, addedAt: date });
   return true;
 }
 

@@ -29,15 +29,15 @@ export function AddTargetForm() {
   );
 }
 
-export function ConnectBoardForm({ companyId }: { companyId: string }) {
-  const [state, action] = useActionState<{ error?: string }, FormData>(connectTargetBoard.bind(null, companyId), {});
+export function ConnectBoardForm({ companyId, replaceId }: { companyId: string; replaceId?: string }) {
+  const [state, action] = useActionState<{ error?: string }, FormData>(connectTargetBoard.bind(null, companyId, replaceId), {});
   return (
     <form action={action} className={s.form}>
       <label className={s.field}>Public ATS board URL
         <input className={ui.input} name="board" placeholder="https://jobs.lever.co/example" inputMode="url" required maxLength={500} />
       </label>
       <FormError error={state.error} />
-      <div><PendingButton label="Connect board" /></div>
+      <div><PendingButton label={replaceId ? "Save replacement" : "Connect board"} /></div>
     </form>
   );
 }

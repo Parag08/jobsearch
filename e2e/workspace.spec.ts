@@ -44,6 +44,12 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
   await page.reload();
   await page.getByRole("button", { name: "Undo" }).click();
   await companies.getByRole("link", { name: "Example Labs" }).click();
+  await page.getByRole("textbox", { name: "Public ATS board URL" }).fill("https://jobs.lever.co/example-typo");
+  await page.getByRole("button", { name: "Connect board" }).click();
+  await page.getByText("Replace board", { exact: true }).click();
+  await page.getByRole("textbox", { name: "Public ATS board URL" }).fill("https://jobs.lever.co/example-labs");
+  await page.getByRole("button", { name: "Save replacement" }).click();
+  await expect(page.getByRole("link", { name: "lever board" })).toHaveAttribute("href", "https://jobs.lever.co/example-labs");
   await page.getByRole("navigation", { name: "Company views" }).getByRole("link", { name: "Company research" }).click();
   await page.getByRole("button", { name: "Ask my Claude for company research" }).click();
   await expect(page.getByRole("button", { name: "Copy Claude request" })).toBeVisible();
