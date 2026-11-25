@@ -12,6 +12,8 @@ The Companies page's Last import banner can be dismissed in this browser. The re
 
 PR #48 QA checks that the full result is unaffected by dismissal and that blocked browser storage allows dismissal for the current page without saving it across reload. On reload, the list renders before the receipt preference is read, without flashing the banner; open tabs sync dismissal through the browser storage event.
 
+PR #46 QA adds browser coverage for a stale import across two tabs and scoped Undo, plus unit coverage for ambiguous mapping, ignored formula columns, and payload shape validation.
+
 Today ranks active target-company postings, with saved triage and an editable daily maximum. Companies owns public research and links to private Network. Picked roles can become Saved safe kits; optional drafts/research wait for the user's Claude, and only explicit confirmation records Applied. Apply additive migration 0020 before live use. The pilot stores structured evidence/answer categories and official citations, not arbitrary prose or full posting snapshots.
 
 Board replacements keep saved applications, reject checks from the previous configuration, and hide postings from the disconnected board. Confirming submission with different materials does not preserve withdrawn evidence in the kit.

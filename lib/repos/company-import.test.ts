@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { analyzeImport, buildImportPlan } from "../companies/import-review";
-import { commitCompanyImport, latestCompanyImport, undoCompanyImport } from "./company-import";
+import { commitCompanyImport, latestCompanyImport, undoCompanyImport, unpackImportPayload } from "./company-import";
 import { FakeDb } from "./fake-db";
 import { setSourcingCompanyActive } from "./sourcing";
 
@@ -24,6 +24,20 @@ describe("company import persistence", () => {
     await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: first });
     await commitCompanyImport(db, "user", second, review("Second Company"), 0);
     await expect(latestCompanyImport(db, "user")).resolves.toMatchObject({ id: second, undone_count: null });
+  });
+
+  it("unpacks only mapped company fields and rejects mixed payloads with extra data before any write", async () => {
+    const db = new FakeDb();
+    const payload = [["New Company", null], ["removed", "removed", null, false]];
+    expect(unpackImportPayload(payload)).toEqual([
+      { id: null, name: "New Company", identity: "new company", website: null, active: null },
+      { id: "removed", name: null, identity: "removed", website: null, active: false },
+    ]);
+    const invalid = unpackImportPayload([...payload, ["Extra Company", null, "Unmapped column"]]);
+    expect(invalid).toBeNull();
+    await expect(commitCompanyImport(db, "user", first, invalid, 0)).resolves.toBeNull();
+    expect(db.rows("sourcing_companies")).toEqual([]);
+    expect(await latestCompanyImport(db, "user")).toBeNull();
   });
 
   it("is atomic on a stale plan and idempotent across confirmation and undo", async () => {
