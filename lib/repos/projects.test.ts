@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { deleteBullet, insertBullets, insertProject, listBulletsByRoleFamily, listProjects, updateBullet } from "./projects";
+import { deleteBullet, insertBullets, insertProject, listProjects, updateBullet } from "./projects";
 
 const newProject = {
   name: "JobPilot",
@@ -29,18 +29,6 @@ describe("projects repo", () => {
     expect(byName["JobPilot"]?.bullets[0]?.projectId).toBe(p1.id);
     expect(byName["Other"]?.bullets).toHaveLength(0);
     expect(p2.bullets).toEqual([]);
-  });
-
-  it("listBulletsByRoleFamily filters by user and role family", async () => {
-    const db = new FakeDb();
-    const p = await insertProject(db, "u1", newProject);
-    await insertBullets(db, "u1", p.id, [
-      { roleFamily: "product-management", text: "PM bullet", skills: [] },
-      { roleFamily: "data-science", text: "DS bullet", skills: [] },
-    ]);
-    const pm = await listBulletsByRoleFamily(db, "u1", "product-management");
-    expect(pm.map((b) => b.text)).toEqual(["PM bullet"]);
-    expect(await listBulletsByRoleFamily(db, "u2", "product-management")).toEqual([]);
   });
 });
 

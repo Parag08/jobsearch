@@ -43,19 +43,6 @@ export async function listProjects(db: DbClient, userId: string): Promise<Projec
   return projectRows.map((r) => toProject(r, byProject.get(r.id) ?? []));
 }
 
-export async function listBulletsByRoleFamily(
-  db: DbClient,
-  userId: string,
-  roleFamily: string,
-): Promise<Bullet[]> {
-  const rows = await many(
-    db.from("bullets").select().eq("user_id", userId).eq("role_family", roleFamily),
-    "bullets",
-    "listByRoleFamily",
-  );
-  return rows.map(toBullet);
-}
-
 export type BulletPatch = Partial<Pick<Bullet, "text" | "roleFamily" | "skills" | "variants" | "strength">>;
 
 /** Edit one of the user's points; throws when the point is not theirs or does not exist. */
