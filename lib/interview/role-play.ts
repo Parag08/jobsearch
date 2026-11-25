@@ -106,13 +106,18 @@ export const RolePlayInputSchema = z.array(LineSchema).min(2).max(ROLE_PLAY_LIMI
 
 const clean = (s: string) => s.replace(/\s+/g, " ").trim();
 
+const ModelRolePlaySchema = z.object({
+  lines: z.array(
+    z.object({ who: z.coerce.string(), say: z.coerce.string(), why: z.unknown().optional() }).nullable().catch(null),
+  ),
+});
+
 /** The model's play, validated. The first line is replaced by the real question. */
 export function parseRolePlay(raw: unknown, question: string): RolePlayLine[] {
-  const loose = z
-    .object({ lines: z.array(z.object({ who: z.coerce.string(), say: z.coerce.string(), why: z.unknown().optional() })) })
-    .parse(raw).lines;
+  const loose = ModelRolePlaySchema.parse(raw).lines;
   const lines: RolePlayLine[] = [];
   for (const l of loose) {
+    if (!l) continue;
     const who = l.who === "interviewer" || l.who === "candidate" ? l.who : null;
     const say = clean(l.say).slice(0, ROLE_PLAY_LIMITS.say);
     if (!who || !say) continue;

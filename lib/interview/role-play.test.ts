@@ -56,6 +56,11 @@ describe("parseRolePlay", () => {
     expect(() => parseRolePlay({ lines: lines.slice(0, 2) }, Q)).toThrow();
     expect(() => parseRolePlay({ lines: [lines[1], lines[0], lines[1], lines[0]] }, Q)).toThrow();
   });
+
+  it("skips incomplete lines without losing the rest of the exchange", () => {
+    expect(parseRolePlay({ lines: [lines[0], { say: "No speaker." }, lines[1], { who: "candidate" }, ...lines.slice(2)] }, Q))
+      .toEqual([{ who: "interviewer", say: Q }, ...lines.slice(1)]);
+  });
 });
 
 describe("guardRolePlay", () => {
