@@ -25,6 +25,8 @@ Copy `.env.example` to `.env.local` and fill in keys (Supabase, LLM providers, j
 
 To develop without Supabase, run `LOCAL_DEMO_MODE=true npm run dev` with the Supabase URL and keys unset (including any placeholders in `.env.local`). This uses an in-memory workspace seeded from `data/cvbuilder/`; only use it locally. Hosted deployments require `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`). The public demo's fictional data is separate and enabled by `DEMO_MAX_VISITORS`.
 
+For browser tests, see the [end-to-end setup and screen coverage](docs/E2E.md). No service credentials are needed.
+
 ## What exists today
 The UI is no longer a shell - signed-in surfaces are live under `/app`:
 
@@ -58,6 +60,7 @@ Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=y
 |---|---|
 | `dev` / `build` / `start` | Next.js dev server, production build, serve |
 | `test` / `test:watch` / `typecheck` | Vitest suite, watch mode, `tsc --noEmit` |
+| `test:e2e` | Playwright suite against a local Next.js production build |
 | `db:apply` / `db:migrate` / `db:seed` | Apply schema, run migrations, load seed data |
 | `seed:build` | Regenerate `supabase/seed.sql` from `data/cvbuilder/` |
 | `data:sync` | Sync corpus data into the database |
@@ -79,7 +82,7 @@ Both db commands need `SUPABASE_DB_URL` in `.env.local` or `.env`; `SEED_EMAIL=y
 - `docs/SPEC.md` - full product spec · `docs/MCP.md` - every agent (MCP) tool · `docs/DESIGN.md`, `docs/ROADMAP.md`, `docs/ONBOARDING.md`, `docs/UI-REVIEW.md` · `docs/MEMORY.md` - work log (older: `docs/MEMORY-archive.md`) · `CLAUDE.md` - project memory & rules
 
 ## CI
-GitHub Actions in `.github/workflows/`: `ci.yml` (typecheck + tests), `db.yml` (schema/seed checks), `keepalive.yml` (Supabase free-tier keepalive), `sourcing.yml` (scheduled sourcing).
+GitHub Actions in `.github/workflows/`: `ci.yml` (typecheck, domain tests, production build + browser tests), `db.yml` (schema/seed checks), `keepalive.yml` (Supabase free-tier keepalive), `sourcing.yml` (scheduled sourcing).
 
 ## Development discipline
 TDD (red -> green -> refactor), typecheck clean, and the token-economy rules in CLAUDE.md apply to every feature.
