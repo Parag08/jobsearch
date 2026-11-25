@@ -2,6 +2,10 @@
 
 Moved out of docs/MEMORY.md on 2026-09-24 so a fresh session reads only the current state. Newest first. Search here (grep) rather than reading it whole.
 
+## 2026-11-22 - Interviewer loops + stronger model (branch fix/interviewer-loops)
+
+Parag: the interviewer asked "why 10%" over and over. Logs: `deepen` every turn to the cap. Fixed in code (`samePoint`, repeat check in `guardFullReply`, `safeDefault`, prompt lists asked points) and the interviewer model is now `AI_GATEWAY_INTERVIEWER_MODEL` (+ `_EFFORT`, `_MAX_TOKENS`) for both mocks, premium as fallback, failures logged. **Gateway is on the free tier: 57% of requests got 429 in 30 days, and Claude may be refused (403) until credits are bought.** Details: docs/FULL-INTERVIEW.md.
+
 ## 2026-11-21 (later) - Pause and Discard (branch feat/interview-pause-discard)
 
 PR #29 merged and live. Parag wanted more time to finish answers: **Vercel now has `INTERVIEW_TURN_SILENCE_MS=2500`, `INTERVIEW_TURN_UNFINISHED_MS=6000`** (Production + Preview, redeployed); `.env.example` matches. Added **Pause** (beside Discard) to both interview rooms and **Discard** to the full interview (deletes only a running session). Details: docs/FULL-INTERVIEW.md "Pause and Discard". Checked in the local demo; not on a real mic.

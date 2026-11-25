@@ -8,12 +8,27 @@ export interface SupabaseEnv {
   publishableKey: string;
 }
 
-/** Read the app-facing Supabase env; null when not configured (=> demo mode). */
+/** Read the app-facing Supabase env; null when not configured. */
 export function readSupabaseEnv(env: Record<string, string | undefined> = process.env): SupabaseEnv | null {
   const url = env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !publishableKey) return null;
   return { url, publishableKey };
+}
+
+export function localDemoEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && process.env.LOCAL_DEMO_MODE === "true";
+}
+
+export function requireWorkspaceEnv(): SupabaseEnv | null {
+  const env = readSupabaseEnv();
+  if (!env && !localDemoEnabled()) {
+    throw new Error(
+      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY " +
+      "(or NEXT_PUBLIC_SUPABASE_ANON_KEY). For local development only, set LOCAL_DEMO_MODE=true.",
+    );
+  }
+  return env;
 }
 
 /**

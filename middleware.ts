@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { signedInRedirect } from "./lib/auth/routing";
-import { readSupabaseEnv } from "./lib/db/supabase";
+import { requireWorkspaceEnv } from "./lib/db/supabase";
 
 /**
  * Keeps the Supabase session alive and routes signed-in visitors.
@@ -10,10 +10,10 @@ import { readSupabaseEnv } from "./lib/db/supabase";
  * about an hour and every page sent the user back to /signin. Here, on every request,
  * getUser() refreshes the token and the new cookies go out on the response (the
  * @supabase/ssr pattern). A signed-in visitor on / or /signin goes straight to /app.
- * Demo mode (Supabase unconfigured) has no session, so nothing happens.
+ * Explicit local demo mode has no session to refresh.
  */
 export async function middleware(request: NextRequest) {
-  const env = readSupabaseEnv();
+  const env = requireWorkspaceEnv();
   if (!env) return NextResponse.next();
 
   let response = NextResponse.next({ request });

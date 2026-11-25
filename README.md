@@ -23,6 +23,8 @@ npm run dev     # http://localhost:3000
 ```
 Copy `.env.example` to `.env.local` and fill in keys (Supabase, LLM providers, job feeds).
 
+To develop without Supabase, run `LOCAL_DEMO_MODE=true npm run dev` with the Supabase URL and keys unset (including any placeholders in `.env.local`). This uses an in-memory workspace seeded from `data/cvbuilder/`; only use it locally. Hosted deployments require `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`). The public demo's fictional data is separate and enabled by `DEMO_MAX_VISITORS`.
+
 ## What exists today
 The UI is no longer a shell - signed-in surfaces are live under `/app`:
 
