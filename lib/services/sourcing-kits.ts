@@ -59,6 +59,21 @@ export async function getSourcingKit(db: DbClient, userId: string, id: string) {
 }
 type KitRecord = NonNullable<Awaited<ReturnType<typeof getSourcingKit>>>;
 
+export function usableKit(kit: SafeKit, verified: readonly EvidenceCode[]): SafeKit {
+  if (kit.submission) return kit;
+  const evidence = kit.evidence.filter((code) => verified.includes(code));
+  const letter = kit.letter?.draft && !evidence.includes(kit.letter.draft.evidence)
+    ? { draft: null, approved: false } : kit.letter;
+  const answer = kit.answer?.draft && !evidence.includes(kit.answer.draft.evidence)
+    ? { ...kit.answer, draft: null, approved: false } : kit.answer;
+  return { ...kit, evidence, letter, answer, cvReviewed: kit.cvReviewed && evidence.length === kit.evidence.length };
+}
+
+export async function getUsableSourcingKit(db: DbClient, userId: string, id: string) {
+  const record = await getSourcingKit(db, userId, id);
+  return record && { ...record, value: usableKit(record.value, await getSafeEvidence(db, userId)) };
+}
+
 async function writeKit(db: DbClient, userId: string, record: KitRecord, kit: SafeKit, patch: Partial<ApplicationRow> = {}) {
   return oneOrNull(db.from("applications").update({
     ...patch, sourcing_kit: kit, sourcing_revision: record.revision + 1,
@@ -93,28 +108,33 @@ export async function setSafeKitEvidence(db: DbClient, userId: string, id: strin
 export async function requestKitDraft(db: DbClient, userId: string, id: string, section: "letter" | "answer", request?: AnswerRequest) {
   const state = { draft: null, approved: false };
   const parsed = section === "answer" ? AnswerRequest.parse(request) : null;
+  const verified = await getSafeEvidence(db, userId);
   return editKit(db, userId, id, (kit) => {
-    if (!kit.evidence.length) throw new Error("Add verified CV evidence first.");
+    if (!kit.evidence.some((code) => verified.includes(code))) throw new Error("Add verified CV evidence first.");
     return section === "letter" ? { ...kit, letter: kit.letter ?? state } :
       { ...kit, answer: kit.answer && JSON.stringify(kit.answer.request) === JSON.stringify(parsed)
         ? kit.answer : { ...state, request: parsed! } };
   });
 }
 
-export async function saveKitDraft(db: DbClient, userId: string, id: string, section: "letter" | "answer", input: SafeDraft, revision: number) {
+export async function saveKitDraft(db: DbClient, userId: string, id: string, section: "letter" | "answer", input: SafeDraft, revision: number, confirmedByUser = false) {
   const draft = SafeDraft.parse(input);
+  const verified = await getSafeEvidence(db, userId);
   return editKit(db, userId, id, (kit) => {
     const entry = kit[section];
-    if (!entry || !kit.evidence.includes(draft.evidence)) throw new Error("Use one of the kit’s verified evidence codes for an explicitly requested draft.");
-    const approved = entry.approved && JSON.stringify(entry.draft) === JSON.stringify(draft);
-    return { ...kit, [section]: { ...entry, draft, approved } };
+    if (!entry || !kit.evidence.includes(draft.evidence) || !verified.includes(draft.evidence)) throw new Error("Use one of the kit’s currently verified evidence codes for an explicitly requested draft.");
+    if (entry.draft && entry.draft.evidence === draft.evidence && entry.draft.tone === draft.tone) return kit;
+    if (entry.approved && !confirmedByUser) throw new Error("Get explicit user confirmation before replacing a reviewed draft.");
+    return { ...kit, [section]: { ...entry, draft, approved: false } };
   }, revision);
 }
 
 export async function approveKitDraft(db: DbClient, userId: string, id: string, section: "letter" | "answer", revision: number) {
+  const verified = await getSafeEvidence(db, userId);
   return editKit(db, userId, id, (kit) => {
     const entry = kit[section];
     if (!entry?.draft) throw new Error("There is no draft to review.");
+    if (!verified.includes(entry.draft.evidence)) throw new Error("This draft relies on an unverified claim.");
     if (section === "answer" && kit.answer && !fitsAnswer(draftText(entry.draft), kit.answer.request)) {
       throw new Error("Shorten the answer before approving it.");
     }
@@ -177,14 +197,20 @@ export async function saveCompanyResearch(db: DbClient, userId: string, id: stri
   return saved.research_version;
 }
 
-export async function saveRankReview(db: DbClient, userId: string, id: string, input: RankReview) {
+export async function saveRankReview(db: DbClient, userId: string, id: string, input: RankReview, confirmedByUser = false) {
   const review = RankReview.parse(input);
   const source = await loadDailySourcing(db, userId);
   if (!source.available.some((job) => job.id === id) || review.evidence.some((code) => !source.evidence.includes(code))) {
     throw new Error("Use an eligible watched role and verified evidence codes only.");
   }
-  const saved = await oneOrNull(db.from("sourced_jobs").update({ sourcing_review: review }).eq("user_id", userId)
-    .eq("id", id).select().maybeSingle(), "sourced_jobs", "save ranking review");
-  if (!saved) throw new Error("No eligible role found.");
+  const row = await oneOrNull(db.from("sourced_jobs").select("sourcing_review").eq("user_id", userId).eq("id", id)
+    .maybeSingle(), "sourced_jobs", "read ranking review");
+  if (!row) throw new Error("No eligible role found.");
+  if (JSON.stringify(RankReview.safeParse(row.sourcing_review).data) === JSON.stringify(review)) return review;
+  if (row.sourcing_review != null && !confirmedByUser) throw new Error("Get explicit user confirmation before replacing a fit review.");
+  const update = db.from("sourced_jobs").update({ sourcing_review: review }).eq("user_id", userId).eq("id", id);
+  const saved = await oneOrNull((confirmedByUser ? update : update.is("sourcing_review", null)).select().maybeSingle(),
+    "sourced_jobs", "save ranking review");
+  if (!saved) throw new Error("The fit review changed. Reload it before writing.");
   return review;
 }

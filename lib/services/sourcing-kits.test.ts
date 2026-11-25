@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { approveKitDraft, confirmSourcingSubmission, getSourcingKit, prepareSourcingBatch, requestKitDraft,
-  saveKitDraft, setSafeKitEvidence, saveCompanyResearch } from "./sourcing-kits";
+  saveKitDraft, setSafeKitEvidence, saveCompanyResearch, saveRankReview, getUsableSourcingKit } from "./sourcing-kits";
 import { SafeDraft, draftText, fitsAnswer, sourceForCompany } from "../watchlist/safe-kit";
-import { setSourcingCompanyActive } from "../repos/sourcing";
+import { putSafeEvidence, setSourcingCompanyActive } from "../repos/sourcing";
 
 const today = "2026-11-26";
 function setup(db = new FakeDb()) {
@@ -102,7 +102,34 @@ describe("daily sourcing kits", () => {
     await saveKitDraft(db, "u", id, "answer", draft, 3);
     await approveKitDraft(db, "u", id, "answer", 4);
     await expect(saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 4)).rejects.toThrow(/changed/);
-    await saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5);
+    await expect(saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5)).rejects.toThrow(/confirm/i);
+    expect(await saveKitDraft(db, "u", id, "answer", draft, 5)).toBe(5);
+    await saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5, true);
     expect((await getSourcingKit(db, "u", id))?.value.answer?.approved).toBe(false);
+  });
+
+  it("requires confirmation to replace a fit review even after a claim is revoked", async () => {
+    const db = setup();
+    const review = { evidence: ["discovery" as const], uncertainty: "scope" as const };
+    await saveRankReview(db, "u", "a", review);
+    await saveRankReview(db, "u", "a", review);
+    await putSafeEvidence(db, "u", ["delivery"]);
+    const replacement = { ...review, evidence: ["delivery" as const] };
+    await expect(saveRankReview(db, "u", "a", replacement)).rejects.toThrow(/confirm/i);
+    await expect(saveRankReview(db, "u", "a", replacement, true)).resolves.toEqual(replacement);
+  });
+
+  it("does not expose or use withdrawn claims in unsent kits", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    const draft = { evidence: "discovery", tone: "direct" } as const;
+    await requestKitDraft(db, "u", id, "letter");
+    await saveKitDraft(db, "u", id, "letter", draft, 1);
+    await putSafeEvidence(db, "u", []);
+    expect((await getUsableSourcingKit(db, "u", id))?.value).toMatchObject({
+      evidence: [], cvReviewed: false, letter: { draft: null, approved: false },
+    });
+    await expect(saveKitDraft(db, "u", id, "letter", draft, 2)).rejects.toThrow(/verified/i);
+    await expect(approveKitDraft(db, "u", id, "letter", 2)).rejects.toThrow(/verified/i);
   });
 });

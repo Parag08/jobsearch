@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Application } from "@/lib/types";
-import type { getSourcingKit } from "@/lib/services/sourcing-kits";
+import { getSourcingKit, usableKit } from "@/lib/services/sourcing-kits";
 import { canTransition } from "@/lib/pipeline";
 import { draftText, EVIDENCE_TEXT, fitsAnswer, PROMPTS, type EvidenceCode } from "@/lib/watchlist/safe-kit";
 import { ClaudeRequest, CopySafeText } from "../../claude-request";
@@ -15,7 +15,8 @@ export function SafeKitView({ application: app, record, verified, today, error }
   application: Application; record: NonNullable<Awaited<ReturnType<typeof getSourcingKit>>>;
   verified: EvidenceCode[]; today: string; error?: string;
 }) {
-  const { value: kit, revision } = record;
+  const { revision } = record;
+  const kit = usableKit(record.value, verified);
   const { id } = app;
   const editable = app.stage === "saved" && !kit.submission;
   const hasReview = kit.cvReviewed && kit.evidence.every((code) => verified.includes(code));
@@ -53,6 +54,7 @@ export function SafeKitView({ application: app, record, verified, today, error }
             <a className={ui.btn} href={"/api/export/safe-sourcing/" + id}>Download PII-free content</a>
           </> : <p className={ui.sub}>No verified claims yet. The kit is Saved and you can continue later.</p>}
           {editable && <p><Link href="/app/settings/sourcing">Manage verified claims</Link></p>}
+          {editable && kit.evidence.length !== record.value.evidence.length && <p className={ui.sub}>Withdrawn claims and drafts relying on them are hidden until you revise this kit.</p>}
           {editable && verified.length > 0 && <ReviewSafeEvidence key={revision} id={id} revision={revision}
             verified={verified} selected={kit.evidence} reviewed={hasReview} />}
         </section>
