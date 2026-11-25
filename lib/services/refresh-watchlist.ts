@@ -135,7 +135,7 @@ export async function refreshWatchlist(
   // Roles still listed are the ones that match the targets; anything else on an
   // answered board counts a miss (closed roles, and roles that no longer match).
   const updates = planRetirement(tracked, wanted, answered);
-  await applyRetirement(db, userId, updates);
+  await applyRetirement(db, userId, updates, new Map(tracked.map((job) => [job.id, job.status])));
   await Promise.all(checks.map(({ entry, result }) => oneOrNull(db.from("watchlist").update({
     last_attempt_at: attemptedAt,
     last_check_failed: result.status === "rejected",

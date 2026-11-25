@@ -69,7 +69,11 @@ describe("refreshWatchlist", () => {
       absolute_url: "https://boards.greenhouse.io/acme-sibling/jobs/44" }] };
     await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard, [sibling.id]: siblingBoard }) }, "u1", TODAY);
     const company = db.rows("sourcing_companies").find((row) => row.name === "Acme Corp")!;
-    expect((await loadDailySourcing(db, "u1")).available.map((job) => job.externalId)).toContain("1");
+    await upsertSourcedJobs(db, "u1", [{
+      source: "greenhouse", externalId: "legacy", title: "Product Director", company: " ACME   CORP ",
+      location: "Singapore", url: null, postedAt: null, score: 0, status: "new",
+    }]);
+    expect((await loadDailySourcing(db, "u1")).available.map((job) => job.externalId)).toEqual(expect.arrayContaining(["1", "legacy"]));
     const oldCheck = {
       async fetchBoard(entry: typeof acme) {
         if (entry.id === acme.id) {
@@ -86,6 +90,7 @@ describe("refreshWatchlist", () => {
     });
     const available = (await loadDailySourcing(db, "u1")).available.map((job) => job.externalId);
     expect(available).not.toContain("1");
+    expect(available).not.toContain("legacy");
     expect(available).toContain("44");
   });
 

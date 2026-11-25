@@ -64,13 +64,17 @@ export async function listTrackedJobs(db: DbClient, userId: string): Promise<Tra
 }
 
 /** Write planRetirement's updates: miss counts and any status change. */
-export async function applyRetirement(db: DbClient, userId: string, updates: RetirementUpdate[]): Promise<void> {
+export async function applyRetirement(
+  db: DbClient, userId: string, updates: RetirementUpdate[], priorStatus: ReadonlyMap<string, SourcedJob["status"]>,
+): Promise<void> {
   for (const u of updates) {
+    const before = priorStatus.get(u.id);
+    if (!before) continue;
     const row = db
         .from("sourced_jobs")
         .update({ missed_refreshes: u.missedRefreshes, status: u.status })
         .eq("user_id", userId)
-        .eq("id", u.id);
+        .eq("id", u.id).eq("status", before);
     const current = u.sourcingBoardUrl ? row.eq("sourcing_board_url", u.sourcingBoardUrl)
       : row.is("sourcing_board_url", null);
     await oneOrNull(current.select().maybeSingle(), "sourced_jobs", "retire");

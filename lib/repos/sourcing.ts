@@ -106,10 +106,14 @@ export async function connectSourcingBoard(db: DbClient, userId: string, company
       careers_url: careersUrl, ats: board.ats, token: board.token, company_id: company.id,
       last_attempt_at: null, last_success_at: null, last_check_failed: null,
     }).eq("id", replaceId).eq("user_id", userId).select().single(), "watchlist", "replace board");
+    const legacy = await many(db.from("sourced_jobs").select("id,company,company_id,sourcing_board_url")
+      .eq("user_id", userId).eq("source", existing.ats), "sourced_jobs", "find unattributed roles");
+    const ids = legacy.filter((job) => !job.sourcing_board_url &&
+      (job.company_id ? job.company_id === company.id : norm(job.company) === company.identity)).map((job) => job.id);
     for (const status of ["new", "shortlisted"] as const) {
-      await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId)
-        .eq("company", existing.company).eq("source", existing.ats).eq("status", status)
-        .is("sourcing_board_url", null).select(), "sourced_jobs", "close unattributed roles until rechecked");
+      if (!ids.length) break;
+      await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId).eq("status", status)
+        .is("sourcing_board_url", null).select().in("id", ids), "sourced_jobs", "close unattributed roles until rechecked");
     }
     return true;
   }
