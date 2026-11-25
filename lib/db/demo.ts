@@ -82,8 +82,3 @@ export function getVisitorDemoDb(visitorId: string, max: number): FakeDb {
   visitors.__jobsearchVisitors ??= new VisitorStore(() => freshVisitorDb(), { ttlMs: DEMO_TTL_SECONDS * 1000, max });
   return visitors.__jobsearchVisitors.get(visitorId);
 }
-
-/** Test hook. */
-export function resetDemoDb(): void {
-  holder.__jobsearchDemoDb = null;
-}
