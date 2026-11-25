@@ -803,7 +803,7 @@ begin
         or r.name !~ '[[:alpha:]]' or r.name ~ '([0-9]{4,}|[[:cntrl:]])'
         or r.name collate pg_catalog."C" !~ U&'^[[:alnum:] .&''()+,\0080-\D7FF\E000-\+10FFFF-]+$'
         or r.name <> btrim(regexp_replace(r.name, '[[:space:]]+', ' ', 'g'))
-        or r.identity <> public.sourcing_company_identity(r.name) then return null; end if;
+        or r.identity <> lower(r.name collate pg_catalog."und-x-icu") then return null; end if;
       if r.website is not null and (length(r.website) > 261 or
         r.website !~ '^https://([a-z0-9-]+\.)+[a-z]{2,63}$' or r.website ~ '^https://www\.'
         or r.website ~ '\.(local|localhost|internal|test|invalid|example)$') then return null; end if;
