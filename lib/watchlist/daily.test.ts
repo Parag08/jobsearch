@@ -43,4 +43,26 @@ describe("daily shortlist", () => {
       .toBe("https://jobs.smartrecruiters.com/AcmeGroup/743999912345678");
     expect(safePostingUrl("https://api.smartrecruiters.com/v1/companies/AcmeGroup")).toBeNull();
   });
+
+  it("prioritizes reviewed evidence over freshness after excluding inactive targets and pipeline roles", () => {
+    const pipelineUrl = job("same-url").url;
+    const jobs = [
+      job("fresh", { postedAt: "2026-11-25" }),
+      job("reviewed", { postedAt: "2026-11-23" }),
+      job("inactive", { company: "Paused Co" }),
+      job("same-ref"),
+      job("same-url"),
+      job("same-title", { title: "Product Lead" }),
+    ];
+    const result = dailyShortlist(jobs, [{ name: "Acme", active: true }, { name: "Paused Co", active: false }], [
+      { company: "Acme", role: "Different role", externalRef: "sourced:same-ref" },
+      { company: "Acme", role: "Another role", applyUrl: pipelineUrl + "?utm_source=ads" },
+      { company: " ACME ", role: " product lead " },
+    ], {}, { cities: [], titles: [], excluded: [], target: 1 }, {
+      reviewed: { evidence: ["discovery"] },
+      inactive: { evidence: ["discovery", "delivery"] },
+    });
+    expect(result.available.map((r) => r.id)).toEqual(["reviewed", "fresh"]);
+    expect(result.ranked.map((r) => r.id)).toEqual(["reviewed"]);
+  });
 });

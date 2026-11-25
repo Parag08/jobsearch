@@ -82,6 +82,22 @@ describe("daily sourcing kits", () => {
     expect((await prepareSourcingBatch(db, "u", today)).applicationIds).toEqual([]);
   });
 
+  it("rejects future and stale confirmations, then records different materials without a frozen version", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    await setSafeKitEvidence(db, "u", id, ["discovery"], true);
+    await db.from("profiles").update({ sourcing_evidence: [] }).eq("user_id", "u");
+    const submission = { date: today, materials: "different", revision: 1, confirmedByUser: true } as const;
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, date: "2026-11-27" }, today, 7)).rejects.toThrow(/future/);
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, revision: 0 }, today, 7)).rejects.toThrow(/changed/);
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, materials: "reviewed" }, today, 7)).rejects.toThrow(/Review/);
+    expect(db.rows("applications")[0]).toMatchObject({ stage: "saved", applied_at: null, sourcing_kit: { submission: null } });
+    await expect(confirmSourcingSubmission(db, "u", id, submission, today, 7)).resolves.toEqual({
+      date: today, materials: "different", version: null,
+    });
+    expect(db.rows("applications")[0]).toMatchObject({ stage: "applied", applied_at: today, sourcing_kit: { submission: { version: null } } });
+  });
+
   it("rejects unstructured draft fields and private research links, and enforces answer limits", () => {
     expect(SafeDraft.safeParse({ evidence: "discovery", tone: "direct", text: "Candidate name" }).success).toBe(false);
     expect(sourceForCompany("https://attacker.example.com/docs", "https://harbour.example.com")).toBeNull();

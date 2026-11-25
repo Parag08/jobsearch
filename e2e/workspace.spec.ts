@@ -65,6 +65,33 @@ test("sourcing preferences control the shortlist maximum without padding", async
   await expect(page.getByRole("region", { name: "Ranked roles" }).getByRole("article")).toHaveCount(1);
 });
 
+test("Today persists Later and unpicking without preparing a kit", async ({ demo: page }) => {
+  await appLink(page, "Watchlist").click();
+  const title = "Product Manager, Growth";
+  const pick = page.getByRole("button", { name: "Pick " + title, exact: true });
+  const prepare = page.getByRole("button", { name: "Prepare your kits", exact: true });
+  const views = page.getByRole("navigation", { name: "Shortlist view" });
+  await pick.click();
+  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await pick.click();
+  await expect(pick).toHaveAttribute("aria-pressed", "false");
+  await expect(prepare).toBeDisabled();
+
+  await page.getByRole("button", { name: "Later: " + title, exact: true }).click();
+  await expect(pick).toHaveCount(0);
+  await views.getByRole("link", { name: /^Later · / }).click();
+  await expect(page).toHaveURL(/view=later$/);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Later", exact: true }).getByRole("heading", { name: title })).toBeVisible();
+  await page.getByRole("button", { name: "Restore " + title, exact: true }).click();
+  await expect(page.getByRole("heading", { name: "No roles in this view" })).toBeVisible();
+  await views.getByRole("link", { name: /^Ranked roles · / }).click();
+  await expect(pick).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByText("Your unfinished kits will stay here until you apply.")).toBeVisible();
+});
+
 test("Network adds a contact and logs a conversation without leaking it into another demo", async ({ demo: page, browser, baseURL }) => {
   await appLink(page, "Network").click();
   await expect(page.getByRole("heading", { name: "Network" })).toBeVisible();
