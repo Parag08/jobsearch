@@ -70,7 +70,7 @@ describe("refreshWatchlist", () => {
     await refreshWatchlist({ db, fetcher: new FakeBoardFetcher({ [acme.id]: acmeBoard, [sibling.id]: siblingBoard }) }, "u1", TODAY);
     const company = db.rows("sourcing_companies").find((row) => row.name === "Acme Corp")!;
     await upsertSourcedJobs(db, "u1", [{
-      source: "greenhouse", externalId: "legacy", title: "Product Director", company: " ACME   CORP ",
+      source: "greenhouse", externalId: "legacy", title: "Product Director", company: " ACME   CORP ", companyId: company.id,
       location: "Singapore", url: null, postedAt: null, score: 0, status: "new",
     }]);
     expect((await loadDailySourcing(db, "u1")).available.map((job) => job.externalId)).toEqual(expect.arrayContaining(["1", "legacy"]));
@@ -92,6 +92,9 @@ describe("refreshWatchlist", () => {
     expect(available).not.toContain("1");
     expect(available).not.toContain("legacy");
     expect(available).toContain("44");
+    const stored = await listSourcedJobs(db, "u1");
+    expect(stored.filter((job) => ["1", "legacy"].includes(job.externalId ?? "")).map((job) => job.status))
+      .toEqual(["closed", "closed"]);
   });
 
   it("fetches every active board, dedupes across sources, skips the pipeline, scores and upserts", async () => {

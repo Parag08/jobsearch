@@ -4,7 +4,7 @@ import { detectAts } from "../watchlist/ats";
 import { Evidence, RankReview, type EvidenceCode } from "../watchlist/safe-kit";
 import { parseTargetList } from "../watchlist/targets";
 import { listCompanies } from "./companies";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import { addWatchlistEntry, listWatchlist } from "./watchlist";
 import type { SourcingCompanyRow } from "./rows";
 
@@ -106,14 +106,14 @@ export async function connectSourcingBoard(db: DbClient, userId: string, company
       careers_url: careersUrl, ats: board.ats, token: board.token, company_id: company.id,
       last_attempt_at: null, last_success_at: null, last_check_failed: null,
     }).eq("id", replaceId).eq("user_id", userId).select().single(), "watchlist", "replace board");
-    const legacy = await many(db.from("sourced_jobs").select("id,company,company_id,sourcing_board_url")
-      .eq("user_id", userId).eq("source", existing.ats), "sourced_jobs", "find unattributed roles");
-    const ids = legacy.filter((job) => !job.sourcing_board_url &&
-      (job.company_id ? job.company_id === company.id : norm(job.company) === company.identity)).map((job) => job.id);
     for (const status of ["new", "shortlisted"] as const) {
-      if (!ids.length) break;
-      await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId).eq("status", status)
-        .is("sourcing_board_url", null).select().in("id", ids), "sourced_jobs", "close unattributed roles until rechecked");
+      const close = () => db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId).eq("status", status);
+      const [attributed, legacy] = await Promise.all([
+        close().eq("sourcing_board_url", existing.careersUrl),
+        close().eq("company_id", company.id).eq("source", existing.ats).is("sourcing_board_url", null),
+      ]);
+      const error = attributed.error ?? legacy.error;
+      if (error) throw new RepoError("sourced_jobs", "close roles from replaced board", error.message);
     }
     return true;
   }
