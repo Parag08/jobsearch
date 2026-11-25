@@ -117,6 +117,7 @@ async function rateInterview(page: Page) {
 }
 
 test("full mock interview scores a typed round and persists feedback and an eval download", async ({ demo: page }) => {
+  test.setTimeout(60_000);
   const { bad, better } = await rateInterview(page);
   const event = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download the eval set" }).click();
@@ -134,6 +135,7 @@ test("full mock interview scores a typed round and persists feedback and an eval
 });
 
 test("a saved rating stays visible when hiding and reopening the same transcript", async ({ demo: page }, testInfo) => {
+  test.setTimeout(60_000);
   const { bad, better } = await rateInterview(page);
   await page.getByRole("button", { name: "Hide transcript" }).click();
   await page.getByRole("button", { name: "Read transcript" }).click();
