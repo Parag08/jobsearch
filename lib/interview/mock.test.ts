@@ -162,6 +162,10 @@ describe("parseFollowUp", () => {
     expect(parseFollowUp({ probe: "reflection", say: "What would you change?" }, ["ownership", "result"]).probe).toBe("ownership");
   });
 
+  it("rejects an unlabeled line so it cannot mark a different probe as asked", () => {
+    expect(() => parseFollowUp({ say: "So what changed?" }, ["ownership", "result"])).toThrow();
+  });
+
   it("throws on an empty line", () => {
     expect(() => parseFollowUp({ probe: "result", say: "  " }, ["result"])).toThrow();
   });
@@ -296,6 +300,7 @@ describe("debrief", () => {
         strengths: ["Answered the question"],
         improvements: ["Say what you did"],
         followUps: [
+          { probe: "ownership", verdict: "partial" },
           { probe: "ownership", verdict: "weak", note: "Still 'we'." },
           { probe: "result", verdict: "held", note: "Never asked." },
         ],

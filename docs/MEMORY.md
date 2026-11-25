@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-25 - Zod 4 security upgrade
+
+Pinned Zod to 4.6.7 for [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). Custom validation messages stay the same. Interview parsers skip incomplete feedback and role-play entries, keeping usable model output.
+
 ## 2026-11-25 - Browser test suite
 
 Added Playwright coverage for every routed screen and the main cross-screen workflows in the isolated public demo. CI runs it on a production build; see [E2E.md](E2E.md) for the screen map, commands and live-service gaps. The transcript hide/reopen regression is an explicit expected failure; the reload and eval export still verify ratings are saved.

@@ -163,7 +163,7 @@ const UpsertContactSchema = z.object({
     .transform((v, ctx) => {
       if (v === null || v === undefined) return v;
       const p = parseLinkedInProfile(v);
-      if (!p) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "linkedinUrl must be a linkedin.com/in/ profile link" });
+      if (!p) ctx.addIssue({ code: "custom", message: "linkedinUrl must be a linkedin.com/in/ profile link" });
       return p?.url ?? null;
     }),
 });

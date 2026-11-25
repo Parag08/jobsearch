@@ -106,19 +106,35 @@ export const RolePlayInputSchema = z.array(LineSchema).min(2).max(ROLE_PLAY_LIMI
 
 const clean = (s: string) => s.replace(/\s+/g, " ").trim();
 
+const ModelRolePlaySchema = z.object({
+  lines: z.array(
+    z.object({
+      who: LineSchema.shape.who,
+      say: z.coerce.string().transform((s) => clean(s).slice(0, ROLE_PLAY_LIMITS.say)).default(""),
+      why: z.unknown().optional(),
+    }).nullable().catch(null),
+  ),
+});
+
 /** The model's play, validated. The first line is replaced by the real question. */
 export function parseRolePlay(raw: unknown, question: string): RolePlayLine[] {
-  const loose = z
-    .object({ lines: z.array(z.object({ who: z.coerce.string(), say: z.coerce.string(), why: z.unknown().optional() })) })
-    .parse(raw).lines;
+  // A blank interviewer line still marks the boundary of its answer.
+  const loose = ModelRolePlaySchema.parse(raw).lines
+    .filter((line) => line !== null)
+    .filter((line) => line.who === "interviewer" || line.say !== "");
+  if (loose[0]?.who !== "interviewer") throw new Error("A role-play opens with the interviewer asking the question.");
   const lines: RolePlayLine[] = [];
-  for (const l of loose) {
-    const who = l.who === "interviewer" || l.who === "candidate" ? l.who : null;
-    const say = clean(l.say).slice(0, ROLE_PLAY_LIMITS.say);
-    if (!who || !say) continue;
-    const line: RolePlayLine = { who, say };
-    if (who === "candidate" && typeof l.why === "string" && clean(l.why)) line.why = clean(l.why).slice(0, ROLE_PLAY_LIMITS.why);
-    lines.push(line);
+  for (let i = 0; i < loose.length - 1; i++) {
+    const ask = loose[i];
+    const reply = loose[i + 1];
+    const prompt = i === 0 ? question : ask.say;
+    if (ask.who !== "interviewer" || reply.who !== "candidate" || !prompt) {
+      if (i === 0) throw new Error("A role-play needs an answer to its opening question.");
+      continue;
+    }
+    const line: RolePlayLine = { who: "candidate", say: reply.say };
+    if (typeof reply.why === "string" && clean(reply.why)) line.why = clean(reply.why).slice(0, ROLE_PLAY_LIMITS.why);
+    lines.push({ who: "interviewer", say: prompt }, line);
   }
   return normaliseLines(lines, question);
 }
