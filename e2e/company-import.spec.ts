@@ -95,6 +95,7 @@ test("can still dismiss the Last import banner when browser storage is unavailab
   await page.getByRole("button", { name: "Review rows" }).click();
   await page.getByRole("button", { name: "Import 1 company", exact: true }).click();
   await page.getByRole("link", { name: "View Companies" }).click();
+  await page.reload();
 
   const dismiss = page.getByRole("button", { name: "Dismiss", exact: true });
   const footer = page.getByRole("region", { name: "Last import", exact: true });
