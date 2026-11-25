@@ -30,8 +30,9 @@ export default defineConfig({
     timeout: 180_000,
     env: {
       // Override local .env values at both build and start, including public build-time variables.
-      NEXT_PUBLIC_SUPABASE_URL: "",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      // Satisfy the production configuration guard without using a live project.
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:9",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "e2e-unused-publishable-key",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
       SUPABASE_SECRET_KEY: "",
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: "",
