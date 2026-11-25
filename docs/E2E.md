@@ -26,6 +26,7 @@ Run a file or filter by behavior with `npm run test:e2e -- e2e/interview.spec.ts
 | Application `/app/applications/[id]` | Manage pipeline records and prepare safe kits for picked roles | Save a next step and close a record; download PII-free content, request a letter or a limited portal answer, confirm manual submission with reviewed or different materials, and verify a frozen version survives closing. |
 | Today `/app/watchlist` | Rank and triage sourced roles | Persist and reverse Pick, Later and Dismiss; change the daily maximum and prepare a kit only after picking. |
 | Companies `/app/companies` and `/app/companies/[id]` | Manage targets, job boards and shared public research | Validate target details, remove and restore a target, replace a board, and explicitly request research. |
+| Company list import `/app/companies/import` | Map and review CSV or XLSX rows before adding targets | Fix or skip CSV rows, map a visible XLSX worksheet on mobile, recover from a stale review without a partial write, and undo only the imported targets. |
 | Network `/app/network` | Manage contacts, conversations and follow-ups | Add a contact, log a conversation, verify the follow-up and history, and check visitor isolation. |
 | Role insights `/app?view=insights` | Find recurring requirements and compare them with existing evidence | Filter by role title, check the filtered evidence summary, and clear the filter. |
 | Experience `/app/bank` | Maintain the evidence bank used for CVs and interviews | Add, edit, reload and delete a quantified point. |

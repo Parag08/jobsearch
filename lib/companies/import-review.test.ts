@@ -21,6 +21,16 @@ describe("import mapping", () => {
     ]);
     expect(mapImportRows(sheet, { start: 2, headers: true, name: 0, website: 0 })).toBeNull();
   });
+
+  it("requires explicit mapping for ambiguous headers and ignores formulas in unmapped columns", () => {
+    const sheet: ImportSheet = { name: "Targets", rows: [
+      { number: 2, cells: { 0: { text: "Company" }, 1: { text: "Employer" }, 2: { text: "Company URL" } } },
+      { number: 3, cells: { 0: { text: "", formula: true }, 1: { text: "Acme" }, 2: { text: "acme.com" } } },
+    ] };
+    expect(suggestImportColumns(sheet, 2, true)).toEqual({ name: null, website: 2 });
+    expect(mapImportRows(sheet, { start: 2, headers: true, name: null, website: 2 })).toBeNull();
+    expect(mapImportRows(sheet, { start: 2, headers: true, name: 1, website: null })).toEqual([row(3, "Acme")]);
+  });
 });
 
 describe("import identity review", () => {
