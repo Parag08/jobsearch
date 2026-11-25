@@ -76,13 +76,19 @@ function parseCsv(bytes: Uint8Array): ImportSheet {
   } catch {
     throw new Error("This CSV is unreadable. Export it as UTF-8 CSV and try again.");
   }
-  let separator = ",", best = 0;
+  let separator = ",", bestAgreement = 0, bestWidth = 1;
   for (const candidate of [",", ";", "\t", "|"]) {
     try {
       const { widths } = csv(content, candidate, true);
-      const multiple = widths.filter((n) => n > 1);
-      const score = multiple.length * 100 + multiple.reduce((best, n) => Math.max(best, multiple.filter((k) => k === n).length), 0);
-      if (score > best) { separator = candidate; best = score; }
+      for (const width of widths) {
+        if (width < 2) continue;
+        const agreement = widths.filter((n) => n === width).length / widths.length;
+        if (agreement > bestAgreement || (agreement === bestAgreement && width > bestWidth)) {
+          separator = candidate;
+          bestAgreement = agreement;
+          bestWidth = width;
+        }
+      }
     } catch {
       // A quoted field may only be valid with the actual separator.
     }
