@@ -70,7 +70,7 @@ export const RoleInterviewInputSchema = z
   .superRefine((r, ctx) => {
     const seen = new Set<string>();
     for (const q of r.questions) {
-      if (seen.has(q.externalRef)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `question "${q.externalRef}" appears twice` });
+      if (seen.has(q.externalRef)) ctx.addIssue({ code: "custom", message: `question "${q.externalRef}" appears twice` });
       seen.add(q.externalRef);
     }
   });

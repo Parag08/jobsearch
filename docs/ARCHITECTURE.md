@@ -157,7 +157,7 @@ Short, so the reasoning is not re-litigated. Add a line when a structural choice
 | 2026-09-02 | Supabase in Singapore, functions pinned to `sin1` | Every query was a US-Singapore round trip on the default region |
 | 2026-09-24 | Schema changes only through numbered, idempotent migrations | Interview answers are hand-typed and cannot be regenerated |
 | 2026-11-11 | findparagjob owns the CV corpus; one-way sync in | Its CVs were better than this app's; one source avoids drift |
-| 2026-11-13 | MCP server hand-rolled, stateless, token auth | No SDK dependency; zod stays on v3; agents get rules, not table access |
+| 2026-11-13 | MCP server hand-rolled, stateless, token auth | No SDK dependency; agents get rules, not table access |
 | 2026-11-13 | Stage and contacts are owned by this app | An agent may propose; only a dated, evidenced call moves a stage |
 | 2026-11-14 | One place reads a posting (`read-role.ts`) | Pasted and pushed roles must produce the same structure |
 | 2026-11-16 | Architecture kept as data (`lib/architecture/graph.ts`) and drawn from it | A diagram that is not generated goes stale; this one is tested |
