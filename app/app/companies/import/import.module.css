@@ -72,7 +72,23 @@
   flex-wrap: wrap;
 }
 .receipt { overflow-wrap: anywhere; }
-.receipt[data-compact] { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+.receipt[data-compact] { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); flex-direction: row; flex-wrap: wrap; justify-content: space-between; position: relative; padding-inline-end: 56px; }
+.dismissReceipt {
+  position: absolute; inset-block-start: 8px; inset-inline-end: 8px;
+  width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: var(--radius); background: transparent;
+  color: var(--ink-soft); font: inherit; font-size: 1.4rem; cursor: pointer;
+}
+.dismissReceipt:hover { background: var(--wash); color: var(--ink); }
+.receiptFooter { color: var(--ink-soft); font-size: .875rem; }
+.receiptLine { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+.receiptLink {
+  display: inline-flex; align-items: center; min-height: 32px; padding: 0;
+  border: 0; background: transparent; font: inherit;
+  color: var(--accent-text); text-decoration: underline;
+}
+button.receiptLink:not(:disabled) { cursor: pointer; }
+.receiptLink:disabled { opacity: .6; }
 .receipt h1, .receipt h2 { margin-block: 4px 8px; }
 .receiptCompanies { margin: 0; padding: 0; list-style: none; }
 .receiptCompanies li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding-block: 10px; border-bottom: 1px solid var(--line-soft); }
