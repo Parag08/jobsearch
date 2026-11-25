@@ -47,5 +47,10 @@
     "typescript": "5.9.2",
     "vite-node": "3.2.4",
     "vitest": "3.2.7"
+  },
+  "overrides": {
+    "postcss": "^8.5.23",
+    "source-map-js": "^1.2.2",
+    "sharp": "^0.35.5"
   }
 }
