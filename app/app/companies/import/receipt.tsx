@@ -21,19 +21,28 @@ export function ImportReceipt({ receipt, compact = false, companies = [], childr
   const [saved, setSaved] = useState<CompanyImportRow>();
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
-  const [dismissedId, setDismissedId] = useState<string>();
+  const [dismissal, setDismissal] = useState<{ id: string; dismissed: boolean }>();
   const dismissalKey = `jobsearch.company-import.dismissed.${receipt.id}`;
-  const dismissed = compact && dismissedId === receipt.id;
+  const dismissalReady = !compact || dismissal?.id === receipt.id;
+  const dismissed = compact && dismissalReady && dismissal?.dismissed;
   useEffect(() => {
     if (!compact) return;
-    try {
-      if (localStorage.getItem(dismissalKey) === "1") setDismissedId(receipt.id);
-    } catch {
-      // The banner can still be dismissed without browser storage.
-    }
+    const readDismissal = () => {
+      try {
+        setDismissal({ id: receipt.id, dismissed: localStorage.getItem(dismissalKey) === "1" });
+      } catch {
+        setDismissal((previous) => previous?.id === receipt.id ? previous : { id: receipt.id, dismissed: false });
+      }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === dismissalKey || event.key === null) readDismissal();
+    };
+    window.addEventListener("storage", onStorage);
+    readDismissal();
+    return () => window.removeEventListener("storage", onStorage);
   }, [compact, dismissalKey, receipt.id]);
   const dismiss = () => {
-    setDismissedId(receipt.id);
+    setDismissal({ id: receipt.id, dismissed: true });
     try {
       localStorage.setItem(dismissalKey, "1");
     } catch {
@@ -93,7 +102,7 @@ export function ImportReceipt({ receipt, compact = false, companies = [], childr
   </section>;
 
   return <>
-    {!dismissed && banner}
+    {dismissalReady && !dismissed && banner}
     {children}
     {dismissed && <section className={styles.receiptFooter} aria-label="Last import">
       <div className={styles.receiptLine}>

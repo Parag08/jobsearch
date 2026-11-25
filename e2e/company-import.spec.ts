@@ -1,5 +1,15 @@
 import { utils, write } from "xlsx";
+import type { Page } from "@playwright/test";
 import { appLink, expect, test } from "./demo";
+
+async function importSampleCsv(page: Page) {
+  await appLink(page, "Companies").click();
+  await page.getByRole("link", { name: "Import list" }).click();
+  await page.getByRole("button", { name: "Sample CSV", exact: true }).click();
+  await page.getByRole("button", { name: "Review rows" }).click();
+  await page.getByRole("button", { name: "Import 1 company", exact: true }).click();
+  await page.getByRole("link", { name: "View Companies" }).click();
+}
 
 test("reviews a CSV before changing targets and undoes only the confirmed import after refresh", async ({ demo: page }, testInfo) => {
   await appLink(page, "Companies").click();
@@ -81,6 +91,41 @@ test("dismisses the banner for one import and keeps its result and Undo below th
   await importTarget("Second Example");
   await expect(bannerHeading).toBeVisible();
   await expect(page.getByRole("button", { name: "Dismiss", exact: true })).toBeVisible();
+});
+
+test("does not render a dismissed banner before hydration on reload", async ({ demo: page }) => {
+  await importSampleCsv(page);
+  const dismiss = page.getByRole("button", { name: "Dismiss", exact: true });
+  const footer = page.getByRole("region", { name: "Last import", exact: true });
+  await dismiss.click();
+  await expect(footer).toBeVisible();
+
+  const scripts = "**/_next/static/**/*.js";
+  await page.route(scripts, (route) => route.abort());
+  await page.reload();
+  await expect(page.getByRole("link", { name: "Example Company", exact: true })).toBeVisible();
+  await expect(dismiss).toHaveCount(0);
+  await expect(footer).toHaveCount(0);
+
+  await page.unroute(scripts);
+  await page.reload();
+  await expect(footer).toContainText("Last import: 1 added");
+  await expect(dismiss).toHaveCount(0);
+});
+
+test("syncs import banner dismissal to an already open tab", async ({ demo: page, context }) => {
+  await importSampleCsv(page);
+  const otherTab = await context.newPage();
+  await otherTab.goto(page.url());
+  const otherDismiss = otherTab.getByRole("button", { name: "Dismiss", exact: true });
+  await expect(otherDismiss).toBeVisible();
+
+  await page.getByRole("button", { name: "Dismiss", exact: true }).click();
+  const otherFooter = otherTab.getByRole("region", { name: "Last import", exact: true });
+  await expect(otherFooter).toContainText("Last import: 1 added");
+  await expect(otherFooter.getByRole("button", { name: "Undo import" })).toBeVisible();
+  await expect(otherFooter.getByRole("link", { name: "View result" })).toBeVisible();
+  await expect(otherDismiss).toHaveCount(0);
 });
 
 test("can still dismiss the Last import banner when browser storage is unavailable", async ({ demo: page }) => {
