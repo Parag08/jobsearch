@@ -5,7 +5,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { DEMO_USER_ID, getDemoDb, getVisitorDemoDb } from "./demo";
 import { DEMO_COOKIE, demoMaxVisitorsFromEnv, isVisitorId } from "../demo/visitors";
-import { asDbClient, createServerSupabase, readSupabaseEnv } from "./supabase";
+import { asDbClient, createServerSupabase, readSupabaseEnv, requireWorkspaceEnv } from "./supabase";
 
 export type WorkspaceMode = "live" | "demo";
 
@@ -25,10 +25,9 @@ export interface Workspace {
 }
 
 /**
- * Resolve the request's workspace. A demo visitor first (cookie); then live when Supabase is configured and the
- * request carries a session; demo when Supabase is not configured at all;
- * null when Supabase is configured but nobody is signed in (callers redirect
- * to /signin). One function, so every page and route agrees on the mode.
+ * Resolve the request's workspace: a public demo visitor first (cookie), then live with a session or
+ * the local demo when explicitly enabled without Supabase. Returns null for signed-out live users.
+ * Missing Supabase configuration outside the local demo is an error.
  */
 export const getWorkspace = cache(resolveWorkspace);
 
@@ -38,6 +37,7 @@ export const getWorkspace = cache(resolveWorkspace);
  * of one per caller (it was two per page, plus middleware's).
  */
 async function resolveWorkspace(): Promise<Workspace | null> {
+  const env = requireWorkspaceEnv();
   // A public demo visitor (the /demo route set the cookie) gets their own fictional workspace,
   // even when Supabase is configured. Unset DEMO_MAX_VISITORS and the cookie is ignored.
   const visitor = (await cookies()).get(DEMO_COOKIE)?.value;
@@ -45,7 +45,6 @@ async function resolveWorkspace(): Promise<Workspace | null> {
   if (visitor && maxVisitors && isVisitorId(visitor)) {
     return { db: getVisitorDemoDb(visitor, maxVisitors), userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: true };
   }
-  const env = readSupabaseEnv();
   if (!env) {
     return { db: getDemoDb(), userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: false };
   }

@@ -12,7 +12,7 @@ import { DEMO_SOURCE } from "../demo/corpus";
 export const DEMO_USER_ID = "00000000-0000-0000-0000-000000000d3e";
 
 /**
- * Demo mode: when Supabase is not configured the app runs on an in-memory
+ * Local demo mode: the app runs on an in-memory
  * FakeDb loaded from data/cvbuilder/ - the same corpus supabase/seed.sql is
  * generated from. Cached per server process, so edits made in the demo persist
  * until the next deploy or restart, and nothing ever leaves the box.

@@ -9,7 +9,7 @@ import { Reveal } from "./_components/reveal";
 import { GoogleButton } from "./_components/google-button";
 import { GoogleOneTap } from "./_components/google-one-tap";
 import { signInWith } from "./signin/actions";
-import { readSupabaseEnv } from "@/lib/db/supabase";
+import { localDemoEnabled, readSupabaseEnv } from "@/lib/db/supabase";
 import { readGoogleClientId, shouldOfferOneTap } from "@/lib/auth/google-one-tap";
 import styles from "./page.module.css";
 
@@ -51,12 +51,11 @@ const COMING = [
 
 export default function Home() {
   // Two demos: the public one (/demo, a fictional person, no AI spend) whenever
-  // DEMO_MAX_VISITORS is set, else the local sample workspace when Supabase is unconfigured.
-  // With neither, /app redirects to /signin, so no demo link is offered.
+  // DEMO_MAX_VISITORS is set, else the explicitly enabled local workspace without Supabase.
   const supabase = readSupabaseEnv();
   const live = supabase !== null;
   const publicDemo = demoMaxVisitorsFromEnv(process.env) !== undefined;
-  const demoHref = publicDemo ? "/demo" : live ? null : "/app/home";
+  const demoHref = publicDemo ? "/demo" : !live && localDemoEnabled() ? "/app/home" : null;
   const demoAvailable = demoHref !== null;
   // Sign in goes straight to Google (the same server action /signin uses) - no detour
   // page. Without Supabase the action could only bounce to /signin, so link there directly.

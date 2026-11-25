@@ -3,7 +3,7 @@
 _Sources: the code at `main` (813c52e), `CLAUDE.md`, `.env.example`, `supabase/schema.sql`, and the owner's answers (2026-11-09). Keep this file current when trust boundaries, entry points or the owner's risk decisions change; security scans start from it. No separate infrastructure repo: Vercel and Supabase are configured in their dashboards (owner), so the in-repo schema/RLS and `vercel.json` are the only infra-as-code._
 
 ## System overview
-A personal job-search app: Next.js 15 App Router on Vercel (`sin1`), Supabase (Postgres + Auth + RLS, ap-southeast-1), LLM calls via Vercel AI Gateway or Gemini/Groq/Anthropic. Without `NEXT_PUBLIC_SUPABASE_URL` the app runs in **demo mode** (in-memory FakeDb loaded from `data/cvbuilder/`).
+A personal job-search app: Next.js 15 App Router on Vercel (`sin1`), Supabase (Postgres + Auth + RLS, ap-southeast-1), LLM calls via Vercel AI Gateway or Gemini/Groq/Anthropic. Without Supabase URL and a publishable key, requests fail closed. Only development with `LOCAL_DEMO_MODE=true` may use the shared in-memory FakeDb loaded from `data/cvbuilder/`. The public demo uses a separate fictional, per-visitor workspace and still requires Supabase configuration.
 
 **Users (owner):** only Parag today; a few invited peers later. Sign-in is Google / LinkedIn OIDC through Supabase Auth — any OAuth account that completes sign-in gets a profile via the `handle_new_user` trigger, so "invite-only" is not enforced in code. **Owner: open sign-up is intended and fine** — a stranger becoming a tenant is not itself a finding; what matters is what one tenant can do to another.
 

@@ -1,14 +1,15 @@
 import { devices } from "@playwright/test";
 import { expect, test } from "./demo";
 
-test("landing leads to sign-in or a fictional workspace and back", async ({ page }) => {
+test("landing and sign-in offer Google, and the fictional workspace can be exited", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/A CV that only says what you can prove/);
 
-  await page.getByRole("link", { name: "Get started" }).click();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeEnabled();
+  await page.goto("/signin");
   await expect(page).toHaveURL(/\/signin$/);
   await expect(page.getByRole("heading", { name: "Get started" })).toBeVisible();
-  await expect(page.getByText("Sign-in is not connected yet", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeEnabled();
   await page.goBack();
 
   await page.getByRole("link", { name: "Try the demo" }).click();
