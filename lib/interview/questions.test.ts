@@ -1,20 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { firmNote, groupQuestions, parseQuestionBank, questionsForFirm, QUESTION_BANK_PATH } from "./questions";
-
-const bank = parseQuestionBank({
-  groups: [
-    { id: "fit", label: "Fit" },
-    { id: "team", label: "Team" },
-    { id: "empty", label: "Nothing here" },
-  ],
-  questions: [
-    { id: "q1", group: "fit", competency: "fit", text: "Why consulting?", firms: ["bain", "bcg"], lookFor: "a reason" },
-    { id: "q2", group: "team", competency: "leadership", text: "Led a team?", firms: ["bain"], lookFor: "you", bain: "team culture" },
-    { id: "q3", group: "fit", competency: "fit", text: "Why McKinsey?", firms: ["mckinsey"], lookFor: "a person" },
-  ],
-});
+import { parseQuestionBank, QUESTION_BANK_PATH } from "./questions";
 
 describe("parseQuestionBank", () => {
   it("rejects duplicate ids, since answers are keyed by question id", () => {
@@ -45,35 +32,6 @@ describe("parseQuestionBank", () => {
   });
 });
 
-describe("questionsForFirm", () => {
-  it("filters to a firm", () => {
-    expect(questionsForFirm(bank, "bain").map((q) => q.id)).toEqual(["q1", "q2"]);
-  });
-
-  it("returns everything for 'all'", () => {
-    expect(questionsForFirm(bank, "all")).toHaveLength(3);
-  });
-});
-
-describe("groupQuestions", () => {
-  it("keeps the bank's group order and drops groups with nothing in them", () => {
-    const grouped = groupQuestions(bank, bank.questions);
-    expect(grouped.map((g) => g.group.id)).toEqual(["fit", "team"]);
-    expect(grouped[0].questions.map((q) => q.id)).toEqual(["q1", "q3"]);
-  });
-});
-
-describe("firmNote", () => {
-  it("returns the firm-specific advice when there is one", () => {
-    expect(firmNote(bank.questions[1], "bain")).toBe("team culture");
-  });
-
-  it("returns null rather than inventing advice", () => {
-    expect(firmNote(bank.questions[0], "bain")).toBeNull();
-    expect(firmNote(bank.questions[1], "all")).toBeNull();
-  });
-});
-
 describe("the shipped question bank", () => {
   // Guards the data file itself: a bad edit to questions.json fails the build rather
   // than breaking the interview tab at runtime.
@@ -100,6 +58,6 @@ describe("the shipped question bank", () => {
   });
 
   it("has Bain questions, since that is the firm being prepared for", () => {
-    expect(questionsForFirm(shipped, "bain").length).toBeGreaterThan(15);
+    expect(shipped.questions.filter((q) => q.firms.includes("bain")).length).toBeGreaterThan(15);
   });
 });
