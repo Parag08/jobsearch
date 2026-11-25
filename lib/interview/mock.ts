@@ -211,7 +211,7 @@ export function buildFollowUpPrompt(input: {
 const MAX_SAY = 400;
 
 export function parseFollowUp(raw: unknown, candidates: ProbeKind[]): FollowUp {
-  const parsed = z.object({ probe: z.coerce.string().default(""), say: z.coerce.string() }).parse(raw);
+  const parsed = z.object({ probe: z.coerce.string(), say: z.coerce.string() }).parse(raw);
   const say = parsed.say.replace(/\s+/g, " ").trim().slice(0, MAX_SAY);
   if (!say) throw new Error("empty follow-up");
   const probe = candidates.find((c) => c === parsed.probe) ?? candidates[0];

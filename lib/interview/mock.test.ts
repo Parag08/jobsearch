@@ -158,12 +158,12 @@ describe("parseFollowUp", () => {
     });
   });
 
-  it("falls back to the first candidate when the model omits or names another probe", () => {
+  it("falls back to the first candidate when the model names another probe", () => {
     expect(parseFollowUp({ probe: "reflection", say: "What would you change?" }, ["ownership", "result"]).probe).toBe("ownership");
-    expect(parseFollowUp({ say: "What would you change?" }, ["ownership", "result"])).toEqual({
-      probe: "ownership",
-      say: "What would you change?",
-    });
+  });
+
+  it("rejects an unlabeled line so it cannot mark a different probe as asked", () => {
+    expect(() => parseFollowUp({ say: "So what changed?" }, ["ownership", "result"])).toThrow();
   });
 
   it("throws on an empty line", () => {
