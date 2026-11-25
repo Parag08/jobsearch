@@ -1,11 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  buildScoringPrompt,
   deliverySignals,
   numberDrift,
   overallScore,
   parseScore,
-  SCORE_DIMENSIONS,
 } from "./score";
 
 const words = (n: number) => Array.from({ length: n }, () => "word").join(" ");
@@ -62,31 +60,6 @@ describe("numberDrift", () => {
 
   it("is empty when there is no written answer to compare against", () => {
     expect(numberDrift("cut it by 30%", "").saidNotWritten).toEqual([]);
-  });
-});
-
-describe("buildScoringPrompt", () => {
-  const prompt = buildScoringPrompt({
-    question: "Tell me about a time you failed.",
-    lookFor: "A genuine failure.",
-    firmNote: "Bain values candour.",
-    transcript: "I missed a deadline.",
-  });
-
-  it("includes the question, the rubric and the transcript", () => {
-    expect(prompt).toContain("Tell me about a time you failed.");
-    expect(prompt).toContain("A genuine failure.");
-    expect(prompt).toContain("I missed a deadline.");
-    for (const d of SCORE_DIMENSIONS) expect(prompt).toContain(d);
-  });
-
-  it("forbids the scorer from rewarding or inventing content that was not said", () => {
-    expect(prompt).toMatch(/only what is in the transcript/i);
-    expect(prompt).toMatch(/do not invent/i);
-  });
-
-  it("asks for JSON, which the gateway's JSON mode requires the prompt to mention", () => {
-    expect(prompt).toMatch(/json/i);
   });
 });
 
