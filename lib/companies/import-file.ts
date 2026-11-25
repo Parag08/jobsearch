@@ -80,12 +80,15 @@ function parseCsv(bytes: Uint8Array): ImportSheet {
   for (const candidate of [",", ";", "\t", "|"]) {
     try {
       const { widths } = csv(content, candidate, true);
-      const headerWidth = widths[0] ?? 0;
-      if (headerWidth < 2) continue;
-      const matches = widths.filter((width) => width === headerWidth).length;
-      if (matches > bestMatches) {
-        separator = candidate;
-        bestMatches = matches;
+      const counts = new Map<number, number>();
+      for (const width of widths) {
+        if (width < 2) continue;
+        const matches = (counts.get(width) ?? 0) + 1;
+        counts.set(width, matches);
+        if (matches > bestMatches) {
+          separator = candidate;
+          bestMatches = matches;
+        }
       }
     } catch {
       // A quoted field may only be valid with the actual separator.

@@ -13,14 +13,24 @@ describe("company import files", () => {
     ]);
   });
 
-  it("uses the semicolon header when ignored fields contain commas", () => {
+  it("detects semicolons after a single-cell title row", () => {
+    const data = new TextEncoder().encode("Target companies\nCompany name;Website\nAcme;acme.com\nBeta;beta.com\n");
+    expect(parseCompanyFile("list.csv", data)[0].rows).toEqual([
+      { number: 1, cells: { 0: { text: "Target companies" } } },
+      { number: 2, cells: { 0: { text: "Company name" }, 1: { text: "Website" } } },
+      { number: 3, cells: { 0: { text: "Acme" }, 1: { text: "acme.com" } } },
+      { number: 4, cells: { 0: { text: "Beta" }, 1: { text: "beta.com" } } },
+    ]);
+  });
+
+  it("detects semicolons when ignored fields contain commas", () => {
     const data = new TextEncoder().encode("Company name;Website;Notes\nAcme;acme.com;One, two\nBeta;beta.com;Three, four\n");
     expect(parseCompanyFile("list.csv", data)[0].rows[1].cells).toEqual({
       0: { text: "Acme" }, 1: { text: "acme.com" }, 2: { text: "One, two" },
     });
   });
 
-  it("prefers comma when both headers match equally despite extra semicolons", () => {
+  it("prefers comma when both delimiters match equally despite extra semicolons", () => {
     const data = new TextEncoder().encode("Company name,Notes;ref;owner\nAcme,One;two;three\nBeta,Four;five;six\n");
     expect(parseCompanyFile("list.csv", data)[0].rows[1].cells).toEqual({
       0: { text: "Acme" }, 1: { text: "One;two;three" },
