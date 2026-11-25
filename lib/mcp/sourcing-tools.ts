@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { getSourcingCompany } from "../repos/sourcing";
-import { loadDailySourcing } from "../services/daily-sourcing";
+import { boardForRole, loadDailySourcing } from "../services/daily-sourcing";
 import {
-  confirmWithWorkspaceSettings, getSourcingKit, prepareSourcingBatch, saveCompanyResearch, saveKitDraft, saveRankReview,
+  confirmWithWorkspaceSettings, getUsableSourcingKit, prepareSourcingBatch, saveCompanyResearch, saveKitDraft, saveRankReview,
 } from "../services/sourcing-kits";
 import { norm } from "../types";
 import {
@@ -49,15 +49,15 @@ export const SOURCING_TOOLS: Tool[] = [
           roleId: job.id,
           companyId: source.companyByName.get(norm(job.company))?.id ?? null,
           company: job.company, title: job.title, location: job.location, postingUrl: job.url, postedAt: job.postedAt,
-          checkedAt: source.configured.find((b) => norm(b.company) === norm(job.company) && b.ats === job.source)?.lastSuccessAt ?? null,
+          checkedAt: boardForRole(source.configured, job)?.lastSuccessAt ?? null,
           picked: pickedIds.has(job.id), review: source.reviews[job.id] ?? null,
         })),
       };
     }),
   define("review_sourcing_match",
-    "Add or replace fit reasons for an eligible role. Use only verified evidence codes that directly support stated posting requirements. Choose the strongest uncertainty; do not submit any posting text or personal details.",
-    "write", RankReview.extend({ roleId: key }),
-    async ({ db, userId }, { roleId, ...review }) => saveRankReview(db, userId, roleId, review)),
+    "Add fit reasons for an eligible role. Use only verified evidence codes that directly support stated requirements; do not submit posting text or personal details. Replacing a fit review requires explicit user confirmation.",
+    "write", RankReview.extend({ roleId: key, confirmedByUser: z.literal(true).optional() }),
+    async ({ db, userId }, { roleId, confirmedByUser, ...review }) => saveRankReview(db, userId, roleId, review, confirmedByUser)),
   define("prepare_sourcing_batch",
     "Prepare only roles the user already picked and add their safe kits to Saved. Never generates an optional draft and never submits an application.",
     "add", z.strictObject({}), async ({ db, userId, nowIso }) =>
@@ -65,7 +65,7 @@ export const SOURCING_TOOLS: Tool[] = [
   define("get_sourcing_kit",
     "Read one owned application kit, its revision, public posting context and explicitly requested sections. Does not read the personal CV, profile or Network.",
     "read", app, async ({ db, userId }, { applicationId }) => {
-      const record = await getSourcingKit(db, userId, applicationId);
+      const record = await getUsableSourcingKit(db, userId, applicationId);
       if (!record) throw new Error("Safe kit not found.");
       const { row, revision, value } = record;
       return { applicationId, revision, companyId: row.company_id ?? null, company: row.company,
@@ -88,10 +88,10 @@ export const SOURCING_TOOLS: Tool[] = [
       version: await saveCompanyResearch(db, userId, companyId, version, facts, nowIso.slice(0, 10)),
     })),
   define("save_sourcing_draft",
-    "Draft only the requested cover letter or portal answer from one verified evidence code. Use the current revision, select a tone and do not supply prose or PII.",
-    "write", app.extend({ section: z.enum(["letter", "answer"]), draft: SafeDraft, revision }),
-    async ({ db, userId }, { applicationId, section, draft, revision }) => ({
-      revision: await saveKitDraft(db, userId, applicationId, section, draft, revision),
+    "Draft only the requested cover letter or portal answer. Use the current revision, a verified evidence code and a tone; do not supply prose or PII. Replacing a reviewed draft requires explicit user confirmation.",
+    "write", app.extend({ section: z.enum(["letter", "answer"]), draft: SafeDraft, revision, confirmedByUser: z.literal(true).optional() }),
+    async ({ db, userId }, { applicationId, section, draft, revision, confirmedByUser }) => ({
+      revision: await saveKitDraft(db, userId, applicationId, section, draft, revision, confirmedByUser),
     })),
   define("confirm_sourcing_submission",
     "Record the exact manually submitted role and date, only after the user confirms the employer accepted it and identifies which materials they used. Never send personal materials or receipts. Does not submit anything.",

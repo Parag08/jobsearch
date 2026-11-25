@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companyWebsite, dailyShortlist, parseDailyTarget } from "./daily";
+import { companyWebsite, dailyShortlist, parseDailyTarget, safePostingUrl } from "./daily";
 import type { SourcedJob } from "../types";
 
 const job = (id: string, patch: Partial<SourcedJob> = {}): SourcedJob => ({
@@ -36,5 +36,33 @@ describe("daily shortlist", () => {
     expect(companyWebsite("www.example.com/careers?email=name@example.com")).toBe("https://example.com");
     expect(companyWebsite("https://user:secret@example.com")).toBeNull();
     expect(companyWebsite("https://127.0.0.1")).toBeNull();
+  });
+
+  it("turns an existing SmartRecruiters API reference into a candidate posting link", () => {
+    expect(safePostingUrl("https://api.smartrecruiters.com/v1/companies/AcmeGroup/postings/743999912345678"))
+      .toBe("https://jobs.smartrecruiters.com/AcmeGroup/743999912345678");
+    expect(safePostingUrl("https://api.smartrecruiters.com/v1/companies/AcmeGroup")).toBeNull();
+  });
+
+  it("prioritizes reviewed evidence over freshness after excluding inactive targets and pipeline roles", () => {
+    const pipelineUrl = job("same-url").url;
+    const jobs = [
+      job("fresh", { postedAt: "2026-11-25" }),
+      job("reviewed", { postedAt: "2026-11-23" }),
+      job("inactive", { company: "Paused Co" }),
+      job("same-ref"),
+      job("same-url"),
+      job("same-title", { title: "Product Lead" }),
+    ];
+    const result = dailyShortlist(jobs, [{ name: "Acme", active: true }, { name: "Paused Co", active: false }], [
+      { company: "Acme", role: "Different role", externalRef: "sourced:same-ref" },
+      { company: "Acme", role: "Another role", applyUrl: pipelineUrl + "?utm_source=ads" },
+      { company: " ACME ", role: " product lead " },
+    ], {}, { cities: [], titles: [], excluded: [], target: 1 }, {
+      reviewed: { evidence: ["discovery"] },
+      inactive: { evidence: ["discovery", "delivery"] },
+    });
+    expect(result.available.map((r) => r.id)).toEqual(["reviewed", "fresh"]);
+    expect(result.ranked.map((r) => r.id)).toEqual(["reviewed"]);
   });
 });

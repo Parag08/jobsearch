@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { approveKitDraft, confirmSourcingSubmission, getSourcingKit, prepareSourcingBatch, requestKitDraft,
-  saveKitDraft, setSafeKitEvidence, saveCompanyResearch } from "./sourcing-kits";
+  saveKitDraft, setSafeKitEvidence, saveCompanyResearch, saveRankReview, getUsableSourcingKit } from "./sourcing-kits";
 import { SafeDraft, draftText, fitsAnswer, sourceForCompany } from "../watchlist/safe-kit";
-import { setSourcingCompanyActive } from "../repos/sourcing";
+import { putSafeEvidence, setSourcingCompanyActive } from "../repos/sourcing";
 
 const today = "2026-11-26";
 function setup(db = new FakeDb()) {
@@ -82,12 +82,28 @@ describe("daily sourcing kits", () => {
     expect((await prepareSourcingBatch(db, "u", today)).applicationIds).toEqual([]);
   });
 
+  it("rejects future and stale confirmations, then records different materials without a frozen version", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    await setSafeKitEvidence(db, "u", id, ["discovery"], true);
+    await db.from("profiles").update({ sourcing_evidence: [] }).eq("user_id", "u");
+    const submission = { date: today, materials: "different", revision: 1, confirmedByUser: true } as const;
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, date: "2026-11-27" }, today, 7)).rejects.toThrow(/future/);
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, revision: 0 }, today, 7)).rejects.toThrow(/changed/);
+    await expect(confirmSourcingSubmission(db, "u", id, { ...submission, materials: "reviewed" }, today, 7)).rejects.toThrow(/Review/);
+    expect(db.rows("applications")[0]).toMatchObject({ stage: "saved", applied_at: null, sourcing_kit: { submission: null } });
+    await expect(confirmSourcingSubmission(db, "u", id, submission, today, 7)).resolves.toEqual({
+      date: today, materials: "different", version: null,
+    });
+    expect(db.rows("applications")[0]).toMatchObject({ stage: "applied", applied_at: today, sourcing_kit: { submission: { version: null } } });
+  });
+
   it("rejects unstructured draft fields and private research links, and enforces answer limits", () => {
     expect(SafeDraft.safeParse({ evidence: "discovery", tone: "direct", text: "Candidate name" }).success).toBe(false);
     expect(sourceForCompany("https://attacker.example.com/docs", "https://harbour.example.com")).toBeNull();
     expect(sourceForCompany("https://harbour.example.com/docs?email=name@example.com", "https://harbour.example.com")).toBeNull();
     expect(sourceForCompany("https://harbour.example.com/docs/people/some-person", "https://harbour.example.com")).toBeNull();
-    expect(fitsAnswer(draftText({ evidence: "discovery", tone: "direct" }), { unit: "words", limit: 2, prompt: "related-experience" })).toBe(false);
+    expect(fitsAnswer(draftText({ evidence: "discovery", tone: "direct" }, "related-experience"), { unit: "words", limit: 2, prompt: "related-experience" })).toBe(false);
   });
 
   it("only saves requested drafts, checks limits and revokes approval when edited", async () => {
@@ -102,7 +118,51 @@ describe("daily sourcing kits", () => {
     await saveKitDraft(db, "u", id, "answer", draft, 3);
     await approveKitDraft(db, "u", id, "answer", 4);
     await expect(saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 4)).rejects.toThrow(/changed/);
-    await saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5);
+    await expect(saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5)).rejects.toThrow(/confirm/i);
+    expect(await saveKitDraft(db, "u", id, "answer", draft, 5)).toBe(5);
+    await saveKitDraft(db, "u", id, "answer", { ...draft, tone: "context-first" }, 5, true);
     expect((await getSourcingKit(db, "u", id))?.value.answer?.approved).toBe(false);
+  });
+
+  it("requires confirmation to replace a fit review even after a claim is revoked", async () => {
+    const db = setup();
+    const review = { evidence: ["discovery" as const], uncertainty: "scope" as const };
+    await saveRankReview(db, "u", "a", review);
+    await saveRankReview(db, "u", "a", review);
+    await putSafeEvidence(db, "u", ["delivery"]);
+    const replacement = { ...review, evidence: ["delivery" as const] };
+    await expect(saveRankReview(db, "u", "a", replacement)).rejects.toThrow(/confirm/i);
+    await expect(saveRankReview(db, "u", "a", replacement, true)).resolves.toEqual(replacement);
+  });
+
+  it("does not expose or use withdrawn claims in unsent kits", async () => {
+    const db = setup();
+    const { applicationIds: [id] } = await prepareSourcingBatch(db, "u", today);
+    const draft = { evidence: "discovery", tone: "direct" } as const;
+    await requestKitDraft(db, "u", id, "letter");
+    await saveKitDraft(db, "u", id, "letter", draft, 1);
+    await putSafeEvidence(db, "u", []);
+    expect((await getUsableSourcingKit(db, "u", id))?.value).toMatchObject({
+      evidence: [], cvReviewed: false, letter: { draft: null, approved: false },
+    });
+    await expect(saveKitDraft(db, "u", id, "letter", draft, 2)).rejects.toThrow(/verified/i);
+    await expect(approveKitDraft(db, "u", id, "letter", 2)).rejects.toThrow(/verified/i);
+    const submission = await confirmSourcingSubmission(db, "u", id, {
+      date: today, confirmedByUser: true, materials: "different", revision: 2,
+    }, today);
+    expect(submission.version).toBeNull();
+    expect((await getSourcingKit(db, "u", id))?.value).toMatchObject({
+      evidence: [], cvReviewed: false, letter: { draft: null, approved: false },
+    });
+    expect((await getUsableSourcingKit(db, "u", id))?.value.evidence).toEqual([]);
+  });
+
+  it("renders the requested portal question using the same verified claim", () => {
+    const draft = { evidence: "discovery", tone: "direct" } as const;
+    const prompts = ["approach-to-work", "work-highlight", "related-experience"] as const;
+    const answers = prompts.map((prompt) => draftText(draft, prompt));
+    expect(new Set(answers).size).toBe(3);
+    expect(answers[0]).toMatch(/I approach/i);
+    expect(answers[1]).toMatch(/one example/i);
   });
 });

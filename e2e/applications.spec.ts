@@ -72,7 +72,14 @@ test("a picked role becomes a safe kit and only confirmation moves it to Applied
   await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
 
   await appLink(page, "Pipeline").click();
-  await expect(page.getByRole("region", { name: "Applied", exact: true }).getByRole("link", { name: /Product Manager, Growth Orchard Commerce/ })).toBeVisible();
+  const applied = page.getByRole("region", { name: "Applied", exact: true }).getByRole("link", { name: /Product Manager, Growth Orchard Commerce/ });
+  await expect(applied).toBeVisible();
+  await applied.click();
+  await page.getByText("Close application…", { exact: true }).click();
+  await page.getByRole("button", { name: "They said no" }).click();
+  await expect(page.getByText("Application kit · closed")).toBeVisible();
+  await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
+
 });
 
 test("a missing application offers a pipeline recovery link", async ({ demo: page }) => {
@@ -80,4 +87,45 @@ test("a missing application offers a pipeline recovery link", async ({ demo: pag
   await expect(page.getByRole("heading", { name: "That page does not exist." })).toBeVisible();
   await page.getByRole("link", { name: "Go to your pipeline" }).click();
   await expect(page.getByRole("heading", { name: "Pipeline" })).toBeVisible();
+});
+
+test("a safe kit saves a portal answer request and can record different submission materials", async ({ demo: page }) => {
+  await appLink(page, "Watchlist").click();
+  await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
+  await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
+  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await page.getByRole("combobox", { name: "Non-personal question" }).selectOption("work-highlight");
+  await page.getByRole("spinbutton", { name: "Maximum" }).fill("240");
+  await page.getByRole("combobox", { name: "Unit", exact: true }).selectOption("characters");
+  await page.getByRole("button", { name: "Ask my Claude for an answer" }).click();
+  const request = page.getByText("Describe an example of relevant work. · Max 240 characters", { exact: true });
+  await expect(request).toBeVisible();
+  await page.reload();
+  await expect(request).toBeVisible();
+  await expect(page.getByText("Requested", { exact: true })).toBeVisible();
+  await expect(page.getByText("Application kit · saved")).toBeVisible();
+
+  const openConfirmation = page.getByRole("button", { name: "I submitted this application" });
+  const confirm = page.getByRole("dialog", { name: "Confirm actual submission" });
+  await openConfirmation.click();
+  await expect(confirm.getByRole("radio", { name: /Reviewed PII-free content/ })).toBeDisabled();
+  const date = confirm.getByLabel("Submission date");
+  await date.fill(new Date().toISOString().slice(0, 10));
+  await confirm.getByRole("radio", { name: "Different materials" }).check();
+  await confirm.getByRole("button", { name: "Confirm and mark Applied" }).click();
+  await expect(confirm).toBeVisible();
+  await confirm.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await expect(page.getByText("Application kit · saved")).toBeVisible();
+
+  await openConfirmation.click();
+  await date.fill(new Date().toISOString().slice(0, 10));
+  await confirm.getByRole("radio", { name: "Different materials" }).check();
+  await confirm.getByRole("checkbox", { name: "The employer portal showed submission confirmation." }).check();
+  await confirm.getByRole("button", { name: "Confirm and mark Applied" }).click();
+  await expect(page.getByRole("heading", { name: "Submission confirmed" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("You used different materials.")).toBeVisible();
+  await expect(page.getByText(/Reviewed safe content version/)).toHaveCount(0);
+  await expect(openConfirmation).toHaveCount(0);
 });

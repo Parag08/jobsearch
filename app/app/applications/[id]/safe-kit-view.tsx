@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Application } from "@/lib/types";
-import type { getSourcingKit } from "@/lib/services/sourcing-kits";
+import { getSourcingKit, usableKit } from "@/lib/services/sourcing-kits";
 import { canTransition } from "@/lib/pipeline";
 import { draftText, EVIDENCE_TEXT, fitsAnswer, PROMPTS, type EvidenceCode } from "@/lib/watchlist/safe-kit";
 import { ClaudeRequest, CopySafeText } from "../../claude-request";
@@ -15,7 +15,8 @@ export function SafeKitView({ application: app, record, verified, today, error }
   application: Application; record: NonNullable<Awaited<ReturnType<typeof getSourcingKit>>>;
   verified: EvidenceCode[]; today: string; error?: string;
 }) {
-  const { value: kit, revision } = record;
+  const { revision } = record;
+  const kit = usableKit(record.value, verified);
   const { id } = app;
   const editable = app.stage === "saved" && !kit.submission;
   const hasReview = kit.cvReviewed && kit.evidence.every((code) => verified.includes(code));
@@ -41,6 +42,18 @@ export function SafeKitView({ application: app, record, verified, today, error }
       {(["screening", "interview", "case", "offer", "negotiation"] as const).filter((stage) => canTransition(app.stage, stage)).map((stage) =>
         <form key={stage} action={moveStage.bind(null, id, stage, undefined)}><PendingButton label={"Move to " + stage} /></form>)}
     </section>}
+    {canTransition(app.stage, "closed") && <details className={ui.panel}>
+      <summary>Close application…</summary>
+      <div className={s.formFoot} role="group" aria-label="Why it closed">
+        <form action={moveStage.bind(null, id, "closed", "withdrawn")}><PendingButton label={kit.submission ? "I withdrew" : "I’m not applying"} /></form>
+        {kit.submission && <>
+          <form action={moveStage.bind(null, id, "closed", "lost")}><PendingButton label="They said no" /></form>
+          <form action={moveStage.bind(null, id, "closed", "ghosted")}><PendingButton label="No reply" /></form>
+        </>}
+        {(app.stage === "offer" || app.stage === "negotiation") &&
+          <form action={moveStage.bind(null, id, "closed", "won")}><PendingButton label="I accepted an offer" /></form>}
+      </div>
+    </details>}
     <div className={s.split}>
       <div className={s.stack}>
         <section className={ui.panel}>
@@ -53,13 +66,15 @@ export function SafeKitView({ application: app, record, verified, today, error }
             <a className={ui.btn} href={"/api/export/safe-sourcing/" + id}>Download PII-free content</a>
           </> : <p className={ui.sub}>No verified claims yet. The kit is Saved and you can continue later.</p>}
           {editable && <p><Link href="/app/settings/sourcing">Manage verified claims</Link></p>}
+          {editable && kit.evidence.length !== record.value.evidence.length && <p className={ui.sub}>Withdrawn claims and drafts relying on them are hidden until you revise this kit.</p>}
           {editable && verified.length > 0 && <ReviewSafeEvidence key={revision} id={id} revision={revision}
             verified={verified} selected={kit.evidence} reviewed={hasReview} />}
         </section>
         {(["letter", "answer"] as const).map((section) => {
           const entry = kit[section];
-          const text = entry?.draft ? draftText(entry.draft, section) : null;
           const request = section === "answer" ? kit.answer?.request : null;
+          const prompt = section === "letter" ? "letter" : request?.prompt;
+          const text = entry?.draft && prompt ? draftText(entry.draft, prompt) : null;
           const fits = !text || !request || fitsAnswer(text, request);
           const label = section === "letter" ? "Cover letter" : "Portal answer";
           return <section key={section} className={ui.panel}>

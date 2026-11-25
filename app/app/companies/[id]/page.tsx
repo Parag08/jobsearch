@@ -9,6 +9,7 @@ import { PendingButton } from "../../sourcing-controls";
 import { askForCompanyResearch, toggleTargetCompany } from "../../sourcing-actions";
 import { ClaudeRequest } from "../../claude-request";
 import { currentResearch, RESEARCH_LABELS } from "@/lib/watchlist/safe-kit";
+import { safePostingUrl } from "@/lib/watchlist/daily";
 import ui from "../../ui.module.css";
 import s from "../../sourcing.module.css";
 
@@ -87,10 +88,18 @@ export default async function CompanyPage({ params, searchParams }: {
         <aside className={ui.panel}>
           <h2>Job board</h2>
           {sp.source && <p role="status" className={ui.sub}>Board connected. Use Refresh roles to check it.</p>}
-          {boards.length ? <ul className={s.reasons}>{boards.map((b) => <li key={b.id}>{b.ats} · {b.lastSuccessAt ?
-            "Last checked " + b.lastSuccessAt.slice(0, 10) : "Not checked yet"}</li>)}</ul> :
+          {boards.length ? <ul className={s.reasons}>{boards.map((b) => {
+            const href = safePostingUrl(b.careersUrl);
+            return <li key={b.id}>{href ? <a href={href} target="_blank" rel="noreferrer">{b.ats} board</a> : b.ats}
+              {" · "}{b.lastCheckFailed ? "Check failed" : b.lastSuccessAt ? "Last checked " + b.lastSuccessAt.slice(0, 10) : "Not checked yet"}
+              <details><summary>Replace board</summary>
+                <p className={ui.sub}>A replacement needs a fresh check. Saved applications are kept.</p>
+                <ConnectBoardForm companyId={id} replaceId={b.id} />
+              </details>
+            </li>;
+          })}</ul> : company.active ?
             <><p className={ui.sub}>Connect this company’s public ATS board to get roles from it.</p>
-              <ConnectBoardForm companyId={id} /></>}
+              <ConnectBoardForm companyId={id} /></> : <p className={ui.sub}>Restore the target to connect a board.</p>}
         </aside>
       </div>}
 

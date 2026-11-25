@@ -63,12 +63,12 @@ export async function toggleTargetCompany(id: string, active: boolean) {
   redirect(active ? "/app/companies?restored=1" : "/app/companies?removed=" + encodeURIComponent(id));
 }
 
-export async function connectTargetBoard(id: string, _previous: { error?: string }, form: FormData) {
+export async function connectTargetBoard(id: string, replaceId: string | undefined, _previous: { error?: string }, form: FormData) {
   const { db, userId } = await workspace();
   try {
     const company = await getSourcingCompany(db, userId, id);
-    if (!company || !await connectSourcingBoard(db, userId, company, value(form, "board"), today())) {
-      return { error: "Use a public Greenhouse, Lever, Ashby, or SmartRecruiters board URL." };
+    if (!company || !await connectSourcingBoard(db, userId, company, value(form, "board"), today(), replaceId)) {
+      return { error: "Check that the company is an active target and use a public Greenhouse, Lever, Ashby, or SmartRecruiters board URL." };
     }
   } catch {
     return { error: "The source could not be saved. Try again." };

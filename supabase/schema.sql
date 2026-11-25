@@ -638,8 +638,11 @@ alter table watchlist add column if not exists last_attempt_at timestamptz;
 alter table watchlist add column if not exists last_success_at timestamptz;
 alter table watchlist add column if not exists last_check_failed boolean;
 alter table sourced_jobs add column if not exists company_id uuid;
+alter table sourced_jobs add column if not exists sourcing_board_url text;
 alter table sourced_jobs add column if not exists sourcing_decision text
   check (sourcing_decision in ('picked', 'later', 'dismissed', 'available'));
+update sourced_jobs set status = 'new', sourcing_decision = coalesce(sourcing_decision, 'dismissed')
+where status = 'dismissed';
 alter table sourced_jobs add column if not exists sourcing_review jsonb;
 alter table applications add column if not exists company_id uuid;
 alter table applications add column if not exists sourcing_kit jsonb;

@@ -87,13 +87,28 @@ export function chooseEvidence(evidence: readonly EvidenceCode[], title: string,
   return [...new Set(order)].filter((entry): entry is EvidenceCode => evidence.includes(entry as EvidenceCode)).slice(0, 3);
 }
 
-export function draftText(draft: SafeDraft, section: "letter" | "answer" = "answer") {
+const APPROACH: Record<EvidenceCode, string> = {
+  discovery: "use product or user discovery to identify needs and validate problems",
+  prioritization: "weigh customer needs and delivery trade-offs when prioritizing a roadmap",
+  delivery: "coordinate across functions from planning through launch",
+  measurement: "define success measures and use the results to guide product decisions",
+  experimentation: "design and evaluate experiments to test product changes",
+  stakeholders: "align stakeholders on decisions, trade-offs and next steps",
+  operations: "identify and remove friction to improve operating processes",
+  "technical-design": "partner on technical design and evaluate implementation trade-offs",
+};
+
+export function draftText(draft: SafeDraft, prompt: "letter" | AnswerRequest["prompt"]) {
   const evidence = "I " + EVIDENCE_TEXT[draft.evidence].replace(/^./, (c) => c.toLowerCase());
-  if (section === "letter") {
+  if (prompt === "letter") {
     const opening = "I’m interested in discussing how my experience could support this role.";
     return draft.tone === "context-first" ? opening + "\n\n" + evidence : evidence + "\n\n" + opening;
   }
-  return (draft.tone === "context-first" ? "A relevant example from my work: " : "") + evidence;
+  if (prompt === "approach-to-work") {
+    return (draft.tone === "direct" ? "I approach the work by making the next step explicit: I " : "My approach depends on the task. For this one, I ") + APPROACH[draft.evidence] + ".";
+  }
+  if (prompt === "work-highlight") return (draft.tone === "direct" ? "One example: " : "One example from my previous work: ") + evidence;
+  return (draft.tone === "context-first" ? "Relevant experience I would bring: " : "") + evidence;
 }
 
 export function fitsAnswer(draft: string, request: AnswerRequest) {

@@ -6,7 +6,7 @@ import { Evidence, RankReview, type EvidenceCode } from "../watchlist/safe-kit";
 import { parseTargetList } from "../watchlist/targets";
 import { listCompanies } from "./companies";
 import { many, one, oneOrNull, type DbClient } from "./db";
-import { addWatchlistEntry } from "./watchlist";
+import { addWatchlistEntry, listWatchlist } from "./watchlist";
 import type { SourcingCompanyRow } from "./rows";
 
 export async function getSourcingRecipe(db: DbClient, userId: string): Promise<SourcingRecipe> {
@@ -95,13 +95,35 @@ export async function setSourcingCompanyActive(db: DbClient, userId: string, id:
   return company;
 }
 
-export async function connectSourcingBoard(db: DbClient, userId: string, company: SourcingCompanyRow, raw: string, date: string) {
+export async function connectSourcingBoard(db: DbClient, userId: string, company: SourcingCompanyRow, raw: string, date: string, replaceId?: string) {
   const board = detectAts(raw.trim());
-  if (board.ats === "unknown" || !board.token || !/^[a-z0-9_-]{1,100}$/i.test(board.token) ||
+  if (!company.active || board.ats === "unknown" || !board.token || !/^[a-z0-9_-]{1,100}$/i.test(board.token) ||
     !companyWebsite(raw.trim())) return false;
   const url = new URL(raw.includes("://") ? raw.trim() : "https://" + raw.trim());
+  const careersUrl = url.origin + "/" + board.token;
+  if (replaceId) {
+    const boards = (await listWatchlist(db, userId, { active: true })).filter((entry) =>
+      entry.companyId ? entry.companyId === company.id : norm(entry.company) === company.identity);
+    const existing = boards.find((entry) => entry.id === replaceId);
+    if (!existing) return false;
+    if (existing.careersUrl === careersUrl) return true;
+    await one(db.from("watchlist").update({
+      careers_url: careersUrl, ats: board.ats, token: board.token, company_id: company.id,
+      last_attempt_at: null, last_success_at: null, last_check_failed: null,
+    }).eq("id", replaceId).eq("user_id", userId).select().single(), "watchlist", "replace board");
+    const legacy = await many(db.from("sourced_jobs").select("id,company,company_id,sourcing_board_url")
+      .eq("user_id", userId).eq("source", existing.ats), "sourced_jobs", "find unattributed roles");
+    const ids = legacy.filter((job) => !job.sourcing_board_url &&
+      (job.company_id ? job.company_id === company.id : norm(job.company) === company.identity)).map((job) => job.id);
+    for (const status of ["new", "shortlisted"] as const) {
+      if (!ids.length) break;
+      await many(db.from("sourced_jobs").update({ status: "closed" }).eq("user_id", userId).eq("status", status)
+        .is("sourcing_board_url", null).select().in("id", ids), "sourced_jobs", "close unattributed roles until rechecked");
+    }
+    return true;
+  }
   await addWatchlistEntry(db, userId, { company: company.name, companyId: company.id,
-    careersUrl: url.origin + "/" + board.token, ats: board.ats, token: board.token, active: true, addedAt: date });
+    careersUrl, ats: board.ats, token: board.token, active: true, addedAt: date });
   return true;
 }
 
