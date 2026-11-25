@@ -87,7 +87,7 @@ describe("daily sourcing kits", () => {
     expect(sourceForCompany("https://attacker.example.com/docs", "https://harbour.example.com")).toBeNull();
     expect(sourceForCompany("https://harbour.example.com/docs?email=name@example.com", "https://harbour.example.com")).toBeNull();
     expect(sourceForCompany("https://harbour.example.com/docs/people/some-person", "https://harbour.example.com")).toBeNull();
-    expect(fitsAnswer(draftText({ evidence: "discovery", tone: "direct" }), { unit: "words", limit: 2, prompt: "related-experience" })).toBe(false);
+    expect(fitsAnswer(draftText({ evidence: "discovery", tone: "direct" }, "related-experience"), { unit: "words", limit: 2, prompt: "related-experience" })).toBe(false);
   });
 
   it("only saves requested drafts, checks limits and revokes approval when edited", async () => {
@@ -131,5 +131,14 @@ describe("daily sourcing kits", () => {
     });
     await expect(saveKitDraft(db, "u", id, "letter", draft, 2)).rejects.toThrow(/verified/i);
     await expect(approveKitDraft(db, "u", id, "letter", 2)).rejects.toThrow(/verified/i);
+  });
+
+  it("renders the requested portal question using the same verified claim", () => {
+    const draft = { evidence: "discovery", tone: "direct" } as const;
+    const prompts = ["approach-to-work", "work-highlight", "related-experience"] as const;
+    const answers = prompts.map((prompt) => draftText(draft, prompt));
+    expect(new Set(answers).size).toBe(3);
+    expect(answers[0]).toMatch(/I approach/i);
+    expect(answers[1]).toMatch(/one example/i);
   });
 });

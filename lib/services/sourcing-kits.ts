@@ -135,7 +135,7 @@ export async function approveKitDraft(db: DbClient, userId: string, id: string, 
     const entry = kit[section];
     if (!entry?.draft) throw new Error("There is no draft to review.");
     if (!verified.includes(entry.draft.evidence)) throw new Error("This draft relies on an unverified claim.");
-    if (section === "answer" && kit.answer && !fitsAnswer(draftText(entry.draft), kit.answer.request)) {
+    if (section === "answer" && kit.answer && !fitsAnswer(draftText(entry.draft, kit.answer.request.prompt), kit.answer.request)) {
       throw new Error("Shorten the answer before approving it.");
     }
     return { ...kit, [section]: { ...entry, approved: true } };

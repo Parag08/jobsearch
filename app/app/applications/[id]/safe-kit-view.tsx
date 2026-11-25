@@ -72,8 +72,9 @@ export function SafeKitView({ application: app, record, verified, today, error }
         </section>
         {(["letter", "answer"] as const).map((section) => {
           const entry = kit[section];
-          const text = entry?.draft ? draftText(entry.draft, section) : null;
           const request = section === "answer" ? kit.answer?.request : null;
+          const prompt = section === "letter" ? "letter" : request?.prompt;
+          const text = entry?.draft && prompt ? draftText(entry.draft, prompt) : null;
           const fits = !text || !request || fitsAnswer(text, request);
           const label = section === "letter" ? "Cover letter" : "Portal answer";
           return <section key={section} className={ui.panel}>
