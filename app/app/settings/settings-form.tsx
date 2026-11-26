@@ -103,7 +103,6 @@ export function SettingsForm({
                 : eligibilityKnown
                   ? "Models marked “needs credits” are not in your AI Gateway plan; a model that fails falls back to Feedback and writing."
                   : "Could not ask the AI Gateway which models your plan includes (it may be busy); prices are shown, plan marks are not."}{" "}
-              Cost per interview is an estimate: about 20 questions, each ~2,000 tokens in and ~600 out.
             </p>
           )}
           {fields
@@ -119,7 +118,7 @@ export function SettingsForm({
                   <Input field={f} value={values[f.key] ?? ""} onChange={(v) => set(f.key, v)} eligibilityKnown={eligibilityKnown} />
                   <p className={s.help}>
                     {f.help}
-                    {f.fallback ? ` Default: ${f.fallback}.` : f.blank ? ` Blank: ${f.blank}.` : " Blank: off."}
+                    {f.kind.type !== "model" && f.kind.type !== "choice" && f.blank && !f.fallback && ` Blank: ${f.blank}.`}
                   </p>
                   {pick && (
                     <p className={s.help}>
@@ -195,7 +194,7 @@ function Input({
   if (k.type === "choice") {
     return (
       <select id={field.key} name={field.key} className={ui.input} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Default{field.fallback ? ` (${field.fallback})` : ""}</option>
+        <option value="">Default{field.fallback || field.blank ? ` (${field.fallback || field.blank})` : ""}</option>
         {k.options.map((o) => (
           <option key={o} value={o}>
             {o}

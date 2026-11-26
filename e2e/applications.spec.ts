@@ -35,33 +35,40 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
 });
 
 test("a picked role becomes a safe kit and only confirmation moves it to Applied", async ({ demo: page }, testInfo) => {
-  await appLink(page, "Watchlist").click();
+  await appLink(page, "Today").click();
   await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
   await expect(page.getByText("1 role picked")).toBeVisible();
   await expect(page.getByRole("link", { name: "Product Manager, Growth · Orchard Commerce" })).toHaveCount(0);
   await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Product Manager, Growth", exact: true })).toBeVisible();
-  await expect(page.getByText("Application kit · saved")).toBeVisible();
-  await expect(page.getByText("Not requested", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  const kitUrl = page.url();
+  await appLink(page, "Today").click();
+  await expect(page.getByRole("link", { name: "Product Manager, Growth · Orchard Commerce" })).toHaveAttribute("href", new URL(kitUrl).pathname);
+  await page.goto(kitUrl);
+  await expect(page.getByRole("heading", { name: "Product Manager, Growth", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CV content", exact: true })).toBeVisible();
+  await expect(page.locator("summary").getByText("Not requested", { exact: true })).toHaveCount(2);
   await testInfo.attach("Saved application kit", { body: await page.screenshot({ path: testInfo.outputPath("saved-kit.png") }), contentType: "image/png" });
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
 
   const downloadEvent = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Download PII-free content" }).click();
+  await page.getByRole("link", { name: "Download content" }).click();
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe("safe-cv-content.txt");
   const content = await readFile(await download.path(), "utf8");
   expect(content).toMatch(/Conducted|Coordinated|Defined/);
   expect(content).not.toMatch(/Maya|@|Orchard Commerce/);
-  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
+  await page.getByText("Cover letter · Optional", { exact: false }).click();
   await page.getByRole("button", { name: "Ask my Claude for a letter" }).click();
   await expect(page.getByRole("button", { name: "Copy Claude request" })).toBeVisible();
-  await page.getByRole("checkbox", { name: "I reviewed the exact safe CV content shown above." }).check();
-  await page.getByRole("button", { name: "Save CV review" }).click();
+  await page.getByRole("checkbox", { name: "I reviewed the exact content shown above." }).check();
+  await page.getByRole("button", { name: "Save review" }).click();
   await expect(page.getByText("Reviewed", { exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "I submitted this application" }).click();
+  await page.getByRole("button", { name: "Confirm submission" }).click();
   const confirm = page.getByRole("dialog", { name: "Confirm actual submission" });
   await expect(confirm.getByRole("radio", { name: /Reviewed PII-free content/ })).not.toBeChecked();
   await confirm.getByLabel("Submission date").fill(new Date().toISOString().slice(0, 10));
@@ -77,7 +84,7 @@ test("a picked role becomes a safe kit and only confirmation moves it to Applied
   await applied.click();
   await page.getByText("Close application…", { exact: true }).click();
   await page.getByRole("button", { name: "They said no" }).click();
-  await expect(page.getByText("Application kit · closed")).toBeVisible();
+  await expect(page.getByText("Closed", { exact: true })).toBeVisible();
   await expect(page.getByText(/Reviewed safe content version \d+ is frozen/)).toBeVisible();
 
 });
@@ -86,14 +93,15 @@ test("a missing application offers a pipeline recovery link", async ({ demo: pag
   await page.goto("/app/applications/00000000-0000-0000-0000-000000000001");
   await expect(page.getByRole("heading", { name: "That page does not exist." })).toBeVisible();
   await page.getByRole("link", { name: "Go to your pipeline" }).click();
-  await expect(page.getByRole("heading", { name: "Pipeline" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Applications", exact: true })).toBeVisible();
 });
 
 test("a safe kit saves a portal answer request and can record different submission materials", async ({ demo: page }) => {
-  await appLink(page, "Watchlist").click();
+  await appLink(page, "Today").click();
   await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
   await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
-  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  await page.getByText("Portal answers · Optional", { exact: false }).click();
   await page.getByRole("combobox", { name: "Non-personal question" }).selectOption("work-highlight");
   await page.getByRole("spinbutton", { name: "Maximum" }).fill("240");
   await page.getByRole("combobox", { name: "Unit", exact: true }).selectOption("characters");
@@ -103,9 +111,9 @@ test("a safe kit saves a portal answer request and can record different submissi
   await page.reload();
   await expect(request).toBeVisible();
   await expect(page.getByText("Requested", { exact: true })).toBeVisible();
-  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
-  const openConfirmation = page.getByRole("button", { name: "I submitted this application" });
+  const openConfirmation = page.getByRole("button", { name: "Confirm submission" });
   const confirm = page.getByRole("dialog", { name: "Confirm actual submission" });
   await openConfirmation.click();
   await expect(confirm.getByRole("radio", { name: /Reviewed PII-free content/ })).toBeDisabled();
@@ -116,7 +124,7 @@ test("a safe kit saves a portal answer request and can record different submissi
   await expect(confirm).toBeVisible();
   await confirm.getByRole("button", { name: "Close" }).click();
   await page.reload();
-  await expect(page.getByText("Application kit · saved")).toBeVisible();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
   await openConfirmation.click();
   await date.fill(new Date().toISOString().slice(0, 10));

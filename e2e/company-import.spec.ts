@@ -34,7 +34,7 @@ test("reviews a CSV before changing targets and undoes only the confirmed import
   const fix = page.getByRole("dialog", { name: "Fix file row 4" });
   await fix.getByRole("textbox", { name: "Company name" }).fill("Second Example");
   await fix.getByRole("button", { name: "Save row" }).click();
-  await page.getByRole("button", { name: "Skip 1 problem row" }).click();
+  await page.getByRole("button", { name: "Skip problem rows" }).click();
   await expect(page.getByRole("table", { name: "Company row review" })).not.toContainText("ignored data");
   await testInfo.attach("Reviewed company rows", { body: await page.screenshot({ path: testInfo.outputPath("company-import-review.png") }), contentType: "image/png" });
   await page.getByRole("button", { name: "Import 2 companies" }).click();
@@ -163,6 +163,7 @@ test("chooses a visible XLSX worksheet and explicitly links a company identity o
   await add.getByRole("textbox", { name: "Company website (optional)" }).fill("northstar.com");
   await add.getByRole("button", { name: "Add company" }).click();
   await page.getByRole("button", { name: "Remove Northstar Studio" }).click();
+  await page.getByRole("dialog", { name: "Remove Northstar Studio?" }).getByRole("button", { name: "Remove target" }).click();
   await page.getByRole("link", { name: "Import list" }).click();
   const book = utils.book_new();
   utils.book_append_sheet(book, utils.aoa_to_sheet([["Header"], ["Unused"]]), "Cover");

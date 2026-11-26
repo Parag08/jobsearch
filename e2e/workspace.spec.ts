@@ -7,14 +7,14 @@ test("Overview switches between progress and market insights and links to Pipeli
   await overview.getByRole("link", { name: "Insights" }).click();
   await expect(page.getByRole("heading", { name: "What those roles ask for" })).toBeVisible();
   await overview.getByRole("link", { name: "Progress" }).click();
-  await page.getByRole("region", { name: "Across your search" }).getByRole("link", { name: /Pipeline/ }).click();
-  await expect(page.getByRole("heading", { name: "Pipeline" })).toBeVisible();
+  await appLink(page, "Pipeline").click();
+  await expect(page.getByRole("heading", { name: "Applications", exact: true })).toBeVisible();
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
 });
 
 test("Today persists triage, and Companies adds, removes, and restores a target", async ({ demo: page }, testInfo) => {
-  await appLink(page, "Watchlist").click();
-  await expect(page.getByRole("heading", { name: "Your next good move." })).toBeVisible();
+  await appLink(page, "Today").click();
+  await expect(page.getByRole("heading", { name: "Roles to review" })).toBeVisible();
   await testInfo.attach("Today shortlist", { body: await page.screenshot({ path: testInfo.outputPath("today-shortlist.png") }), contentType: "image/png" });
   const role = page.getByRole("button", { name: "Dismiss Program Manager, Platform" });
   await role.click();
@@ -26,6 +26,11 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
   await expect(page.getByRole("button", { name: "Restore Program Manager, Platform" })).toBeHidden();
 
   await appLink(page, "Companies").click();
+  await expect(page.getByRole("heading", { name: "Target companies", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Needs source setup 1", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Harbour Studio", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Kestrel AI", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "All 4", exact: true }).click();
   await page.getByRole("button", { name: "Add company" }).click();
   const dialog = page.getByRole("dialog", { name: "Add a target company" });
   await dialog.getByRole("textbox", { name: "Company name" }).fill("Example Labs");
@@ -40,6 +45,9 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
   await expect(companies.getByRole("link", { name: "Example Labs" })).toBeVisible();
   await testInfo.attach("Target companies", { body: await page.screenshot({ path: testInfo.outputPath("target-companies.png") }), contentType: "image/png" });
   await companies.getByRole("button", { name: "Remove Example Labs" }).click();
+  const remove = page.getByRole("dialog", { name: "Remove Example Labs?" });
+  await expect(remove.getByText("Saved roles, research and people are unchanged.", { exact: false })).toBeVisible();
+  await remove.getByRole("button", { name: "Remove target" }).click();
   await expect(companies.getByRole("link", { name: "Example Labs" })).toBeHidden();
   await page.reload();
   await page.getByRole("button", { name: "Undo" }).click();
@@ -56,20 +64,20 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
 });
 
 test("sourcing preferences control the shortlist maximum without padding", async ({ demo: page }) => {
-  await appLink(page, "Watchlist").click();
+  await appLink(page, "Today").click();
   await page.getByRole("link", { name: "Sourcing preferences" }).click();
   await page.getByRole("spinbutton", { name: "Daily target number" }).fill("1");
   await page.getByRole("button", { name: "Save preferences" }).click();
   await page.getByRole("link", { name: "Back to Today" }).click();
-  await expect(page.getByText("Your target: 1 maximum")).toBeVisible();
+  await expect(page.getByText("Your target:", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Ranked roles" }).getByRole("article")).toHaveCount(1);
 });
 
 test("Today persists Later and unpicking without preparing a kit", async ({ demo: page }) => {
-  await appLink(page, "Watchlist").click();
+  await appLink(page, "Today").click();
   const title = "Product Manager, Growth";
   const pick = page.getByRole("button", { name: "Pick " + title, exact: true });
-  const prepare = page.getByRole("button", { name: "Prepare your kits", exact: true });
+  const prepare = page.getByRole("button", { name: /^Prepare \d+ kits?$/ });
   const views = page.getByRole("navigation", { name: "Shortlist view" });
   await pick.click();
   await expect(pick).toHaveAttribute("aria-pressed", "true");
@@ -77,7 +85,7 @@ test("Today persists Later and unpicking without preparing a kit", async ({ demo
   await expect(pick).toHaveAttribute("aria-pressed", "true");
   await pick.click();
   await expect(pick).toHaveAttribute("aria-pressed", "false");
-  await expect(prepare).toBeDisabled();
+  await expect(prepare).toHaveCount(0);
 
   await page.getByRole("button", { name: "Later: " + title, exact: true }).click();
   await expect(pick).toHaveCount(0);
@@ -87,9 +95,9 @@ test("Today persists Later and unpicking without preparing a kit", async ({ demo
   await expect(page.getByRole("region", { name: "Later", exact: true }).getByRole("heading", { name: title })).toBeVisible();
   await page.getByRole("button", { name: "Restore " + title, exact: true }).click();
   await expect(page.getByRole("heading", { name: "No roles in this view" })).toBeVisible();
-  await views.getByRole("link", { name: /^Ranked roles · / }).click();
+  await views.getByRole("link", { name: /^Ranked · / }).click();
   await expect(pick).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByText("Your unfinished kits will stay here until you apply.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Saved kits" })).toHaveCount(0);
 });
 
 test("Network adds a contact and logs a conversation without leaking it into another demo", async ({ demo: page, browser, baseURL }) => {
@@ -168,10 +176,10 @@ test("Experience creates, revises and deletes a point in the evidence bank", asy
 
 test("Assistant shows setup instructions but does not issue keys to demo users", async ({ demo: page }) => {
   await appLink(page, "Assistant").click();
-  await expect(page.getByRole("heading", { name: "AI assistant", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connect an assistant", exact: true })).toBeVisible();
   await page.getByText("Technical details", { exact: true }).click();
   await expect(page.getByText("It connects over MCP", { exact: false })).toBeVisible();
-  await expect(page.getByText("Keys need a signed-in account", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/signin");
   await expect(page.getByRole("button", { name: "Create key" })).toHaveCount(0);
 });
 

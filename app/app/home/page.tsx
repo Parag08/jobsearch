@@ -7,11 +7,11 @@ import { listContacts, listInteractionDates } from "@/lib/repos/contacts";
 import { listAttempts } from "@/lib/repos/answers";
 import { listCaseSessions } from "@/lib/repos/case-sessions";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
+import { listRoleQuestions } from "@/lib/repos/role-questions";
 import { listProjects } from "@/lib/repos/projects";
 import { staleApplications } from "@/lib/pipeline";
 import { followupsDue } from "@/lib/outreach";
-import { needsMetric } from "@/lib/onboarding";
-import { momentum, type Activity, type Momentum, type NextStep, type GoalKey } from "@/lib/home/momentum";
+import { momentum, type Activity, type NextStep, type GoalKey } from "@/lib/home/momentum";
 import { homeGoalsFromEnv } from "@/lib/home/settings";
 import { getProfile } from "@/lib/repos/profiles";
 import { roleFamilies, roleInsights } from "@/lib/insights/role-insights";
@@ -31,26 +31,6 @@ export const dynamic = "force-dynamic";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-function headline(m: Momentum): { title: string; body: string } {
-  const week = `This week: ${plural(m.week.applied, "application")} sent, ${plural(m.week.reachedOut, "conversation")}, ${plural(m.week.practised, "practice run")}.`;
-  switch (m.mood) {
-    case "start":
-      return { title: "Your search starts with one job.", body: "Paste a posting and JobSearch builds the application around your own experience." };
-    case "offer":
-      return { title: m.offers === 1 ? "You have an offer on the table." : `You have ${m.offers} offers on the table.`, body: "Every application before it got you here. Weigh it carefully, and negotiate." };
-    case "interviews":
-      return { title: `${plural(m.live, "interview")} in play.`, body: "Practice is the part you control. One story out loud today makes the next round easier." };
-    case "goal-met":
-      return { title: "You hit this week's goal.", body: `${week} Steady weeks win searches. Keep the run going.` };
-    case "streak":
-      return { title: `${m.streak} days in a row.`, body: `${week} Small steps every day add up faster than big bursts.` };
-    case "quiet":
-      return { title: "A quiet week. One action restarts it.", body: "Send one application or one message today. Momentum comes back faster than it feels." };
-    default:
-      return { title: "You're moving.", body: week };
-  }
-}
-
 function stepCopy(n: NextStep, savedCompany: string | undefined): { text: string; href: string } {
   switch (n.kind) {
     case "follow-up":
@@ -65,7 +45,7 @@ function stepCopy(n: NextStep, savedCompany: string | undefined): { text: string
     case "add":
       return { text: "Add your first job", href: "/app" };
     case "roles":
-      return { text: `Look at ${plural(n.count, "new role")} on your watchlist`, href: "/app/watchlist" };
+      return { text: `Review ${plural(n.count, "new role")} in Today`, href: "/app/watchlist" };
     default:
       return { text: "Practise one question out loud", href: "/app/interview" };
   }
@@ -129,7 +109,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile] = await Promise.all([
+  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile, roleQuestions] = await Promise.all([
     listApplications(db, userId),
     listContacts(db, userId),
     listInteractionDates(db, userId),
@@ -138,10 +118,10 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     listSourcedJobs(db, userId),
     listProjects(db, userId),
     getProfile(db, userId),
+    listRoleQuestions(db, userId).catch(() => []),
   ]);
 
   const openRoles = jobs.filter((j) => j.status === "new" || j.status === "shortlisted").length;
-  const finishedCases = cases.filter((c) => c.status === "done" && c.overall !== null);
   const m = momentum({
     today,
     applications: apps.map((a) => ({ id: a.id, company: a.company, stage: a.stage, savedAt: a.savedAt, appliedAt: a.appliedAt })),
@@ -156,24 +136,12 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     goals: homeGoalsFromEnv(await envFor(db, userId)),
   });
 
-  const { title, body } = headline(m);
   const company = (id?: string) => apps.find((a) => a.id === id)?.company;
   const steps = m.next.map((n) => stepCopy(n, company(n.applicationId)));
   const primary = steps[0]!;
 
-  const open = apps.filter((a) => a.stage !== "closed").length;
-  const bullets = projects.flatMap((p) => p.bullets);
-  const thin = bullets.filter((b) => needsMetric(b.text)).length;
-  const practisedQuestions = new Set(attempts.map((a) => a.questionId)).size;
-  const bestCase = finishedCases.reduce<number | null>((best, c) => (best === null || (c.overall ?? 0) > best ? c.overall : best), null);
-
-  const reports = [
-    { href: "/app", name: "Pipeline", value: plural(open, "open application"), sub: m.live ? `${m.live} in interviews` : `${m.tries} sent so far`, tone: "var(--stage-interview)" },
-    { href: "/app/bank", name: "Experience", value: plural(bullets.length, "point"), sub: thin ? `${thin} could use a number` : "All points carry a number", tone: "var(--stage-applied)" },
-    { href: "/app/watchlist", name: "Watchlist", value: plural(openRoles, "open role"), sub: openRoles ? "Waiting for a look" : "Add a company to watch", tone: "var(--stage-screening)" },
-    { href: "/app/interview", name: "Interview", value: plural(practisedQuestions, "question"), sub: practisedQuestions ? "practised out loud" : "Not practised yet", tone: "var(--warm)" },
-    { href: "/app/interview?tab=casing", name: "Cases", value: plural(finishedCases.length, "case"), sub: bestCase !== null ? `Best ${bestCase.toFixed(1)} / 5` : "Not tried yet", tone: "var(--stage-case)" },
-  ];
+  const interview = apps.find((a) => a.stage === "interview" || a.stage === "case");
+  const round = interview && roleQuestions.find((question) => question.applicationId === interview.id && question.round)?.round;
 
   const insights = tab === "insights" ? roleInsights(apps, projects, profile?.taxonomy ?? { tags: {} }) : null;
   const families = tab === "insights" ? roleFamilies(apps) : [];
@@ -182,13 +150,12 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   return (
     <>
       <section className={ui.homeHero} aria-labelledby="home-title">
-        <h1 id="home-title">{title}</h1>
-        <p>{body}</p>
+        <h1 id="home-title">{primary.text}</h1>
+        {interview && <p>{[interview.role, interview.company, round ?? interview.nextAction].filter(Boolean).join(" · ")}</p>}
         <div className={ui.homeHeroActions}>
-          <Link href={primary.href} className={ui.btn} data-primary="">
-            {primary.text}
+          <Link href={primary.href} className={ui.btn} aria-label={primary.text} data-primary="">
+            Open
           </Link>
-          {m.tries > 0 && <span className={ui.homeTries}>{plural(m.tries, "application")} sent so far. Most close, and every one sharpens the next.</span>}
         </div>
       </section>
 
@@ -222,18 +189,6 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             </section>
           )}
 
-          <section aria-labelledby="reports-title" className={ui.stack}>
-            <h2 id="reports-title">Across your search</h2>
-            <div className={ui.reports}>
-              {reports.map((r) => (
-                <Link key={r.name} href={r.href} className={ui.report} style={{ "--tone": r.tone } as React.CSSProperties}>
-                  <span className={ui.reportName}>{r.name}</span>
-                  <b>{r.value}</b>
-                  <span>{r.sub}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
         </>
       ) : insights && insights.roles > 0 ? (
         <>

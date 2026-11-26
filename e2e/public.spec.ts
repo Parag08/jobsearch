@@ -54,7 +54,7 @@ test.describe("phone navigation", () => {
     const menu = app.getByRole("navigation", { name: "Pages" });
     await expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
     await menu.getByRole("link", { name: "Pipeline" }).click();
-    await expect(demo.getByRole("heading", { name: "Pipeline" })).toBeVisible();
+    await expect(demo.getByRole("heading", { name: "Applications", exact: true })).toBeVisible();
     await expect(menu).toBeHidden();
     await app.getByRole("button", { name: "Pipeline" }).click();
     await demo.keyboard.press("Escape");

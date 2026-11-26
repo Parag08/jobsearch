@@ -553,8 +553,7 @@ export function FullInterview({
                 ? "A general behavioural interview from the question bank, starting with the areas you have practised least."
                 : card.interviewer
                   ? `You'll be interviewed by ${card.interviewer}.`
-                  : `A hiring manager at ${card.company} for the ${card.role} role.`}{" "}
-              It follows your answers: weak spots get probed, strong ones get a deeper “why”.
+                  : `A hiring manager at ${card.company} for the ${card.role} role.`}
             </p>
           </div>
         </div>

@@ -6,7 +6,7 @@ async function openPractice(page: Page) {
   await appLink(page, "Interview").click();
   await expect(page.getByRole("heading", { name: "Interview prep" })).toBeVisible();
   const preparation = page.getByRole("navigation", { name: "Preparing for" });
-  await preparation.getByRole("link", { name: /Practice Any interview/ }).click();
+  await preparation.getByRole("link", { name: "Practice", exact: true }).click();
   return page.getByRole("navigation", { name: "Practice", exact: true });
 }
 
@@ -15,7 +15,7 @@ test("Interview prep switches company, question and technical views and keeps wr
   const preparation = page.getByRole("navigation", { name: "Preparing for" });
   await preparation.getByRole("link", { name: /Kestrel AI/ }).click();
   await expect(page.getByRole("heading", { name: /Kestrel AI/ })).toBeVisible();
-  await preparation.getByRole("link", { name: /Practice Any interview/ }).click();
+  await preparation.getByRole("link", { name: "Practice", exact: true }).click();
   await tabs.getByRole("link", { name: "Questions" }).click();
   const questions = page.getByRole("complementary", { name: "Questions" }).getByRole("link").filter({ has: page.locator("span[title]") });
   const first = questions.nth(0);
