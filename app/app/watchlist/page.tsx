@@ -87,6 +87,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
             const company = source.companyByName.get(norm(job.company));
             const board = boardForRole(configured, job);
             const review = source.reviews[job.id];
+            const pickLabel = picks.has(job.id) ? "Picked" : "Pick role";
             return (
               <article className={ui.panel + " " + s.role} key={job.id} id={"role-" + job.id}>
                 <div>
@@ -101,7 +102,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
                 <div className={s.roleActions}>
                   {view === "ranked" ? <>
                     <form action={triageRole.bind(null, job.id, picks.has(job.id) ? "available" : "picked", view)}>
-                      <PendingButton label={picks.has(job.id) ? "Picked" : "Pick role"} primary pressed={picks.has(job.id)} ariaLabel={"Pick " + job.title} />
+                      <PendingButton label={pickLabel} primary pressed={picks.has(job.id)} ariaLabel={pickLabel + " " + job.title} />
                     </form>
                     <form action={triageRole.bind(null, job.id, "later", view)}>
                       <PendingButton label="Later" ariaLabel={"Later: " + job.title} />

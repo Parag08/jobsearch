@@ -1,6 +1,8 @@
 import { appLink, enterDemo, expect, test } from "./demo";
 
 test("Overview switches between progress and market insights and links to Pipeline", async ({ demo: page }) => {
+  const mainHeading = await page.getByRole("heading", { level: 1 }).textContent();
+  await expect(page.getByRole("link", { name: "Open " + mainHeading, exact: true })).toHaveText("Open");
   const overview = page.getByRole("navigation", { name: "Overview", exact: true });
   await expect(overview.getByRole("link", { name: "Progress" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("region", { name: "Your streaks" })).toBeVisible();
@@ -76,14 +78,15 @@ test("sourcing preferences control the shortlist maximum without padding", async
 test("Today persists Later and unpicking without preparing a kit", async ({ demo: page }) => {
   await appLink(page, "Today").click();
   const title = "Product Manager, Growth";
-  const pick = page.getByRole("button", { name: "Pick " + title, exact: true });
+  const pick = page.getByRole("button", { name: "Pick role " + title, exact: true });
+  const picked = page.getByRole("button", { name: "Picked " + title, exact: true });
   const prepare = page.getByRole("button", { name: /^Prepare \d+ kits?$/ });
   const views = page.getByRole("navigation", { name: "Shortlist view" });
   await pick.click();
-  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await expect(picked).toHaveAttribute("aria-pressed", "true");
   await page.reload();
-  await expect(pick).toHaveAttribute("aria-pressed", "true");
-  await pick.click();
+  await expect(picked).toHaveAttribute("aria-pressed", "true");
+  await picked.click();
   await expect(pick).toHaveAttribute("aria-pressed", "false");
   await expect(prepare).toHaveCount(0);
 

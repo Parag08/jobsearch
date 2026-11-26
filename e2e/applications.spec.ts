@@ -36,7 +36,7 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
 
 test("a picked role becomes a safe kit and only confirmation moves it to Applied", async ({ demo: page }, testInfo) => {
   await appLink(page, "Today").click();
-  await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
+  await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
   await expect(page.getByText("1 role picked")).toBeVisible();
   await expect(page.getByRole("link", { name: "Product Manager, Growth · Orchard Commerce" })).toHaveCount(0);
   await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
@@ -98,7 +98,7 @@ test("a missing application offers a pipeline recovery link", async ({ demo: pag
 
 test("a safe kit saves a portal answer request and can record different submission materials", async ({ demo: page }) => {
   await appLink(page, "Today").click();
-  await page.getByRole("button", { name: "Pick Product Manager, Growth", exact: true }).click();
+  await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
   await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   await page.getByText("Portal answers · Optional", { exact: false }).click();

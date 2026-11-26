@@ -153,7 +153,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         <h1 id="home-title">{primary.text}</h1>
         {interview && <p>{[interview.role, interview.company, round ?? interview.nextAction].filter(Boolean).join(" · ")}</p>}
         <div className={ui.homeHeroActions}>
-          <Link href={primary.href} className={ui.btn} aria-label={primary.text} data-primary="">
+          <Link href={primary.href} className={ui.btn} aria-label={"Open " + primary.text} data-primary="">
             Open
           </Link>
         </div>
