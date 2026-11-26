@@ -65,9 +65,9 @@ export const SETTINGS: readonly Setting[] = [
   { key: "PIPELINE_COLUMN_MAX", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 100 }, unit: "cards", label: "Cards per column", help: "Cards a board column shows before the rest fold under \"Show more\"." },
 
   // ---- Weekly goals
-  { key: "HOME_GOAL_APPLY", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Applications", help: "Your weekly target, shown as a ring on the Overview." },
-  { key: "HOME_GOAL_REACH_OUT", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "People reached out to", help: "Your weekly target, shown as a ring on the Overview." },
-  { key: "HOME_GOAL_PRACTISE", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Practice sessions", help: "Your weekly target, shown as a ring on the Overview." },
+  { key: "HOME_GOAL_APPLY", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Applications", help: "Your weekly target, shown under “This week” on the Overview streak card." },
+  { key: "HOME_GOAL_REACH_OUT", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "People reached out to", help: "Your weekly target, shown under “This week” on the Overview streak card." },
+  { key: "HOME_GOAL_PRACTISE", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Practice sessions", help: "Your weekly target, shown under “This week” on the Overview streak card." },
 
   // ---- Role insights
   { key: "ROLE_READ_BATCH", group: "Role insights", kind: { type: "int", min: 1, max: 50 }, unit: "roles", label: "Roles read per click", help: "How many unread roles one click of \"Read them\" sends to the reading model." },

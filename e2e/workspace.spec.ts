@@ -109,16 +109,18 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
   await website.fill("https://example.com");
   await dialog.getByRole("button", { name: "Add company" }).click();
   const companies = page.getByRole("region", { name: "All target companies" });
-  await expect(companies.getByRole("link", { name: "Example Labs" })).toBeVisible();
+  await expect(companies.getByRole("link", { name: "Example Labs", exact: true })).toBeVisible();
+  const addedCompany = companies.getByRole("listitem").filter({ has: page.getByRole("link", { name: "Example Labs", exact: true }) });
+  await expect(addedCompany.getByRole("link", { name: /^Not requested.*research/i })).toHaveText("Not requested");
   await testInfo.attach("Target companies", { body: await page.screenshot({ path: testInfo.outputPath("target-companies.png") }), contentType: "image/png" });
   await companies.getByRole("button", { name: "Remove Example Labs" }).click();
   const remove = page.getByRole("dialog", { name: "Remove Example Labs?" });
   await expect(remove.getByText("Saved roles, research and people are unchanged.", { exact: false })).toBeVisible();
   await remove.getByRole("button", { name: "Remove target" }).click();
-  await expect(companies.getByRole("link", { name: "Example Labs" })).toBeHidden();
+  await expect(companies.getByRole("link", { name: "Example Labs", exact: true })).toBeHidden();
   await page.reload();
   await page.getByRole("button", { name: "Undo" }).click();
-  await companies.getByRole("link", { name: "Example Labs" }).click();
+  await companies.getByRole("link", { name: "Example Labs", exact: true }).click();
   await page.getByRole("textbox", { name: "Public ATS board URL" }).fill("https://jobs.lever.co/example-typo");
   await page.getByRole("button", { name: "Connect board" }).click();
   await page.getByText("Replace board", { exact: true }).click();
@@ -249,12 +251,16 @@ test("Assistant shows setup instructions but does not issue keys to demo users",
   await expect(page.getByRole("heading", { name: "Connect an assistant", exact: true })).toBeVisible();
   await page.getByText("Technical details", { exact: true }).click();
   await expect(page.getByText("It connects over MCP", { exact: false })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Connection steps" }).getByRole("listitem").first())
+    .toHaveText("Sign in to create a key, then copy it.");
   await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/signin");
   await expect(page.getByRole("button", { name: "Create key" })).toHaveCount(0);
 });
 
 test("Settings saves a board preference across a reload", async ({ demo: page }) => {
   await appLink(page, "Settings").click();
+  const goals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Weekly goals", exact: true }) });
+  await expect(goals.getByText(/Your weekly target, shown under “This week” on the Overview streak card\./)).toHaveCount(3);
   const setting = page.getByLabel("Cards per column", { exact: false });
   await setting.fill("3");
   await page.getByRole("button", { name: /Save settings/i }).click();

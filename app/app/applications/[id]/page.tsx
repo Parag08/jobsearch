@@ -155,7 +155,7 @@ export default async function ApplicationPage({
                 <li key={st} className={s.step} data-state={state} style={{ "--stage": `var(--stage-${st})` } as React.CSSProperties}>
                   {canTransition(app.stage, st) ? (
                     <form action={moveStage.bind(null, app.id, st, undefined)}>
-                      <button type="submit" className={s.stepBtn} aria-label={`Move to ${label}`}>
+                      <button type="submit" className={s.stepBtn} aria-label={`${label} — move application to this stage`}>
                         <span className={s.stepDot} aria-hidden="true" />
                         <span>{label}</span>
                       </button>

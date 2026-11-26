@@ -39,10 +39,9 @@ export default async function AgentAccess() {
         </div>
       </div>
 
-      {!live && <p className={ui.panel}><Link href="/signin">Sign in</Link> to create a key.</p>}
       <section className={ui.panel} aria-label="Connection steps">
         <ol className={a.howto}>
-          <li>Create a key below, and copy it.</li>
+          {live ? <li>Create a key below, then copy it.</li> : <li><Link href="/signin">Sign in</Link> to create a key, then copy it.</li>}
           <li>
             Run this where your assistant runs, with your key in place of <code>&lt;token&gt;</code>:
             <div className={a.codeRow}>

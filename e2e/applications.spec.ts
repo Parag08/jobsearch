@@ -18,6 +18,7 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Example Labs");
   const stage = page.getByRole("region", { name: "Stage" });
   await expect(stage.locator('[aria-current="step"]')).toHaveText("Saved");
+  await expect(stage.getByRole("button", { name: /^Applied\b/ })).toHaveText("Applied");
 
   const step = stage.getByRole("textbox", { name: "Next step" });
   const updated = page.waitForResponse((r) => r.request().method() === "POST" && r.url() === page.url());

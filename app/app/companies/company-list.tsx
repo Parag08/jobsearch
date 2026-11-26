@@ -47,7 +47,7 @@ export function CompanyList({ companies }: { companies: CompanyListItem[] }) {
               <strong><Link href={path}>{company.name}</Link></strong>
               <span>{company.connected ? "Connected" : "Setup needed"}</span>
               <Link href={path + "#company-roles"}>{company.matching} {company.matching === 1 ? "role" : "roles"}</Link>
-              <Link href={path + "?view=research"} aria-label={"Research: " + company.research}>{company.research}</Link>
+              <Link href={path + "?view=research"} aria-label={`${company.research} — research for ${company.name}`}>{company.research}</Link>
               <Link href={path + "?view=network"}>{company.connections} {company.connections === 1 ? "person" : "people"}</Link>
               <SourcingDialog trigger="Remove" triggerLabel={"Remove " + company.name} title={"Remove " + company.name + "?"}>
                 <form action={toggleTargetCompany.bind(null, company.id, false)} className={s.form}>
