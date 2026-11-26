@@ -52,6 +52,10 @@ test.describe("phone navigation", () => {
     const app = demo.getByRole("navigation", { name: "App", exact: true });
     await app.getByRole("button", { name: "Overview" }).click();
     const menu = app.getByRole("navigation", { name: "Pages" });
+    const links = menu.getByRole("link");
+    await expect(links.nth(0)).toHaveText("Overview");
+    await expect(links.nth(1)).toHaveText("Today");
+    await expect(links.nth(2)).toHaveText("Pipeline");
     await expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
     await menu.getByRole("link", { name: "Pipeline" }).click();
     await expect(demo.getByRole("heading", { name: "Applications", exact: true })).toBeVisible();

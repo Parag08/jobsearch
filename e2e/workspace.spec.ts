@@ -1,6 +1,10 @@
 import { appLink, enterDemo, expect, test } from "./demo";
 
 test("Today replaces Watchlist in navigation without changing its bookmarked URL", async ({ demo: page }) => {
+  const links = page.getByRole("navigation", { name: "App", exact: true }).getByRole("link");
+  await expect(links.nth(0)).toHaveAccessibleName("JobSearch, overview");
+  await expect(links.nth(1)).toHaveText("Today");
+  await expect(links.nth(2)).toHaveText("Pipeline");
   await expect(appLink(page, "Watchlist")).toHaveCount(0);
   await expect(appLink(page, "Today")).toHaveAttribute("href", "/app/watchlist");
   await page.goto("/app/watchlist");

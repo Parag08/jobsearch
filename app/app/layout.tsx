@@ -15,9 +15,9 @@ import styles from "./app.module.css";
  */
 const NAV = [
   ["/app/home", "Overview"],
+  ["/app/watchlist", "Today"],
   ["/app", "Pipeline"],
   ["/app/interview", "Interview"],
-  ["/app/watchlist", "Today"],
   ["/app/companies", "Companies"],
   ["/app/network", "Network"],
   ["/app/bank", "Experience"],
