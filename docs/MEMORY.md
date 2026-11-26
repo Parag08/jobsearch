@@ -4,6 +4,10 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-26 - Workspace content polish
 
+Today is the first workspace tab after JobSearch (Overview) and before Pipeline. Overview remains the default workspace landing page.
+
+PR #51 QA covers clicking Today and returning to Overview on desktop, and tapping Today and checking the current page in the phone menu. Live Google OAuth remains outside the credential-free browser suite.
+
 Companies, Today, kits and the audited workspace pages now lead with records and actions. Today keeps the existing /app/watchlist route. Company removal explains its scope before confirmation and still offers Undo. Kits still require exact-content review and actual-submission confirmation. Home's hero shows only the recommended task and its link, without unrelated interview context.
 
 Home's roles recommendation uses the same Ranked list as Today, including picked roles retained outside the ranking limit, rather than counting every new or shortlisted posting.
