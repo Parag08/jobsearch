@@ -245,6 +245,74 @@ test("Insights filters the evidence summary by job title and clears the filter",
   await expect(rolesRead).toHaveText(originalSelection);
 });
 
+test("Role insights shows loading while the Pipeline tab is opening", async ({ demo: page }, testInfo) => {
+  await appLink(page, "Pipeline").click();
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route((url) => url.pathname === "/app" && url.searchParams.get("view") === "insights", async (route) => {
+    await pending;
+    await route.continue();
+  });
+
+  const tabs = page.getByRole("navigation", { name: "Pipeline views" });
+  const tab = tabs.getByRole("link", { name: "Role insights", exact: true });
+  await expect(tabs.getByRole("status")).toBeEmpty();
+  try {
+    await tab.click();
+    await expect(tabs.getByRole("status")).toHaveText("Loading…");
+    await expect(tab).not.toHaveAttribute("aria-current", "page");
+    await testInfo.attach("Role insights loading", { body: await page.screenshot(), contentType: "image/png" });
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("heading", { name: "Insights", exact: true })).toBeVisible();
+  await expect(tab).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("status")).toBeEmpty();
+});
+
+test("Role insights excludes sourcing kits but includes their separately pasted postings", async ({ demo: page }, testInfo) => {
+  await appLink(page, "Today").click();
+  await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
+  await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/applications\//);
+  await appLink(page, "Pipeline").click();
+  await page.getByRole("link", { name: "Role insights", exact: true }).click();
+
+  const excluded = page.getByRole("region", { name: "Excluded roles" });
+  await expect(excluded).toContainText("1 role is excluded from Role insights");
+  await expect(excluded).toContainText("1 safe sourcing kit");
+  await expect(excluded).toContainText("paste its posting as a regular job in Pipeline");
+  const search = page.getByRole("search");
+  await search.getByRole("searchbox").fill("Growth");
+  await search.getByRole("button", { name: "Filter" }).click();
+  await expect(page.getByText("No read roles match this filter.", { exact: true })).toBeVisible();
+  await expect(excluded).toBeVisible();
+  await expect(page.getByRole("region", { name: "Summary" })).toHaveCount(0);
+  await expect(page.getByText("Nothing these roles ask for is missing from your history.")).toHaveCount(0);
+  await testInfo.attach("Excluded kit and empty filter", { body: await page.screenshot(), contentType: "image/png" });
+
+  await excluded.getByRole("link", { name: "Pipeline", exact: true }).click();
+  await page.getByRole("button", { name: "Add a job", exact: true }).and(page.locator("[aria-controls]")).click();
+  await page.getByRole("textbox", { name: "Job posting" }).fill(
+    "Product Manager, Growth\nCompany: Orchard Commerce\nOwn the product roadmap, run customer research and measure adoption in Singapore.",
+  );
+  await page.getByRole("button", { name: "Add to pipeline" }).click();
+  await expect(page.getByRole("heading", { name: "Orchard Commerce", exact: true })).toBeVisible();
+  await appLink(page, "Pipeline").click();
+  await page.getByRole("link", { name: "Role insights", exact: true }).click();
+  await page.getByRole("navigation", { name: "Role families" }).getByRole("link", { name: /^General\b/ }).click();
+  await search.getByRole("searchbox").fill("Growth");
+  await search.getByRole("button", { name: "Filter" }).click();
+  const summary = page.getByRole("region", { name: "Summary" });
+  await expect(summary.getByText("Roles read · General, “Growth”", { exact: true })).toBeVisible();
+  await expect(summary.getByText("1", { exact: true })).toBeVisible();
+  await expect(excluded).toContainText("1 safe sourcing kit");
+  await page.reload();
+  await expect(summary.getByText("Roles read · General, “Growth”", { exact: true })).toBeVisible();
+  await expect(excluded).toContainText("1 safe sourcing kit");
+  await testInfo.attach("Matching read role", { body: await page.screenshot(), contentType: "image/png" });
+});
+
 test("Experience creates, revises and deletes a point in the evidence bank", async ({ demo: page }) => {
   await appLink(page, "Experience").click();
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible();

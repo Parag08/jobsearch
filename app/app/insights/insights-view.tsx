@@ -8,7 +8,7 @@ import { getProfile } from "@/lib/repos/profiles";
 import { getRolePlan } from "@/lib/repos/role-plans";
 import { unreadRoleIds } from "@/lib/services/read-role";
 import { planKey } from "@/lib/services/role-plan";
-import { roleFamilies, roleInsights, selectRoles, type RoleSelector } from "@/lib/insights/role-insights";
+import { roleFamilies, roleInsights, roleReadCoverage, selectRoles, type RoleSelector } from "@/lib/insights/role-insights";
 import { rolePlanMaxGapsFromEnv, roleReadBatchFromEnv } from "@/lib/insights/settings";
 import { STATUS_LABEL, STATUS_ORDER, STATUS_SUB, STATUS_TONE, basedOn, statusCounts } from "@/lib/insights/display";
 import { familyLabel } from "@/lib/pipeline-display";
@@ -32,12 +32,13 @@ export async function Insights({ params: sp }: { params: Params }) {
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [apps, projects, profile] = await Promise.all([listApplications(db, userId), listProjects(db, userId), getProfile(db, userId)]);
+  const [apps, projects, profile, unreadIds, env] = await Promise.all([
+    listApplications(db, userId), listProjects(db, userId), getProfile(db, userId), unreadRoleIds(db, userId), envFor(db, userId),
+  ]);
   const taxonomy = profile?.taxonomy ?? { tags: {} };
-  const unread = (await unreadRoleIds(db, userId)).length;
+  const coverage = roleReadCoverage(apps, unreadIds);
   const families = roleFamilies(apps);
   const readTotal = families.reduce((n, f) => n + f.roles, 0);
-  const env = await envFor(db, userId);
   const readBatch = roleReadBatchFromEnv(env);
   const planEnabled = rolePlanMaxGapsFromEnv(env) !== undefined;
 
@@ -130,13 +131,20 @@ export async function Insights({ params: sp }: { params: Params }) {
 
       {sp.error && <p className={s.alert} role="alert">{sp.error}</p>}
 
+      {(coverage.excluded > 0 || sp.read !== undefined) && (
+        <UnreadNotice coverage={coverage} readBatch={readBatch} selection={selection} justRead={sp.read !== undefined ? Number(sp.read) : undefined} failed={failed} />
+      )}
+
       {families.length === 0 ? (
         <section className={ui.panel}>
-          <p className={ui.none}>
-            Nothing has been read yet. Add a job to your <Link href="/app">pipeline</Link> and its requirements show up here once
-            the posting is read.
-          </p>
-          {unread > 0 && <UnreadNotice unread={unread} readBatch={readBatch} selection={selection} />}
+          {active ? (
+            <p className={ui.none}>No read roles match this filter. <Link href="/app?view=insights">Clear filters</Link></p>
+          ) : (
+            <p className={ui.none}>
+              Nothing has been read yet. Add a job to your <Link href="/app">pipeline</Link> and its requirements show up here once
+              the posting is read.
+            </p>
+          )}
         </section>
       ) : (
         <>
@@ -165,7 +173,12 @@ export async function Insights({ params: sp }: { params: Params }) {
             </form>
           </nav>
 
-          {insights && (
+          {insights?.roles === 0 && (
+            <section className={ui.panel}>
+              <p className={ui.none}>No read roles match this filter.</p>
+            </section>
+          )}
+          {insights && insights.roles > 0 && (
             <section className={ui.panel} aria-label="Summary">
               <div className={ui.summary}>
                 <div className={ui.sumStat}>
@@ -198,9 +211,6 @@ export async function Insights({ params: sp }: { params: Params }) {
                   </span>
                 </div>
               </div>
-              {(unread > 0 || sp.read !== undefined) && (
-                <UnreadNotice unread={unread} readBatch={readBatch} selection={selection} justRead={sp.read !== undefined ? Number(sp.read) : undefined} failed={failed} />
-              )}
             </section>
           )}
 
@@ -214,15 +224,14 @@ export async function Insights({ params: sp }: { params: Params }) {
   );
 }
 
-/** "3 saved roles haven't been read yet" with the button beside it, or the result of reading. */
 function UnreadNotice({
-  unread,
+  coverage: { excluded, safeKits, needsPosting, readyToRead },
   readBatch,
   selection,
   justRead,
   failed = 0,
 }: {
-  unread: number;
+  coverage: ReturnType<typeof roleReadCoverage>;
   readBatch: number | undefined;
   selection: React.ReactNode;
   justRead?: number;
@@ -233,21 +242,39 @@ function UnreadNotice({
       ? `Read ${justRead} ${justRead === 1 ? "role" : "roles"}${failed > 0 ? `; ${failed} couldn't be read` : ""}.`
       : null;
   return (
-    <div className={ui.notice} data-tone={failed > 0 ? "attention" : undefined} role="status">
-      <span>
-        {result}
-        {result && unread > 0 ? " " : ""}
-        {unread > 0 && `${unread} saved ${unread === 1 ? "role hasn't" : "roles haven't"} been read yet.`}
-        {unread > 0 && readBatch === undefined && " Reading roles isn't switched on for this workspace."}
-      </span>
-      {unread > 0 && readBatch !== undefined && (
-        <form action={readUnreadRolesAction}>
-          {selection}
-          <button className={ui.btn} type="submit">
-            Read {Math.min(unread, readBatch)} now
-          </button>
-        </form>
+    <section className={ui.panel} aria-label="Excluded roles">
+      {result && <p className={failed > 0 ? s.alert : ui.none} role="status">{result}</p>}
+      {excluded > 0 && (
+        <p className={ui.none}>
+          {excluded} {excluded === 1 ? "role is" : "roles are"} excluded from Role insights because {excluded === 1 ? "its posting hasn’t" : "their postings haven’t"} been read.
+        </p>
       )}
-    </div>
+      {safeKits > 0 && (
+        <p className={ui.none}>
+          {safeKits} safe sourcing {safeKits === 1 ? "kit doesn’t" : "kits don’t"} store a posting. For insights, paste {safeKits === 1 ? "its posting as a regular job" : "their postings as regular jobs"} in <Link href="/app">Pipeline</Link>.
+        </p>
+      )}
+      {needsPosting > 0 && (
+        <p className={ui.none}>
+          {needsPosting} {needsPosting === 1 ? "role has" : "roles have"} no posting saved. Open {needsPosting === 1 ? "the role" : "each role"} in <Link href="/app">Pipeline</Link> to paste and read the posting.
+        </p>
+      )}
+      {readyToRead > 0 && (
+        <div className={ui.notice}>
+          <span>
+            {readyToRead} {readyToRead === 1 ? "role has a posting ready to read." : "roles have postings ready to read."}
+            {readBatch === undefined && <> Open {readyToRead === 1 ? "the role" : "each role"} in <Link href="/app">Pipeline</Link> to read the posting.</>}
+          </span>
+          {readBatch !== undefined && (
+            <form action={readUnreadRolesAction}>
+              {selection}
+              <button className={ui.btn} type="submit">
+                Read {Math.min(readyToRead, readBatch)} now
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

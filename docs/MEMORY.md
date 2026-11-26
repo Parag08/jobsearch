@@ -8,6 +8,10 @@ Today is the first workspace tab after JobSearch (Overview) and before Pipeline.
 
 PR #51 QA covers clicking Today and returning to Overview on desktop, and tapping Today and checking the current page in the phone menu. Live Google OAuth remains outside the credential-free browser suite.
 
+Pipeline Role insights now shows when its tab is opening, explains which roles are excluded and how to get a posting read, and shows an empty state when no read roles match a filter. Opening the tab makes no model calls; one projected query finds unread postings. Safe kits still store neither posting text nor extracts.
+
+PR #52 QA covers the PostgREST query shape and the demo path from a safe kit excluded from Role insights to a separately pasted posting counted after reload. This does not exercise live sign-in or Supabase data.
+
 Companies, Today, kits and the audited workspace pages now lead with records and actions. Today keeps the existing /app/watchlist route. Company removal explains its scope before confirmation and still offers Undo. Kits still require exact-content review and actual-submission confirmation. Home's hero shows only the recommended task and its link, without unrelated interview context.
 
 Home's roles recommendation uses the same Ranked list as Today, including picked roles retained outside the ranking limit, rather than counting every new or shortlisted posting.

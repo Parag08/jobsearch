@@ -1,10 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { createClient } from "@supabase/supabase-js";
+import { describe, it, expect, vi } from "vitest";
+import { asDbClient } from "../db/supabase";
 import type { Application } from "../types";
 import { FakeDb } from "./fake-db";
 import {
   getApplication,
   insertApplication,
   listApplications,
+  listUnextractedPostings,
   updateApplication,
   type NewApplication,
 } from "./applications";
@@ -64,5 +67,24 @@ describe("applications repo", () => {
     await insertApplication(db, "u2", { ...base, company: "Other" });
     const apps = await listApplications(db, "u1");
     expect(apps.map((a) => a.company)).toEqual(["New", "Old"]);
+  });
+
+  it("requests only posting IDs and text for the user's SQL-null extracts over PostgREST", async () => {
+    const rows = [{ id: "unread", jd_raw: "Job posting" }, { id: "no-posting", jd_raw: null }];
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json(rows));
+    const db = asDbClient(createClient("https://supabase.example", "test-key", { global: { fetch } }));
+
+    expect(await listUnextractedPostings(db, "u1")).toEqual(rows);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [request, init] = fetch.mock.calls[0]!;
+    const url = new URL(String(request));
+    expect(init?.method).toBe("GET");
+    expect(url.pathname).toBe("/rest/v1/applications");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      select: "id,jd_raw",
+      user_id: "eq.u1",
+      jd_extract: "is.null",
+      order: "updated_at.desc",
+    });
   });
 });
