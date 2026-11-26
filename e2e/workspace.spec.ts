@@ -1,6 +1,26 @@
 import { appLink, enterDemo, expect, test } from "./demo";
 
+test("Today opens from the desktop navigation without replacing Overview", async ({ demo: page }) => {
+  const overview = appLink(page, "JobSearch, overview");
+  const today = appLink(page, "Today");
+  await expect(overview).toHaveAttribute("aria-current", "page");
+  await today.click();
+  await expect(page).toHaveURL("/app/watchlist");
+  await expect(page.getByRole("heading", { name: "Roles to review", exact: true })).toBeVisible();
+  await expect(today).toHaveAttribute("aria-current", "page");
+  await expect(overview).not.toHaveAttribute("aria-current", "page");
+
+  await overview.click();
+  await expect(page).toHaveURL("/app/home");
+  await expect(overview).toHaveAttribute("aria-current", "page");
+  await expect(today).not.toHaveAttribute("aria-current", "page");
+});
+
 test("Today replaces Watchlist in navigation without changing its bookmarked URL", async ({ demo: page }) => {
+  const links = page.getByRole("navigation", { name: "App", exact: true }).getByRole("link");
+  await expect(links.nth(0)).toHaveAccessibleName("JobSearch, overview");
+  await expect(links.nth(1)).toHaveText("Today");
+  await expect(links.nth(2)).toHaveText("Pipeline");
   await expect(appLink(page, "Watchlist")).toHaveCount(0);
   await expect(appLink(page, "Today")).toHaveAttribute("href", "/app/watchlist");
   await page.goto("/app/watchlist");
