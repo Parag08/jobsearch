@@ -25,7 +25,7 @@ test("reviews a CSV before changing targets and undoes only the confirmed import
   const discard = page.getByRole("dialog", { name: "Discard this import preview?" });
   await discard.getByRole("button", { name: "Discard preview" }).click();
   const targets = page.getByRole("region", { name: "All target companies" });
-  await expect(targets.getByRole("link", { name: "Aperture Robotics" })).toHaveCount(0);
+  await expect(targets.getByRole("link", { name: "Aperture Robotics", exact: true })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Import list" }).click();
   await page.getByLabel("Choose file").setInputFiles(file);
@@ -34,20 +34,20 @@ test("reviews a CSV before changing targets and undoes only the confirmed import
   const fix = page.getByRole("dialog", { name: "Fix file row 4" });
   await fix.getByRole("textbox", { name: "Company name" }).fill("Second Example");
   await fix.getByRole("button", { name: "Save row" }).click();
-  await page.getByRole("button", { name: "Skip 1 problem row" }).click();
+  await page.getByRole("button", { name: "Skip problem rows" }).click();
   await expect(page.getByRole("table", { name: "Company row review" })).not.toContainText("ignored data");
   await testInfo.attach("Reviewed company rows", { body: await page.screenshot({ path: testInfo.outputPath("company-import-review.png") }), contentType: "image/png" });
   await page.getByRole("button", { name: "Import 2 companies" }).click();
   await expect(page.getByRole("heading", { name: "2 companies added to your targets." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Aperture Robotics" })).toBeVisible();
   await page.getByRole("link", { name: "View Companies" }).click();
-  await expect(targets.getByRole("link", { name: "Aperture Robotics" })).toBeVisible();
+  await expect(targets.getByRole("link", { name: "Aperture Robotics", exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "2 companies added to your targets." })).toBeVisible();
   await page.getByRole("button", { name: "Undo import" }).click();
   await expect(page.getByRole("heading", { name: "Import undone." })).toBeVisible();
-  await expect(targets.getByRole("link", { name: "Aperture Robotics" })).toHaveCount(0);
-  await expect(targets.getByRole("link", { name: "Second Example" })).toHaveCount(0);
+  await expect(targets.getByRole("link", { name: "Aperture Robotics", exact: true })).toHaveCount(0);
+  await expect(targets.getByRole("link", { name: "Second Example", exact: true })).toHaveCount(0);
   await testInfo.attach("Import undone", { body: await page.screenshot({ path: testInfo.outputPath("company-import-undo.png") }), contentType: "image/png" });
 });
 
@@ -86,7 +86,7 @@ test("dismisses the banner for one import and keeps its result and Undo below th
   await latest.getByRole("button", { name: "Undo import" }).click();
   await expect(latest).toContainText("Import undone");
   await expect(latest.getByRole("button", { name: "Undo import" })).toHaveCount(0);
-  await expect(targets.getByRole("link", { name: "Aperture Robotics" })).toHaveCount(0);
+  await expect(targets.getByRole("link", { name: "Aperture Robotics", exact: true })).toHaveCount(0);
 
   await importTarget("Second Example");
   await expect(bannerHeading).toBeVisible();
@@ -151,7 +151,7 @@ test("can still dismiss the Last import banner when browser storage is unavailab
   await page.reload();
   await expect(dismiss).toBeVisible();
   await expect(footer).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "All target companies" }).getByRole("link", { name: "Example Company" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "All target companies" }).getByRole("link", { name: "Example Company", exact: true })).toBeVisible();
 });
 
 test("chooses a visible XLSX worksheet and explicitly links a company identity on mobile", async ({ demo: page }, testInfo) => {
@@ -163,6 +163,7 @@ test("chooses a visible XLSX worksheet and explicitly links a company identity o
   await add.getByRole("textbox", { name: "Company website (optional)" }).fill("northstar.com");
   await add.getByRole("button", { name: "Add company" }).click();
   await page.getByRole("button", { name: "Remove Northstar Studio" }).click();
+  await page.getByRole("dialog", { name: "Remove Northstar Studio?" }).getByRole("button", { name: "Remove target" }).click();
   await page.getByRole("link", { name: "Import list" }).click();
   const book = utils.book_new();
   utils.book_append_sheet(book, utils.aoa_to_sheet([["Header"], ["Unused"]]), "Cover");
@@ -188,8 +189,8 @@ test("chooses a visible XLSX worksheet and explicitly links a company identity o
   await expect(page.getByText("0 new · 1 re-added", { exact: false })).toBeVisible();
   await page.getByRole("link", { name: "View Companies" }).click();
   const targets = page.getByRole("region", { name: "All target companies" });
-  await expect(targets.getByRole("link", { name: "Northstar Studio" })).toBeVisible();
-  await expect(targets.getByRole("link", { name: "Northstar Group" })).toHaveCount(0);
+  await expect(targets.getByRole("link", { name: "Northstar Studio", exact: true })).toBeVisible();
+  await expect(targets.getByRole("link", { name: "Northstar Group", exact: true })).toHaveCount(0);
 });
 
 test("a stale company import refreshes the review without saving a partial batch", async ({ demo: page, context }) => {

@@ -5,7 +5,7 @@ import { listContacts } from "@/lib/repos/contacts";
 import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { norm } from "@/lib/types";
 import { AddCompanyWebsiteForm, ConnectBoardForm } from "../../sourcing-forms";
-import { PendingButton } from "../../sourcing-controls";
+import { PendingButton, SourcingDialog } from "../../sourcing-controls";
 import { askForCompanyResearch, toggleTargetCompany } from "../../sourcing-actions";
 import { ClaudeRequest } from "../../claude-request";
 import { currentResearch, RESEARCH_LABELS } from "@/lib/watchlist/safe-kit";
@@ -32,7 +32,7 @@ export default async function CompanyPage({ params, searchParams }: {
   const open = source.available.filter((j) => norm(j.company) === company.identity);
   const saved = source.apps.filter((a) => a.stage === "saved" && (a.companyId ?? id) === id && norm(a.company) === company.identity);
   const boards = source.configured.filter((b) => b.companyId ? b.companyId === id : norm(b.company) === company.identity);
-  const people = contacts.filter((p) => p.companyId ? p.companyId === id : norm(p.company ?? "") === company.identity).length;
+  const people = contacts.filter((p) => p.companyId ? p.companyId === id : norm(p.company ?? "") === company.identity);
   const referralRoles = [
     ...open.map((j) => ({ id: j.id, title: j.title })),
     ...saved.map((a) => ({ id: a.id, title: a.role })),
@@ -44,15 +44,17 @@ export default async function CompanyPage({ params, searchParams }: {
       <div className={ui.head}>
         <div className={ui.headText}>
           <Link href="/app/companies">‹ All target companies</Link>
-          <p className={s.eyebrow}>Companies / Shared company record</p>
           <h1>{company.name}</h1>
-          <p className={ui.sub}>{company.active ? "Target company" : "Not a target"} · {boards.length ? "Source connected" : "Source setup needed"}</p>
+          {!company.active && <p className={ui.sub}>Not a target</p>}
         </div>
         <div className={s.formFoot}>
           {company.website && <a href={company.website} target="_blank" rel="noreferrer" className={ui.btn}>Company website ↗</a>}
-          <form action={toggleTargetCompany.bind(null, id, !company.active)}>
-            <PendingButton label={company.active ? "Remove target" : "Restore target"} />
-          </form>
+          {company.active ? <SourcingDialog trigger="Remove target" title={"Remove " + company.name + "?"}>
+            <form action={toggleTargetCompany.bind(null, id, false)} className={s.form}>
+              <p>New roles from this company will no longer appear in Today. Saved roles, research and people are unchanged.</p>
+              <div><PendingButton label="Remove target" /></div>
+            </form>
+          </SourcingDialog> : <form action={toggleTargetCompany.bind(null, id, true)}><PendingButton label="Restore target" /></form>}
         </div>
       </div>
       <nav className={s.tabs} aria-label="Company views">
@@ -62,17 +64,8 @@ export default async function CompanyPage({ params, searchParams }: {
 
       {view === "overview" && <div className={s.split}>
         <div className={s.stack}>
-          <section className={ui.panel}>
-            <h2>One company, connected.</h2>
-            <p className={ui.sub}>Company research stays the same when you switch roles. People stay in your private Network.</p>
-            <div className={s.formFoot}>
-              <Link href={path + "?view=research"} className={ui.btn}>Company research</Link>
-              <Link href={path + "?view=network"} className={ui.btn}>Network · {people}</Link>
-            </div>
-          </section>
           <section className={ui.panel} id="company-roles">
-            <h2>Roles at {company.name}</h2>
-            <p className={ui.sub}>{open.length} matching · {saved.length} saved</p>
+            <h2>Roles</h2>
             {open.length + saved.length === 0 && <p className={ui.none}>No matching or Saved roles yet.</p>}
             <ul className={s.reasons}>
               {open.map((job) => <li key={job.id}>{job.title} · {job.location ?? "Location not stated"} · {job.url &&
@@ -83,6 +76,15 @@ export default async function CompanyPage({ params, searchParams }: {
                 <Link href={path + "?view=network&role=" + app.id}>Find referral path</Link>
               </li>)}
             </ul>
+          </section>
+          <section className={ui.panel}>
+            <h2>Company research</h2>
+            <Link href={path + "?view=research"}>{company.research_requested ? "Requested" : facts.length ? "View public sources" : "Not requested"}</Link>
+          </section>
+          <section className={ui.panel}>
+            <h2>People</h2>
+            {people.length ? <ul className={s.reasons}>{people.map((person) => <li key={person.id}><Link href={network + "#contact-" + person.id}>{person.name}</Link></li>)}</ul>
+              : <p className={ui.sub}>No connections yet.</p>}
           </section>
         </div>
         <aside className={ui.panel}>
@@ -104,14 +106,12 @@ export default async function CompanyPage({ params, searchParams }: {
       </div>}
 
       {view === "research" && <section className={ui.panel}>
-        <h2>{company.name} · Company research</h2>
-        <p className={ui.sub}>One public-source record for this company’s roles and Network.</p>
-        <p className={s.tagline}>{company.research_requested ? "Requested" : facts.length ? "Public sources recorded" : "Not requested"}</p>
+        {company.research_requested ? <p className={s.tagline}>Requested</p>
+          : !facts.length && company.website && <p className={ui.sub}>No public sources recorded yet.</p>}
         {sp.error && <p className={s.notice} role="alert">Research could not be requested. Try again.</p>}
         {!!facts.length && <ul className={s.reasons}>{facts.map((fact) => <li key={fact.kind + fact.url}>
           <a href={fact.url} target="_blank" rel="noreferrer">{RESEARCH_LABELS[fact.kind]} ↗</a> · Checked {fact.checkedAt}
         </li>)}</ul>}
-        {!!facts.length && <p className={ui.sub}>These sources describe the organization; fit for a specific role is not a company fact.</p>}
         {company.research_requested ? <ClaudeRequest prompt={
           "Use get_sourcing_company with companyId " + id + ". Review the official website for public facts and use save_sourcing_research with the current version, only approved fact kinds, official URLs, and checked dates. Do not send names, profile links, or personal information."
         } /> : company.website ? <form action={askForCompanyResearch.bind(null, id)}>
@@ -124,18 +124,14 @@ export default async function CompanyPage({ params, searchParams }: {
 
       {view === "network" && <div className={s.split}>
         <section className={ui.panel}>
-          <h2>People at {company.name}</h2>
-          <p className={ui.sub}>{people} private {people === 1 ? "connection" : "connections"} in your Network. No message is sent from here.</p>
+          <h2>People</h2>
+          {people.length ? <ul className={s.reasons}>{people.map((person) => <li key={person.id}><Link href={network + "#contact-" + person.id}>{person.name}</Link></li>)}</ul>
+            : <p className={ui.sub}>No connections yet.</p>}
           <div className={s.inlineHead}>
             <Link className={ui.btn} href={network}>Open company Network</Link>
             <a className={ui.btn} href={"https://www.linkedin.com/search/results/people/?keywords=" + encodeURIComponent(company.name)}
-              target="_blank" rel="noreferrer">Find people at {company.name} ↗</a>
+              target="_blank" rel="noreferrer">Find people on LinkedIn ↗</a>
           </div>
-          <details className={s.rankDetails}>
-            <summary>Plan a coffee chat</summary>
-            <p>Learn about the team and its work before asking about a role.</p>
-            <Link href={network}>Choose a connection in Network</Link>
-          </details>
         </section>
         <aside className={s.stack}>
           <section className={ui.panel}>
@@ -152,10 +148,6 @@ export default async function CompanyPage({ params, searchParams }: {
                 <button className={ui.btn} type="submit">Discuss referral</button>
               </form>}
             {role && <p className={ui.sub}>Ask about <strong>{role.title}</strong> ({role.id}). <Link href={network + "&role=" + role.id}>Choose a connection</Link>.</p>}
-          </section>
-          <section className={ui.panel}>
-            <h2>Prepare with shared facts</h2>
-            <Link href={path + "?view=research"}>Open company research</Link>
           </section>
         </aside>
       </div>}

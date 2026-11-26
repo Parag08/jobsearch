@@ -20,11 +20,6 @@ import styles from "./import.module.css";
 
 const steps = ["File", "Columns", "Review"] as const;
 const titles = ["Bring your company list.", "Choose the company columns.", "Review before adding targets."];
-const descriptions = [
-  "Start with a CSV or Excel workbook. Nothing is added until you review and confirm.",
-  "Choose the company name and optional website columns. Other columns stay out of JobSearch.",
-  "Check every row and resolve uncertain company matches before adding targets.",
-];
 const initialMapping: ImportMapping = { start: 1, headers: true, name: null, website: null };
 const template = (format: string) => `/company-list-template.${format}`;
 const columnName = (index: number): string => (index >= 26 ? columnName(Math.floor(index / 26) - 1) : "") + String.fromCharCode(65 + index % 26);
@@ -195,9 +190,7 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
     <header className={ui.head}>
       <div className={ui.headText}>
         <Link className={styles.crumb} href={companiesPath} onClick={leave}>‹ Companies</Link>
-        <p className={s.eyebrow}>Companies / Import list</p>
         <h1 ref={heading} tabIndex={-1}>{titles[step]}</h1>
-        <p className={ui.sub}>{descriptions[step]}</p>
       </div>
     </header>
     <ol className={styles.progress} aria-label="Import progress">
@@ -212,7 +205,7 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
           onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
           <span className={styles.uploadIcon} aria-hidden="true">↑</span>
           <h2>{reading ? "Reading your file…" : "Drop your company list here"}</h2>
-          <p className={styles.muted} role="status">{reading ? "No targets added." : "CSV or XLSX · Up to 5 MB and 1,000 company rows."}</p>
+          {!reading && <p className={styles.muted}>CSV or XLSX · Up to 5 MB and 1,000 company rows.</p>}
           {reading
             ? <button className={styles.button} type="button" onClick={stopRead}>Cancel</button>
             : <label className={styles.fileButton} data-primary>Choose file
@@ -231,9 +224,7 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
         </div>
       </section>
       <aside className={s.stack}>
-        <section className={ui.panel}><h2>Just two fields</h2><p><strong>Company name</strong> · required<br /><strong>Company website</strong> · optional</p>
-          <p className={styles.muted}>Use public organization names and websites, not a contact list. Your file stays in this browser.</p>
-        </section>
+        <p className={ui.panel}>Use a public company list, not a contact list. Your file stays in this browser.</p>
         <section className={ui.panel}><h2>Try a sample</h2><div className={styles.actions}>
           <button className={styles.button} type="button" disabled={reading} onClick={() => void loadSample("csv")}>Sample CSV</button>
           <button className={styles.button} type="button" disabled={reading} onClick={() => void loadSample("xlsx")}>Sample XLSX</button>
@@ -242,7 +233,7 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
     </div>}
 
     {step === 1 && sheet && file && <>
-      <div className={s.split}>
+      <div>
         <section className={ui.panel}>
           <div className={styles.spread}><h2>{file.name}</h2><button type="button" className={styles.button} onClick={() => go(0)}>Change file</button></div>
           {/\.xlsx$/i.test(file.name) && <label className={s.field}>Worksheet
@@ -273,7 +264,6 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
             </label>)}
           </div>
         </section>
-        <aside className={ui.panel}><h2>Check the preview</h2><p className={styles.muted}>The review keeps original row numbers and includes rows with missing company names. Formulas must be replaced with plain values.</p></aside>
       </div>
       <section className={ui.panel}>
         <h2>Mapped preview</h2>
@@ -290,7 +280,6 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
           </table>}
       </section>
       <div className={styles.footer}>
-        <span>{selectedCount} file rows</span>
         <div className={styles.actions}>
           <button type="button" className={styles.button} onClick={() => go(0)}>Back</button>
           <button type="button" className={styles.button} data-primary disabled={!mapped?.length} onClick={() => go(2)}>Review rows</button>
@@ -300,7 +289,6 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
 
     {step === 2 && <>
       <dl className={styles.counts} aria-live="polite">
-        <div><dt>Ready to add</dt><dd>{ready}</dd></div>
         <div><dt>Already targets</dt><dd>{counts.existing}</dd></div>
         <div><dt>Repeated or skipped</dt><dd>{counts.skipped}</dd></div>
         <div data-warning={counts.issue > 0 || undefined}><dt>Need attention</dt><dd>{counts.issue}</dd></div>
@@ -312,11 +300,11 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
             setError("");
             setOverrides((current) => ({ ...current, ...Object.fromEntries(review.filter((row) => row.kind === "issue")
               .map((row) => [row.number, { ...current[row.number], skip: true }])) }));
-          }}>Skip {counts.issue} problem {counts.issue === 1 ? "row" : "rows"}</button>
+          }}>Skip problem rows</button>
         </div>}
         {!ready && !counts.issue && <p className={styles.attention} role="status">No new targets. Your existing list stays unchanged.</p>}
         <section className={ui.panel}>
-          <div className={styles.spread}><h2>{file?.name}</h2><div className={styles.actions} aria-label="Filter company rows">
+          <div className={styles.spread}><div className={styles.actions} aria-label="Filter company rows">
             <button type="button" className={styles.button} aria-pressed={!filter} onClick={() => setFilter(false)}>All rows</button>
             <button type="button" className={styles.button} aria-pressed={filter} onClick={() => setFilter(true)}>Need attention</button>
           </div></div>
@@ -325,8 +313,7 @@ export function ImportWizard({ companies, initialReceipt }: { companies: ImportC
       </fieldset>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <div className={styles.footer}>
-        <div><strong>{ready ? `${targetCount(ready)} ready to add` : "No new targets"}</strong>
-          <p className={styles.muted}>Only confirm public organization names and websites.</p></div>
+        <p className={styles.muted}>Only public company names and websites will be imported.</p>
         <div className={styles.actions}>
           <button type="button" className={styles.button} disabled={pending}
             onClick={() => Object.keys(overrides).length ? warn("mapping") : go(1)}>Back to columns</button>

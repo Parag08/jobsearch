@@ -49,8 +49,6 @@ export default async function Network({ searchParams }: { searchParams: Promise<
     (r.companyId ? r.companyId === companyRecord.id : norm(r.company) === companyRecord.identity);
   const referralTitle = sourcing?.available.find(isReferralRole)?.title ?? sourcing?.apps.find(isReferralRole)?.role;
   const { due, upcoming, rest } = networkSections(contacts, today);
-  const dueAll = networkSections(all, today).due.length;
-  const met = all.filter((c) => c.status === "met" || c.status === "in-conversation").length;
   const flashId = params.added ?? params.found ?? params.logged;
   const flash = flashId ? all.find((c) => c.id === flashId) : undefined;
   const flashText = params.added
@@ -212,17 +210,6 @@ export default async function Network({ searchParams }: { searchParams: Promise<
       <div className={ui.head}>
         <div className={ui.headText}>
           <h1>Network</h1>
-          <p className={ui.facts}>
-            <span>
-              <b>{all.length}</b> {all.length === 1 ? "person" : "people"}
-            </span>
-            <span data-tone={dueAll ? "due" : undefined}>
-              <b>{dueAll}</b> to follow up
-            </span>
-            <span>
-              <b>{met}</b> talking or met
-            </span>
-          </p>
         </div>
       </div>
 
@@ -253,7 +240,6 @@ export default async function Network({ searchParams }: { searchParams: Promise<
         <section className={ui.panel} aria-labelledby="due-h">
           <div>
             <h2 id="due-h">Follow up</h2>
-            <p className={ui.sub}>Due today or overdue. Log what you sent, and the next date is set for you.</p>
           </div>
           <ul className={s.list}>{due.map(row)}</ul>
         </section>
@@ -265,7 +251,6 @@ export default async function Network({ searchParams }: { searchParams: Promise<
         <section className={ui.panel} aria-labelledby="people-h">
           <div>
             <h2 id="people-h">{due.length ? "Everyone else" : "People"}</h2>
-            <p className={ui.sub}>Soonest follow-up first, then everyone without one.</p>
           </div>
           <ul className={s.list}>{[...upcoming, ...rest].map(row)}</ul>
         </section>

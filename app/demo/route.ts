@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { DEMO_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv, isVisitorId, newVisitorId } from "@/lib/demo/visitors";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE, demoMaxVisitorsFromEnv, newVisitorId } from "@/lib/demo/visitors";
+import { demoCookieOptions, demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "@/lib/demo/visitor-token";
 
 /**
  * GET /demo - start (or resume) the public demo: a cookie with a random visitor id, then the
@@ -7,17 +8,18 @@ import { DEMO_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv, isVisitorId, new
  * every AI feature answers from lib/demo/canned.ts, so a visit costs no tokens.
  * Off when DEMO_MAX_VISITORS is unset: the landing page then sends people to sign in.
  */
-export function GET(req: NextRequest): NextResponse {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!demoMaxVisitorsFromEnv(process.env)) return NextResponse.redirect(new URL("/signin", req.url));
-  const existing = req.cookies.get(DEMO_COOKIE)?.value;
-  const id = existing && isVisitorId(existing) ? existing : newVisitorId();
+  const secret = demoSigningSecret();
+  const now = Date.now();
+  const existing = await readDemoVisitor(req.cookies.get(DEMO_COOKIE)?.value, secret, now);
+  const id = existing?.id ?? newVisitorId();
   const res = NextResponse.redirect(new URL("/app/home", req.url));
-  res.cookies.set(DEMO_COOKIE, id, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: DEMO_TTL_SECONDS,
-  });
+  if (!existing) res.cookies.delete(DEMO_KITS_COOKIE);
+  if (secret) {
+    await setSignedDemoLease(res.cookies, id, secret, now, existing ? req.cookies.get(DEMO_KITS_COOKIE)?.value : undefined);
+  } else {
+    res.cookies.set(DEMO_COOKIE, id, demoCookieOptions(null));
+  }
   return res;
 }

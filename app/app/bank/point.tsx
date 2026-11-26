@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import type { Bullet } from "@/lib/types";
-import { toneFor } from "@/lib/pipeline-display";
-import { BAND_LABEL, DEFAULT_STRENGTH, effectiveStrength, chipsFor, strengthBand, usageNote, type CvUse } from "@/lib/bank/display";
+import { BAND_LABEL, DEFAULT_STRENGTH, effectiveStrength, strengthBand, usageNote, type CvUse } from "@/lib/bank/display";
 import { MAX_UNEVIDENCED_STRENGTH, needsMetric } from "@/lib/onboarding/intake-guard";
 import { deletePointAction, savePointAction, type PointState } from "./actions";
 import ui from "../ui.module.css";
@@ -11,31 +10,12 @@ import s from "./bank.module.css";
 
 const LEVELS = [1, 2, 3, 4, 5] as const;
 
-/** Five dots, filled to the score, all in the band's colour, with the band named under them. */
-export function Strength({ value }: { value: number | undefined }) {
-  const v = value ?? DEFAULT_STRENGTH;
-  const band = strengthBand(v);
-  return (
-    <span className={s.strength} data-band={band} title={`Strength ${v} of 5`}>
-      <span className={s.dots} aria-hidden="true">
-        {LEVELS.map((n) => (
-          <i key={n} data-on={n <= v || undefined} />
-        ))}
-      </span>
-      <span className={s.bandLabel}>
-        {BAND_LABEL[band]}
-        <span className={s.srOnly}>, {v} of 5</span>
-      </span>
-    </span>
-  );
-}
-
 /** One point: read view with an Edit button, or the editor in its place. */
 export function PointRow({ point, families, usage }: { point: Bullet; families: string[]; usage?: CvUse }) {
   const [editing, setEditing] = useState(false);
   const editBtn = useRef<HTMLButtonElement>(null);
-  const chips = chipsFor(point);
   const gap = needsMetric(point.text);
+  const band = strengthBand(effectiveStrength(point));
 
   const close = () => {
     setEditing(false);
@@ -50,22 +30,10 @@ export function PointRow({ point, families, usage }: { point: Bullet; families: 
         <>
           <div className={s.pointBody}>
             <p className={s.pointText}>{point.text}</p>
-            <div className={s.chips}>
-              {gap && <span className={s.needsNumber}>Needs a number</span>}
-              <span className={ui.tag} data-tone={toneFor(point.roleFamily)}>{chips.family}</span>
-              {chips.skills.map((k) => (
-                <span key={k} className={s.chip}>{k}</span>
-              ))}
-              {chips.more > 0 && <span className={s.chip} title={point.skills.join(", ")}>+{chips.more}</span>}
-              {(point.variants?.length ?? 0) > 0 && (
-                <span className={s.meta}>
-                  {point.variants!.length} variant{point.variants!.length > 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
+            {gap && <span className={s.needsNumber}>Needs a number</span>}
           </div>
           <div className={s.pointSide}>
-            <Strength value={effectiveStrength(point)} />
+            <span className={s.strength} data-band={band}><span className={s.bandLabel}>{BAND_LABEL[band]}</span></span>
             <button ref={editBtn} type="button" className={s.editBtn} onClick={() => setEditing(true)} aria-label={`Edit point: ${point.text.slice(0, 60)}`}>
               Edit
             </button>

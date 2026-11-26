@@ -17,13 +17,13 @@ export function PendingButton({ label, pending: pendingLabel, primary, disabled,
   );
 }
 
-export function SourcingDialog({ trigger, title, primary, children }: {
-  trigger: string; title: string; primary?: boolean; children: React.ReactNode;
+export function SourcingDialog({ trigger, triggerLabel, title, primary, children }: {
+  trigger: string; triggerLabel?: string; title: string; primary?: boolean; children: React.ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useId();
   return <>
-    <button type="button" className={ui.btn + " " + s.control} data-primary={primary ? "" : undefined}
+    <button type="button" className={ui.btn + " " + s.control} data-primary={primary ? "" : undefined} aria-label={triggerLabel}
       onClick={() => dialog.current?.showModal()}>{trigger}</button>
     <dialog className={s.dialog} aria-labelledby={heading} ref={dialog}>
       <div className={s.inlineHead}>

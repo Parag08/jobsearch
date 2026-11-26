@@ -20,7 +20,7 @@ import s from "./application.module.css";
 import { ReadPosting } from "./read-posting";
 import { applyFollowUpDaysFromEnv } from "@/lib/apply/follow-up";
 import { getSourcingKit } from "@/lib/services/sourcing-kits";
-import { getSafeEvidence } from "@/lib/repos/sourcing";
+import { getSafeEvidence, getSourcingCompany } from "@/lib/repos/sourcing";
 import { SafeKitView } from "./safe-kit-view";
 
 /**
@@ -68,9 +68,14 @@ export default async function ApplicationPage({
   const app = await getApplication(db, userId, id);
   if (!app) notFound();
   if (app.hasSourcingKit) {
-    const [record, verified] = await Promise.all([getSourcingKit(db, userId, id), getSafeEvidence(db, userId)]);
+    const [record, verified, company] = await Promise.all([
+      getSourcingKit(db, userId, id), getSafeEvidence(db, userId),
+      app.companyId ? getSourcingCompany(db, userId, app.companyId) : null,
+    ]);
     if (!record) notFound();
-    return <SafeKitView application={app} record={record} verified={verified} today={new Date().toISOString().slice(0, 10)} error={kitError} />;
+    const researchStatus = company?.research_requested ? "Requested" : company && company.research_version > 0 ? "Available" : "Not requested";
+    return <SafeKitView application={app} record={record} verified={verified} researchStatus={researchStatus}
+      today={new Date().toISOString().slice(0, 10)} error={kitError} />;
   }
   const [cv, projects, stories, letter, jdRaw] = await Promise.all([
     app.cvVersionId ? getApplicationCv(db, userId, app.cvVersionId) : null,
@@ -113,11 +118,9 @@ export default async function ApplicationPage({
         </div>
       </div>
 
-      {/* ---- just arrived from Apply on the Watchlist ---- */}
       {applied === "ready" && cv && app.stage === "saved" && (
         <p className={s.appliedNote} role="status">
-          Ready to send: the posting is read and your CV is built for it.{" "}
-          {app.applyUrl ? "Open the posting, apply there with this CV, then mark it applied here." : "Apply with this CV, then mark it applied here."}
+          Your tailored CV is ready.
         </p>
       )}
       {applied === "no-cv" && !cv && (
@@ -141,8 +144,7 @@ export default async function ApplicationPage({
         </h2>
         {closed ? (
           <p className={s.closed}>
-            <span className={ui.tag}>Closed</span> {app.closedReason ? `Closed: ${CLOSED_LABEL[app.closedReason]}.` : "Closed."} A closed
-            application is a try, not a failure.
+            {app.closedReason ? `Closed: ${CLOSED_LABEL[app.closedReason]}.` : "Closed."}
           </p>
         ) : (
           <ol className={s.stepper}>
@@ -153,7 +155,7 @@ export default async function ApplicationPage({
                 <li key={st} className={s.step} data-state={state} style={{ "--stage": `var(--stage-${st})` } as React.CSSProperties}>
                   {canTransition(app.stage, st) ? (
                     <form action={moveStage.bind(null, app.id, st, undefined)}>
-                      <button type="submit" className={s.stepBtn} aria-label={`Move to ${label}`}>
+                      <button type="submit" className={s.stepBtn} aria-label={`${label} — move application to this stage`}>
                         <span className={s.stepDot} aria-hidden="true" />
                         <span>{label}</span>
                       </button>
@@ -190,8 +192,7 @@ export default async function ApplicationPage({
               </form>
             </div>
             <p className={ui.sub}>
-              {app.applyUrl ? "Apply on their site with this CV, then mark it here. " : ""}We&apos;ll keep a copy of the CV and letter exactly as
-              you sent them{followUpDays ? `, and remind you to follow up after ${followUpDays} days` : ""}.
+              Mark as applied only after submitting. This locks the CV and letter{followUpDays ? ` and schedules a follow-up in ${followUpDays} days` : ""}.
             </p>
           </div>
         )}

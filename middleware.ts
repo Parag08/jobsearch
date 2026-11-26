@@ -2,6 +2,28 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { signedInRedirect } from "./lib/auth/routing";
 import { requireWorkspaceEnv } from "./lib/db/supabase";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv } from "./lib/demo/visitors";
+import { demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "./lib/demo/visitor-token";
+
+const leaseRenewalIntervalMs = 15 * 60 * 1000;
+
+async function renewDemoVisit(request: NextRequest, response: NextResponse) {
+  const path = request.nextUrl.pathname;
+  if (request.method !== "GET" || !(path === "/app" || path.startsWith("/app/") ||
+    path.startsWith("/api/export/safe-sourcing/")) || !demoMaxVisitorsFromEnv(process.env)) return response;
+  const headers = request.headers;
+  if (headers.has("next-action") || headers.has("next-router-prefetch") ||
+    headers.has("next-router-segment-prefetch") || headers.get("purpose") === "prefetch") return response;
+  // Next's internal server-action redirect fetch removes the router state tree.
+  if (headers.has("rsc") && !headers.has("next-router-state-tree")) return response;
+  const secret = demoSigningSecret();
+  if (!secret) return response;
+  const now = Date.now();
+  const visitor = await readDemoVisitor(request.cookies.get(DEMO_COOKIE)?.value, secret, now);
+  if (!visitor?.expiresAt || visitor.expiresAt - now > DEMO_TTL_SECONDS * 1000 - leaseRenewalIntervalMs) return response;
+  await setSignedDemoLease(response.cookies, visitor.id, secret, now, request.cookies.get(DEMO_KITS_COOKIE)?.value);
+  return response;
+}
 
 /**
  * Keeps the Supabase session alive and routes signed-in visitors.
@@ -14,7 +36,7 @@ import { requireWorkspaceEnv } from "./lib/db/supabase";
  */
 export async function middleware(request: NextRequest) {
   const env = requireWorkspaceEnv();
-  if (!env) return NextResponse.next();
+  if (!env) return renewDemoVisit(request, NextResponse.next());
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(env.url, env.publishableKey, {
@@ -32,7 +54,7 @@ export async function middleware(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
 
   const to = signedInRedirect(request.nextUrl.pathname, Boolean(data.user));
-  if (!to) return response;
+  if (!to) return renewDemoVisit(request, response);
   const redirect = NextResponse.redirect(new URL(to, request.url));
   for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
   return redirect;

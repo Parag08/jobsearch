@@ -4,7 +4,10 @@ import type { FileStore } from "../export/file-store";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { DEMO_USER_ID, getDemoDb, getVisitorDemoDb } from "./demo";
-import { DEMO_COOKIE, demoMaxVisitorsFromEnv, isVisitorId } from "../demo/visitors";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE, demoMaxVisitorsFromEnv } from "../demo/visitors";
+import { demoCookieOptions, demoSigningSecret } from "../demo/visitor-token";
+import { readNodeDemoVisitor } from "../demo/node-mac";
+import { restoreDemoKits, writeDemoKits } from "./demo-kits";
 import { asDbClient, createServerSupabase, readSupabaseEnv, requireWorkspaceEnv } from "./supabase";
 
 export type WorkspaceMode = "live" | "demo";
@@ -22,6 +25,7 @@ export interface Workspace {
    * provider is ever called (lib/services/ai-write.ts). False everywhere else.
    */
   cannedAi: boolean;
+  persistDemoKits?: () => Promise<void>;
 }
 
 /**
@@ -40,10 +44,20 @@ async function resolveWorkspace(): Promise<Workspace | null> {
   const env = requireWorkspaceEnv();
   // A public demo visitor (the /demo route set the cookie) gets their own fictional workspace,
   // even when Supabase is configured. Unset DEMO_MAX_VISITORS and the cookie is ignored.
-  const visitor = (await cookies()).get(DEMO_COOKIE)?.value;
+  const jar = await cookies();
   const maxVisitors = demoMaxVisitorsFromEnv(process.env);
-  if (visitor && maxVisitors && isVisitorId(visitor)) {
-    return { db: getVisitorDemoDb(visitor, maxVisitors), userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: true };
+  const secret = maxVisitors ? demoSigningSecret() : undefined;
+  const visitor = maxVisitors ? readNodeDemoVisitor(jar.get(DEMO_COOKIE)?.value, secret) : null;
+  if (visitor && maxVisitors) {
+    const db = getVisitorDemoDb(visitor.id, maxVisitors);
+    const journal = jar.get(DEMO_KITS_COOKIE)?.value;
+    if (secret && journal && visitor.expiresAt !== null) restoreDemoKits(db, journal, visitor.id, secret);
+    const expiresAt = visitor.expiresAt;
+    const persistDemoKits = secret && expiresAt !== null ? async () => {
+      const token = writeDemoKits(db, visitor.id, secret);
+      jar.set(DEMO_KITS_COOKIE, token, demoCookieOptions(expiresAt));
+    } : undefined;
+    return { db, userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: true, persistDemoKits };
   }
   if (!env) {
     return { db: getDemoDb(), userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: false };

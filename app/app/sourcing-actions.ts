@@ -52,9 +52,10 @@ export async function addTargetCompany(_previous: { error?: string }, form: Form
 }
 
 export async function toggleTargetCompany(id: string, active: boolean) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   try {
     await setSourcingCompanyActive(db, userId, id, active);
+    if (!active) await persistDemoKits?.();
   } catch {
     redirect("/app/companies?error=1");
   }
@@ -90,11 +91,12 @@ export async function refreshDailyBoards() {
 }
 
 export async function triageRole(id: string, decision: Decision | "available", view: "ranked" | "later" | "dismissed") {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   try {
     const source = await loadDailySourcing(db, userId);
     if (![...source.available, ...source.later, ...source.dismissed].some((job) => job.id === id)) return;
     await setSourcingDecision(db, userId, id, decision);
+    await persistDemoKits?.();
   } catch {
     redirect("/app/watchlist?notice=error");
   }
@@ -104,10 +106,11 @@ export async function triageRole(id: string, decision: Decision | "available", v
 }
 
 export async function prepareDailyBatch() {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   let result: Awaited<ReturnType<typeof prepareSourcingBatch>>;
   try {
     result = await prepareSourcingBatch(db, userId, today());
+    await persistDemoKits?.();
   } catch {
     redirect("/app/watchlist?notice=prepare-error");
   }
@@ -119,11 +122,12 @@ export async function prepareDailyBatch() {
 }
 
 export async function saveEvidence(_previous: { error?: string }, form: FormData) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   const codes = Evidence.array().max(Evidence.options.length).safeParse(form.getAll("evidence"));
   if (!codes.success || form.get("attested") !== "on") return { error: "Confirm that every selected claim is true of your work." };
   try {
     await putSafeEvidence(db, userId, codes.data);
+    await persistDemoKits?.();
   } catch {
     return { error: "Verified evidence could not be saved. Try again." };
   }
@@ -135,11 +139,12 @@ const kitPath = (id: string) => "/app/applications/" + id;
 type FormState = { error?: string };
 
 export async function saveKitEvidence(id: string, revision: number, _state: FormState, form: FormData) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   const codes = Evidence.array().max(3).safeParse(form.getAll("evidence"));
   if (!codes.success) return { error: "Choose up to three verified claims." };
   try {
     await setSafeKitEvidence(db, userId, id, codes.data, form.get("reviewed") === "on", revision);
+    await persistDemoKits?.();
   } catch {
     return { error: "Could not save this review. Reload and choose only claims verified in Sourcing preferences." };
   }
@@ -148,11 +153,12 @@ export async function saveKitEvidence(id: string, revision: number, _state: Form
 }
 
 export async function requestDraft(id: string, section: "letter" | "answer", _state: FormState, form: FormData) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   const parsed = AnswerRequest.safeParse({ prompt: form.get("prompt"), unit: form.get("unit"), limit: Number(form.get("limit")) });
   if (section === "answer" && !parsed.success) return { error: "Choose a question and a limit from 1 to 10,000." };
   try {
     await requestKitDraft(db, userId, id, section, parsed.data);
+    await persistDemoKits?.();
   } catch {
     return { error: "Could not request a draft. Add verified CV evidence first and check that the kit is still Saved." };
   }
@@ -161,9 +167,10 @@ export async function requestDraft(id: string, section: "letter" | "answer", _st
 }
 
 export async function approveDraft(id: string, section: "letter" | "answer", revision: number) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   try {
     await approveKitDraft(db, userId, id, section, revision);
+    await persistDemoKits?.();
   } catch {
     redirect(kitPath(id) + "?kitError=review");
   }
@@ -195,7 +202,7 @@ export async function addCompanyWebsite(id: string, _state: FormState, form: For
 }
 
 export async function confirmManualSubmission(id: string, revision: number, _state: FormState, form: FormData) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   const parsed = ConfirmSubmission.safeParse({ date: form.get("date"), materials: form.get("materials"), revision,
     confirmedByUser: form.get("confirmed") === "on" });
   if (!parsed.success || parsed.data.date > today()) return { error: "Enter the actual date, choose the materials used, and confirm the employer accepted the submission." };
@@ -203,6 +210,7 @@ export async function confirmManualSubmission(id: string, revision: number, _sta
   if (!kit) notFound();
   try {
     await confirmWithWorkspaceSettings(db, userId, id, parsed.data, today());
+    await persistDemoKits?.();
   } catch {
     return { error: "Could not confirm. Reload the kit and review the exact safe content, or select different materials." };
   }

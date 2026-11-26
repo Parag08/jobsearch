@@ -43,14 +43,7 @@ export default async function Companies({ searchParams }: { searchParams: Promis
     <>
       <div className={ui.head}>
         <div className={ui.headText}>
-          <p className={s.eyebrow}>Companies / Your targets</p>
-          <h1>Your target companies.</h1>
-          <p className={ui.sub}>One company connects the roles, research and people you want to know.</p>
-          <p className={ui.facts}>
-            <span><b>{companies.length}</b> targets</span>
-            <span><b>{companies.reduce((n, c) => n + c.matching, 0)}</b> matching roles</span>
-            <span><b>{companies.reduce((n, c) => n + c.connections, 0)}</b> connections</span>
-          </p>
+          <h1>Target companies</h1>
         </div>
         <div className={styles.actions}>
           <Link className={styles.button} href={importPath}>Import list</Link>

@@ -11,9 +11,9 @@ import ui from "../../ui.module.css";
 import s from "../../sourcing.module.css";
 import { ConfirmSafeSubmission, RequestSafeDraft, ReviewSafeEvidence } from "./safe-kit-forms";
 
-export function SafeKitView({ application: app, record, verified, today, error }: {
+export function SafeKitView({ application: app, record, verified, researchStatus, today, error }: {
   application: Application; record: NonNullable<Awaited<ReturnType<typeof getSourcingKit>>>;
-  verified: EvidenceCode[]; today: string; error?: string;
+  verified: EvidenceCode[]; researchStatus: string; today: string; error?: string;
 }) {
   const { revision } = record;
   const kit = usableKit(record.value, verified);
@@ -25,50 +25,40 @@ export function SafeKitView({ application: app, record, verified, today, error }
     <header className={ui.head}>
       <div className={ui.headText}>
         <Link href="/app/watchlist">‹ Today</Link>
-        {" · "}<Link href="/app">Pipeline</Link>
-        <p className={s.eyebrow}>Application kit · {app.stage}</p>
-        <h1>{app.role}</h1>
         <p className={ui.sub}>{app.companyId ? <Link href={"/app/companies/" + app.companyId}>{app.company}</Link> : app.company}
-          {" · "}{kit.location ?? "Location not stated"}{kit.checkedAt ? " · Checked " + kit.checkedAt.slice(0, 10) : ""}</p>
+          {" · "}<strong>{app.stage.charAt(0).toUpperCase() + app.stage.slice(1)}</strong></p>
+        <h1>{app.role}</h1>
+        <p className={ui.sub}>{kit.location ?? "Location not stated"}{kit.checkedAt ? " · Employer posting checked " + kit.checkedAt.slice(0, 10) : ""}</p>
       </div>
     </header>
     {error && <p className={s.notice} role="alert">Could not approve this draft. Reload, or ask your Claude to revise an over-limit answer.</p>}
     {kit.submission && <section className={ui.panel}>
       <h2>Submission confirmed</h2>
-      <p>{app.role} · {app.company} · {kit.submission.date}</p>
+      <p>{kit.submission.date}</p>
       <p className={ui.sub}>{kit.submission.version === null ? "You used different materials." :
         "Reviewed safe content version " + kit.submission.version + " is frozen. This is not a copy of your portal submission."}</p>
       {app.nextAction && <p>{app.nextAction}</p>}
       {(["screening", "interview", "case", "offer", "negotiation"] as const).filter((stage) => canTransition(app.stage, stage)).map((stage) =>
         <form key={stage} action={moveStage.bind(null, id, stage, undefined)}><PendingButton label={"Move to " + stage} /></form>)}
     </section>}
-    {canTransition(app.stage, "closed") && <details className={ui.panel}>
-      <summary>Close application…</summary>
-      <div className={s.formFoot} role="group" aria-label="Why it closed">
-        <form action={moveStage.bind(null, id, "closed", "withdrawn")}><PendingButton label={kit.submission ? "I withdrew" : "I’m not applying"} /></form>
-        {kit.submission && <>
-          <form action={moveStage.bind(null, id, "closed", "lost")}><PendingButton label="They said no" /></form>
-          <form action={moveStage.bind(null, id, "closed", "ghosted")}><PendingButton label="No reply" /></form>
-        </>}
-        {(app.stage === "offer" || app.stage === "negotiation") &&
-          <form action={moveStage.bind(null, id, "closed", "won")}><PendingButton label="I accepted an offer" /></form>}
-      </div>
-    </details>}
+    <p className={ui.panel + " " + s.notice}>Keep personal details and your final CV outside JobSearch.</p>
     <div className={s.split}>
       <div className={s.stack}>
         <section className={ui.panel}>
-          <h2>PII-free CV content</h2>
-          <p className={s.tagline}>{kit.submission ? "Locked" : hasReview ? "Reviewed" : "Review needed"}</p>
-          <p className={ui.sub}>Keep your name, contact details, employer names, education and final personal CV outside JobSearch.</p>
-          {evidenceText ? <>
-            <ul className={s.reasons}>{kit.evidence.map((code) => <li key={code}>{EVIDENCE_TEXT[code]}</li>)}</ul>
-            <CopySafeText text={evidenceText} label="Copy PII-free content" />{" "}
-            <a className={ui.btn} href={"/api/export/safe-sourcing/" + id}>Download PII-free content</a>
-          </> : <p className={ui.sub}>No verified claims yet. The kit is Saved and you can continue later.</p>}
-          {editable && <p><Link href="/app/settings/sourcing">Manage verified claims</Link></p>}
+          <div className={s.inlineHead}>
+            <h2>CV content</h2>
+            <span className={s.tagline}>{kit.submission ? "Locked" : hasReview ? "Reviewed" : "Review needed"}</span>
+          </div>
+          {evidenceText ? <ul className={s.kitEvidence}>{kit.evidence.map((code) => <li key={code}>{EVIDENCE_TEXT[code]}</li>)}</ul>
+            : <p className={ui.sub}>No verified claims yet.</p>}
           {editable && kit.evidence.length !== record.value.evidence.length && <p className={ui.sub}>Withdrawn claims and drafts relying on them are hidden until you revise this kit.</p>}
           {editable && verified.length > 0 && <ReviewSafeEvidence key={revision} id={id} revision={revision}
             verified={verified} selected={kit.evidence} reviewed={hasReview} />}
+          {evidenceText && <div className={s.formFoot + " " + s.kitDownloads}>
+            <CopySafeText text={evidenceText} label="Copy content" />
+            <a className={ui.btn} href={"/api/export/safe-sourcing/" + id}>Download content</a>
+          </div>}
+          {editable && <p><Link href="/app/settings/sourcing">Manage verified claims</Link></p>}
         </section>
         {(["letter", "answer"] as const).map((section) => {
           const entry = kit[section];
@@ -76,10 +66,9 @@ export function SafeKitView({ application: app, record, verified, today, error }
           const prompt = section === "letter" ? "letter" : request?.prompt;
           const text = entry?.draft && prompt ? draftText(entry.draft, prompt) : null;
           const fits = !text || !request || fitsAnswer(text, request);
-          const label = section === "letter" ? "Cover letter" : "Portal answer";
-          return <section key={section} className={ui.panel}>
-            <h2>{label}</h2>
-            <p className={s.tagline}>{!entry ? "Not requested" : !text ? "Requested" : entry.approved ? "Reviewed" : "Draft"}</p>
+          const label = section === "letter" ? "Cover letter" : "Portal answers";
+          return <details key={section} className={ui.panel + " " + s.kitOptional} open={!!entry}>
+            <summary>{label} · Optional <span className={s.tagline}>{!entry ? "Not requested" : !text ? "Requested" : entry.approved ? "Reviewed" : "Draft"}</span></summary>
             {request && <p>{PROMPTS[request.prompt]} · Max {request.limit} {request.unit}</p>}
             {text && <>
               <p className={s.draft}>{text}</p>
@@ -98,22 +87,33 @@ export function SafeKitView({ application: app, record, verified, today, error }
             {editable && section === "answer" && !!entry && <details><summary>Change question or limit</summary>
               <RequestSafeDraft id={id} section="answer" revise disabled={!kit.evidence.length} />
             </details>}
-          </section>;
+          </details>;
         })}
       </div>
       <aside className={s.stack}>
         <section className={ui.panel}>
-          <h2>Company research</h2>
-          <p className={ui.sub}>Shared across this company’s roles. It is not started automatically.</p>
-          {app.companyId && <Link href={"/app/companies/" + app.companyId + "?view=research"}>Open company research</Link>}
-        </section>
-        <section className={ui.panel}>
-          <h2>Apply in the employer portal</h2>
-          <p className={ui.sub}>Opening the posting, copying or downloading does not mark this role Applied.</p>
+          <h2>Employer portal</h2>
           {app.applyUrl && <p><a className={ui.btn} href={app.applyUrl} target="_blank" rel="noreferrer">Open employer posting ↗</a></p>}
           {editable && <ConfirmSafeSubmission key={revision} id={id} revision={revision} today={today} role={app.role}
             company={app.company} hasReview={hasReview} />}
         </section>
+        {app.companyId && <section className={ui.panel}>
+          <h2>Company research</h2>
+          <p className={ui.sub}>{researchStatus}</p>
+          <Link href={"/app/companies/" + app.companyId + "?view=research"}>Open {app.company} research</Link>
+        </section>}
+        {canTransition(app.stage, "closed") && <details className={ui.panel}>
+          <summary>Close application…</summary>
+          <div className={s.formFoot} role="group" aria-label="Why it closed">
+            <form action={moveStage.bind(null, id, "closed", "withdrawn")}><PendingButton label={kit.submission ? "I withdrew" : "I’m not applying"} /></form>
+            {kit.submission && <>
+              <form action={moveStage.bind(null, id, "closed", "lost")}><PendingButton label="They said no" /></form>
+              <form action={moveStage.bind(null, id, "closed", "ghosted")}><PendingButton label="No reply" /></form>
+            </>}
+            {(app.stage === "offer" || app.stage === "negotiation") &&
+              <form action={moveStage.bind(null, id, "closed", "won")}><PendingButton label="I accepted an offer" /></form>}
+          </div>
+        </details>}
       </aside>
     </div>
   </>;

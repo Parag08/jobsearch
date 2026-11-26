@@ -36,8 +36,10 @@ export class VisitorStore<T> {
   }
 }
 
-/** The cookie that marks a browser as a demo visitor. Holds a random id, nothing else. */
+/** The cookie that marks a browser as a demo visitor. */
 export const DEMO_COOKIE = "jobsearch_demo";
+export const DEMO_KITS_COOKIE = "jobsearch_demo_kits";
+export const DEMO_KITS_COOKIE_LIMIT = 3800;
 /** How long a demo visit lasts without activity, in seconds (cookie and store agree). */
 export const DEMO_TTL_SECONDS = 2 * 60 * 60;
 

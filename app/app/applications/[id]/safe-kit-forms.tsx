@@ -13,8 +13,8 @@ export function ReviewSafeEvidence({ id, revision, selected, verified, reviewed 
   const [state, action] = useActionState(saveKitEvidence.bind(null, id, revision), {});
   const [choices, setChoices] = useState(selected.filter((code) => verified.includes(code)));
   const same = choices.length === selected.length && choices.every((code) => selected.includes(code));
-  return <form action={action} className={s.form}>
-    <fieldset className={s.checks}>
+  return <form action={action} className={s.form + " " + s.kitReview}>
+    <details><summary>Edit selected claims</summary><fieldset className={s.checks}>
       <legend>Choose up to three verified claims</legend>
       {verified.map((code) => <label key={code}>
         <input type="checkbox" name="evidence" value={code} checked={choices.includes(code)}
@@ -22,12 +22,12 @@ export function ReviewSafeEvidence({ id, revision, selected, verified, reviewed 
           onChange={(e) => setChoices(e.target.checked ? [...choices, code] : choices.filter((c) => c !== code))} />
         {" "}{EVIDENCE_TEXT[code]}
       </label>)}
-    </fieldset>
+    </fieldset></details>
     {same && choices.length > 0 ? <label>
-      <input type="checkbox" name="reviewed" defaultChecked={reviewed} /> I reviewed the exact safe CV content shown above.
+      <input type="checkbox" name="reviewed" defaultChecked={reviewed} /> I reviewed the exact content shown above.
     </label> : <p className={ui.sub}>Save your changes before reviewing the new content.</p>}
     {state.error && <p className={s.notice} role="alert">{state.error}</p>}
-    <div><PendingButton label={same ? "Save CV review" : "Save CV choices"} /></div>
+    <div><PendingButton label={same ? "Save review" : "Save CV choices"} primary /></div>
   </form>;
 }
 
@@ -48,8 +48,7 @@ export function RequestSafeDraft({ id, section, disabled, revise = false }: {
         <label className={s.field}>Unit
           <select name="unit" className={ui.input}><option value="words">Words</option><option value="characters">Characters</option></select>
         </label>
-      </div>
-      <p className={ui.sub}>Use a supported non-personal question. Handle any other prompt directly in the employer portal.</p>
+    </div>
     </>}
     {state.error && <p className={s.notice} role="alert">{state.error}</p>}
     <div><PendingButton label={revise ? "Update answer request" : section === "letter" ? "Ask my Claude for a letter" : "Ask my Claude for an answer"} disabled={disabled} /></div>
@@ -63,7 +62,7 @@ export function ConfirmSafeSubmission({ id, role, company, revision, today, hasR
   const [date, setDate] = useState("");
   const [materials, setMaterials] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  return <SourcingDialog title="Confirm actual submission" trigger="I submitted this application" primary>
+  return <SourcingDialog title="Confirm actual submission" trigger="Confirm submission">
     <div className={s.stack}>
       <p><strong>{role}</strong> · {company}</p>
       <p className={ui.sub}>Only confirm after the employer portal accepted your application. Do not upload a receipt or personal documents.</p>

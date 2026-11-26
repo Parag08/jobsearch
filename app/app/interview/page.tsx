@@ -104,7 +104,6 @@ export default async function Interview({ searchParams }: { searchParams: Promis
       <nav className={ui.prepStrip} aria-label="Preparing for">
         <Link href={url({ prep: GENERAL })} scroll={false} className={ui.prepItem} aria-current={prep === GENERAL ? "page" : undefined}>
           <b>Practice</b>
-          <span>Any interview, any day</span>
         </Link>
         {entries.length > 0 && <span className={ui.prepDivider} aria-hidden="true" />}
         {entries.map((e) => (
@@ -262,10 +261,10 @@ function CompanyPrep({
 }) {
   const base = { prep: entry.slug };
   const n = card?.topics ?? questions.length;
-  const asked = settings && settings.maxTopics < n ? `, ${settings.maxTopics} of them asked` : "";
+  const asked = settings && settings.maxTopics < n ? ` (${settings.maxTopics} asked)` : "";
   const line =
     entry.kind === "round"
-      ? `The round your agent prepared: ${n} questions${asked}${card?.interviewer ? `, asked by ${card.interviewer}` : ""}. Weak answers get probed, strong ones get a deeper “why”.`
+      ? `${n} questions${asked}${card?.interviewer ? ` · ${card.interviewer}` : ""}`
       : entry.kind === "consulting"
         ? "The fit part of the interview: why this firm, why you, and your stories. Practise a case below."
         : "Built from the job ad. Ask your agent to push this round's questions for a more realistic interview.";

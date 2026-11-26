@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { DEMO_COOKIE } from "@/lib/demo/visitors";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE } from "@/lib/demo/visitors";
 import { redirect } from "next/navigation";
 import { createServerSupabase, readSupabaseEnv } from "@/lib/db/supabase";
 
@@ -12,7 +12,9 @@ export async function signInWith(provider: Provider): Promise<void> {
   const env = readSupabaseEnv();
   if (!env) redirect("/signin?error=not_configured");
   // Signing in ends a demo visit, or the sample workspace would keep winning (lib/db getWorkspace).
-  (await cookies()).delete(DEMO_COOKIE);
+  const jar = await cookies();
+  jar.delete(DEMO_COOKIE);
+  jar.delete(DEMO_KITS_COOKIE);
   const h = await headers();
   const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const supabase = await createServerSupabase(env);

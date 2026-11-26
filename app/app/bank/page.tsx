@@ -4,7 +4,7 @@ import { getWorkspace } from "@/lib/db";
 import { listProjects } from "@/lib/repos/projects";
 import { listApplicationCvs } from "@/lib/repos/cvs";
 import { getProfile } from "@/lib/repos/profiles";
-import { needsMetric, readiness, nudgeQueue, POINTS_PER_ROLE } from "@/lib/onboarding";
+import { needsMetric, nudgeQueue, POINTS_PER_ROLE } from "@/lib/onboarding";
 import { cvUsage, effectiveStrength, isRecentRole, strengthMix, todoItems } from "@/lib/bank/display";
 import { monogram, toneFor } from "@/lib/pipeline-display";
 import { AddPoint, OpenOnHash, PointRow } from "./point";
@@ -18,8 +18,7 @@ const BAND_TONE = { strong: "good", solid: "mid", weak: "attention" } as const;
 const OPEN_FALLBACK = 2;
 
 /**
- * The bullet bank (M2), the single source of evidence (DESIGN.md section 5, Bank). A summary
- * panel says how ready the bank is; the to-do list turns deferred onboarding nudges into
+ * The bullet bank (M2), the single source of evidence (DESIGN.md section 5, Bank). The to-do list turns deferred onboarding nudges into
  * sentences that link to their role or point; each role is a collapsible panel of points you
  * can edit in place. A point with no number is marked, never hidden.
  */
@@ -41,12 +40,6 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
   const recent = (dates: string | null) => isRecentRole(dates, thisYear);
   const usage = cvUsage(cvs);
 
-  const ready = readiness({
-    identity: Boolean(profile?.displayName),
-    education: projects.some((p) => /school|university|insead|mba|college/i.test(`${p.org} ${p.name}`)),
-    roles: projects.map((p) => ({ points: p.bullets.length, recent: recent(p.dates) })),
-    targets: profile?.roleFamilies.length ?? 0,
-  });
   const nudges = nudgeQueue({
     targets: profile?.roleFamilies.length ?? 0,
     workAuthorisation: Boolean(profile?.visaContext),
@@ -68,10 +61,6 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
   const gaps = bullets.filter((b) => needsMetric(b.text)).length;
   const families = [...new Set(bullets.map((b) => b.roleFamily))].sort();
   const anyRecent = projects.some((p) => recent(p.dates));
-  const readyLine =
-    ready.score >= 100
-      ? "Enough for a credible one-page CV"
-      : `Still to add: ${ready.missing.filter((m) => !m.startsWith("recent role ")).join(", ")}`;
 
   const roles = projects
     .map((p) => ({ ...p, bullets: onlyGaps ? p.bullets.filter((b) => needsMetric(b.text)) : p.bullets }))
@@ -83,27 +72,11 @@ export default async function Bank({ searchParams }: { searchParams: Promise<{ o
       <div className={ui.head}>
         <div className={ui.headText}>
           <h1>Experience</h1>
-          <p className={ui.facts}>
-            <span>
-              <b>{bullets.length}</b> point{bullets.length === 1 ? "" : "s"}
-            </span>
-            <span>
-              <b>{projects.length}</b> role{projects.length === 1 ? "" : "s"}
-            </span>
-          </p>
         </div>
       </div>
 
       <section className={ui.panel} aria-label="Experience summary">
         <div className={ui.summary}>
-        <div className={ui.sumStat}>
-          <span className={ui.sumLabel}>CV readiness</span>
-          <b className={ui.sumValue}>{ready.score}%</b>
-          <div className={ui.meter} aria-hidden="true">
-            <i style={{ "--w": `${ready.score}%` } as React.CSSProperties} />
-          </div>
-          <span className={ui.sumNote}>{readyLine}</span>
-        </div>
         <div className={ui.sumStat}>
           <span className={ui.sumLabel}>Point strength</span>
           <div className={ui.sumBar} role="img" aria-label={`${mix.strong} strong, ${mix.solid} solid, ${mix.weak} weak`}>

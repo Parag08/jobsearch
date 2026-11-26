@@ -63,9 +63,6 @@ export default async function SettingsPage() {
       <div className={ui.head}>
         <div className={ui.headText}>
           <h1>Settings</h1>
-          <p className={ui.facts}>
-            <span>Leave a field blank to use the default. Changes apply to your account from the next action.</span>
-          </p>
         </div>
       </div>
       <section className={ui.panel}>
