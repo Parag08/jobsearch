@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { getApplication } from "../repos/applications";
+import { setSourcingDecision } from "../repos/sourcing";
 import { getSourcingKit } from "../services/sourcing-kits";
 import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS } from "../demo/visitors";
 import { demoVisitorToken } from "../demo/visitor-token";
-import { confirmManualSubmission, prepareDailyBatch, saveKitEvidence, triageRole } from "../../app/app/sourcing-actions";
+import { confirmManualSubmission, prepareDailyBatch, saveKitEvidence, toggleTargetCompany, triageRole } from "../../app/app/sourcing-actions";
 import { getWorkspace } from "./index";
 
 vi.mock("server-only", () => ({}));
@@ -158,5 +159,31 @@ describe("getWorkspace", () => {
     await expect(getWorkspace()).resolves.toBeNull();
     browser.set(DEMO_COOKIE, idForVisitor);
     await expect(getWorkspace()).resolves.toBeNull();
+  });
+
+  it("does not revive removed company picks when Undo reaches a different instance", async () => {
+    const secret = "test-only-secret-for-demo-journal";
+    vi.stubEnv("LOCAL_DEMO_MODE", "true");
+    vi.stubEnv("SUPABASE_SECRET_KEY", secret);
+    vi.stubEnv("DEMO_MAX_VISITORS", "10");
+    vi.stubGlobal("__jobsearchVisitors", undefined);
+    const visitorId = "00000000-0000-4000-8000-000000000001";
+    const browser = new Map([[DEMO_COOKIE, await demoVisitorToken(visitorId, secret)]]);
+    getCookie.mockImplementation((name: string) => ({ value: browser.get(name) }));
+    setCookie.mockImplementation((name: string, value: string) => browser.set(name, value));
+
+    const { db, userId } = (await getWorkspace())!;
+    const sampleJobs = (db as FakeDb).rows("sourced_jobs");
+    const role = sampleJobs.find((row) => row.external_id === "demo-1")!;
+    const otherRole = sampleJobs.find((row) => row.external_id === "demo-2")!;
+    await setSourcingDecision(db, userId, otherRole.id, "picked");
+    await triageRole(role.id, "picked", "ranked");
+    await expect(toggleTargetCompany(role.company_id!, false)).rejects.toThrow("/app/companies?removed=");
+    vi.stubGlobal("__jobsearchVisitors", undefined);
+    await expect(toggleTargetCompany(role.company_id!, true)).rejects.toThrow("/app/companies?restored=1");
+
+    const restored = ((await getWorkspace())!.db as FakeDb).rows("sourced_jobs");
+    expect(restored.find((row) => row.id === role.id)?.sourcing_decision).toBe("available");
+    expect(restored.find((row) => row.id === otherRole.id)?.sourcing_decision).toBe("picked");
   });
 });

@@ -52,9 +52,10 @@ export async function addTargetCompany(_previous: { error?: string }, form: Form
 }
 
 export async function toggleTargetCompany(id: string, active: boolean) {
-  const { db, userId } = await workspace();
+  const { db, userId, persistDemoKits } = await workspace();
   try {
     await setSourcingCompanyActive(db, userId, id, active);
+    if (!active) await persistDemoKits?.();
   } catch {
     redirect("/app/companies?error=1");
   }
