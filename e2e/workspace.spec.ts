@@ -225,6 +225,27 @@ test("Insights filters the evidence summary by job title and clears the filter",
   await expect(rolesRead).toHaveText(originalSelection);
 });
 
+test("Role insights explains excluded sourcing kits and an unread-only title filter", async ({ demo: page }) => {
+  await appLink(page, "Today").click();
+  await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
+  await page.getByRole("button", { name: "Prepare 1 kit", exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/applications\//);
+  await appLink(page, "Pipeline").click();
+  await page.getByRole("link", { name: "Role insights", exact: true }).click();
+
+  const excluded = page.getByRole("region", { name: "Excluded roles" });
+  await expect(excluded).toContainText("1 role is excluded from Role insights");
+  await expect(excluded).toContainText("1 safe sourcing kit");
+  await expect(excluded).toContainText("paste its posting as a regular job in Pipeline");
+  const search = page.getByRole("search");
+  await search.getByRole("searchbox").fill("Growth");
+  await search.getByRole("button", { name: "Filter" }).click();
+  await expect(page.getByText("No read roles match this filter.", { exact: true })).toBeVisible();
+  await expect(excluded).toBeVisible();
+  await expect(page.getByRole("region", { name: "Summary" })).toHaveCount(0);
+  await expect(page.getByText("Nothing these roles ask for is missing from your history.")).toHaveCount(0);
+});
+
 test("Experience creates, revises and deletes a point in the evidence bank", async ({ demo: page }) => {
   await appLink(page, "Experience").click();
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible();

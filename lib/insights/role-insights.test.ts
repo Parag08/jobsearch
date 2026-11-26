@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Application, JdExtract, Project } from "../types";
 import type { Taxonomy } from "../editorial/score";
-import { roleFamilies, roleInsights, selectRoles, topGaps } from "./role-insights";
+import { roleFamilies, roleInsights, roleReadCoverage, selectRoles, topGaps } from "./role-insights";
 
 /**
  * The role knowledge base: across every role read so far, what one line of work asks for,
@@ -54,6 +54,29 @@ describe("roleFamilies", () => {
       { family: fde, roles: 3 },
       { family: "product-management", roles: 1 },
     ]);
+  });
+});
+
+describe("roleReadCoverage", () => {
+  const kit = { ...role("Kit", "Product Manager, Growth", "product-management", []), jdExtract: null, hasSourcingKit: true };
+  const withPosting = { ...role("Posting", "Product Manager", "product-management", []), jdExtract: null };
+
+  it("counts excluded roles by the action needed to read their postings", () => {
+    expect(roleReadCoverage([...apps, kit, withPosting], [withPosting.id])).toEqual({
+      excluded: 3, safeKits: 1, needsPosting: 1, readyToRead: 1,
+    });
+  });
+
+  it("counts nothing when there are no roles or all roles are read", () => {
+    const empty = { excluded: 0, safeKits: 0, needsPosting: 0, readyToRead: 0 };
+    expect(roleReadCoverage([], [])).toEqual(empty);
+    expect(roleReadCoverage([apps[0]!], [])).toEqual(empty);
+  });
+
+  it("ignores duplicate, unknown, or ineligible posting IDs", () => {
+    expect(roleReadCoverage([apps[0]!, kit, withPosting], [apps[0]!.id, kit.id, withPosting.id, withPosting.id, "missing"])).toEqual({
+      excluded: 2, safeKits: 1, needsPosting: 0, readyToRead: 1,
+    });
   });
 });
 

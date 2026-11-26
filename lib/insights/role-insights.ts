@@ -49,6 +49,19 @@ export function familyKey(family: string): string {
 
 const read = (apps: Application[]) => apps.filter((a) => a.jdExtract);
 
+export function roleReadCoverage(apps: Application[], unreadIds: readonly string[]) {
+  const unread = new Set(unreadIds);
+  const coverage = { excluded: 0, safeKits: 0, needsPosting: 0, readyToRead: 0 };
+  for (const app of apps) {
+    if (app.jdExtract) continue;
+    coverage.excluded++;
+    if (app.hasSourcingKit) coverage.safeKits++;
+    else if (unread.has(app.id)) coverage.readyToRead++;
+    else coverage.needsPosting++;
+  }
+  return coverage;
+}
+
 /** Families seen, with how many read roles each has, most first. */
 export function roleFamilies(apps: Application[]): { family: string; roles: number }[] {
   const counts = new Map<string, number>();
