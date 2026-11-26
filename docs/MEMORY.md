@@ -14,6 +14,8 @@ Newer journals merge kits by application ID and patch only journal-owned fields.
 
 The signed Playwright workspace subset passed on both baselines (origin/main and `524ee6c`, 17 each), but failed with asynchronous Node-side HMACs (8 failed). Request traces showed no journal replays and the same FakeDb for mutations and renders, including stale UI on responses that wrote no cookies. Switching Node-side lease and journal HMACs to synchronous crypto resolved the reproduced failures (17 passed); middleware retains Edge-compatible Web Crypto and the same lease format.
 
+PR #50 QA adds coverage for the Today bookmark, workspace headings and action labels, signed kit revisits across two browser-test server processes, visitor isolation, and journal size and unsigned-demo limits. See `docs/E2E.md` for ports and scope.
+
 ## 2026-11-26 - Daily sourcing and company list import
 
 Companies → Import list reviews one CSV or visible XLSX worksheet in a browser worker. Only confirmed, mapped organization fields reach the server; migration 0021 applies target changes as one transaction and keeps a minimal receipt for retry and Undo. Undo removes unchanged memberships and unprepared picks, not company records, research, Network or applications. Run `LOCAL_DEMO_MODE=true npm run dev` without Supabase to try the flow with the included templates.

@@ -1,5 +1,49 @@
 import { appLink, enterDemo, expect, test } from "./demo";
 
+test("Today replaces Watchlist in navigation without changing its bookmarked URL", async ({ demo: page }) => {
+  await expect(appLink(page, "Watchlist")).toHaveCount(0);
+  await expect(appLink(page, "Today")).toHaveAttribute("href", "/app/watchlist");
+  await page.goto("/app/watchlist");
+  await expect(appLink(page, "Today")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Roles to review");
+});
+
+test("workspace pages have one main title without repeating navigation in an eyebrow", async ({ demo: page }) => {
+  const main = page.getByRole("main");
+  const heading = main.getByRole("heading", { level: 1 });
+  for (const [nav, title, eyebrow] of [
+    ["Overview", "Follow up with 1 person", /^Overview$/i],
+    ["Pipeline", "Applications", /^Pipeline$/i],
+    ["Interview", "Interview prep", /^Interview$/i],
+    ["Today", "Roles to review", /^(Watchlist|Today)(\s*\/.*)?$/i],
+    ["Companies", "Target companies", /^Companies(\s*\/.*)?$/i],
+    ["Network", "Network", /^Network$/i],
+    ["Experience", "Experience", /^Experience$/i],
+    ["Assistant", "Connect an assistant", /^Assistant$/i],
+    ["Settings", "Settings", /^(User settings|Settings)$/i],
+  ] as const) {
+    await test.step(nav, async () => {
+      if (nav !== "Overview") await appLink(page, nav).click();
+      await expect(heading).toHaveText(title);
+      await expect(main.getByRole("paragraph").filter({ hasText: eyebrow })).toHaveCount(0);
+    });
+  }
+
+  await page.goto("/app/settings/sourcing");
+  await expect(heading).toHaveText("Sourcing preferences");
+  await expect(main.getByRole("paragraph").filter({ hasText: /^(User settings|Settings)$/i })).toHaveCount(0);
+
+  await appLink(page, "Companies").click();
+  await main.getByRole("link", { name: "Orchard Commerce", exact: true }).click();
+  await expect(heading).toHaveText("Orchard Commerce");
+  await expect(main.getByText("Companies / Shared company record", { exact: true })).toHaveCount(0);
+
+  await appLink(page, "Companies").click();
+  await main.getByRole("link", { name: "Import list", exact: true }).click();
+  await expect(heading).toHaveText("Bring your company list.");
+  await expect(main.getByText("Companies / Import list", { exact: true })).toHaveCount(0);
+});
+
 test("Overview switches between progress and market insights and links to Pipeline", async ({ demo: page }) => {
   const mainHeading = await page.getByRole("heading", { level: 1 }).textContent();
   await expect(page.getByRole("link", { name: "Open " + mainHeading, exact: true })).toHaveText("Open");
@@ -103,6 +147,7 @@ test("Today persists Later and unpicking without preparing a kit", async ({ demo
   const picked = page.getByRole("button", { name: "Picked " + title, exact: true });
   const prepare = page.getByRole("button", { name: /^Prepare \d+ kits?$/ });
   const views = page.getByRole("navigation", { name: "Shortlist view" });
+  await expect(pick).toHaveText("Pick role");
   await pick.click();
   await expect(picked).toHaveAttribute("aria-pressed", "true");
   await page.reload();
@@ -157,6 +202,7 @@ test("Network adds a contact and logs a conversation without leaking it into ano
 test("Insights filters the evidence summary by job title and clears the filter", async ({ demo: page }) => {
   await appLink(page, "Pipeline").click();
   await page.getByRole("link", { name: "Role insights", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Insights");
   await page.getByRole("navigation", { name: "Role families" }).getByRole("link", { name: /^Product management/ }).click();
   await expect(page).toHaveURL(/family=product-management$/);
   const search = page.getByRole("search");

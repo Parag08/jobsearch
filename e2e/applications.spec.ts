@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { appLink, expect, test } from "./demo";
+import { appLink, enterDemo, expect, test } from "./demo";
 
 test("Pipeline reads a pasted role, saves the next step, and records a closure", async ({ demo: page }) => {
   await appLink(page, "Pipeline").click();
@@ -15,6 +15,7 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
 
   await expect(page).toHaveURL(/\/app\/applications\/[^/?]+$/);
   await expect(page.getByRole("heading", { name: "Example Labs" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Example Labs");
   const stage = page.getByRole("region", { name: "Stage" });
   await expect(stage.locator('[aria-current="step"]')).toHaveText("Saved");
 
@@ -34,7 +35,7 @@ test("Pipeline reads a pasted role, saves the next step, and records a closure",
   await expect(page.getByRole("link", { name: /Product Operations Lead Example Labs/ })).toBeVisible();
 });
 
-test("a picked role becomes a safe kit and only confirmation moves it to Applied", async ({ demo: page }, testInfo) => {
+test("a picked role becomes a safe kit and only confirmation moves it to Applied", async ({ demo: page, browser, context }, testInfo) => {
   await appLink(page, "Today").click();
   await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
   await expect(page.getByText("1 role picked")).toBeVisible();
@@ -51,6 +52,34 @@ test("a picked role becomes a safe kit and only confirmation moves it to Applied
   await expect(page.locator("summary").getByText("Not requested", { exact: true })).toHaveCount(2);
   await testInfo.attach("Saved application kit", { body: await page.screenshot({ path: testInfo.outputPath("saved-kit.png") }), contentType: "image/png" });
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
+
+  await test.step("the kit opens on a fresh server process only for the visitor who saved it", async () => {
+    const replica = new URL(testInfo.config.metadata.demoReplicaURL);
+    expect(replica.origin).not.toBe(new URL(kitUrl).origin);
+    const sharedUrl = new URL(new URL(kitUrl).pathname, replica);
+    const reopened = await context.newPage();
+    try {
+      const response = await reopened.goto(sharedUrl.href);
+      expect(response?.status()).toBe(200);
+      const main = reopened.getByRole("main");
+      await expect(main.getByRole("heading", { level: 1 })).toHaveText("Product Manager, Growth");
+      await expect(main.getByRole("heading", { name: "CV content", exact: true })).toBeVisible();
+      await expect(main.getByText(/^Application kit ·/)).toHaveCount(0);
+    } finally {
+      await reopened.close();
+    }
+
+    const otherContext = await browser.newContext({ baseURL: replica.origin });
+    try {
+      const other = await otherContext.newPage();
+      await enterDemo(other);
+      await other.goto(sharedUrl.href);
+      await expect(other.getByRole("heading", { name: "That page does not exist." })).toBeVisible();
+      await expect(other.getByRole("heading", { name: "CV content", exact: true })).toHaveCount(0);
+    } finally {
+      await otherContext.close();
+    }
+  });
 
   const downloadEvent = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download content" }).click();

@@ -71,12 +71,19 @@ describe("getWorkspace", () => {
     vi.stubEnv("NEXT_SERVER_ACTIONS_ENCRYPTION_KEY", undefined);
     vi.stubEnv("SUPABASE_SECRET_KEY", undefined);
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", undefined);
+    vi.stubGlobal("__jobsearchVisitors", undefined);
     getCookie.mockReturnValue({ value: "00000000-0000-0000-0000-000000000001" });
     await expect(getWorkspace()).resolves.toMatchObject({
       db: expect.any(FakeDb),
       mode: "demo",
       cannedAi: true,
     });
+    const w = (await getWorkspace())!;
+    expect(w.persistDemoKits).toBeUndefined();
+    const role = (w.db as FakeDb).rows("sourced_jobs").find((row) => row.external_id === "demo-1")!;
+    await triageRole(role.id, "picked", "ranked");
+    expect((w.db as FakeDb).rows("sourced_jobs").find((row) => row.id === role.id)?.sourcing_decision).toBe("picked");
+    expect(setCookie).not.toHaveBeenCalled();
   });
 
   it("revisits a newly prepared public demo kit on a different instance", async () => {
