@@ -57,6 +57,13 @@ test.describe("phone navigation", () => {
     await expect(links.nth(1)).toHaveText("Today");
     await expect(links.nth(2)).toHaveText("Pipeline");
     await expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    await menu.getByRole("link", { name: "Today", exact: true }).tap();
+    await expect(demo).toHaveURL("/app/watchlist");
+    await expect(demo.getByRole("heading", { name: "Roles to review", exact: true })).toBeVisible();
+    await expect(menu).toBeHidden();
+    await app.getByRole("button", { name: "Today", exact: true }).tap();
+    await expect(menu.getByRole("link", { name: "Today", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(menu.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current", "page");
     await menu.getByRole("link", { name: "Pipeline" }).click();
     await expect(demo.getByRole("heading", { name: "Applications", exact: true })).toBeVisible();
     await expect(menu).toBeHidden();
