@@ -17,6 +17,24 @@ test("Overview switches between progress and market insights and links to Pipeli
   await expect(appLink(page, "Pipeline")).toHaveAttribute("aria-current", "page");
 });
 
+test("Home recommends the same number of roles that Today shows as ranked", async ({ demo: page }) => {
+  // Clear a higher-priority task so the roles recommendation fits in Home's three steps.
+  await page.getByRole("link", { name: /^Send your saved application/ }).click();
+  const stage = page.getByRole("region", { name: "Stage" });
+  await stage.getByText("Close application…").click();
+  await stage.getByRole("button", { name: "They said no" }).click();
+  await expect(stage.getByText("Closed: they said no.", { exact: false })).toBeVisible();
+  await page.goto("/app/home");
+
+  const recommendation = page.getByRole("link", { name: /^Review \d+ ranked roles? in Today/ });
+  const homeCount = (await recommendation.innerText()).match(/\d+/)?.[0];
+  await recommendation.click();
+  const views = page.getByRole("navigation", { name: "Shortlist view" });
+  const ranked = views.getByRole("link", { name: /^Ranked · \d+$/ });
+  const rankedCount = (await ranked.innerText()).match(/\d+/)?.[0];
+  expect(homeCount).toBe(rankedCount);
+});
+
 test("Today persists triage, and Companies adds, removes, and restores a target", async ({ demo: page }, testInfo) => {
   await appLink(page, "Today").click();
   await expect(page.getByRole("heading", { name: "Roles to review" })).toBeVisible();

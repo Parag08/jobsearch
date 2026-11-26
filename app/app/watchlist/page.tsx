@@ -22,7 +22,8 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
   const w = await getWorkspace();
   if (!w) redirect("/signin");
   const source = await loadDailySourcing(w.db, w.userId);
-  const { ranked, picked, configured, recipe } = source;
+  const { ranked, rankedRoles, picked, configured, recipe } = source;
+  const rankedIds = new Set(ranked.map((job) => job.id));
   const picks = new Set(picked.map((job) => job.id));
   const lastSuccessful = configured.map((b) => b.lastSuccessAt).filter(Boolean).sort().at(-1);
   const failures = configured.filter((b) => b.lastCheckFailed);
@@ -30,8 +31,6 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
   const saved = source.apps.filter((a) => a.stage === "saved" && a.hasSourcingKit);
   const connected = new Set(configured.map((board) => norm(board.company)));
   const needsSetup = targets.filter((company) => !connected.has(company.identity)).length;
-  const rankedIds = new Set(ranked.map((job) => job.id));
-  const rankedRoles = [...ranked, ...picked.filter((job) => !rankedIds.has(job.id))];
   const roles = view === "ranked" ? rankedRoles : source[view];
   const notices: Record<string, string> = {
     error: "That update could not be completed. Try again.",

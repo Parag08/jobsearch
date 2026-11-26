@@ -2,11 +2,10 @@ import Link from "next/link";
 import { envFor } from "@/lib/services/settings";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
-import { listApplications } from "@/lib/repos/applications";
 import { listContacts, listInteractionDates } from "@/lib/repos/contacts";
 import { listAttempts } from "@/lib/repos/answers";
 import { listCaseSessions } from "@/lib/repos/case-sessions";
-import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
+import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { listProjects } from "@/lib/repos/projects";
 import { staleApplications } from "@/lib/pipeline";
 import { followupsDue } from "@/lib/outreach";
@@ -44,7 +43,7 @@ function stepCopy(n: NextStep, savedCompany: string | undefined): { text: string
     case "add":
       return { text: "Add your first job", href: "/app" };
     case "roles":
-      return { text: `Review ${plural(n.count, "new role")} in Today`, href: "/app/watchlist" };
+      return { text: `Review ${plural(n.count, "ranked role")} in Today`, href: "/app/watchlist" };
     default:
       return { text: "Practise one question out loud", href: "/app/interview" };
   }
@@ -108,18 +107,16 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile] = await Promise.all([
-    listApplications(db, userId),
+  const [{ apps, rankedRoles }, contacts, outreachDates, attempts, cases, projects, profile] = await Promise.all([
+    loadDailySourcing(db, userId),
     listContacts(db, userId),
     listInteractionDates(db, userId),
     listAttempts(db, userId),
     listCaseSessions(db, userId),
-    listSourcedJobs(db, userId),
     listProjects(db, userId),
     getProfile(db, userId),
   ]);
 
-  const openRoles = jobs.filter((j) => j.status === "new" || j.status === "shortlisted").length;
   const m = momentum({
     today,
     applications: apps.map((a) => ({ id: a.id, company: a.company, stage: a.stage, savedAt: a.savedAt, appliedAt: a.appliedAt })),
@@ -128,7 +125,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
       ...attempts.map((a) => ({ date: a.createdAt, seconds: attemptSeconds(a) })),
       ...cases.map((c) => ({ date: c.updatedAt, seconds: caseSeconds(c.session.turns.map((t) => t.at)) })),
     ],
-    openRoles,
+    openRoles: rankedRoles.length,
     followupsDue: followupsDue(contacts, today).length,
     stale: staleApplications(apps, today).length,
     goals: homeGoalsFromEnv(await envFor(db, userId)),

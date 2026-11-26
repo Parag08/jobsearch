@@ -24,6 +24,9 @@ export async function loadDailySourcing(db: DbClient, userId: string) {
     (b.companyId ? companiesById.get(b.companyId) : companyByName.get(norm(b.company)))?.active);
   const boardUrls = new Set(configured.map((board) => board.careersUrl));
   const currentJobs = jobs.filter((job) => !job.sourcingBoardUrl || boardUrls.has(job.sourcingBoardUrl));
-  return { ...dailyShortlist(currentJobs, companies, apps, triage.decisions, recipe, triage.reviews),
+  const shortlist = dailyShortlist(currentJobs, companies, apps, triage.decisions, recipe, triage.reviews);
+  const rankedIds = new Set(shortlist.ranked.map((job) => job.id));
+  const rankedRoles = [...shortlist.ranked, ...shortlist.picked.filter((job) => !rankedIds.has(job.id))];
+  return { ...shortlist, rankedRoles,
     companies, configured, apps, companyByName, recipe, reviews: triage.reviews, evidence: triage.evidence };
 }

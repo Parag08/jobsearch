@@ -6,6 +6,8 @@ Keep this file updated at the end of every working session: what was done, decis
 
 Companies, Today, kits and the audited workspace pages now lead with records and actions. Today keeps the existing /app/watchlist route. Company removal explains its scope before confirmation and still offers Undo. Kits still require exact-content review and actual-submission confirmation. Home's hero shows only the recommended task and its link, without unrelated interview context.
 
+Home's roles recommendation uses the same Ranked list as Today, including picked roles retained outside the ranking limit, rather than counting every new or shortlisted posting.
+
 The public demo lost newly prepared kits when a request reached another instance. With the same existing server signing secret configured on every instance, the visitor carries a bounded, signed cookie for sample-role triage, verified claims, and kits (including review and submission). The two-hour lease renews on workspace navigations at most every 15 minutes, not on Server Actions, prefetches, or internal action redirects. Other demo edits remain process-local; local FakeDb development mode and live Supabase are unchanged. A two-FakeDb regression and a local two-process browser check cover direct kit revisits.
 
 Newer journals merge kits by application ID and patch only journal-owned fields. Missing entries do not delete warm data. This also restores kits prepared elsewhere when the receiving worker is already warm for that visitor. Removing a target journals the cleared picks, so Undo on another instance does not restore them. The journal cookie persists across browser restarts and expires and renews alongside the visitor cookie.
