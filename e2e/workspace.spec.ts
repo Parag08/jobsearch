@@ -3,6 +3,9 @@ import { appLink, enterDemo, expect, test } from "./demo";
 test("Overview switches between progress and market insights and links to Pipeline", async ({ demo: page }) => {
   const mainHeading = await page.getByRole("heading", { level: 1 }).textContent();
   await expect(page.getByRole("link", { name: "Open " + mainHeading, exact: true })).toHaveText("Open");
+  const hero = page.getByRole("region", { name: "Follow up with 1 person", exact: true });
+  await expect(hero.getByRole("link", { name: "Open Follow up with 1 person", exact: true })).toHaveAttribute("href", "/app/network");
+  await expect(hero.getByRole("paragraph")).toHaveCount(0);
   const overview = page.getByRole("navigation", { name: "Overview", exact: true });
   await expect(overview.getByRole("link", { name: "Progress" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("region", { name: "Your streaks" })).toBeVisible();

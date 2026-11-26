@@ -7,7 +7,6 @@ import { listContacts, listInteractionDates } from "@/lib/repos/contacts";
 import { listAttempts } from "@/lib/repos/answers";
 import { listCaseSessions } from "@/lib/repos/case-sessions";
 import { listSourcedJobs } from "@/lib/repos/sourced-jobs";
-import { listRoleQuestions } from "@/lib/repos/role-questions";
 import { listProjects } from "@/lib/repos/projects";
 import { staleApplications } from "@/lib/pipeline";
 import { followupsDue } from "@/lib/outreach";
@@ -109,7 +108,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile, roleQuestions] = await Promise.all([
+  const [apps, contacts, outreachDates, attempts, cases, jobs, projects, profile] = await Promise.all([
     listApplications(db, userId),
     listContacts(db, userId),
     listInteractionDates(db, userId),
@@ -118,7 +117,6 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     listSourcedJobs(db, userId),
     listProjects(db, userId),
     getProfile(db, userId),
-    listRoleQuestions(db, userId).catch(() => []),
   ]);
 
   const openRoles = jobs.filter((j) => j.status === "new" || j.status === "shortlisted").length;
@@ -140,9 +138,6 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const steps = m.next.map((n) => stepCopy(n, company(n.applicationId)));
   const primary = steps[0]!;
 
-  const interview = apps.find((a) => a.stage === "interview" || a.stage === "case");
-  const round = interview && roleQuestions.find((question) => question.applicationId === interview.id && question.round)?.round;
-
   const insights = tab === "insights" ? roleInsights(apps, projects, profile?.taxonomy ?? { tags: {} }) : null;
   const families = tab === "insights" ? roleFamilies(apps) : [];
   const tabHref = (t: "progress" | "insights") => (t === "progress" ? "/app/home" : "/app/home?tab=insights");
@@ -151,7 +146,6 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     <>
       <section className={ui.homeHero} aria-labelledby="home-title">
         <h1 id="home-title">{primary.text}</h1>
-        {interview && <p>{[interview.role, interview.company, round ?? interview.nextAction].filter(Boolean).join(" · ")}</p>}
         <div className={ui.homeHeroActions}>
           <Link href={primary.href} className={ui.btn} aria-label={"Open " + primary.text} data-primary="">
             Open
