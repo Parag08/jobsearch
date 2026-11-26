@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { signedInRedirect } from "./lib/auth/routing";
 import { requireWorkspaceEnv } from "./lib/db/supabase";
-import { DEMO_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv } from "./lib/demo/visitors";
-import { demoCookieOptions, demoSigningSecret, demoVisitorToken, readDemoVisitor } from "./lib/demo/visitor-token";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv } from "./lib/demo/visitors";
+import { demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "./lib/demo/visitor-token";
 
 const leaseRenewalIntervalMs = 15 * 60 * 1000;
 
@@ -21,8 +21,7 @@ async function renewDemoVisit(request: NextRequest, response: NextResponse) {
   const now = Date.now();
   const visitor = await readDemoVisitor(request.cookies.get(DEMO_COOKIE)?.value, secret, now);
   if (!visitor?.expiresAt || visitor.expiresAt - now > DEMO_TTL_SECONDS * 1000 - leaseRenewalIntervalMs) return response;
-  response.cookies.set(DEMO_COOKIE, await demoVisitorToken(visitor.id, secret, now),
-    { ...demoCookieOptions(), maxAge: DEMO_TTL_SECONDS });
+  await setSignedDemoLease(response.cookies, visitor.id, secret, now, request.cookies.get(DEMO_KITS_COOKIE)?.value);
   return response;
 }
 

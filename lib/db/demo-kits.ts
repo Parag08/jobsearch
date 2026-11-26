@@ -5,9 +5,9 @@ import { ClosedReasonSchema, StageSchema } from "../types";
 import { safePostingUrl } from "../watchlist/daily";
 import { Evidence, SafeKit } from "../watchlist/safe-kit";
 import { signDemoMac, verifyDemoMac } from "../demo/node-mac";
+import { DEMO_KITS_COOKIE_LIMIT } from "../demo/visitors";
 import { DEMO_USER_ID } from "./demo";
 
-const cookieLimit = 3800;
 const journalLimit = 16_384;
 const maxKits = 12;
 const Role = z.string().regex(/^demo-\d{1,3}$/);
@@ -57,7 +57,7 @@ export function writeDemoKits(db: FakeDb, visitor: string, secret: string): stri
     const json = Buffer.from(JSON.stringify(journal));
     if (json.length <= journalLimit) {
       const payload = deflateRawSync(json).toString("base64url");
-      if (payload.length + 44 <= cookieLimit) {
+      if (payload.length + 44 <= DEMO_KITS_COOKIE_LIMIT) {
         return payload + "." + signDemoMac(secret, "kits", visitor + "." + payload);
       }
     }
@@ -66,7 +66,7 @@ export function writeDemoKits(db: FakeDb, visitor: string, secret: string): stri
 }
 
 function readJournal(token: string, visitor: string, secret: string): Journal | null {
-  if (token.length > cookieLimit) return null;
+  if (token.length > DEMO_KITS_COOKIE_LIMIT) return null;
   const [payload, signature, extra] = token.split(".");
   if (!payload || !/^[A-Za-z0-9_-]+$/.test(payload) || !signature || extra !== undefined) return null;
   if (!verifyDemoMac(secret, "kits", visitor + "." + payload, signature)) return null;

@@ -89,14 +89,17 @@ describe("getWorkspace", () => {
     vi.stubEnv("DEMO_MAX_VISITORS", "10");
     vi.stubGlobal("__jobsearchVisitors", undefined);
     const idForVisitor = "00000000-0000-4000-8000-000000000001";
-    const browser = new Map([[DEMO_COOKIE, await demoVisitorToken(idForVisitor, secret)]]);
+    const issued = Date.now() - 10 * 60_000;
+    const browser = new Map([[DEMO_COOKIE, await demoVisitorToken(idForVisitor, secret, issued)]]);
     getCookie.mockImplementation((name: string) => ({ value: browser.get(name) }));
     setCookie.mockImplementation((name: string, value: string) => browser.set(name, value));
 
     const picker = (await getWorkspace())!;
     const role = (picker.db as FakeDb).rows("sourced_jobs").find((row) => row.external_id === "demo-1")!;
     await triageRole(role.id, "picked", "ranked");
-    expect(setCookie).toHaveBeenCalledWith(DEMO_KITS_COOKIE, expect.any(String), expect.any(Object));
+    expect(setCookie).toHaveBeenCalledWith(DEMO_KITS_COOKIE, expect.any(String), expect.objectContaining({
+      expires: new Date(issued + DEMO_TTL_SECONDS * 1000),
+    }));
     expect(setCookie.mock.calls.some(([name]) => name === DEMO_COOKIE)).toBe(false);
     vi.stubGlobal("__jobsearchVisitors", undefined);
     const writer = (await getWorkspace())!;

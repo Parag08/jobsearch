@@ -1,4 +1,5 @@
-import { DEMO_TTL_SECONDS, isVisitorId } from "./visitors";
+import type { NextResponse } from "next/server";
+import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_KITS_COOKIE_LIMIT, DEMO_TTL_SECONDS, isVisitorId } from "./visitors";
 
 const utf8 = new TextEncoder();
 const ttlMs = DEMO_TTL_SECONDS * 1000;
@@ -48,6 +49,19 @@ export async function readDemoVisitor(token: string | undefined, secret: string 
   return { id, expiresAt };
 }
 
-export function demoCookieOptions() {
-  return { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" } as const;
+export function demoCookieOptions(expiresAt: number | null) {
+  return {
+    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/",
+    ...(expiresAt === null ? { maxAge: DEMO_TTL_SECONDS } : { expires: new Date(expiresAt) }),
+  } as const;
+}
+
+export async function setSignedDemoLease(
+  cookies: NextResponse["cookies"], id: string, secret: string, now: number, journal?: string,
+) {
+  const options = demoCookieOptions(now + ttlMs);
+  cookies.set(DEMO_COOKIE, await demoVisitorToken(id, secret, now), options);
+  if (journal && journal.length <= DEMO_KITS_COOKIE_LIMIT && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(journal)) {
+    cookies.set(DEMO_KITS_COOKIE, journal, options);
+  }
 }

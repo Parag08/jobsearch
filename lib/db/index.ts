@@ -52,9 +52,10 @@ async function resolveWorkspace(): Promise<Workspace | null> {
     const db = getVisitorDemoDb(visitor.id, maxVisitors);
     const journal = jar.get(DEMO_KITS_COOKIE)?.value;
     if (secret && journal && visitor.expiresAt !== null) restoreDemoKits(db, journal, visitor.id, secret);
-    const persistDemoKits = secret ? async () => {
+    const expiresAt = visitor.expiresAt;
+    const persistDemoKits = secret && expiresAt !== null ? async () => {
       const token = writeDemoKits(db, visitor.id, secret);
-      jar.set(DEMO_KITS_COOKIE, token, demoCookieOptions());
+      jar.set(DEMO_KITS_COOKIE, token, demoCookieOptions(expiresAt));
     } : undefined;
     return { db, userId: DEMO_USER_ID, mode: "demo", email: null, files: null, cannedAi: true, persistDemoKits };
   }
