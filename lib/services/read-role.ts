@@ -2,7 +2,7 @@ import type { LlmProvider } from "../adapters/llm";
 import { findOrCreateNode, mergeJdExtract } from "../sector-graph";
 import type { Application, JdExtract, SectorNode } from "../types";
 import type { DbClient } from "../repos/db";
-import { getApplication, getJdRaw, listApplications, updateApplication } from "../repos/applications";
+import { getApplication, getJdRaw, listUnextractedPostings, updateApplication } from "../repos/applications";
 import { getSectorByPath, saveSector } from "../repos/sectors";
 import { getProfile } from "../repos/profiles";
 import { jdSignals } from "../editorial/score";
@@ -71,7 +71,6 @@ export async function readUnreadRoles(deps: ReadRoleDeps, userId: string, limit:
 
 /** Applications with posting text and no extract. */
 export async function unreadRoleIds(db: DbClient, userId: string): Promise<string[]> {
-  const apps = (await listApplications(db, userId)).filter((a) => !a.jdExtract);
-  const texts = await Promise.all(apps.map((a) => getJdRaw(db, userId, a.id)));
-  return apps.filter((_, i) => texts[i]?.trim()).map((a) => a.id);
+  const postings = await listUnextractedPostings(db, userId);
+  return postings.filter((posting) => posting.jd_raw?.trim()).map((posting) => posting.id);
 }

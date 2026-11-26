@@ -13,6 +13,7 @@ import { monogram, toneFor } from "@/lib/pipeline-display";
 import ui from "./ui.module.css";
 import sourcing from "./sourcing.module.css";
 import { Insights } from "./insights/insights-view";
+import { InsightsLinkStatus } from "./insights/link-status";
 
 /**
  * Pipeline board (M5). Closed is neutral whatever the reason; only stale and due earn colour.
@@ -26,7 +27,9 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const tabs = (
     <nav aria-label="Pipeline views" className={sourcing.tabs}>
       <Link href="/app" aria-current={view !== "insights" ? "page" : undefined}>Applications</Link>
-      <Link href="/app?view=insights" aria-current={view === "insights" ? "page" : undefined}>Role insights</Link>
+      <Link href="/app?view=insights" prefetch={false} aria-current={view === "insights" ? "page" : undefined} aria-label="Role insights">
+        Role insights<InsightsLinkStatus />
+      </Link>
     </nav>
   );
   if (view === "insights") return <>{tabs}<Insights params={params} /></>;

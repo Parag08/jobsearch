@@ -24,6 +24,7 @@ export interface DbResult<T> {
 export interface DbSelect<R> extends PromiseLike<DbResult<R[]>> {
   eq(column: keyof R & string, value: unknown): DbSelect<R>;
   in(column: keyof R & string, values: unknown[]): DbSelect<R>;
+  is(column: keyof R & string, value: boolean | null): DbSelect<R>;
   order(column: keyof R & string, opts?: { ascending?: boolean }): DbSelect<R>;
   limit(count: number): DbSelect<R>;
   range(from: number, to: number): DbSelect<R>;

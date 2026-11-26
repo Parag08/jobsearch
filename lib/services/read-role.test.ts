@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { FakeLlm } from "../adapters/llm";
 import type { JdExtract } from "../types";
 import { FakeDb } from "../repos/fake-db";
 import { getApplication, listApplications } from "../repos/applications";
 import { listSectors } from "../repos/sectors";
 import { upsertApplication } from "./agent-sync";
-import { readRole, readUnreadRoles } from "./read-role";
+import { readRole, readUnreadRoles, unreadRoleIds } from "./read-role";
 
 const USER = "user-1";
 const TODAY = "2026-11-14";
@@ -81,6 +81,27 @@ describe("readRole", () => {
     const { record } = await upsertApplication({ db }, USER, { company: "Palantir", role: "FDE" }, TODAY);
     expect(await readRole({ db, llm }, USER, record.id)).toBeNull();
     expect(llm.calls).toHaveLength(0);
+  });
+});
+
+describe("unreadRoleIds", () => {
+  it("finds only the user's unread postings, newest first, in one query", async () => {
+    const { db, llm } = fixtures();
+    const older = await upsertApplication({ db }, USER, { company: "Older", role: "FDE", jdRaw: POSTING }, TODAY);
+    const newer = await upsertApplication({ db }, USER, { company: "Newer", role: "FDE", jdRaw: POSTING }, "2026-11-15");
+    await upsertApplication({ db, llm }, USER, { company: "Read", role: "FDE", jdRaw: POSTING }, TODAY);
+    await upsertApplication({ db }, USER, { company: "Blank", role: "FDE", jdRaw: " \n\t" }, TODAY);
+    await upsertApplication({ db }, USER, { company: "No posting", role: "FDE" }, TODAY);
+    await upsertApplication({ db }, "another-user", { company: "Private", role: "FDE", jdRaw: POSTING }, TODAY);
+
+    const from = vi.spyOn(db, "from");
+    expect(await unreadRoleIds(db, USER)).toEqual([newer.record.id, older.record.id]);
+    expect(from.mock.calls).toEqual([["applications"]]);
+  });
+
+  it("returns no IDs when there are no unread postings", async () => {
+    const { db } = fixtures();
+    expect(await unreadRoleIds(db, USER)).toEqual([]);
   });
 });
 

@@ -32,12 +32,13 @@ export async function Insights({ params: sp }: { params: Params }) {
   if (!w) redirect("/signin");
   const { db, userId } = w;
 
-  const [apps, projects, profile] = await Promise.all([listApplications(db, userId), listProjects(db, userId), getProfile(db, userId)]);
+  const [apps, projects, profile, unreadIds, env] = await Promise.all([
+    listApplications(db, userId), listProjects(db, userId), getProfile(db, userId), unreadRoleIds(db, userId), envFor(db, userId),
+  ]);
   const taxonomy = profile?.taxonomy ?? { tags: {} };
-  const coverage = roleReadCoverage(apps, await unreadRoleIds(db, userId));
+  const coverage = roleReadCoverage(apps, unreadIds);
   const families = roleFamilies(apps);
   const readTotal = families.reduce((n, f) => n + f.roles, 0);
-  const env = await envFor(db, userId);
   const readBatch = roleReadBatchFromEnv(env);
   const planEnabled = rolePlanMaxGapsFromEnv(env) !== undefined;
 

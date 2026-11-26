@@ -1,6 +1,6 @@
 import type { Application } from "../types";
 import { many, one, oneOrNull, type DbClient } from "./db";
-import { applicationPatch, applicationRow, toApplication } from "./rows";
+import { applicationPatch, applicationRow, toApplication, type ApplicationRow } from "./rows";
 
 export type NewApplication = Omit<Application, "id">;
 
@@ -39,6 +39,14 @@ export async function listApplications(db: DbClient, userId: string): Promise<Ap
     "list",
   );
   return rows.map(toApplication);
+}
+
+export function listUnextractedPostings(db: DbClient, userId: string): Promise<Pick<ApplicationRow, "id" | "jd_raw">[]> {
+  return many(
+    db.from("applications").select("id,jd_raw").eq("user_id", userId).is("jd_extract", null).order("updated_at", { ascending: false }),
+    "applications",
+    "listUnextractedPostings",
+  );
 }
 
 /** Persist a domain-transformed application (e.g. after pipeline.advance). jd_raw is untouched. */

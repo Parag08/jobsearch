@@ -4,7 +4,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-26 - Workspace content polish
 
-Pipeline Role insights now explains which roles are excluded and how to get a posting read; title filters without read matches no longer show a zero-gap verdict. Safe kits still store neither posting text nor extracts.
+Pipeline Role insights now shows when its tab is opening, explains which roles are excluded and how to get a posting read, and shows an empty state when no read roles match a filter. Opening the tab makes no model calls; one projected query finds unread postings. Safe kits still store neither posting text nor extracts.
 
 Companies, Today, kits and the audited workspace pages now lead with records and actions. Today keeps the existing /app/watchlist route. Company removal explains its scope before confirmation and still offers Undo. Kits still require exact-content review and actual-submission confirmation. Home's hero shows only the recommended task and its link, without unrelated interview context.
 

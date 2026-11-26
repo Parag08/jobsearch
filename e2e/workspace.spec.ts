@@ -225,6 +225,30 @@ test("Insights filters the evidence summary by job title and clears the filter",
   await expect(rolesRead).toHaveText(originalSelection);
 });
 
+test("Role insights shows loading while the Pipeline tab is opening", async ({ demo: page }) => {
+  await appLink(page, "Pipeline").click();
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route((url) => url.pathname === "/app" && url.searchParams.get("view") === "insights", async (route) => {
+    await pending;
+    await route.continue();
+  });
+
+  const tabs = page.getByRole("navigation", { name: "Pipeline views" });
+  const tab = tabs.getByRole("link", { name: "Role insights", exact: true });
+  await expect(tabs.getByRole("status")).toBeEmpty();
+  try {
+    await tab.click();
+    await expect(tabs.getByRole("status")).toHaveText("Loading…");
+    await expect(tab).not.toHaveAttribute("aria-current", "page");
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("heading", { name: "Insights", exact: true })).toBeVisible();
+  await expect(tab).toHaveAttribute("aria-current", "page");
+  await expect(tabs.getByRole("status")).toBeEmpty();
+});
+
 test("Role insights explains excluded sourcing kits and an unread-only title filter", async ({ demo: page }) => {
   await appLink(page, "Today").click();
   await page.getByRole("button", { name: "Pick role Product Manager, Growth", exact: true }).click();
