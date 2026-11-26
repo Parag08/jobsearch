@@ -15,9 +15,18 @@ export class FakeDb implements DbClient {
   private tables = new Map<string, Row[]>();
   private seq = 0;
 
+  constructor(private readonly newRowId?: () => string) {}
+
   /** Inspect a table's raw rows (assertions on DB-only columns like jd_raw). */
   rows<T extends TableName>(table: T): RowOf<T>[] {
     return structuredClone(this.tableRows(table)) as unknown as RowOf<T>[];
+  }
+
+  patchRows<T extends TableName>(table: T, match: Partial<RowOf<T>>, patch: Partial<RowOf<T>>): void {
+    const keys = Object.entries(match);
+    for (const row of this.tableRows(table)) {
+      if (keys.every(([key, value]) => row[key] === value)) Object.assign(row, structuredClone(patch));
+    }
   }
 
   seed<T extends TableName>(table: T, rows: Partial<RowOf<T>>[]): void {
@@ -25,7 +34,7 @@ export class FakeDb implements DbClient {
   }
 
   from<T extends TableName>(table: T): DbTable<RowOf<T>> {
-    return new FakeTable(this.tableRows(table), () => this.nextId()) as unknown as DbTable<RowOf<T>>;
+    return new FakeTable(this.tableRows(table), this.newRowId ?? (() => this.nextId())) as unknown as DbTable<RowOf<T>>;
   }
 
   async rpc(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
@@ -64,7 +73,7 @@ export class FakeDb implements DbClient {
     };
     for (const r of plan) {
       if (r.id === null) {
-        const companyId = this.nextId();
+        const companyId = this.newRowId?.() ?? this.nextId();
         companies.push({ id: companyId, user_id: user, name: r.name, identity: r.identity, website: r.website,
           active: true, import_id: id, research: [], research_version: 0, research_requested: false });
         for (const table of ["watchlist", "sourced_jobs", "applications", "contacts"]) {

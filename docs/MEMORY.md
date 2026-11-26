@@ -6,7 +6,11 @@ Keep this file updated at the end of every working session: what was done, decis
 
 Companies, Today, kits and the audited workspace pages now lead with records and actions. Today keeps the existing /app/watchlist route. Company removal explains its scope before confirmation and still offers Undo. Kits still require exact-content review and actual-submission confirmation.
 
-Reproduced the public demo kit revisit failure with two production-mode processes: the same browser could open its kit on the writer, but saw “That page does not exist” on the other process. The visitor cookie identifies a process-local FakeDb; demo workspace persistence across instances is still needed.
+The public demo lost newly prepared kits when a request reached another instance. With the same existing server signing secret configured on every instance, the visitor carries a bounded, signed cookie for sample-role triage, verified claims, and kits (including review and submission). The two-hour lease renews on workspace navigations at most every 15 minutes, not on Server Actions, prefetches, or internal action redirects. Other demo edits remain process-local; local FakeDb development mode and live Supabase are unchanged. A two-FakeDb regression and a local two-process browser check cover direct kit revisits.
+
+Newer journals merge kits by application ID and patch only journal-owned fields. Missing entries do not delete warm data. This also restores kits prepared elsewhere when the receiving worker is already warm for that visitor.
+
+The signed Playwright workspace subset passed on both baselines (origin/main and `524ee6c`, 17 each), but failed with asynchronous Node-side HMACs (8 failed). Request traces showed no journal replays and the same FakeDb for mutations and renders, including stale UI on responses that wrote no cookies. Switching Node-side lease and journal HMACs to synchronous crypto resolved the reproduced failures (17 passed); middleware retains Edge-compatible Web Crypto and the same lease format.
 
 ## 2026-11-26 - Daily sourcing and company list import
 

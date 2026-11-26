@@ -60,9 +60,9 @@ Next.js 15 App Router on Vercel (`sin1`) + Supabase (Postgres, Auth, RLS, Storag
 - **SSRF / egress (CWE-918).** Outbound calls go to fixed hosts (`postingEndpoint`, ElevenLabs, LLM providers) with user parts `encodeURIComponent`-ed; never fetch a user-supplied URL (e.g. a pasted LinkedIn link) server-side.
 - **Injection (CWE-89).** All DB access via supabase-js query builder / parameterised `pg` in scripts; no string-built SQL from user input.
 - **File storage / path (CWE-22).** Export paths are `<userId>/…` built server-side; downloads by signed URL for the caller's own path only.
-- **Secrets (CWE-798, CWE-200).** Secret key only in `lib/db/agent.ts` and `scripts/**`; never `NEXT_PUBLIC_*`, never in client bundles or logs; per-user settings (`lib/settings/registry.ts`) never include secrets.
+- **Secrets (CWE-798, CWE-200).** Supabase service-key requests originate only in `lib/db/agent.ts` and `scripts/**`. The demo may use that key for domain-separated HMACs without making any privileged database requests. Secrets are never `NEXT_PUBLIC_*`, in client bundles or logs, or in per-user settings.
 - **Fail closed (CWE-1188).** Workspace resolution and middleware throw when Supabase env is missing; the local FakeDb (real `data/cvbuilder/` data, shared, no auth) is reachable only when `NODE_ENV === "development"` and `LOCAL_DEMO_MODE=true`. Any other path to `getDemoDb()` is a gap.
-- **Demo isolation.** A `jobsearch_demo` cookie must never yield a live workspace, real data or a provider call; `cannedAi` must short-circuit every AI and TTS path.
+- **Demo isolation.** A `jobsearch_demo` cookie must never yield a live workspace, real data or a provider call; `cannedAi` must short-circuit every AI and TTS path. The optional kit journal is signed for the specific demo visitor, capped before decoding, and restores only entries for fictional sample roles.
 - **CI / supply chain (CWE-829).** Workflows with `SUPABASE_DB_URL` run only on `main`/dispatch, never on `pull_request_target` with untrusted code.
 - **Resource abuse (CWE-770).** Body/batch/read caps on MCP; owner rates LLM spend as low impact.
 

@@ -82,7 +82,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 /** Move an application; the applied transition goes through markApplied so the sent CV freezes. */
 export async function moveStage(applicationId: string, to: Stage, closedReason?: ClosedReason): Promise<void> {
-  const { db, userId } = await ws();
+  const { db, userId, persistDemoKits } = await ws();
   if (!STAGES.includes(to)) return;
   if (to === "applied") {
     const { application } = await markApplied({ db }, userId, applicationId, new Date().toISOString());
@@ -96,6 +96,7 @@ export async function moveStage(applicationId: string, to: Stage, closedReason?:
     if (!app) return;
     if (app.hasSourcingKit && !app.appliedAt && to !== "closed") return;
     await updateApplication(db, userId, advance(app, to, today(), closedReason));
+    if (app.hasSourcingKit) await persistDemoKits?.();
   }
   revalidatePath("/app");
   revalidatePath(`/app/applications/${applicationId}`);
