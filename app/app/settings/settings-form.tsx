@@ -294,8 +294,8 @@ function SettingInput({ field, value, error, onChange }: {
       </select> : <>
         <input {...inputProps} className={`${ui.input} ${styles.number}`} type="number" inputMode={kind.type === "int" && !key.endsWith("_MS") ? "numeric" : "decimal"}
           min={displayNumber(key, String(kind.min))} max={kind.max === undefined ? undefined : displayNumber(key, String(kind.max))}
-          step={kind.type === "int" ? displayNumber(key, "1") : "any"} value={value ?? fallback} placeholder="Not set" onChange={(event) => onChange(event.target.value)} />
-        {value === null ? <span className={styles.help}>App default</span> :
+          step={kind.type === "int" ? displayNumber(key, "1") : "any"} value={value ?? fallback} placeholder="—" onChange={(event) => onChange(event.target.value)} />
+        {value === null ? <span className={styles.help}>App default{!fallback && ` · ${blank ?? "Not configured"}`}</span> :
           <button type="button" className={styles.defaultButton} onClick={() => onChange(null)}>Use app default</button>}
       </>}
     {pick && <span className={styles.help}>{pick.price} · about {money(pick.interview)} per full interview

@@ -122,6 +122,14 @@ test("signed-out Assistant links retain the destination after sign-in", async ({
   await expect(page).toHaveURL("/signin?next=%2Fapp%2Fsettings%3Fsection%3Dassistant");
 });
 
+test("Settings distinguishes configured numeric defaults from unset weekly goals", async ({ demo: page }) => {
+  await appLink(page, "Settings").click();
+  await page.getByRole("link", { name: "Goals & follow-ups", exact: true }).click();
+  await expect(page.getByText("App default · No weekly target", { exact: true })).toHaveCount(3);
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Interview", exact: true }).click();
+  await expect(page.getByRole("spinbutton", { name: "Topics per full interview (topics)" })).toHaveValue("2");
+});
+
 test("changes to verified claims require a fresh attestation", async ({ demo: page }) => {
   await appLink(page, "Settings").click();
   await page.getByRole("link", { name: "CV & evidence", exact: true }).click();

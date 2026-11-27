@@ -4,7 +4,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-27 - Settings redesign
 
-The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves patch the edited section’s registry keys against the latest stored row and validate the combined settings with the existing readers. Restore app defaults clears overrides, not deployment values. Verified claims remain in the profile and are managed in CV & evidence. Assistant keys keep the same MCP permissions and lifetimes and are shown only in the key-creation step.
+The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves validate the actual merged row with the existing readers and change only the edited section’s keys. Restore app defaults clears overrides, not deployment values; an unset weekly goal means no target, not a sample number. Verified claims remain in the profile and are managed in CV & evidence. Assistant keys keep the same MCP permissions and lifetimes and are shown only in the key-creation step. Rerun a first-time Settings `Saved.` e2e timeout before debugging it.
 
 ## 2026-11-27 - Per-user AI call limit
 
