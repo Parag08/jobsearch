@@ -4,6 +4,8 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-27 - Settings redesign
 
+QA follow-up for PR #61: Settings dialogs portal to the Settings frame so search cannot hide them; canceling a guarded jump shows the unsaved draft. Dark placeholders use the Settings secondary text color, and mobile controls use a 44px minimum.
+
 The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves validate the actual merged values for each reader group touched by the edit, even when its controls span sections; untouched groups remain unchanged. Saving a pause or related control validates the pause pair even if missing settings turn hands-free off at runtime. Restore app defaults clears overrides, not deployment values; unset weekly goals remain blank. The slate dark palette is scoped to Settings. Verified claims remain in the profile; Assistant keys are shown only during creation. Rerun a first-time Settings `Saved.` e2e timeout before debugging it.
 
 ## 2026-11-27 - Per-user AI call limit

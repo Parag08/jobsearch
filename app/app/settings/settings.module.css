@@ -228,11 +228,12 @@
     font-size: 1.55rem;
     font-weight: 650;
   }
-  .sectionList nav a, .search, .appearance button, .fieldControl :is(input, select), .dialog :is(input, select, button), .saveActions button { min-height: 44px; }
+  .layout :is(a[href], button, summary, select, input:not([type="checkbox"], [type="radio"])), .search { min-height: 44px; }
+  .assistantCard > a, a.related { display: inline-flex; align-items: center; gap: 4px; }
   .field { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; gap: 8px; }
   .fieldControl { justify-items: start; }
   .fieldControl .help { text-align: left; }
-  .defaultButton { justify-self: start; min-height: 44px; }
+  .defaultButton { justify-self: start; }
   .heading { min-height: 0; justify-content: flex-end; margin-bottom: 0; }
   .title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
