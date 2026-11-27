@@ -147,3 +147,73 @@ describe("FakeDb", () => {
     expect(reread?.items).toHaveLength(0);
   });
 });
+
+describe("FakeDb.limitWrites", () => {
+  const limited = (limits: Partial<import("./fake-db").FakeDbLimits> = {}) => {
+    const db = new FakeDb();
+    db.seed("briefs", [{ user_id: "u1", date: "2026-08-01", items: [] }]);
+    db.limitWrites({ maxRowsPerTable: 3, maxRowChars: 500, maxTotalChars: 2000, ...limits });
+    return db;
+  };
+
+  it("refuses inserts past the row cap, counting seeded rows", async () => {
+    const db = limited();
+    expect((await db.from("briefs").insert([{ user_id: "u1", date: "a", items: [] }, { user_id: "u1", date: "b", items: [] }])).error).toBeNull();
+    const { error } = await db.from("briefs").insert({ user_id: "u1", date: "c", items: [] });
+    expect(error?.message).toMatch(/demo workspace limit/);
+    expect(db.rows("briefs")).toHaveLength(3);
+  });
+
+  it("frees room when rows are deleted", async () => {
+    const db = limited();
+    await db.from("briefs").insert([{ user_id: "u1", date: "a", items: [] }, { user_id: "u1", date: "b", items: [] }]);
+    await db.from("briefs").delete().eq("date", "a");
+    expect((await db.from("briefs").insert({ user_id: "u1", date: "c", items: [] })).error).toBeNull();
+  });
+
+  it("refuses an oversized record on insert, upsert and update, leaving the row unchanged", async () => {
+    const db = limited();
+    const big = "x".repeat(600);
+    expect((await db.from("briefs").insert({ user_id: "u1", date: big, items: [] })).error?.message).toMatch(/at most 500 characters/);
+    expect((await db.from("briefs").upsert({ user_id: "u1", date: "2026-08-01", items: [{ title: big, why: "", url: null }] }, { onConflict: "user_id,date" })).error).not.toBeNull();
+    expect((await db.from("briefs").update({ items: [{ title: big, why: "", url: null }] }).eq("user_id", "u1")).error).not.toBeNull();
+    expect(db.rows("briefs")).toHaveLength(1);
+    expect(db.rows("briefs")[0]!.items).toEqual([]);
+  });
+
+  it("refuses writes once the workspace's total size is used up", async () => {
+    const db = limited({ maxRowsPerTable: 100, maxTotalChars: 1000 });
+    const text = "y".repeat(300);
+    const results = [];
+    for (let i = 0; i < 5; i++) results.push((await db.from("bullets").insert({ user_id: "u1", text })).error);
+    expect(results.slice(0, 2).every((e) => e === null)).toBe(true);
+    expect(results.at(-1)?.message).toMatch(/full/);
+    expect(JSON.stringify(db.rows("bullets")).length).toBeLessThanOrEqual(1000);
+  });
+
+  it("does not limit a FakeDb that never opted in", async () => {
+    const db = new FakeDb();
+    for (let i = 0; i < 20; i++) await db.from("briefs").insert({ user_id: "u1", date: String(i), items: [{ title: "z".repeat(1000), why: "", url: null }] });
+    expect(db.rows("briefs")).toHaveLength(20);
+  });
+});
+
+describe("FakeDb.limitWrites with apply_company_import", () => {
+  const importId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const plan = (...names: string[]) => names.map((n) => ({ id: null, name: n, identity: n.toLowerCase(), website: null, active: null }));
+
+  it("rolls back an import that does not fit, and still answers a retry of one that did", async () => {
+    const db = new FakeDb();
+    db.limitWrites({ maxRowsPerTable: 2, maxRowChars: 10_000, maxTotalChars: 100_000 });
+    const tooBig = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B", "C"), p_skipped: 0 });
+    expect(tooBig.error?.message).toMatch(/demo workspace limit/);
+    expect(db.rows("sourcing_companies")).toEqual([]);
+    expect(db.rows("company_imports")).toEqual([]);
+
+    const saved = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B"), p_skipped: 0 });
+    expect(saved.error).toBeNull();
+    const retry = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B"), p_skipped: 0 });
+    expect(retry).toEqual(saved);
+    expect(db.rows("sourcing_companies")).toHaveLength(2);
+  });
+});

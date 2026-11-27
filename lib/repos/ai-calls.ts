@@ -1,7 +1,7 @@
 import { RepoError, type DbClient } from "./db";
 
 /**
- * The per-user model call count (migration 0023). The window lives in the database, so it holds
+ * The per-user model call count (migration 0025). The window lives in the database, so it holds
  * across serverless instances, and only the take_ai_call function can write it: a user cannot
  * reset their own count from the browser.
  */

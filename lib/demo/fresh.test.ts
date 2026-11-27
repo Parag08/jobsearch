@@ -55,3 +55,16 @@ describe("data/demo", () => {
     }
   });
 });
+
+describe("a visitor's sample workspace is bounded", () => {
+  it("refuses watchlist rows past the per-table cap and huge pasted postings", async () => {
+    const { DEMO_DB_LIMITS } = await import("../db/demo");
+    const db = freshVisitorDb("2026-11-19");
+    const room = DEMO_DB_LIMITS.maxRowsPerTable - db.rows("watchlist").length;
+    const rows = Array.from({ length: room }, (_, i) => ({ user_id: "u", company: `C${i}` }));
+    expect((await db.from("watchlist").insert(rows)).error).toBeNull();
+    expect((await db.from("watchlist").insert({ user_id: "u", company: "one too many" })).error?.message).toMatch(/demo workspace limit/);
+    const jd = "j".repeat(DEMO_DB_LIMITS.maxRowChars);
+    expect((await db.from("applications").insert({ user_id: "u", company: "Big", jd_raw: jd })).error?.message).toMatch(/demo workspace limit/);
+  });
+});

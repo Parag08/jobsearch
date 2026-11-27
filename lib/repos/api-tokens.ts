@@ -29,19 +29,19 @@ function toApiToken(r: ApiTokenRow): ApiToken {
   };
 }
 
+/**
+ * Make a token through create_api_token (migration 0024). The owner cannot write api_tokens
+ * directly: the database sets the expiry from the lifetime and starts the rate-limit window.
+ */
 export async function insertApiToken(
   db: DbClient,
   userId: string,
   name: string,
   tokenHash: string,
-  opts: { scope: TokenScope; expiresAt: string },
+  opts: { scope: TokenScope; days: number },
 ): Promise<ApiToken> {
   const row = await one(
-    db
-      .from("api_tokens")
-      .insert({ user_id: userId, name, token_hash: tokenHash, scope: opts.scope, expires_at: opts.expiresAt, window_count: 0 })
-      .select()
-      .single(),
+    db.rpc("create_api_token", { p_user_id: userId, p_name: name, p_token_hash: tokenHash, p_scope: opts.scope, p_days: opts.days }),
     "api_tokens",
     "insert",
   );

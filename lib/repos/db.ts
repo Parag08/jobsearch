@@ -1,6 +1,6 @@
 import type { RowOf, TableName } from "./rows";
 import type { ImportPlanRow } from "../companies/import-review";
-import type { CompanyImportRow } from "./rows";
+import type { ApiTokenRow, CompanyImportRow } from "./rows";
 
 export type CompanyImportRpc = {
   p_user_id: string;
@@ -13,6 +13,15 @@ export type TakeAiCallRpc = {
   p_user_id: string;
   p_limit: number;
   p_window_seconds: number;
+};
+
+/** Arguments of create_api_token (migration 0024), the only way a token row is made. */
+export type CreateApiTokenRpc = {
+  p_user_id: string;
+  p_name: string;
+  p_token_hash: string;
+  p_scope: "read" | "write";
+  p_days: number;
 };
 
 /**
@@ -65,6 +74,7 @@ export interface DbClient {
   rpc(name: "apply_company_import", args: CompanyImportRpc): PromiseLike<DbResult<CompanyImportRow>>;
   /** 0 = allowed and recorded; n > 0 = refused, retry in n seconds; null = refused (not this user). */
   rpc(name: "take_ai_call", args: TakeAiCallRpc): PromiseLike<DbResult<number>>;
+  rpc(name: "create_api_token", args: CreateApiTokenRpc): PromiseLike<DbResult<ApiTokenRow>>;
 }
 
 /** Every repo call either returns typed data or throws this - raw {data,error} never leaks upward. */

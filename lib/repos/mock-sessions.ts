@@ -2,7 +2,7 @@ import type { MockSession } from "../interview/mock";
 import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
 
 /**
- * Running quick mock interviews (migration 0023). The session is kept here, never round-tripped
+ * Running quick mock interviews (migration 0025). The session is kept here, never round-tripped
  * through the browser, so a page cannot post one running session again and again; each turn
  * advances the stored copy, and scoring removes it.
  */

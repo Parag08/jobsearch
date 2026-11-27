@@ -334,14 +334,14 @@ export interface RowMap {
   interview_mock_sessions: InterviewMockSessionRow;
 }
 
-/** One model call made for a user (migration 0023); written only by the take_ai_call function. */
+/** One model call made for a user (migration 0025); written only by the take_ai_call function. */
 export interface AiCallRow {
   id: string;
   user_id: string;
   at: string;
 }
 
-/** A running quick mock interview (migration 0023), kept on the server until it is scored. */
+/** A running quick mock interview (migration 0025), kept on the server until it is scored. */
 export interface InterviewMockSessionRow {
   id: string;
   user_id: string;

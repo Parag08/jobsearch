@@ -468,10 +468,24 @@ create table interview_role_plays (
   unique (user_id, question_id)
 );
 
--- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count.
+-- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count,
+-- and each is checked again on read. The column holds short text values only (0023).
+create or replace function public.user_settings_values_ok(v jsonb) returns boolean
+language sql immutable set search_path = '' as $$
+  select jsonb_typeof(v) = 'object'
+     and (select count(*) from jsonb_object_keys(v)) <= 64
+     and not exists (
+       select 1 from jsonb_each(v) e
+       where e.key !~ '^[A-Z][A-Z0-9_]{0,63}$'
+          or jsonb_typeof(e.value) <> 'string'
+          or length(e.value #>> '{}') > 200
+     );
+$$;
+
 create table user_settings (
   user_id uuid primary key references profiles (user_id) on delete cascade,
-  values jsonb not null default '{}'::jsonb,
+  values jsonb not null default '{}'::jsonb
+    constraint user_settings_values_ok check (public.user_settings_values_ok(values)),
   updated_at timestamptz not null default now()
 );
 
@@ -534,7 +548,7 @@ begin
   foreach t in array array['sectors','projects','bullets','master_cvs','application_cvs',
                            'applications','contacts','interactions','sourced_jobs','briefs',
                            'watchlist','stories','token_ledger',
-                           'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
+                           'interview_answers','interview_attempts','case_sessions','role_plans',
                            'interview_custom_questions','interview_role_questions','interview_model_answers',
                            'interview_full_sessions','interview_role_plays','user_settings']
   loop
@@ -549,6 +563,40 @@ create policy "own rows" on interviewer_ratings for all
     user_id = auth.uid()
     and exists (select 1 from interview_full_sessions s where s.id = session_id and s.user_id = auth.uid())
   );
+
+-- Agent tokens are the exception to "own rows" (0024): resolveApiToken trusts scope,
+-- expiry, revocation and the rate-limit window, so the owner may only read, revoke and
+-- delete. A token is created through create_api_token; the window is written by the MCP
+-- route with the secret key.
+create policy "read own tokens" on public.api_tokens for select using (user_id = auth.uid());
+create policy "revoke own tokens" on public.api_tokens for update
+  using (user_id = auth.uid()) with check (user_id = auth.uid() and revoked_at is not null);
+create policy "delete own tokens" on public.api_tokens for delete using (user_id = auth.uid());
+
+revoke all on public.api_tokens from anon, authenticated;
+grant select, delete on public.api_tokens to authenticated;
+grant update (revoked_at) on public.api_tokens to authenticated;
+
+create or replace function public.create_api_token(
+  p_user_id uuid, p_name text, p_token_hash text, p_scope text, p_days integer
+) returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  made public.api_tokens;
+begin
+  if p_user_id is null or p_user_id is distinct from auth.uid() then return null; end if;
+  if not coalesce(length(p_name) between 1 and 60 and p_token_hash ~ '^[0-9a-f]{64}$'
+                  and p_scope in ('read', 'write') and p_days in (30, 90, 365), false) then
+    return null;
+  end if;
+  insert into public.api_tokens (user_id, name, token_hash, scope, expires_at)
+  values (p_user_id, p_name, p_token_hash, p_scope, now() + make_interval(days => p_days))
+  returning * into made;
+  return to_jsonb(made);
+end
+$$;
+
+revoke all on function public.create_api_token(uuid, text, text, text, integer) from public, anon;
+grant execute on function public.create_api_token(uuid, text, text, text, integer) to authenticated;
 
 -- ---- helpful indexes -------------------------------------------------------------------
 create index on applications (user_id, stage);
@@ -847,7 +895,7 @@ $$;
 revoke all on function public.apply_company_import(uuid, uuid, jsonb, integer) from public, anon;
 grant execute on function public.apply_company_import(uuid, uuid, jsonb, integer) to authenticated;
 
--- ---- per-user model call limit and server-side quick mock interviews (0023) ------------
+-- ---- per-user model call limit and server-side quick mock interviews (0025) ------------
 -- ai_calls is written only by take_ai_call (lib/services/ai-write.ts); interview_mock_sessions
 -- holds the running quick mock interview so the browser never sends it back.
 create table if not exists public.ai_calls (

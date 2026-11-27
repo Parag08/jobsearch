@@ -29,7 +29,7 @@ export interface AiCallLimit {
   windowSeconds: number;
 }
 
-/** take_ai_call (migration 0023) never allows more than this per user per day. */
+/** take_ai_call (migration 0025) never allows more than this per user per day. */
 export const AI_CALL_CEILING = 5000;
 
 export const AI_CALL_LIMIT_DEFAULT: AiCallLimit = { calls: 100, windowSeconds: 3600 };
