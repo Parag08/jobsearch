@@ -4,7 +4,11 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-27 - Posting length cap before the model
 
-Security finding (cost amplification): job-posting text reached the paid LLM with only a 40-character minimum. `extractRole` (lib/services/read-role.ts) now refuses text over `MAX_POSTING_CHARS` (30,000) with `PostingTooLongError` before any model call, so every path (`/api/jd`, `createFromJd`, `readPostingAction`, save-to-pipeline, MCP upserts, Role insights reads) is covered. `/api/jd` answers 413; the server actions return the error's message, and an over-long paste is not stored. A per-user daily quota against the token ledger is not done yet.
+Security finding (cost amplification): job-posting text reached the paid LLM with only a 40-character minimum. `extractRole` (lib/services/read-role.ts) now refuses text over `MAX_POSTING_CHARS` (30,000) with `PostingTooLongError` before any model call, so every path (`/api/jd`, `createFromJd`, `readPostingAction`, save-to-pipeline, MCP upserts, Role insights reads) is covered. `/api/jd` answers 413; the server actions return the error's message, and an over-long paste is not stored. Role insights batches skip postings over the cap so they never take a slot. A per-user daily quota against the token ledger is not done yet.
+
+## 2026-11-27 - Interviewer ratings keyed per user
+
+Migration 0022 makes `interviewer_ratings` unique on (user_id, session_id, turn_index) and its "own rows" policy only accepts a row whose session belongs to the caller; it deletes existing rows that point at another user's session. `rateInterviewerLine` upserts on `user_id,session_id,turn_index`. Run `npm run db:migrate` to apply it to the live project.
 
 ## 2026-11-26 - Workspace content polish
 
