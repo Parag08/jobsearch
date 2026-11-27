@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getWorkspace } from "@/lib/db";
 import { exportCv, exportLetter, type ExportFormat } from "@/lib/services/export-cv";
-import { parseLetterBank } from "@/lib/cover-letter";
-import letterBank from "@/data/cvbuilder/letter-bank.json";
+import { letterBankFor } from "@/lib/cover-letter/bank";
 
 /**
  * GET /api/export/<applicationId>?format=pdf|docx[&doc=letter]
@@ -24,7 +23,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ applicationId: 
   try {
     const deps = { db: w.db, files: w.files };
     const out = isLetter
-      ? await exportLetter({ ...deps, bank: parseLetterBank(letterBank) }, w.userId, applicationId, format as ExportFormat)
+      ? await exportLetter({ ...deps, bank: letterBankFor(w) }, w.userId, applicationId, format as ExportFormat)
       : await exportCv(deps, w.userId, applicationId, format as ExportFormat);
     if (out.storageError) console.warn(`exportCv: file not stored - ${out.storageError}`);
     return new Response(Buffer.from(out.bytes), {

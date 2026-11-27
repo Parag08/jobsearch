@@ -12,8 +12,7 @@ import { markApplied } from "@/lib/services/mark-applied";
 import { tailorCv } from "@/lib/services/tailor-cv";
 import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "@/lib/cv-page-settings";
 import { draftCoverLetter, editCoverLetter } from "@/lib/services/cover-letter";
-import { parseLetterBank } from "@/lib/cover-letter";
-import letterBank from "@/data/cvbuilder/letter-bank.json";
+import { letterBankFor } from "@/lib/cover-letter/bank";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { buildRewritePrompt, guardRewrite } from "@/lib/interview/model-answer";
 import { setModelAnswer } from "@/lib/services/model-answers";
@@ -154,7 +153,7 @@ export async function draftCoverLetterAction(applicationId: string, formData: Fo
   let message: string | null = null;
   try {
     const result = await draftCoverLetter(
-      { db, write, bank: parseLetterBank(letterBank), model },
+      { db, write, bank: letterBankFor(w), model },
       userId,
       applicationId,
       inputs,
@@ -172,9 +171,10 @@ export async function draftCoverLetterAction(applicationId: string, formData: Fo
 
 /** Save the user's edit of the letter body and re-run the voice checks. */
 export async function editCoverLetterAction(applicationId: string, formData: FormData): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   try {
-    await editCoverLetter({ db, bank: parseLetterBank(letterBank) }, userId, applicationId, String(formData.get("body") ?? ""));
+    await editCoverLetter({ db, bank: letterBankFor(w) }, userId, applicationId, String(formData.get("body") ?? ""));
   } catch (err) {
     letterError(applicationId, err instanceof Error ? err.message : "Saving failed.");
   }

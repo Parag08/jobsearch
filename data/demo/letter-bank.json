@@ -1,0 +1,14 @@
+{
+  "_readme": "Fictional cover-letter bank for the public demo person (Maya Okafor, data/demo/profile.json). Same shape as data/cvbuilder/letter-bank.json; it must share none of that file's text (lib/cover-letter/bank.test.ts).",
+  "signOff": "Kind regards,",
+  "spineAnchor": "I am finishing my MBA at Meridian Business School in Singapore.",
+  "usefulOpener": "That is also where I expect I could help your team.",
+  "logistics": "My programme ends in December and I can start in the new year.",
+  "close": "I would be glad to talk further, and thank you for reading.",
+  "implementationTriads": [
+    "the launch plan nobody costed, the dashboard nobody opened after week one, the policy written without asking the people who had to follow it",
+    "the pilot that never had an owner, the metric chosen because it was easy to count, the hand-off that lived only in someone's inbox",
+    "the forecast nobody checked against last year, the workflow built for a team that no longer existed, the feature shipped before anyone asked support"
+  ],
+  "wordRange": [300, 450]
+}
