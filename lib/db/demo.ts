@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { FakeDb } from "../repos/fake-db";
+import { FakeDb, type FakeDbLimits } from "../repos/fake-db";
 import { importCvbuilder } from "../import/cvbuilder";
 import { seedFakeDb } from "./seed-fake-db";
 import type { ImportedWorkspace } from "../import/cvbuilder";
@@ -69,6 +69,9 @@ export function demoTaxonomy(): unknown {
   return DEMO_SOURCE.taxonomy;
 }
 
+/** What one visitor's writes may add to their sample workspace (the seed is about 65k characters). */
+export const DEMO_DB_LIMITS: FakeDbLimits = { maxRowsPerTable: 500, maxRowChars: 200_000, maxTotalChars: 2_000_000 };
+
 /** A fresh sample workspace: the fictional corpus, staged along the pipeline, plus watchlist and practice. */
 export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): FakeDb {
   const db = new FakeDb(() => crypto.randomUUID());
@@ -76,6 +79,7 @@ export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): F
     sourcing_evidence: ["discovery", "delivery", "measurement"],
   });
   seedDemoExtras(db, DEMO_USER_ID, today);
+  db.limitWrites(DEMO_DB_LIMITS);
   return db;
 }
 

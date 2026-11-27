@@ -147,3 +147,53 @@ describe("FakeDb", () => {
     expect(reread?.items).toHaveLength(0);
   });
 });
+
+describe("FakeDb.limitWrites", () => {
+  const limited = (limits: Partial<import("./fake-db").FakeDbLimits> = {}) => {
+    const db = new FakeDb();
+    db.seed("briefs", [{ user_id: "u1", date: "2026-08-01", items: [] }]);
+    db.limitWrites({ maxRowsPerTable: 3, maxRowChars: 500, maxTotalChars: 2000, ...limits });
+    return db;
+  };
+
+  it("refuses inserts past the row cap, counting seeded rows", async () => {
+    const db = limited();
+    expect((await db.from("briefs").insert([{ user_id: "u1", date: "a", items: [] }, { user_id: "u1", date: "b", items: [] }])).error).toBeNull();
+    const { error } = await db.from("briefs").insert({ user_id: "u1", date: "c", items: [] });
+    expect(error?.message).toMatch(/demo workspace limit/);
+    expect(db.rows("briefs")).toHaveLength(3);
+  });
+
+  it("frees room when rows are deleted", async () => {
+    const db = limited();
+    await db.from("briefs").insert([{ user_id: "u1", date: "a", items: [] }, { user_id: "u1", date: "b", items: [] }]);
+    await db.from("briefs").delete().eq("date", "a");
+    expect((await db.from("briefs").insert({ user_id: "u1", date: "c", items: [] })).error).toBeNull();
+  });
+
+  it("refuses an oversized record on insert, upsert and update, leaving the row unchanged", async () => {
+    const db = limited();
+    const big = "x".repeat(600);
+    expect((await db.from("briefs").insert({ user_id: "u1", date: big, items: [] })).error?.message).toMatch(/at most 500 characters/);
+    expect((await db.from("briefs").upsert({ user_id: "u1", date: "2026-08-01", items: [{ title: big, why: "", url: null }] }, { onConflict: "user_id,date" })).error).not.toBeNull();
+    expect((await db.from("briefs").update({ items: [{ title: big, why: "", url: null }] }).eq("user_id", "u1")).error).not.toBeNull();
+    expect(db.rows("briefs")).toHaveLength(1);
+    expect(db.rows("briefs")[0]!.items).toEqual([]);
+  });
+
+  it("refuses writes once the workspace's total size is used up", async () => {
+    const db = limited({ maxRowsPerTable: 100, maxTotalChars: 1000 });
+    const text = "y".repeat(300);
+    const results = [];
+    for (let i = 0; i < 5; i++) results.push((await db.from("bullets").insert({ user_id: "u1", text })).error);
+    expect(results.slice(0, 2).every((e) => e === null)).toBe(true);
+    expect(results.at(-1)?.message).toMatch(/full/);
+    expect(JSON.stringify(db.rows("bullets")).length).toBeLessThanOrEqual(1000);
+  });
+
+  it("does not limit a FakeDb that never opted in", async () => {
+    const db = new FakeDb();
+    for (let i = 0; i < 20; i++) await db.from("briefs").insert({ user_id: "u1", date: String(i), items: [{ title: "z".repeat(1000), why: "", url: null }] });
+    expect(db.rows("briefs")).toHaveLength(20);
+  });
+});
