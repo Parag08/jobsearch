@@ -144,4 +144,16 @@ describe("readPostingInto", () => {
       error: "The posting couldn't be read just now. It's saved: try again in a moment.",
     });
   });
+
+  it("refuses an over-long paste before storing it or calling the model", async () => {
+    const { db, deps, built } = setup(null);
+    const { applicationId } = await saveToPipeline(deps, U, "job-1", NOW);
+    const callsBefore = deps.llm.calls.length;
+    const r = await readPostingInto(deps, U, applicationId, "x".repeat(100_000));
+    expect(r.read).toBe(false);
+    expect(r.read === false && r.error).toMatch(/too long/);
+    expect(deps.llm.calls.length).toBe(callsBefore);
+    expect(await getJdRaw(db, U, applicationId)).toBeFalsy();
+    expect(built).toEqual([]);
+  });
 });
