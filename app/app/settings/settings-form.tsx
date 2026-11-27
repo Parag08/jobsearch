@@ -100,6 +100,11 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
     setState({});
   }
 
+  function keepEditing() {
+    clearSearch();
+    setLeaving(null);
+  }
+
   function useBest() {
     const next = { ...draft };
     for (const field of fields) {
@@ -239,10 +244,10 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
         </div>
       </div>}
       {savedMessage && <div className={styles.toast} role="status">Saved.</div>}
-      {leaving && <SettingsDialog title="Leave with unsaved changes?" onClose={() => { if (!pending) setLeaving(null); }}>
+      {leaving && <SettingsDialog title="Leave with unsaved changes?" onClose={() => { if (!pending) keepEditing(); }}>
         <p>You have changes in this section that haven’t been saved.</p>
         <div className={styles.dialogActions}>
-          <button type="button" className={ui.btn} disabled={pending} onClick={() => setLeaving(null)}>Keep editing</button>
+          <button type="button" className={ui.btn} disabled={pending} onClick={keepEditing}>Keep editing</button>
           <button type="button" className={ui.btn} disabled={pending} onClick={() => { discard(); setLeaving(null); leaving(); }}>Discard</button>
           <button type="button" className={ui.btn} data-primary="" disabled={pending} onClick={() => void save()}>{pending ? "Saving…" : "Save and continue"}</button>
         </div>

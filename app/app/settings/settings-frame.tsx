@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { SECTIONS, settingsHref, type SettingsSection } from "@/lib/settings/sections";
 import { AppearancePicker } from "../../_components/theme-toggle";
 import ui from "../ui.module.css";
+import { SettingsDialogHost } from "./dialog";
 import styles from "./settings.module.css";
 
 interface Result { key: string; label: string; section: SettingsSection; group: string }
@@ -24,6 +25,7 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
   const [query, setQuery] = useState("");
   const [menu, setMenu] = useState(false);
   const [jump, setJump] = useState("");
+  const dialogHost = useRef<HTMLDivElement>(null);
   const needle = query.trim().toLowerCase();
   const results = needle ? searchable.filter(({ label, section, group }) =>
     `${label} ${SECTIONS[section]} ${group}`.toLowerCase().includes(needle)) : [];
@@ -50,7 +52,7 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
   }, [jump, needle, loadFailed]);
 
   return (
-    <div className={styles.layout} data-settings>
+    <div className={styles.layout} data-settings ref={dialogHost}>
       <div className={styles.sidebar}>
         <strong className={styles.sidebarTitle}>Settings</strong>
         <label className={styles.search}>
@@ -89,7 +91,9 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
           {loadFailed ? <div className={styles.notice} role="alert">
             <p>Couldn’t load this section. Your saved settings haven’t changed.</p>
             <button className={ui.btn} type="button" onClick={() => location.reload()}>Try again</button>
-          </div> : <ClearSearch.Provider value={() => setQuery("")}>{children}</ClearSearch.Provider>}
+          </div> : <SettingsDialogHost.Provider value={dialogHost}>
+            <ClearSearch.Provider value={() => setQuery("")}>{children}</ClearSearch.Provider>
+          </SettingsDialogHost.Provider>}
         </div>
       </div>
     </div>
