@@ -4,7 +4,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-27 - Settings redesign
 
-The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves validate the actual merged row, ignoring unchanged validation errors in other sections without replacing their saved values. Interview validates the pause pair on save even if missing settings turn hands-free off at runtime. Restore app defaults clears overrides, not deployment values; unset weekly goals remain blank. The slate dark palette is scoped to Settings. Verified claims remain in the profile; Assistant keys are shown only during creation. Rerun a first-time Settings `Saved.` e2e timeout before debugging it.
+The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves validate the actual merged values for each reader group touched by the edit, even when its controls span sections; untouched groups remain unchanged. Saving a pause or related control validates the pause pair even if missing settings turn hands-free off at runtime. Restore app defaults clears overrides, not deployment values; unset weekly goals remain blank. The slate dark palette is scoped to Settings. Verified claims remain in the profile; Assistant keys are shown only during creation. Rerun a first-time Settings `Saved.` e2e timeout before debugging it.
 
 ## 2026-11-27 - Per-user AI call limit
 

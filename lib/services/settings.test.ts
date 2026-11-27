@@ -82,6 +82,17 @@ describe("settings service", () => {
     expect(await getUserSettings(db, "u1")).toEqual({ HOME_GOAL_APPLY: "4", INTERVIEW_TURN_UNFINISHED_MS: "2000" });
     expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
   });
+  it("rejects an Advanced control edit when its stored pause group would be ignored", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    const result = await saveSettingsSection(db, "u1", "advanced", { INTERVIEW_TURN_MIN_WORDS: "55" }, BASE);
+    expect(result).toEqual({ saved: false, errors: {
+      INTERVIEW_TURN_UNFINISHED_MS: '"Pause after an unfinished answer" must be at least "Pause after a finished answer"',
+    } });
+    expect(await saveSettingsSection(db, "u1", "advanced", { ROLE_READ_BATCH: "8" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await getUserSettings(db, "u1")).toEqual({ INTERVIEW_TURN_UNFINISHED_MS: "2000", ROLE_READ_BATCH: "8" });
+  });
   it("still rejects a newly invalid pair if an unrelated stored field is malformed", async () => {
     const db = new FakeDb();
     await putUserSettings(db, "u1", { HOME_GOAL_APPLY: "stale" });

@@ -176,16 +176,19 @@ const READERS: { keys: string[]; read: (env: Env) => unknown }[] = [
 ];
 
 /** Problems with a set of values, by key; empty when they can be saved. */
-export function validateSettings(env: Env, raw: Record<string, unknown>): Record<string, string> {
+export function validateSettings(env: Env, raw: Record<string, unknown>, editedKeys?: readonly string[]): Record<string, string> {
   const values = cleanValues(raw);
   const errors: Record<string, string> = {};
   const allowed = allowedModels(env);
   for (const [k, v] of Object.entries(values)) {
     const e = fieldError(BY_KEY.get(k)!, v, allowed);
-    if (e) errors[k] = e;
+    if (!e) continue;
+    if (!editedKeys || editedKeys.includes(k)) errors[k] = e;
+    else delete values[k];
   }
   const merged = overlay(env, values);
   for (const r of READERS) {
+    if (editedKeys && !r.keys.some((key) => editedKeys.includes(key))) continue;
     if (r.keys.some((key) => Object.hasOwn(errors, key))) continue;
     try {
       r.read(merged);
