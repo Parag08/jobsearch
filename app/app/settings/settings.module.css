@@ -23,6 +23,7 @@
 .search input { min-width: 0; width: 100%; color: var(--ink); border: 0; background: transparent; font: inherit; font-size: 0.9rem; }
 .search input:focus { outline: none; }
 .search:focus-within { outline: 2px solid var(--accent); }
+:global(html[data-theme="dark"]) .layout input::placeholder { color: var(--ink-soft); opacity: 1; }
 .sectionList nav { display: grid; gap: 3px; }
 .sectionList nav a {
   display: flex;

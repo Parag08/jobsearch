@@ -307,3 +307,27 @@ test("mobile Assistant controls meet the 44px touch target minimum", async ({ de
   expect((await client.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
   expect((await copy.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 });
+
+test("dark Settings placeholders meet 4.5:1 contrast", async ({ demo: page }) => {
+  await appLink(page, "Settings").click();
+  await page.getByRole("group", { name: "Appearance", exact: true }).getByRole("button", { name: "Dark", exact: true }).click();
+  for (const label of ["Find a setting", "Cities"] as const) {
+    const field = page.getByLabel(label, { exact: true });
+    const contrast = await field.evaluate((input) => {
+      const placeholder = getComputedStyle(input, "::placeholder");
+      const background = getComputedStyle(input.matches('[type="search"]') ? input.parentElement! : input).backgroundColor;
+      if (placeholder.opacity !== "1") return 0;
+      const luminance = (color: string) => {
+        const [r, g, b] = (color.match(/[\d.]+/g) ?? []).slice(0, 3).map((value) => {
+          const channel = Number(value) / 255;
+          return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const foreground = luminance(placeholder.color);
+      const backdrop = luminance(background);
+      return (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05);
+    });
+    expect(contrast, label).toBeGreaterThanOrEqual(4.5);
+  }
+});
