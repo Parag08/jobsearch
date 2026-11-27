@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent } from "react";
 import type { SettingKind } from "@/lib/settings/registry";
 import { displayNumber, settingsHref, SOURCING_FIELDS, type SettingsSection } from "@/lib/settings/sections";
 import { Evidence, EVIDENCE_TEXT, type EvidenceCode } from "@/lib/watchlist/safe-kit";
@@ -163,6 +163,7 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
                 <input id={key} className={`${ui.input} ${styles.number}`} type="number" inputMode="numeric" min={1} max={2147483647} step={1}
                   aria-invalid={!!state.errors?.[key]} aria-describedby={`${key}-help`} value={draft[key] ?? ""} onChange={(event) => set(key, event.target.value)} /> :
                 <input id={key} className={ui.input} maxLength={2000} aria-invalid={!!state.errors?.[key]} aria-describedby={`${key}-help`}
+                  onPaste={(event) => pasteSourcingTerms(event, (value) => set(key, value))}
                   value={draft[key] ?? ""} onChange={(event) => set(key, event.target.value)} />}
             </Field>)}
           </div>
@@ -239,6 +240,18 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
       </SettingsDialog>}
     </form>
   );
+}
+
+function pasteSourcingTerms(event: ClipboardEvent<HTMLInputElement>, update: (value: string) => void) {
+  const text = event.clipboardData.getData("text/plain");
+  if (!/[\r\n]/.test(text)) return;
+  event.preventDefault();
+  const input = event.currentTarget;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? start;
+  const remaining = Math.max(0, input.maxLength - input.value.length + end - start);
+  input.setRangeText(text.replace(/\r\n?|\n/g, ",").slice(0, remaining), start, end, "end");
+  update(input.value);
 }
 
 function Field({ id, label, help, error, children }: {

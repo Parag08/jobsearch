@@ -36,9 +36,9 @@ export function settingLocation(key: string): { section: SettingsSection; group:
 
 export const SOURCING_FIELDS = [
   { key: "target", label: "Daily role maximum", help: "A maximum, not a quota." },
-  { key: "cities", label: "Cities", help: "Separate multiple cities with commas." },
-  { key: "titles", label: "Role families", help: "Separate multiple role families with commas." },
-  { key: "excluded", label: "Titles to skip", help: "Optional words to leave out of titles." },
+  { key: "cities", label: "Cities", help: "Separate cities with commas, or paste one per line." },
+  { key: "titles", label: "Role families", help: "Separate role families with commas, or paste one per line." },
+  { key: "excluded", label: "Titles to skip", help: "Optional title phrases. Separate with commas, or paste one per line." },
 ] as const;
 
 export function displayNumber(key: string, value: string): string {

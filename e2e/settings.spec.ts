@@ -55,6 +55,28 @@ test("a failed save retains the draft and offers retry", async ({ demo: page }) 
   await expect(page.getByRole("status")).toHaveText("Saved.");
 });
 
+test("pasting multiline sourcing preferences preserves separate terms after save", async ({ demo: page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await appLink(page, "Settings").click();
+  const lists = [
+    ["Cities", "Singapore\nKuala Lumpur", "Singapore, Kuala Lumpur"],
+    ["Role families", "product manager\nproduct owner", "product manager, product owner"],
+    ["Titles to skip", "intern\ndesigner", "intern, designer"],
+  ];
+  for (const [label, text] of lists) {
+    await page.evaluate((value) => navigator.clipboard.writeText(value), text);
+    const input = page.getByLabel(label, { exact: true });
+    await input.fill("");
+    await input.press("ControlOrMeta+v");
+  }
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("button", { name: "Save changes" })).toBeHidden();
+  await page.reload();
+  for (const [label, , saved] of lists) {
+    await expect(page.getByLabel(label, { exact: true })).toHaveValue(saved);
+  }
+});
+
 test("settings search opens and focuses a control in a collapsed section", async ({ demo: page }) => {
   await appLink(page, "Settings").click();
   const search = page.getByRole("searchbox", { name: "Find a setting" });
