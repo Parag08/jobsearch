@@ -467,7 +467,7 @@ create table interview_role_plays (
 );
 
 -- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count,
--- and each is checked again on read. The column holds short text values only (0022).
+-- and each is checked again on read. The column holds short text values only (0023).
 create or replace function public.user_settings_values_ok(v jsonb) returns boolean
 language sql immutable set search_path = '' as $$
   select jsonb_typeof(v) = 'object'
@@ -496,7 +496,7 @@ create table interviewer_ratings (
   rating text not null check (rating in ('good', 'bad')),
   better text,
   updated_at timestamptz not null default now(),
-  unique (session_id, turn_index)
+  unique (user_id, session_id, turn_index)
 );
 create index interviewer_ratings_user on interviewer_ratings (user_id);
 
@@ -548,12 +548,19 @@ begin
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','api_tokens','role_plans',
                            'interview_custom_questions','interview_role_questions','interview_model_answers',
-                           'interview_full_sessions','interview_role_plays','user_settings','interviewer_ratings']
+                           'interview_full_sessions','interview_role_plays','user_settings']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
   end loop;
 end $$;
+-- a rating may only point at one of your own interviews (0022)
+create policy "own rows" on interviewer_ratings for all
+  using (user_id = auth.uid())
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from interview_full_sessions s where s.id = session_id and s.user_id = auth.uid())
+  );
 
 -- ---- helpful indexes -------------------------------------------------------------------
 create index on applications (user_id, stage);

@@ -2,9 +2,13 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Interviewer ratings keyed per user
+
+Migration 0022 makes `interviewer_ratings` unique on (user_id, session_id, turn_index) and its "own rows" policy only accepts a row whose session belongs to the caller; it deletes existing rows that point at another user's session. `rateInterviewerLine` upserts on `user_id,session_id,turn_index`. Run `npm run db:migrate` to apply it to the live project.
+
 ## 2026-11-27 - Settings checked on read
 
-Saved settings are now checked every time they are read, not only on save. A user can write their own `user_settings` row through PostgREST and skip the form. `settingsEnv` drops any stored value that breaks its registry bounds or choices, any group the app's own `*FromEnv` readers reject, and any model outside `allowedModels`. A dropped value falls back to the deployment's. The model allow-list is `AI_GATEWAY_ALLOWED_MODELS` when set, else the preference lists; the deployment's own models and the built-in defaults are always allowed. The Settings page offers only allowed models. Migration 0022 adds a `NOT VALID` check limiting `values` to at most 64 env-style keys with string values of at most 200 characters (mirrored in schema.sql). Run `npm run db:migrate` to apply it.
+Saved settings are now checked every time they are read, not only on save. A user can write their own `user_settings` row through PostgREST and skip the form. `settingsEnv` drops any stored value that breaks its registry bounds or choices, any group the app's own `*FromEnv` readers reject, and any model outside `allowedModels`. A dropped value falls back to the deployment's. The model allow-list is `AI_GATEWAY_ALLOWED_MODELS` when set, else the preference lists; the deployment's own models and the built-in defaults are always allowed. The Settings page offers only allowed models. Migration 0023 adds a `NOT VALID` check limiting `values` to at most 64 env-style keys with string values of at most 200 characters (mirrored in schema.sql). Run `npm run db:migrate` to apply it.
 
 ## 2026-11-26 - Workspace content polish
 

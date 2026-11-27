@@ -1,4 +1,4 @@
--- 0022: user_settings.values may only hold short text settings (defence in depth).
+-- 0023: user_settings.values may only hold short text settings (defence in depth).
 --
 -- The `own rows` policy lets a signed-in user write their own row straight through PostgREST,
 -- around the Settings form. The app checks every stored value again when it reads it
