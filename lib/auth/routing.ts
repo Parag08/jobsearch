@@ -11,3 +11,21 @@ const SIGNED_OUT_ONLY = new Set(["/", "/signin"]);
 export function signedInRedirect(pathname: string, signedIn: boolean): string | null {
   return signedIn && SIGNED_OUT_ONLY.has(pathname) ? APP_HOME : null;
 }
+
+/**
+ * The `next` page to land on after sign-in, accepted only when it is a path on this
+ * site: a single leading slash, no backslash or control character (browsers treat
+ * `/\host` and `/\t/host` as `//host`), and resolving to the same origin.
+ * Anything else falls back to the overview, so the callback never redirects off-site.
+ */
+export function safeNextPath(next: string | null | undefined): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return APP_HOME;
+  if (/[\\\u0000-\u001f\u007f]/.test(next)) return APP_HOME;
+  const base = "http://same-origin.invalid";
+  try {
+    const url = new URL(next, base);
+    return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : APP_HOME;
+  } catch {
+    return APP_HOME;
+  }
+}
