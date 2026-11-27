@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ClipboardEvent } from "react";
 import type { SettingKind } from "@/lib/settings/registry";
-import { displayNumber, settingsHref, SOURCING_FIELDS, type SettingsSection } from "@/lib/settings/sections";
+import { displayNumber, SECTIONS, settingsHref, SOURCING_FIELDS, type SettingsSection } from "@/lib/settings/sections";
 import { Evidence, EVIDENCE_TEXT, type EvidenceCode } from "@/lib/watchlist/safe-kit";
 import { saveSettingsAction, type SettingsState } from "./actions";
 import { SettingsDialog } from "./dialog";
@@ -26,7 +26,7 @@ export interface FieldView {
   key: string;
   group: string;
   label: string;
-  help: string;
+  help?: string;
   unit?: string;
   kind: SettingKind;
   saved: string;
@@ -155,16 +155,25 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
 
   return (
     <form className={styles.form} ref={form} noValidate onSubmit={(event) => { event.preventDefault(); void save(); }}>
+      <div className={styles.heading}>
+        <h1 className={styles.title}>{SECTIONS[section]}</h1>
+        <span className={styles.saveNote}>
+          {!dirty && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m5 12 4 4L19 6" />
+          </svg>}
+          {pending ? "Saving…" : dirty ? "Unsaved changes" : "Up to date"}
+        </span>
+      </div>
       <fieldset className={styles.fieldset} disabled={pending}>
         {sourcing && <>
           <div className={styles.panel}>
-            {SOURCING_FIELDS.map(({ key, label, help }) => <Field key={key} id={key} label={label} help={help} error={state.errors?.[key]}>
-              {key === "target" ?
-                <input id={key} className={`${ui.input} ${styles.number}`} type="number" inputMode="numeric" min={1} max={2147483647} step={1}
-                  aria-invalid={!!state.errors?.[key]} aria-describedby={`${key}-help`} value={draft[key] ?? ""} onChange={(event) => set(key, event.target.value)} /> :
-                <input id={key} className={ui.input} maxLength={2000} aria-invalid={!!state.errors?.[key]} aria-describedby={`${key}-help`}
-                  onPaste={(event) => pasteSourcingTerms(event, (value) => set(key, value))}
-                  value={draft[key] ?? ""} onChange={(event) => set(key, event.target.value)} />}
+            {SOURCING_FIELDS.map((field) => <Field key={field.key} id={field.key} label={field.label} help={field.help} error={state.errors?.[field.key]}>
+              {field.key === "target" ?
+                <input id={field.key} className={`${ui.input} ${styles.number}`} type="number" inputMode="numeric" min={1} max={2147483647} step={1}
+                  aria-invalid={!!state.errors?.target} aria-describedby="target-help" value={draft.target ?? ""} onChange={(event) => set("target", event.target.value)} /> :
+                <input id={field.key} className={ui.input} maxLength={2000} aria-invalid={!!state.errors?.[field.key]} aria-describedby={`${field.key}-help`}
+                  placeholder={field.placeholder} onPaste={(event) => pasteSourcingTerms(event, (value) => set(field.key, value))}
+                  value={draft[field.key] ?? ""} onChange={(event) => set(field.key, event.target.value)} />}
             </Field>)}
           </div>
           <Link className={styles.related} href="/app/companies">Manage target companies <span aria-hidden="true">→</span></Link>
@@ -255,12 +264,12 @@ function pasteSourcingTerms(event: ClipboardEvent<HTMLInputElement>, update: (va
 }
 
 function Field({ id, label, help, error, children }: {
-  id: string; label: string; help: string; error?: string; children: React.ReactNode;
+  id: string; label: string; help?: string; error?: string; children: React.ReactNode;
 }) {
   return <div className={styles.field}>
     <div>
       <label htmlFor={id}>{label}</label>
-      <p className={styles.help} id={`${id}-help`}>{help}{error && <span className={styles.error}>{error}</span>}</p>
+      {(help || error) && <p className={styles.help} id={`${id}-help`}>{help}{error && <span className={styles.error}>{error}</span>}</p>}
     </div>
     <div className={styles.fieldControl}>{children}</div>
   </div>;
@@ -272,11 +281,12 @@ function SettingInput({ field, value, error, onChange }: {
   const { key, kind, label, help, fallback, blank, unit, ranked = [], others = [] } = field;
   const options = [...ranked, ...others];
   const pick = options.find((option) => option.id === (value || fallback));
-  const inputProps = { id: key, className: ui.input, "aria-invalid": !!error, "aria-describedby": `${key}-help` };
+  const description = [help || error ? `${key}-help` : "", unit ? `${key}-unit` : ""].filter(Boolean).join(" ");
+  const inputProps = { id: key, className: ui.input, "aria-invalid": !!error, "aria-describedby": description || undefined };
   const numeric = kind.type === "int" || kind.type === "decimal";
   const adjustedError = numeric && error ? error.replace(/^(Between |At least )([\d.]+)(?: and ([\d.]+))?\.$/,
     (_, prefix, min, max) => `${prefix}${displayNumber(key, min)}${max ? ` and ${displayNumber(key, max)}` : ""}${unit ? ` ${unit}` : ""}.`) : error;
-  return <Field id={key} label={unit ? `${label} (${unit})` : label} help={help} error={adjustedError}>
+  return <Field id={key} label={label} help={help} error={adjustedError}>
     {kind.type === "model" || kind.type === "choice" ?
       <select {...inputProps} value={value ?? ""} onChange={(event) => onChange(event.target.value || null)}>
         <option value="">App default{fallback || blank ? ` · ${fallback || blank}` : " · Not set"}</option>
@@ -292,10 +302,13 @@ function SettingInput({ field, value, error, onChange }: {
           })}
         </>}
       </select> : <>
-        <input {...inputProps} className={`${ui.input} ${styles.number}`} type="number" inputMode={kind.type === "int" && !key.endsWith("_MS") ? "numeric" : "decimal"}
-          min={displayNumber(key, String(kind.min))} max={kind.max === undefined ? undefined : displayNumber(key, String(kind.max))}
-          step={kind.type === "int" ? displayNumber(key, "1") : "any"} value={value ?? fallback} placeholder="—" onChange={(event) => onChange(event.target.value)} />
-        {value === null ? <span className={styles.help}>App default{!fallback && ` · ${blank ?? "Not configured"}`}</span> :
+        <div className={styles.valueRow}>
+          <input {...inputProps} className={`${ui.input} ${styles.number}`} type="number" inputMode={kind.type === "int" && !key.endsWith("_MS") ? "numeric" : "decimal"}
+            min={displayNumber(key, String(kind.min))} max={kind.max === undefined ? undefined : displayNumber(key, String(kind.max))}
+            step={kind.type === "int" ? displayNumber(key, "1") : "any"} value={value ?? fallback} placeholder="Not set" onChange={(event) => onChange(event.target.value)} />
+          {unit && <span className={styles.unit} id={`${key}-unit`}>{unit}</span>}
+        </div>
+        {value === null ? <span className={styles.help}>App default</span> :
           <button type="button" className={styles.defaultButton} onClick={() => onChange(null)}>Use app default</button>}
       </>}
     {pick && <span className={styles.help}>{pick.price} · about {money(pick.interview)} per full interview

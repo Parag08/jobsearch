@@ -85,7 +85,7 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
             </a>) : <div className={styles.notice}><h3>No matching settings</h3><p>Try a term such as follow-up, CV or assistant.</p></div>}
         </section>}
         <div hidden={!!needle}>
-          <h1 className={styles.title}>{SECTIONS[section]}</h1>
+          {(section === "assistant" || loadFailed) && <h1 className={styles.title}>{SECTIONS[section]}</h1>}
           {loadFailed ? <div className={styles.notice} role="alert">
             <p>Couldn’t load this section. Your saved settings haven’t changed.</p>
             <button className={ui.btn} type="button" onClick={() => location.reload()}>Try again</button>

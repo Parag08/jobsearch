@@ -94,16 +94,15 @@ export function ThemeRuntime() {
 
 export function AppearancePicker({ className }: { className?: string }) {
   const pref = useThemePreference();
+  const choices: readonly ThemePref[] = ["system", "light", "dark", "auto"];
   return (
-    <label className={className}>
+    <div className={className}>
       <span>Appearance</span>
-      <select value={pref ?? "auto"} onChange={(event) => changeTheme(parsePref(event.target.value))}>
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="auto">{LABEL.auto}</option>
-      </select>
-    </label>
+      <div role="group" aria-label="Appearance">
+        {choices.map((choice) => <button key={choice} type="button" aria-pressed={(pref ?? "auto") === choice}
+          title={LABEL[choice]} onClick={() => changeTheme(choice)}>{choice === "auto" ? "Auto" : LABEL[choice]}</button>)}
+      </div>
+    </div>
   );
 }
 

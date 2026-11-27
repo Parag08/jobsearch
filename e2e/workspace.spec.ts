@@ -358,8 +358,10 @@ test("Settings saves a board preference across a reload", async ({ demo: page })
   await appLink(page, "Settings").click();
   await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Goals & follow-ups" }).click();
   const goals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Weekly goals", exact: true }) });
-  await expect(goals.getByText(/Your weekly target, shown under “This week” on the Overview streak card\./)).toHaveCount(3);
-  const setting = page.getByLabel("Cards per column", { exact: false });
+  await expect(goals.getByRole("spinbutton", { name: "Applications", exact: true })).toHaveAccessibleDescription("/ week");
+  await expect(goals.getByRole("spinbutton", { name: "People to contact", exact: true })).toHaveAccessibleDescription("/ week");
+  await expect(goals.getByRole("spinbutton", { name: "Practice sessions", exact: true })).toHaveAccessibleDescription("/ week");
+  const setting = page.getByLabel("Visible cards per stage", { exact: true });
   await setting.fill("3");
   await page.getByRole("button", { name: /Save changes/i }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");

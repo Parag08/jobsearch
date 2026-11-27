@@ -5,7 +5,7 @@ import { getSafeEvidence, getSourcingRecipe } from "@/lib/repos/sourcing";
 import { loadCatalog } from "@/lib/services/settings";
 import { SETTINGS, allowedModels } from "@/lib/settings/registry";
 import { interviewCost, modelChoices } from "@/lib/settings/models";
-import { displayNumber, settingLocation, settingsHref, settingsSection, SOURCING_FIELDS } from "@/lib/settings/sections";
+import { displayNumber, settingLocation, settingsHref, settingsSection, SETTINGS_HELP, SETTINGS_UNITS, SOURCING_FIELDS } from "@/lib/settings/sections";
 import preferences from "@/data/settings/model-preferences.json";
 import { AssistantSection } from "./assistant-section";
 import { SettingsForm, type FieldView, type ModelOption } from "./settings-form";
@@ -53,9 +53,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           ...field, group: settingLocation(key).group,
           saved: numeric ? displayNumber(key, savedValue) : savedValue,
           fallback: numeric ? displayNumber(key, fallback) : fallback,
-          unit: key.endsWith("_MS") ? "seconds" : ["CV_MAX_ORG_SHARE", "CV_COLLISION_OVERLAP", "INTERVIEW_TURN_QUIET_LEVEL"].includes(key) ? "%" : field.unit,
-          help: key === "CV_MAX_ORG_SHARE" ? "Maximum share of bullet lines for one employer." :
-            key === "INTERVIEW_TURN_QUIET_LEVEL" ? "Raise this threshold in a noisy room." : field.help,
+          unit: SETTINGS_UNITS[key] ?? field.unit,
+          help: SETTINGS_HELP[key],
         };
         if (kind.type !== "model") return base;
         const choices = modelChoices(offered, PREFS[key] ?? []);

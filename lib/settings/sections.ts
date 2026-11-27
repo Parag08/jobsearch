@@ -36,10 +36,31 @@ export function settingLocation(key: string): { section: SettingsSection; group:
 
 export const SOURCING_FIELDS = [
   { key: "target", label: "Daily role maximum", help: "A maximum, not a quota." },
-  { key: "cities", label: "Cities", help: "Separate cities with commas, or paste one per line." },
-  { key: "titles", label: "Role families", help: "Separate role families with commas, or paste one per line." },
-  { key: "excluded", label: "Titles to skip", help: "Optional title phrases. Separate with commas, or paste one per line." },
+  { key: "cities", label: "Cities", help: "Separate multiple cities with commas.", placeholder: "Any city" },
+  { key: "titles", label: "Role families", help: "Separate role families with commas.", placeholder: "Any role family" },
+  { key: "excluded", label: "Titles to skip", help: "Optional words to leave out of titles.", placeholder: "No exclusions" },
 ] as const;
+
+export const SETTINGS_HELP: Readonly<Record<string, string>> = {
+  APPLY_FOLLOW_UP_DAYS: "Sets a reminder when you confirm an application.",
+  INTERVIEW_TURN_UNFINISHED_MS: "At least as long as the finished-answer pause.",
+  CV_MAX_BULLETS: "Upper limit when choosing from your evidence.",
+  CV_MAX_ORG_SHARE: "Keeps one employer from dominating the CV.",
+  CV_COLLISION_OVERLAP: "Higher values allow more similar bullet points.",
+  CV_OVERHEAD_LINES: "Room for headings, education and other sections.",
+  INTERVIEW_TURN_QUIET_LEVEL: "Raise it if background noise stops answers ending.",
+};
+
+export const SETTINGS_UNITS: Readonly<Record<string, string>> = {
+  HOME_GOAL_APPLY: "/ week",
+  HOME_GOAL_REACH_OUT: "/ week",
+  HOME_GOAL_PRACTISE: "/ week",
+  PIPELINE_COLUMN_MAX: "cards",
+  INTERVIEW_TURN_SILENCE_MS: "seconds",
+  INTERVIEW_TURN_UNFINISHED_MS: "seconds",
+  CV_MAX_ORG_SHARE: "%",
+  CV_COLLISION_OVERLAP: "%",
+};
 
 export function displayNumber(key: string, value: string): string {
   if (!value || !Number.isFinite(Number(value))) return value;
@@ -53,6 +74,6 @@ export function settingNumber(key: string, value: string): string {
 
 function factor(key: string): number {
   if (key.endsWith("_MS")) return 1000;
-  if (["CV_MAX_ORG_SHARE", "CV_COLLISION_OVERLAP", "INTERVIEW_TURN_QUIET_LEVEL"].includes(key)) return 0.01;
+  if (key === "CV_MAX_ORG_SHARE" || key === "CV_COLLISION_OVERLAP") return 0.01;
   return 1;
 }

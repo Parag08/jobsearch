@@ -4,6 +4,27 @@
   flex-direction: column;
 }
 
+:global(html[data-theme="dark"]) .shell:has([data-settings]) {
+  --paper: #151c27;
+  --card: #1f2938;
+  --wash: #253447;
+  --surface: var(--card);
+  --ground: var(--paper);
+  --line: #3f4d60;
+  --line-soft: #364255;
+  --line-strong: #8493a9;
+  --settings-input-line: #8493a9;
+  --ink: #edf2f8;
+  --ink-soft: #b1bed0;
+  --ink-faint: #99a8be;
+  --accent-text: #86bbff;
+  --accent-wash: #263f60;
+  --danger: #ffb0ba;
+  --danger-wash: #4b2630;
+  background: var(--paper);
+  color: var(--ink);
+}
+
 .top {
   position: sticky;
   top: 0;

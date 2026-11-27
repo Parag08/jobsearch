@@ -48,23 +48,40 @@
   color: var(--ink-soft);
   font-size: 0.85rem;
 }
-.appearance select {
-  min-height: 36px;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  border: 1px solid var(--line-strong);
+.appearance [role="group"] {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 4px 8px;
   background: var(--card);
-  color: var(--ink);
-  font: inherit;
 }
+.appearance button {
+  flex: 1;
+  min-height: 30px;
+  min-width: 0;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+}
+.appearance button:hover, .appearance button[aria-pressed="true"] {
+  background: var(--wash);
+  color: var(--ink);
+}
+.appearance button[aria-pressed="true"] { font-weight: 650; }
 .sectionPicker { display: none; }
 
 .content { min-width: 0; }
 .title { margin: 0 0 22px; color: var(--ink); font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -0.035em; }
 .form, .fieldset { display: grid; gap: 14px; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; margin-bottom: 8px; }
+.heading .title { margin: 0; }
+.saveNote { display: flex; align-items: center; gap: 4px; color: var(--ink-soft); font-size: 0.75rem; white-space: nowrap; }
 .fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .panel, .notice, .results {
   background: var(--card);
@@ -88,11 +105,18 @@
 .field label { font-size: 0.9rem; font-weight: 650; }
 .fieldControl { display: grid; gap: 4px; justify-items: end; min-width: 0; }
 .fieldControl select, .fieldControl input { width: 100%; min-width: 0; }
-.fieldControl .number { width: 8rem; max-width: 100%; }
+.fieldControl :is(input, select), .dialog :is(input:not([type="radio"]), select) {
+  min-height: 40px;
+  background: var(--card);
+  border-color: var(--settings-input-line, #8391a5);
+}
+.fieldControl .number { width: 84px; max-width: 100%; }
+.valueRow { display: flex; align-items: center; gap: 9px; max-width: 100%; }
+.unit { color: var(--ink-soft); font-size: 0.75rem; white-space: nowrap; }
 .help { color: var(--ink-soft); font-size: 0.8rem; line-height: 1.45; margin: 4px 0 0; }
 .fieldControl .help { text-align: right; }
 .error { display: block; margin: 4px 0 0; color: var(--ink); background: var(--danger-wash); padding: 4px 8px; border-radius: 6px; }
-.field [aria-invalid="true"] { border-color: var(--danger); }
+.field .fieldControl [aria-invalid="true"] { border-color: var(--danger); }
 .defaultButton, .related {
   border: 0;
   background: none;
@@ -203,10 +227,11 @@
     font-size: 1.55rem;
     font-weight: 650;
   }
-  .sectionList nav a, .search, .appearance select, .field input, .field select, .dialog :is(input, select, button), .saveActions button { min-height: 44px; }
+  .sectionList nav a, .search, .appearance button, .fieldControl :is(input, select), .dialog :is(input, select, button), .saveActions button { min-height: 44px; }
   .field { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; gap: 8px; }
   .fieldControl { justify-items: start; }
   .fieldControl .help { text-align: left; }
   .defaultButton { justify-self: start; min-height: 44px; }
+  .heading { min-height: 0; justify-content: flex-end; margin-bottom: 0; }
   .title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
