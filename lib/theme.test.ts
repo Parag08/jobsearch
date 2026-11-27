@@ -24,13 +24,18 @@ describe("resolveTheme", () => {
     expect(resolveTheme("auto", at(DARK_UNTIL_HOUR - 1, 59))).toBe("dark");
     expect(resolveTheme("auto", at(DARK_UNTIL_HOUR))).toBe("light");
   });
+  it("follows the OS preference only when System is selected", () => {
+    expect(resolveTheme("system", at(23), false)).toBe("light");
+    expect(resolveTheme("system", at(12), true)).toBe("dark");
+  });
 });
 
 describe("parsePref", () => {
-  it("accepts the three known values and defaults anything else to auto", () => {
+  it("accepts known values and defaults anything else to auto", () => {
     expect(parsePref("dark")).toBe("dark");
     expect(parsePref("light")).toBe("light");
     expect(parsePref("auto")).toBe("auto");
+    expect(parsePref("system")).toBe("system");
     expect(parsePref(null)).toBe("auto");
     expect(parsePref("sepia")).toBe("auto");
   });
@@ -62,7 +67,7 @@ describe("msUntilNextSwitch", () => {
 describe("themeBootScript", () => {
   // Runs the inline script against a stand-in document, the way the browser
   // does before first paint.
-  function boot(stored: string | null, hour: number, throwOnStorage = false) {
+  function boot(stored: string | null, hour: number, throwOnStorage = false, systemDark = false) {
     const attrs: Record<string, string> = {};
     const document = { documentElement: { setAttribute: (k: string, v: string) => (attrs[k] = v) } };
     const localStorage = {
@@ -74,13 +79,16 @@ describe("themeBootScript", () => {
     const FakeDate = function () {
       return at(hour);
     } as unknown as DateConstructor;
-    new Function("document", "localStorage", "Date", themeBootScript())(document, localStorage, FakeDate);
+    const matchMedia = () => ({ matches: systemDark });
+    new Function("document", "localStorage", "Date", "matchMedia", themeBootScript())(document, localStorage, FakeDate, matchMedia);
     return attrs["data-theme"];
   }
 
   it("applies the stored choice", () => {
     expect(boot("dark", 12)).toBe("dark");
     expect(boot("light", 22)).toBe("light");
+    expect(boot("system", 22)).toBe("light");
+    expect(boot("system", 12, false, true)).toBe("dark");
   });
 
   it("falls back to the clock when nothing is stored or storage is blocked", () => {

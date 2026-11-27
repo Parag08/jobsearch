@@ -1,5 +1,5 @@
 import { fullInterviewSettingsFromEnv } from "../interview/full-plan";
-import { turnSettingsFromEnv } from "../interview/turn-taking";
+import { turnSettingsFromEnv, validateTurnPauses } from "../interview/turn-taking";
 import { interviewerModels } from "../interview/interviewer-model";
 import { customQuestionMaxCharsFromEnv } from "../interview/custom-questions";
 import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "../cv-page-settings";
@@ -50,24 +50,24 @@ export const SETTINGS: readonly Setting[] = [
   { key: "AI_GATEWAY_CASE_MODEL", group: "AI models", kind: { type: "model" }, label: "Case interviewer", blank: "the Reading and quick tasks model", help: "Talks you through case interviews. Code checks the maths; the model only talks." },
 
   // ---- Mock interviews
-  { key: "INTERVIEW_TURN_SILENCE_MS", group: "Mock interviews", kind: { type: "int", min: 300, max: 20000 }, unit: "ms", label: "Wait after a finished answer", help: "Hands-free: how long a silence ends an answer that sounds finished." },
-  { key: "INTERVIEW_TURN_UNFINISHED_MS", group: "Mock interviews", kind: { type: "int", min: 300, max: 30000 }, unit: "ms", label: "Wait after an unfinished answer", help: "For an answer that stops mid-sentence (\"...at Nutanix as\") or is still short. Must be at least the wait above." },
-  { key: "INTERVIEW_TURN_MIN_WORDS", group: "Mock interviews", kind: { type: "int", min: 1, max: 1000 }, unit: "words", label: "Short answer", help: "Answers shorter than this always get the longer wait." },
-  { key: "INTERVIEW_TURN_RAMBLE_WORDS", group: "Mock interviews", kind: { type: "int", min: 50, max: 5000 }, unit: "words", label: "Cut in after", help: "Past this many words the interviewer cuts in at the next finished phrase, as a real one does." },
+  { key: "INTERVIEW_TURN_SILENCE_MS", group: "Mock interviews", kind: { type: "int", min: 300, max: 20000 }, unit: "ms", label: "Pause after a finished answer", help: "Hands-free: how long a silence ends an answer that sounds finished." },
+  { key: "INTERVIEW_TURN_UNFINISHED_MS", group: "Mock interviews", kind: { type: "int", min: 300, max: 30000 }, unit: "ms", label: "Pause after an unfinished answer", help: "For an answer that stops mid-sentence (\"...at Nutanix as\") or is still short. Must be at least the wait above." },
+  { key: "INTERVIEW_TURN_MIN_WORDS", group: "Mock interviews", kind: { type: "int", min: 1, max: 1000 }, unit: "words", label: "Short-answer threshold", help: "Answers shorter than this always get the longer wait." },
+  { key: "INTERVIEW_TURN_RAMBLE_WORDS", group: "Mock interviews", kind: { type: "int", min: 50, max: 5000 }, unit: "words", label: "Interrupt long answers after", help: "Past this many words the interviewer cuts in at the next finished phrase, as a real one does." },
   { key: "INTERVIEW_TURN_QUIET_LEVEL", group: "Mock interviews", kind: { type: "decimal", min: 0.001, max: 0.999 }, label: "Microphone quiet level", help: "Loudness (0-1) below which you count as quiet. Raise it in a noisy room." },
-  { key: "INTERVIEW_FULL_MAX_TOPICS", group: "Mock interviews", kind: { type: "int", min: 2, max: 60 }, unit: "topics", label: "Topics per full interview", help: "Most questions one full interview covers." },
+  { key: "INTERVIEW_FULL_MAX_TOPICS", group: "Mock interviews", kind: { type: "int", min: 2, max: 60 }, unit: "topics", label: "Topics per interview", help: "Most questions one full interview covers." },
   { key: "INTERVIEW_FULL_TOPIC_FOLLOW_UPS", group: "Mock interviews", kind: { type: "int", min: 0, max: 10 }, label: "Follow-ups per topic", help: "Most follow-up questions on one topic." },
   { key: "INTERVIEW_FULL_TOTAL_FOLLOW_UPS", group: "Mock interviews", kind: { type: "int", min: 0, max: 100 }, label: "Follow-ups per interview", help: "Most follow-up questions in the whole interview." },
-  { key: "INTERVIEW_CUSTOM_QUESTION_MAX_CHARS", group: "Mock interviews", kind: { type: "int", min: 20, max: 2000 }, unit: "characters", label: "Longest question of your own", help: "The longest question you can add under \"My own\"." },
+  { key: "INTERVIEW_CUSTOM_QUESTION_MAX_CHARS", group: "Mock interviews", kind: { type: "int", min: 20, max: 2000 }, unit: "characters", label: "Custom question length", help: "The longest question you can add under \"My own\"." },
 
   // ---- Pipeline and follow-ups
-  { key: "APPLY_FOLLOW_UP_DAYS", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 90 }, unit: "days", label: "Follow up after applying", help: "Marking an application applied sets \"follow up if no reply by\" this many days later." },
-  { key: "PIPELINE_RECENT_DAYS", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 365 }, unit: "days", label: "\"Recent\" on the board", help: "The window behind the board's \"Only the last N days\" link." },
-  { key: "PIPELINE_COLUMN_MAX", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 100 }, unit: "cards", label: "Cards per column", help: "Cards a board column shows before the rest fold under \"Show more\"." },
+  { key: "APPLY_FOLLOW_UP_DAYS", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 90 }, unit: "days", label: "Application follow-up", help: "Marking an application applied sets \"follow up if no reply by\" this many days later." },
+  { key: "PIPELINE_RECENT_DAYS", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 365 }, unit: "days", label: "Recent applications", help: "The window behind the board's \"Only the last N days\" link." },
+  { key: "PIPELINE_COLUMN_MAX", group: "Pipeline and follow-ups", kind: { type: "int", min: 1, max: 100 }, unit: "cards", label: "Visible cards per stage", help: "Cards a board column shows before the rest fold under \"Show more\"." },
 
   // ---- Weekly goals
   { key: "HOME_GOAL_APPLY", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Applications", help: "Your weekly target, shown under “This week” on the Overview streak card." },
-  { key: "HOME_GOAL_REACH_OUT", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "People reached out to", help: "Your weekly target, shown under “This week” on the Overview streak card." },
+  { key: "HOME_GOAL_REACH_OUT", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "People to contact", help: "Your weekly target, shown under “This week” on the Overview streak card." },
   { key: "HOME_GOAL_PRACTISE", group: "Weekly goals", kind: { type: "int", min: 1, max: 100 }, unit: "a week", label: "Practice sessions", help: "Your weekly target, shown under “This week” on the Overview streak card." },
 
   // ---- Role insights
@@ -76,12 +76,12 @@ export const SETTINGS: readonly Setting[] = [
 
   // ---- CV
   { key: "CV_PAGE_SIZE", group: "CV", kind: { type: "choice", options: ["A4", "Letter"] }, label: "Page size", help: "The page a tailored CV is fitted to. Page size, scale and overhead lines go together." },
-  { key: "CV_SCALE", group: "CV", kind: { type: "decimal", min: 0.5, max: 2 }, label: "Scale", help: "Type scale of the exported CV." },
-  { key: "CV_OVERHEAD_LINES", group: "CV", kind: { type: "int", min: 0, max: 80 }, unit: "lines", label: "Overhead lines", help: "Lines that are not bullets (header, education, skills, headings) at scale 1." },
-  { key: "CV_MAX_BULLETS", group: "CV", kind: { type: "int", min: 1, max: 60 }, label: "Most bullets", help: "Bullet budget when a CV is chosen from your whole pool." },
-  { key: "CV_MAX_PER_ROLE", group: "CV", kind: { type: "int", min: 1, max: 20 }, label: "Most bullets per role", help: "No single role carries more than this." },
-  { key: "CV_MIN_PER_ROLE", group: "CV", kind: { type: "int", min: 0, max: 10 }, label: "Fewest bullets per role", help: "Every role keeps at least this many." },
-  { key: "CV_MAX_ORG_SHARE", group: "CV", kind: { type: "decimal", min: 0.05, max: 1 }, label: "Most share for one employer", help: "No employer takes more than this share of the bullet lines (0.34 = about a third)." },
+  { key: "CV_SCALE", group: "CV", kind: { type: "decimal", min: 0.5, max: 2 }, label: "Type scale", help: "Type scale of the exported CV." },
+  { key: "CV_OVERHEAD_LINES", group: "CV", kind: { type: "int", min: 0, max: 80 }, unit: "lines", label: "Non-bullet lines", help: "Lines that are not bullets (header, education, skills, headings) at scale 1." },
+  { key: "CV_MAX_BULLETS", group: "CV", kind: { type: "int", min: 1, max: 60 }, label: "Maximum bullet points", help: "Bullet budget when a CV is chosen from your whole pool." },
+  { key: "CV_MAX_PER_ROLE", group: "CV", kind: { type: "int", min: 1, max: 20 }, label: "Maximum bullets per role", help: "No single role carries more than this." },
+  { key: "CV_MIN_PER_ROLE", group: "CV", kind: { type: "int", min: 0, max: 10 }, label: "Minimum bullets per role", help: "Every role keeps at least this many." },
+  { key: "CV_MAX_ORG_SHARE", group: "CV", kind: { type: "decimal", min: 0.05, max: 1 }, label: "Maximum share for one employer", help: "No employer takes more than this share of the bullet lines (0.34 = about a third)." },
   { key: "CV_COLLISION_OVERLAP", group: "CV", kind: { type: "decimal", min: 0.05, max: 1 }, label: "Same-story overlap", help: "Two bullets this similar tell the same story; only one is kept." },
 ];
 
@@ -160,7 +160,9 @@ function fieldError(s: Setting, v: string, allowed: ReadonlySet<string>): string
 /** The app's own readers, run on the combined env: they own the rules that span fields. */
 const READERS: { keys: string[]; read: (env: Env) => unknown }[] = [
   { keys: ["AI_GATEWAY_INTERVIEWER_MAX_TOKENS", "AI_GATEWAY_INTERVIEWER_EFFORT", "AI_GATEWAY_INTERVIEWER_MODEL"], read: (e) => interviewerModels(e) },
-  { keys: ["INTERVIEW_TURN_UNFINISHED_MS", "INTERVIEW_TURN_SILENCE_MS", "INTERVIEW_TURN_MIN_WORDS", "INTERVIEW_TURN_RAMBLE_WORDS", "INTERVIEW_TURN_QUIET_LEVEL"], read: turnSettingsFromEnv },
+  { keys: ["INTERVIEW_TURN_UNFINISHED_MS", "INTERVIEW_TURN_SILENCE_MS", "INTERVIEW_TURN_MIN_WORDS", "INTERVIEW_TURN_RAMBLE_WORDS", "INTERVIEW_TURN_QUIET_LEVEL"], read: (env) => {
+    return turnSettingsFromEnv(env) ?? validateTurnPauses(env);
+  } },
   { keys: ["INTERVIEW_FULL_MAX_TOPICS", "INTERVIEW_FULL_TOPIC_FOLLOW_UPS", "INTERVIEW_FULL_TOTAL_FOLLOW_UPS"], read: fullInterviewSettingsFromEnv },
   { keys: ["INTERVIEW_CUSTOM_QUESTION_MAX_CHARS"], read: customQuestionMaxCharsFromEnv },
   { keys: ["APPLY_FOLLOW_UP_DAYS"], read: applyFollowUpDaysFromEnv },
@@ -174,23 +176,26 @@ const READERS: { keys: string[]; read: (env: Env) => unknown }[] = [
 ];
 
 /** Problems with a set of values, by key; empty when they can be saved. */
-export function validateSettings(env: Env, raw: Record<string, unknown>): Record<string, string> {
+export function validateSettings(env: Env, raw: Record<string, unknown>, editedKeys?: readonly string[]): Record<string, string> {
   const values = cleanValues(raw);
   const errors: Record<string, string> = {};
   const allowed = allowedModels(env);
   for (const [k, v] of Object.entries(values)) {
     const e = fieldError(BY_KEY.get(k)!, v, allowed);
-    if (e) errors[k] = e;
+    if (!e) continue;
+    if (!editedKeys || editedKeys.includes(k)) errors[k] = e;
+    else delete values[k];
   }
-  if (Object.keys(errors).length) return errors;
-
   const merged = overlay(env, values);
   for (const r of READERS) {
+    if (editedKeys && !r.keys.some((key) => editedKeys.includes(key))) continue;
+    if (r.keys.some((key) => Object.hasOwn(errors, key))) continue;
     try {
       r.read(merged);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const key = r.keys.find((k) => msg.includes(k)) ?? r.keys[0];
+      const key = r.keys.map((name) => ({ name, position: msg.indexOf(name) })).filter(({ position }) => position >= 0)
+        .sort((a, b) => a.position - b.position)[0]?.name ?? r.keys[0];
       errors[key] = inLabels(msg);
     }
   }

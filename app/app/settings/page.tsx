@@ -1,85 +1,76 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { getUserSettings } from "@/lib/repos/user-settings";
+import { getSafeEvidence, getSourcingRecipe } from "@/lib/repos/sourcing";
 import { loadCatalog } from "@/lib/services/settings";
-import { SETTINGS, SETTING_GROUPS, allowedModels } from "@/lib/settings/registry";
+import { SETTINGS, allowedModels } from "@/lib/settings/registry";
 import { interviewCost, modelChoices } from "@/lib/settings/models";
+import { displayNumber, settingLocation, settingsHref, settingsSection, SETTINGS_HELP, SETTINGS_UNITS, SOURCING_FIELDS } from "@/lib/settings/sections";
 import preferences from "@/data/settings/model-preferences.json";
+import { AssistantSection } from "./assistant-section";
 import { SettingsForm, type FieldView, type ModelOption } from "./settings-form";
-import ui from "../ui.module.css";
+import { SettingsFrame } from "./settings-frame";
 
-/**
- * Settings: every value the app used to take only from the deployment's env, now yours to change
- * (lib/settings/registry.ts). Blank = the deployment's value. The model pickers show the AI
- * Gateway's catalogue with prices, and which models this team's plan may use.
- */
-export const dynamic = "force-dynamic";
+const { _note, ...modelPreferences } = preferences;
+const PREFS: Record<string, string[]> = modelPreferences;
+const searchable = [
+  ...SOURCING_FIELDS, ...SETTINGS,
+  { key: "evidence", label: "Verified experience and matching evidence" },
+  { key: "assistant-access", label: "Connect or revoke assistant access" },
+].map(({ key, label }) => ({ key, label, ...settingLocation(key) }));
 
-const PREFS = preferences as unknown as Record<string, string[]>;
-
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ section?: string }> }) {
+  const section = settingsSection((await searchParams).section);
   const w = await getWorkspace();
-  if (!w) redirect("/signin");
-  const [saved, catalog] = await Promise.all([
-    getUserSettings(w.db, w.userId).catch(() => ({}) as Record<string, string>),
-    loadCatalog(w.cannedAi ? undefined : process.env.AI_GATEWAY_API_KEY),
-  ]);
+  if (!w) redirect(`/signin?next=${encodeURIComponent(settingsHref(section))}`);
+  let content: React.ReactNode;
+  try {
+    if (section === "assistant") {
+      content = await AssistantSection(w);
+    } else if (section === "job-search") {
+      const recipe = await getSourcingRecipe(w.db, w.userId);
+      const sourcing = { target: String(recipe.target), cities: recipe.cities.join(", "), titles: recipe.titles.join(", "), excluded: recipe.excluded.join(", ") };
+      content = <SettingsForm key={section} section={section} sourcing={sourcing} fields={[]} />;
+    } else {
+      const [saved, evidence, catalog] = await Promise.all([
+        getUserSettings(w.db, w.userId),
+        section === "cv" ? getSafeEvidence(w.db, w.userId) : [],
+        section === "advanced" ? loadCatalog(w.mode === "live" ? process.env.AI_GATEWAY_API_KEY : undefined) : null,
+      ]);
+      const deployment = process.env;
+      const allowed = allowedModels(deployment);
+      const offered = (catalog?.models ?? []).filter((m) => allowed.has(m.id));
+      const option = (m: (typeof offered)[number], recommended: string | null): ModelOption => ({
+        id: m.id, name: m.name, price: `$${m.inputPerM} / $${m.outputPerM} per M tokens`,
+        interview: interviewCost(m), eligible: m.eligible, reasoning: m.reasoning, recommended: m.id === recommended,
+      });
+      const fields: FieldView[] = SETTINGS.filter(({ key }) => settingLocation(key).section === section).map((field) => {
+        const { key, kind } = field;
+        const numeric = kind.type === "int" || kind.type === "decimal";
+        const savedValue = saved[key]?.trim() ?? "";
+        const fallback = deployment[key]?.trim() ?? "";
+        const base = {
+          ...field, group: settingLocation(key).group,
+          saved: numeric ? displayNumber(key, savedValue) : savedValue,
+          fallback: numeric ? displayNumber(key, fallback) : fallback,
+          unit: SETTINGS_UNITS[key] ?? field.unit,
+          help: SETTINGS_HELP[key],
+        };
+        if (kind.type !== "model") return base;
+        const choices = modelChoices(offered, PREFS[key] ?? []);
+        return {
+          ...base,
+          ranked: choices.ranked.map((m) => option(m, choices.recommended)),
+          others: choices.others.map((m) => option(m, choices.recommended)),
+          recommended: choices.recommended,
+        };
+      });
+      content = <SettingsForm key={section} section={section} fields={fields} evidence={evidence}
+        catalogLoaded={!!catalog?.models.length} eligibilityKnown={catalog?.eligibilityKnown} demo={w.cannedAi} />;
+    }
+  } catch {
+    content = null;
+  }
 
-  const option = (m: (typeof catalog.models)[number], recommended: string | null): ModelOption => ({
-    id: m.id,
-    name: m.name,
-    price: `$${m.inputPerM} / $${m.outputPerM} per M tokens`,
-    interview: interviewCost(m),
-    eligible: m.eligible,
-    reasoning: m.reasoning,
-    recommended: m.id === recommended,
-  });
-
-  const allowed = allowedModels(process.env);
-  const offered = catalog.models.filter((m) => allowed.has(m.id));
-
-  const fields: FieldView[] = SETTINGS.map((s) => {
-    const base: FieldView = {
-      key: s.key,
-      group: s.group,
-      label: s.label,
-      help: s.help,
-      unit: s.unit,
-      kind: s.kind,
-      // A saved model no longer allowed is ignored on read; show it as blank so saving clears it.
-      saved: s.kind.type === "model" && saved[s.key] && !allowed.has(saved[s.key]) ? "" : saved[s.key] ?? "",
-      fallback: process.env[s.key] ?? "",
-      blank: s.blank,
-    };
-    if (s.kind.type !== "model") return base;
-    const choices = modelChoices(offered, PREFS[s.key] ?? []);
-    return {
-      ...base,
-      ranked: choices.ranked.map((m) => option(m, choices.recommended)),
-      others: choices.others.map((m) => option(m, choices.recommended)),
-      recommended: choices.recommended,
-    };
-  });
-
-  return (
-    <>
-      <div className={ui.head}>
-        <div className={ui.headText}>
-          <h1>Settings</h1>
-        </div>
-      </div>
-      <section className={ui.panel}>
-        <h2>Sourcing</h2>
-        <Link href="/app/settings/sourcing" className={ui.btn}>Sourcing preferences</Link>
-      </section>
-      <SettingsForm
-        groups={[...SETTING_GROUPS]}
-        fields={fields}
-        eligibilityKnown={catalog.eligibilityKnown}
-        catalogLoaded={catalog.models.length > 0}
-        demo={w.cannedAi}
-      />
-    </>
-  );
+  return <SettingsFrame key={section} section={section} searchable={searchable} loadFailed={content === null}>{content}</SettingsFrame>;
 }

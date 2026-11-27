@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { SETTINGS_PATH } from "@/lib/settings/sections";
 import styles from "./app.module.css";
 
 /**
@@ -16,6 +17,19 @@ import styles from "./app.module.css";
  */
 /** The overview's address: the JobSearch name is its tab on wide screens. */
 export const OVERVIEW = "/app/home";
+
+export function SettingsLink() {
+  const path = usePathname();
+  return (
+    <Link href={SETTINGS_PATH} title="Settings" aria-label="Settings" className={styles.gear}
+      aria-current={path === SETTINGS_PATH ? "page" : undefined}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+        <path d="m10.1 3-.6 2.3-1.6.9-2.3-.6-1.9 3.3 1.7 1.7v1.8l-1.7 1.7 1.9 3.3 2.3-.6 1.6.9.6 2.3h3.8l.6-2.3 1.6-.9 2.3.6 1.9-3.3-1.7-1.7v-1.8l1.7-1.7-1.9-3.3-2.3.6-1.6-.9-.6-2.3z" />
+        <circle cx="12" cy="11.5" r="3" />
+      </svg>
+    </Link>
+  );
+}
 
 /**
  * The logo and name, acting as the Overview tab (Parag, 2026-11-19: a name that did nothing
@@ -40,7 +54,7 @@ export function NavLinks({ items }: { items: ReadonlyArray<readonly [string, str
 
   const isCurrent = (href: string) =>
     href === "/app" ? pathname === "/app" || pathname.startsWith("/app/applications") : pathname.startsWith(href);
-  const currentLabel = items.find(([href]) => isCurrent(href))?.[1] ?? "Menu";
+  const currentLabel = items.find(([href]) => isCurrent(href))?.[1] ?? "Pages";
 
   // A new page closes the menu.
   useEffect(() => setOpen(false), [pathname]);

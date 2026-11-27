@@ -3,12 +3,12 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getWorkspace } from "@/lib/db";
-import { addSourcingCompany, connectSourcingBoard, getSourcingCompany, putSourcingRecipe, setSourcingCompanyActive,
-  putSafeEvidence, setCompanyWebsite, setSourcingDecision, sourcingTerms } from "@/lib/repos/sourcing";
+import { addSourcingCompany, connectSourcingBoard, getSourcingCompany, setSourcingCompanyActive,
+  setCompanyWebsite, setSourcingDecision } from "@/lib/repos/sourcing";
 import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { refreshWatchlist } from "@/lib/services/refresh-watchlist";
 import { HttpBoardFetcher } from "@/lib/watchlist/fetcher";
-import { parseDailyTarget, type Decision } from "@/lib/watchlist/daily";
+import type { Decision } from "@/lib/watchlist/daily";
 import { AnswerRequest, ConfirmSubmission, Evidence } from "@/lib/watchlist/safe-kit";
 import { approveKitDraft, confirmWithWorkspaceSettings, getSourcingKit, prepareSourcingBatch,
   requestCompanyResearch, requestKitDraft, setSafeKitEvidence } from "@/lib/services/sourcing-kits";
@@ -21,23 +21,6 @@ async function workspace() {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const value = (form: FormData, name: string) => String(form.get(name) ?? "");
-
-export async function saveSourcingRecipe(_previous: { error?: string }, form: FormData) {
-  const { db, userId } = await workspace();
-  const target = parseDailyTarget(value(form, "target").trim());
-  const cities = sourcingTerms(value(form, "cities"));
-  const titles = sourcingTerms(value(form, "titles"));
-  const excluded = sourcingTerms(value(form, "excluded"));
-  if (!target) return { error: "Enter a positive whole number for your daily target." };
-  if (!cities || !titles || !excluded) return { error: "Use short city or role phrases only, without personal details." };
-  try {
-    await putSourcingRecipe(db, userId, { target, cities, titles, excluded });
-  } catch {
-    return { error: "Preferences could not be saved. Try again." };
-  }
-  revalidatePath("/app/watchlist");
-  redirect("/app/settings/sourcing?saved=1");
-}
 
 export async function addTargetCompany(_previous: { error?: string }, form: FormData) {
   const { db, userId } = await workspace();
@@ -121,20 +104,6 @@ export async function prepareDailyBatch() {
   redirect("/app/watchlist?notice=" + (ids.length ? "prepared" : "no-picks"));
 }
 
-export async function saveEvidence(_previous: { error?: string }, form: FormData) {
-  const { db, userId, persistDemoKits } = await workspace();
-  const codes = Evidence.array().max(Evidence.options.length).safeParse(form.getAll("evidence"));
-  if (!codes.success || form.get("attested") !== "on") return { error: "Confirm that every selected claim is true of your work." };
-  try {
-    await putSafeEvidence(db, userId, codes.data);
-    await persistDemoKits?.();
-  } catch {
-    return { error: "Verified evidence could not be saved. Try again." };
-  }
-  revalidatePath("/app/watchlist");
-  redirect("/app/settings/sourcing?saved=1");
-}
-
 const kitPath = (id: string) => "/app/applications/" + id;
 type FormState = { error?: string };
 
@@ -146,7 +115,7 @@ export async function saveKitEvidence(id: string, revision: number, _state: Form
     await setSafeKitEvidence(db, userId, id, codes.data, form.get("reviewed") === "on", revision);
     await persistDemoKits?.();
   } catch {
-    return { error: "Could not save this review. Reload and choose only claims verified in Sourcing preferences." };
+    return { error: "Could not save this review. Reload and choose only claims verified in CV & evidence." };
   }
   revalidatePath(kitPath(id));
   return {};

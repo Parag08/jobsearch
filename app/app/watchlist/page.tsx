@@ -47,7 +47,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<{ 
           <h1>Roles to review</h1>
         </div>
         <div className={s.formFoot}>
-          <Link href="/app/settings/sourcing" aria-label="Sourcing preferences">Preferences</Link>
+          <Link href="/app/settings" aria-label="Sourcing preferences">Preferences</Link>
           {configured.length > 0 && <form action={refreshDailyBoards}>
             <PendingButton label="Refresh roles" pending="Checking boards…" />
           </form>}

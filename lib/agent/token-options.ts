@@ -4,7 +4,7 @@
 export const TOKEN_SCOPES = ["read", "write"] as const;
 export type TokenScope = (typeof TOKEN_SCOPES)[number];
 
-/** Lifetimes offered on /app/agent. Every token expires; a lost one stops working on its own. */
+/** Lifetimes offered in Settings → Assistant. Every token expires; a lost one stops working on its own. */
 export const TOKEN_LIFETIME_DAYS = [30, 90, 365] as const;
 export const DEFAULT_TOKEN_DAYS = 90;
 

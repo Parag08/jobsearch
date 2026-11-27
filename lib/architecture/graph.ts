@@ -89,7 +89,7 @@ export const NODES: ArchNode[] = [
     era: "today",
     status: "live",
     what: "An agent holding a personal token. Today that is the findparagjob workspace, which pushes roles and the outreach log and reads the pipeline back.",
-    where: "findparagjob tools/portal-sync; token made on /app/agent",
+    where: "findparagjob tools/portal-sync; token made in Settings → Assistant",
   },
   {
     id: "peers",

@@ -64,7 +64,7 @@ export interface DbDelete extends PromiseLike<DbResult<null>> {
 export interface DbTable<R> {
   select(columns?: string): DbSelect<R>;
   insert(values: Partial<R> | Partial<R>[]): DbWrite<R>;
-  upsert(values: Partial<R> | Partial<R>[], opts: { onConflict: string }): DbWrite<R>;
+  upsert(values: Partial<R> | Partial<R>[], opts: { onConflict: string; ignoreDuplicates?: boolean }): DbWrite<R>;
   update(patch: Partial<R>): DbUpdate<R>;
   delete(): DbDelete;
 }

@@ -93,7 +93,7 @@ async function editKit(db: DbClient, userId: string, id: string, edit: (kit: Saf
 
 export async function setSafeKitEvidence(db: DbClient, userId: string, id: string, codes: EvidenceCode[], reviewed: boolean, revision?: number) {
   const currentEvidence = await getSafeEvidence(db, userId);
-  if (codes.length > 3 || codes.some((code) => !currentEvidence.includes(code))) throw new Error("Select only claims you verified in Sourcing preferences.");
+  if (codes.length > 3 || codes.some((code) => !currentEvidence.includes(code))) throw new Error("Select only claims you verified in CV & evidence.");
   const evidence = [...new Set(codes)];
   return editKit(db, userId, id, (k) => {
     const sameContent = k.evidence.length === evidence.length && evidence.every((code) => k.evidence.includes(code));

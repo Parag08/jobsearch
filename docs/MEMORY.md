@@ -2,6 +2,12 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Settings redesign
+
+QA follow-up for PR #61: Settings dialogs portal to the Settings frame so search cannot hide them; canceling a guarded jump shows the unsaved draft. Dark placeholders use the Settings secondary text color, and mobile controls use a 44px minimum. Browsers can open an Advanced disclosure for a URL fragment before hydration, so only those closed-by-default disclosures ignore the expected attribute difference.
+
+The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves validate the actual merged values for each reader group touched by the edit, even when its controls span sections; untouched groups remain unchanged. Saving a pause or related control validates the pause pair even if missing settings turn hands-free off at runtime. Restore app defaults clears overrides, not deployment values; unset weekly goals remain blank. The slate dark palette is scoped to Settings. Verified claims remain in the profile; Assistant keys are shown only during creation. Rerun a first-time Settings `Saved.` e2e timeout before debugging it.
+
 ## 2026-11-27 - Per-user AI call limit
 
 Code scan finding (signed-in users could make unlimited AI calls on the shared key). `aiWrite`, `aiLlm` and the MCP posting reader now take one call from a per-user sliding window before reaching a provider (`AI_CALL_LIMIT`, default 100, per `AI_CALL_WINDOW_SECONDS`, default 3600; deployment env only). The count lives in `ai_calls`, written only by `take_ai_call` (migration 0025, security definer, never resets inside the window). The quick mock interview session is stored in `interview_mock_sessions` and deleted once scored; `mockTurnAction`/`mockFeedbackAction` take `sessionId`. Run `npm run db:migrate` for 0025.

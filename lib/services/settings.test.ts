@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
-import { envFor, loadCatalog, saveSettings } from "./settings";
-import { putUserSettings } from "../repos/user-settings";
+import { envFor, loadCatalog, saveSettings, saveSettingsSection } from "./settings";
+import { getUserSettings, putUserSettings } from "../repos/user-settings";
 import { roleReadBatchFromEnv } from "../insights/settings";
 
 const BASE = { AI_GATEWAY_API_KEY: "k", INTERVIEW_TURN_SILENCE_MS: "2500", INTERVIEW_TURN_UNFINISHED_MS: "6000", INTERVIEW_TURN_MIN_WORDS: "40", INTERVIEW_TURN_RAMBLE_WORDS: "280", INTERVIEW_TURN_QUIET_LEVEL: "0.05" };
@@ -27,6 +27,78 @@ describe("settings service", () => {
     expect(env.ROLE_READ_BATCH).toBe("10");
     expect(roleReadBatchFromEnv(env)).toBe(10);
     expect(env.AI_GATEWAY_INTERVIEWER_MODEL).toBeUndefined();
+  });
+  it("updates only submitted keys in the section, and clears an override when inheritance is selected", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { HOME_GOAL_APPLY: "4", PIPELINE_RECENT_DAYS: "14", ROLE_READ_BATCH: "3" });
+    expect(await saveSettingsSection(db, "u1", "goals", { HOME_GOAL_APPLY: "", ROLE_READ_BATCH: "20" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await getUserSettings(db, "u1")).toEqual({ PIPELINE_RECENT_DAYS: "14", ROLE_READ_BATCH: "3" });
+  });
+  it("checks a section against overrides already saved outside it", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { CV_MAX_BULLETS: "10" });
+    const base = { ...BASE, CV_MAX_PER_ROLE: "3", CV_MIN_PER_ROLE: "2", CV_MAX_ORG_SHARE: "0.5", CV_COLLISION_OVERLAP: "0.5" };
+    const result = await saveSettingsSection(db, "u1", "advanced", { CV_MIN_PER_ROLE: "4" }, base);
+    expect(result.errors.CV_MIN_PER_ROLE).toContain("cannot exceed");
+    expect(await getUserSettings(db, "u1")).toEqual({ CV_MAX_BULLETS: "10" });
+  });
+  it("does not lose another section's concurrent save, even without a settings row", async () => {
+    const db = new FakeDb();
+    const results = await Promise.all([
+      saveSettingsSection(db, "u1", "goals", { HOME_GOAL_APPLY: "5" }, BASE),
+      saveSettingsSection(db, "u1", "advanced", { ROLE_READ_BATCH: "8" }, BASE),
+    ]);
+    expect(results.every(({ saved }) => saved)).toBe(true);
+    expect(await getUserSettings(db, "u1")).toEqual({ HOME_GOAL_APPLY: "5", ROLE_READ_BATCH: "8" });
+  });
+  it("validates the saved pause pair against the actual stored overrides after deployment defaults change", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
+    const result = await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_SILENCE_MS: "3000" }, BASE);
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
+    expect(await getUserSettings(db, "u1")).toEqual({ INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+
+    expect(await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_SILENCE_MS: "1500" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await envFor(db, "u1", BASE)).toMatchObject({ INTERVIEW_TURN_SILENCE_MS: "1500", INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+  });
+  it("rejects a shorter unfinished pause even with hands-free turn-taking disabled", async () => {
+    const db = new FakeDb();
+    const result = await saveSettingsSection(db, "u1", "interview", {
+      INTERVIEW_TURN_SILENCE_MS: "2500", INTERVIEW_TURN_UNFINISHED_MS: "1000",
+    }, {});
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
+    expect(db.rows("user_settings")).toHaveLength(0);
+  });
+  it("lets an unrelated section save without replacing an existing invalid pause", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect(await saveSettingsSection(db, "u1", "goals", { HOME_GOAL_APPLY: "4" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await getUserSettings(db, "u1")).toEqual({ HOME_GOAL_APPLY: "4", INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
+  });
+  it("rejects an Advanced control edit when its stored pause group would be ignored", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    const result = await saveSettingsSection(db, "u1", "advanced", { INTERVIEW_TURN_MIN_WORDS: "55" }, BASE);
+    expect(result).toEqual({ saved: false, errors: {
+      INTERVIEW_TURN_UNFINISHED_MS: '"Pause after an unfinished answer" must be at least "Pause after a finished answer"',
+    } });
+    expect(await saveSettingsSection(db, "u1", "advanced", { ROLE_READ_BATCH: "8" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await getUserSettings(db, "u1")).toEqual({ INTERVIEW_TURN_UNFINISHED_MS: "2000", ROLE_READ_BATCH: "8" });
+  });
+  it("still rejects a newly invalid pair if an unrelated stored field is malformed", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { HOME_GOAL_APPLY: "stale" });
+    const result = await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_UNFINISHED_MS: "2000" }, BASE);
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
   });
 });
 

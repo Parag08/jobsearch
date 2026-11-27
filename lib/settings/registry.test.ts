@@ -100,7 +100,7 @@ describe("validateSettings", () => {
     const errors = validateSettings(ENV, { INTERVIEW_TURN_UNFINISHED_MS: "1000" });
     expect(errors.INTERVIEW_TURN_UNFINISHED_MS).toMatch(/at least/);
     // In the page's words, not env names.
-    expect(errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("Wait after an unfinished answer");
+    expect(errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("Pause after an unfinished answer");
     expect(errors.INTERVIEW_TURN_UNFINISHED_MS).not.toMatch(/INTERVIEW_TURN_/);
   });
   it("an effort without a token cap is caught", () => {

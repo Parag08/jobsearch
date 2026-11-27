@@ -30,6 +30,7 @@ export function turnSettingsFromEnv(env: Record<string, string | undefined>): Tu
   } as const;
   const raw = Object.fromEntries(Object.entries(names).map(([k, n]) => [k, env[n]?.trim()])) as Record<keyof TurnSettings, string | undefined>;
   if (Object.values(raw).some((v) => !v)) return null;
+  validateTurnPauses(env);
   const int = (k: keyof TurnSettings) => {
     const n = Number(raw[k]);
     if (!Number.isInteger(n) || n <= 0) throw new Error(`${names[k]} must be a whole number above 0, got "${raw[k]}"`);
@@ -42,9 +43,16 @@ export function turnSettingsFromEnv(env: Record<string, string | undefined>): Tu
     rambleWords: int("rambleWords"),
     quietLevel: Number(raw.quietLevel),
   };
-  if (out.unfinishedMs < out.silenceMs) throw new Error(`${names.unfinishedMs} must be at least ${names.silenceMs}`);
   if (!(out.quietLevel > 0 && out.quietLevel < 1)) throw new Error(`${names.quietLevel} must be between 0 and 1, got "${raw.quietLevel}"`);
   return out;
+}
+
+export function validateTurnPauses(env: Record<string, string | undefined>): void {
+  const finished = env.INTERVIEW_TURN_SILENCE_MS?.trim();
+  const unfinished = env.INTERVIEW_TURN_UNFINISHED_MS?.trim();
+  if (finished && unfinished && Number(unfinished) < Number(finished)) {
+    throw new Error("INTERVIEW_TURN_UNFINISHED_MS must be at least INTERVIEW_TURN_SILENCE_MS");
+  }
 }
 
 /** Words that never end a finished sentence. */

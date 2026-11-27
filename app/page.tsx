@@ -59,7 +59,7 @@ export default function Home() {
   const demoAvailable = demoHref !== null;
   // Sign in goes straight to Google (the same server action /signin uses) - no detour
   // page. Without Supabase the action could only bounce to /signin, so link there directly.
-  const startWithGoogle = signInWith.bind(null, "google");
+  const startWithGoogle = signInWith.bind(null, "google", undefined);
   const clientId = readGoogleClientId();
 
   return (

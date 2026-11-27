@@ -27,6 +27,6 @@ export function ClaudeRequest({ prompt }: { prompt: string }) {
       <p>{prompt}</p>
     </details>
     <CopySafeText text={prompt} label="Copy Claude request" />{" "}
-    <Link href="/app/agent">Connection setup</Link>
+    <Link href="/app/settings?section=assistant">Connection setup</Link>
   </>;
 }

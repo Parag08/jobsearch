@@ -20,6 +20,10 @@ describe("turnSettingsFromEnv", () => {
     const { INTERVIEW_TURN_MIN_WORDS: _, ...rest } = env;
     expect(turnSettingsFromEnv(rest)).toBeNull();
   });
+  it("stays off when an incomplete deployment also has reversed pauses", () => {
+    const { INTERVIEW_TURN_MIN_WORDS: _, ...rest } = env;
+    expect(turnSettingsFromEnv({ ...rest, INTERVIEW_TURN_UNFINISHED_MS: "1000" })).toBeNull();
+  });
   it("refuses nonsense", () => {
     expect(() => turnSettingsFromEnv({ ...env, INTERVIEW_TURN_SILENCE_MS: "soon" })).toThrow(/INTERVIEW_TURN_SILENCE_MS/);
     expect(() => turnSettingsFromEnv({ ...env, INTERVIEW_TURN_UNFINISHED_MS: "1000" })).toThrow(/UNFINISHED/);

@@ -2,8 +2,8 @@
    Palette: Apple-style blue and white (2026-11-19, replacing Sage Studio). White cards on
    the grouped grey of iOS and macOS, system blue for doing, and the system colours to tell
    stages apart, so the pipeline reads at a glance. There is deliberately no
-   prefers-color-scheme block: <html data-theme> is set by the user's choice or, on auto,
-   by their local clock (lib/theme.ts).
+   prefers-color-scheme block: <html data-theme> resolves the user's explicit, System, or
+   local-clock appearance choice (lib/theme.ts).
    Blue is for doing (the main action, links, focus). Green is for progress (offer,
    practised, wins). Orange flags something gone quiet. Red is fenced to destructive
    confirmations: a rejection is never red. */

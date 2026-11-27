@@ -1,54 +1,239 @@
-/* Settings (/app/settings): one panel per group, one field per row. Product motion only (DESIGN §5). */
-.form {
+.layout {
+  width: min(100%, 68rem);
+  margin-inline: auto;
   display: grid;
-  gap: 16px;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(20px, 4vw, 44px);
 }
 
-.groupHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.field {
-  display: grid;
-  gap: 4px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-}
-
-.field:first-of-type {
-  border-top: 0;
-}
-
-.label {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.help {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-  line-height: 1.45;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: baseline;
-}
-
-.saveBar {
-  position: sticky;
-  bottom: 12px;
+.sidebar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.sidebarTitle { font-size: 0.95rem; }
+.search {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--surface);
+  gap: 8px;
+  min-height: 40px;
+  padding-inline: 10px;
+  background: var(--card);
   border: 1px solid var(--line);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 9px;
+  color: var(--ink-soft);
+}
+.search input { min-width: 0; width: 100%; color: var(--ink); border: 0; background: transparent; font: inherit; font-size: 0.9rem; }
+.search input:focus { outline: none; }
+.search:focus-within { outline: 2px solid var(--accent); }
+:global(html[data-theme="dark"]) .layout input::placeholder { color: var(--ink-soft); opacity: 1; }
+.sectionList nav { display: grid; gap: 3px; }
+.sectionList nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 39px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.sectionList nav a span { width: 16px; text-align: center; }
+.sectionList nav a:hover { background: var(--card); color: var(--ink); }
+.sectionList nav a[aria-current] { background: var(--accent-wash); color: var(--accent-text); font-weight: 650; }
+.sectionList nav a:last-child { margin-top: 10px; }
+.appearance {
+  display: grid;
+  gap: 6px;
+  margin-top: 24px;
+  padding: 12px 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.appearance [role="group"] {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+.appearance button {
+  flex: 1;
+  min-height: 30px;
+  min-width: 0;
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+}
+.appearance button:hover, .appearance button[aria-pressed="true"] {
+  background: var(--wash);
+  color: var(--ink);
+}
+.appearance button[aria-pressed="true"] { font-weight: 650; }
+.sectionPicker { display: none; }
+
+.content { min-width: 0; }
+.title { margin: 0 0 22px; color: var(--ink); font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -0.035em; }
+.form, .fieldset { display: grid; gap: 14px; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; margin-bottom: 8px; }
+.heading .title { margin: 0; }
+.saveNote { display: flex; align-items: center; gap: 4px; color: var(--ink-soft); font-size: 0.75rem; white-space: nowrap; }
+.fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.panel, .notice, .results {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  min-width: 0;
+}
+.panel h2, .panel summary { margin: 0; padding: 16px 20px; font-size: 1rem; font-weight: 650; }
+.panel summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.panel summary::after { content: "+"; color: var(--ink-soft); font-size: 1.25rem; }
+.panel[open] summary::after { content: "−"; }
+.panel h2 + *, .panel summary + * { border-top: 1px solid var(--line); }
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 22px;
+  padding: 16px 20px;
+}
+.field + .field, .groupNote + .field { border-top: 1px solid var(--line); }
+.field label { font-size: 0.9rem; font-weight: 650; }
+.fieldControl { display: grid; gap: 4px; justify-items: end; min-width: 0; }
+.fieldControl select, .fieldControl input { width: 100%; min-width: 0; }
+.fieldControl :is(input, select), .dialog :is(input:not([type="radio"]), select) {
+  min-height: 40px;
+  background: var(--card);
+  border-color: var(--settings-input-line, #8391a5);
+}
+.fieldControl .number { width: 84px; max-width: 100%; }
+.valueRow { display: flex; align-items: center; gap: 9px; max-width: 100%; }
+.unit { color: var(--ink-soft); font-size: 0.75rem; white-space: nowrap; }
+.help { color: var(--ink-soft); font-size: 0.8rem; line-height: 1.45; margin: 4px 0 0; }
+.fieldControl .help { text-align: right; }
+.error { display: block; margin: 4px 0 0; color: var(--ink); background: var(--danger-wash); padding: 4px 8px; border-radius: 6px; }
+.field .fieldControl [aria-invalid="true"] { border-color: var(--danger); }
+.defaultButton, .related {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent-text);
+  cursor: pointer;
+  text-align: left;
+  justify-self: start;
+}
+.defaultButton { justify-self: end; font-size: 0.8rem; }
+.related { font-weight: 650; margin-top: 5px; text-decoration: none; }
+.defaultButton:hover, .related:hover { text-decoration: underline; }
+.groupNote, .notice, .resultHeading { padding: 14px 20px; }
+.groupNote p, .notice p { margin: 0 0 8px; color: var(--ink-soft); line-height: 1.5; }
+.groupNote p:last-child, .notice p:last-child { margin: 0; }
+.check { min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; }
+.check input { flex-shrink: 0; accent-color: var(--accent); }
+.saveBar {
+  position: sticky;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 13px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-glass);
+}
+.saveActions, .dialogActions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; }
+.saveActions > span { margin-right: auto; color: var(--ink-soft); font-size: 0.85rem; }
+.toast {
+  position: fixed;
+  z-index: 12;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  right: 16px;
+  padding: 10px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-glass);
+}
+.dialog {
+  width: min(34rem, calc(100% - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: clamp(16px, 4vw, 24px);
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-glass);
+}
+.dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.dialog h2 { margin: 0 0 12px; }
+.dialog p { line-height: 1.5; }
+.dialogActions { margin-top: 18px; }
+.resultHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.resultHeading h2, .notice h3 { margin: 0; }
+.resultHeading span { color: var(--ink-soft); font-size: 0.85rem; }
+.result { display: grid; gap: 3px; padding: 12px 20px; border-top: 1px solid var(--line); text-decoration: none; color: var(--accent-text); }
+.result:hover { background: var(--accent-wash); }
+.result span { color: var(--ink-soft); font-size: 0.85rem; }
+.results > .notice { border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.assistantCard {
+  padding: clamp(18px, 4vw, 28px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.assistantCard h2 { margin: 0; font-size: 1.15rem; }
+.assistantCard p { margin: 8px 0 14px; color: var(--ink-soft); }
+.assistantDetails { margin-top: 12px; }
+.assistantDetails code, .instructions code { overflow-wrap: anywhere; }
+.tokenList { display: grid; gap: 10px; margin: 14px 0; padding: 0; list-style: none; }
+.tokenList li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
+.tokenList p { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.85rem; }
+.tokenActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.steps { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 0; }
+.steps li { border-radius: 7px; padding: 5px 8px; color: var(--ink-soft); font-size: 0.8rem; }
+.steps [aria-current="step"] { background: var(--accent-wash); color: var(--accent-text); font-weight: 650; }
+.stack { display: grid; gap: 6px; font-weight: 600; font-size: 0.9rem; }
+.stack select { width: 100%; }
+.permission { margin: 0; padding: 0; border: 0; }
+.permission legend { margin-bottom: 4px; padding: 0; font-size: 0.9rem; font-weight: 600; }
+.instructions { min-width: 0; }
+.dialog pre, .instructions pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.layout :is(a, button, summary, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.search input:focus-visible { outline: none; }
+
+@media (max-width: 700px) {
+  .layout { display: block; }
+  .sidebar { margin-bottom: 18px; }
+  .sidebarTitle, .sectionList:not([data-open]) { display: none; }
+  .sectionPicker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    border: 0;
+    border-bottom: 1px solid var(--line-strong);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+    font-size: 1.55rem;
+    font-weight: 650;
+  }
+  .layout :is(a[href], button, summary, select, input:not([type="checkbox"], [type="radio"])), .search { min-height: 44px; }
+  .assistantCard > a, a.related { display: inline-flex; align-items: center; gap: 4px; }
+  .field { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; gap: 8px; }
+  .fieldControl { justify-items: start; }
+  .fieldControl .help { text-align: left; }
+  .defaultButton { justify-self: start; }
+  .heading { min-height: 0; justify-content: flex-end; margin-bottom: 0; }
+  .title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }

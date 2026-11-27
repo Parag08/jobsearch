@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Logo } from "../_components/logo";
 import { isSupabaseConfigured } from "@/lib/db";
+import { safeNextPath } from "@/lib/auth/routing";
 import { GoogleButton } from "../_components/google-button";
 import { signInWith } from "./actions";
 import styles from "./page.module.css";
@@ -21,9 +22,9 @@ function explain(code: string): string {
  * separate signup route - the same button creates an account or signs you in -
  * so the copy has to carry that, or a new visitor never learns they can join.
  */
-export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
   const live = isSupabaseConfigured();
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <main className={styles.page}>
@@ -40,7 +41,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
           </p>
         </div>
 
-        <form action={signInWith.bind(null, "google")}>
+        <form action={signInWith.bind(null, "google", typeof next === "string" ? safeNextPath(next) : undefined)}>
           <GoogleButton label="Continue with Google" disabled={!live} wide />
         </form>
 
@@ -51,10 +52,10 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
         )}
         {error && <p className={styles.pending}>{explain(error)}</p>}
 
-        <p className={styles.note}>
+        {!next && <p className={styles.note}>
           You&apos;ll land on your overview. Start by adding a job posting to your pipeline: we&apos;ll
           read it and open an application for it.
-        </p>
+        </p>}
 
         <Link href="/" className={styles.back}>
           Back to home
