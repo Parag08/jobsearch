@@ -1,4 +1,4 @@
--- 0022: a per-user limit on model calls, and the quick mock interview kept on the server.
+-- 0023: a per-user limit on model calls, and the quick mock interview kept on the server.
 --
 -- ai_calls: one row per provider call made for a user (lib/services/ai-write.ts). No user can
 --   read or write it directly; the only door is take_ai_call, which counts the caller's calls in

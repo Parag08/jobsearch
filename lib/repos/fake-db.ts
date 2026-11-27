@@ -43,7 +43,7 @@ export class FakeDb implements DbClient {
     return name === "take_ai_call" ? this.takeAiCall(args as TakeAiCallRpc) : this.applyCompanyImport(args as CompanyImportRpc);
   }
 
-  /** Mirrors public.take_ai_call (migration 0022): a sliding window over the user's calls. */
+  /** Mirrors public.take_ai_call (migration 0023): a sliding window over the user's calls. */
   private takeAiCall({ p_user_id: user, p_limit, p_window_seconds }: TakeAiCallRpc): DbResult<number> {
     const calls = this.tableRows("ai_calls");
     const now = Date.now();
