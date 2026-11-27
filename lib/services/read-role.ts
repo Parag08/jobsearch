@@ -18,12 +18,27 @@ export interface ReadRoleDeps {
   llm: LlmProvider;
 }
 
+/** The longest posting a model call accepts; real postings run well under 10,000 characters. */
+export const MAX_POSTING_CHARS = 30_000;
+
+export class PostingTooLongError extends Error {
+  constructor(readonly length: number) {
+    super(`That posting is too long (${length.toLocaleString("en-US")} characters, the limit is ${MAX_POSTING_CHARS.toLocaleString("en-US")}). Paste just the job description.`);
+    this.name = "PostingTooLongError";
+  }
+}
+
+export function assertPostingLength(jdRaw: string): void {
+  if (jdRaw.length > MAX_POSTING_CHARS) throw new PostingTooLongError(jdRaw.length);
+}
+
 /** One small-tier call for the extract; code reads the tag demand; the sector graph learns from it. */
 export async function extractRole(
   { db, llm }: ReadRoleDeps,
   userId: string,
   jdRaw: string,
 ): Promise<{ jd: JdExtract; sector: SectorNode }> {
+  assertPostingLength(jdRaw);
   const [extracted, profile] = await Promise.all([llm.extractJd(jdRaw), getProfile(db, userId)]);
   // Code, not the model, reads the JD's tag demand through the user's own taxonomy.
   const jd = { ...extracted, signals: jdSignals(jdRaw, profile?.taxonomy ?? { tags: {} }) };
@@ -69,8 +84,10 @@ export async function readUnreadRoles(deps: ReadRoleDeps, userId: string, limit:
   return { read, failed, remaining: unread.length - read };
 }
 
-/** Applications with posting text and no extract. */
+/** Applications with posting text the reader accepts and no extract. An over-long posting never reads, so it never takes a batch slot. */
 export async function unreadRoleIds(db: DbClient, userId: string): Promise<string[]> {
   const postings = await listUnextractedPostings(db, userId);
-  return postings.filter((posting) => posting.jd_raw?.trim()).map((posting) => posting.id);
+  return postings
+    .filter((posting) => posting.jd_raw?.trim() && posting.jd_raw.length <= MAX_POSTING_CHARS)
+    .map((posting) => posting.id);
 }

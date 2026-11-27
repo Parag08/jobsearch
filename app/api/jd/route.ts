@@ -6,6 +6,7 @@ import { aiLlm } from "@/lib/services/ai-write";
 import { demoTaxonomy } from "@/lib/db/demo";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
+import { PostingTooLongError, assertPostingLength } from "@/lib/services/read-role";
 
 /**
  * POST /api/jd  { jd: string }
@@ -20,6 +21,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   const body = (await req.json().catch(() => null)) as { jd?: unknown } | null;
   const jd = typeof body?.jd === "string" ? body.jd.trim() : "";
   if (jd.length < 40) return NextResponse.json({ error: "Send { jd: string } with the full posting." }, { status: 400 });
+  try {
+    assertPostingLength(jd);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 413 });
+  }
 
   const base = aiLlm(w, demoTaxonomy, await envFor(w.db, w.userId));
   if (!base) {
@@ -39,6 +45,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const result = await processJd({ db: w.db, llm }, w.userId, jd, today);
     return NextResponse.json({ application: result.application, sector: result.sector }, { status: 201 });
   } catch (err) {
+    if (err instanceof PostingTooLongError) return NextResponse.json({ error: err.message }, { status: 413 });
     return NextResponse.json({ error: err instanceof Error ? err.message : "processJd failed" }, { status: 502 });
   }
 }

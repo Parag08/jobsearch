@@ -6,6 +6,7 @@ import { listApplications } from "../repos/applications";
 import { listSectors } from "../repos/sectors";
 import { saveProfile } from "../repos/profiles";
 import { processJd } from "./process-jd";
+import { MAX_POSTING_CHARS, PostingTooLongError } from "./read-role";
 
 const jd: JdExtract = {
   company: "Grab",
@@ -29,6 +30,19 @@ function fixtures() {
 }
 
 describe("processJd", () => {
+  it("rejects a posting over the length cap before any model call or write", async () => {
+    const { db, llm } = fixtures();
+    await expect(processJd({ db, llm }, "u1", "x".repeat(100_000), NOW)).rejects.toBeInstanceOf(PostingTooLongError);
+    expect(llm.calls).toHaveLength(0);
+    expect(await listApplications(db, "u1")).toHaveLength(0);
+  });
+
+  it("accepts a posting exactly at the cap", async () => {
+    const { db, llm } = fixtures();
+    await processJd({ db, llm }, "u1", "x".repeat(MAX_POSTING_CHARS), NOW);
+    expect(llm.calls).toHaveLength(1);
+  });
+
   it("stores the JD's scoring signals on the extract, read through the user's taxonomy - no extra model call", async () => {
     const { db, llm } = fixtures();
     await saveProfile(db, {

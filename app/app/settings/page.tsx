@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { getUserSettings } from "@/lib/repos/user-settings";
 import { loadCatalog } from "@/lib/services/settings";
-import { SETTINGS, SETTING_GROUPS } from "@/lib/settings/registry";
+import { SETTINGS, SETTING_GROUPS, allowedModels } from "@/lib/settings/registry";
 import { interviewCost, modelChoices } from "@/lib/settings/models";
 import preferences from "@/data/settings/model-preferences.json";
 import { SettingsForm, type FieldView, type ModelOption } from "./settings-form";
@@ -36,6 +36,9 @@ export default async function SettingsPage() {
     recommended: m.id === recommended,
   });
 
+  const allowed = allowedModels(process.env);
+  const offered = catalog.models.filter((m) => allowed.has(m.id));
+
   const fields: FieldView[] = SETTINGS.map((s) => {
     const base: FieldView = {
       key: s.key,
@@ -44,12 +47,13 @@ export default async function SettingsPage() {
       help: s.help,
       unit: s.unit,
       kind: s.kind,
-      saved: saved[s.key] ?? "",
+      // A saved model no longer allowed is ignored on read; show it as blank so saving clears it.
+      saved: s.kind.type === "model" && saved[s.key] && !allowed.has(saved[s.key]) ? "" : saved[s.key] ?? "",
       fallback: process.env[s.key] ?? "",
       blank: s.blank,
     };
     if (s.kind.type !== "model") return base;
-    const choices = modelChoices(catalog.models, PREFS[s.key] ?? []);
+    const choices = modelChoices(offered, PREFS[s.key] ?? []);
     return {
       ...base,
       ranked: choices.ranked.map((m) => option(m, choices.recommended)),

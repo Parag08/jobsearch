@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SETTINGS, settingsEnv, validateSettings, cleanValues } from "./registry";
+import { SETTINGS, settingsEnv, validateSettings, cleanValues, allowedModels } from "./registry";
 
 const ENV = {
   AI_GATEWAY_API_KEY: "secret",
@@ -30,6 +30,53 @@ describe("settingsEnv", () => {
     expect(env.AI_GATEWAY_API_KEY).toBe("secret");
     expect(env.NOT_A_SETTING).toBeUndefined();
     expect(env.INTERVIEW_TURN_MIN_WORDS).toBe("40");
+  });
+  it("re-checks stored values on read: an out-of-range value falls back to the deployment's", () => {
+    const env = settingsEnv({ ...ENV, ROLE_READ_BATCH: "10" }, { ROLE_READ_BATCH: "100000", INTERVIEW_FULL_MAX_TOPICS: "99999", HOME_GOAL_APPLY: "5" });
+    expect(env.ROLE_READ_BATCH).toBe("10");
+    expect(env.INTERVIEW_FULL_MAX_TOPICS).toBeUndefined();
+    expect(env.HOME_GOAL_APPLY).toBe("5");
+  });
+  it("drops a token cap above the registry's maximum, and the effort that needs it", () => {
+    const env = settingsEnv(ENV, {
+      AI_GATEWAY_INTERVIEWER_MODEL: "google/gemini-3.8-flash",
+      AI_GATEWAY_INTERVIEWER_EFFORT: "max",
+      AI_GATEWAY_INTERVIEWER_MAX_TOKENS: "1000000",
+    });
+    expect(env.AI_GATEWAY_INTERVIEWER_MAX_TOKENS).toBeUndefined();
+    expect(env.AI_GATEWAY_INTERVIEWER_EFFORT).toBeUndefined();
+    expect(env.AI_GATEWAY_INTERVIEWER_MODEL).toBeUndefined();
+  });
+  it("drops a model the deployment does not allow", () => {
+    const env = settingsEnv(ENV, { AI_GATEWAY_INTERVIEWER_MODEL: "anthropic/some-pricey-model", AI_GATEWAY_SMALL_MODEL: "google/gemini-2.5-flash-lite" });
+    expect(env.AI_GATEWAY_INTERVIEWER_MODEL).toBeUndefined();
+    expect(env.AI_GATEWAY_SMALL_MODEL).toBe("google/gemini-2.5-flash-lite");
+  });
+  it("drops a group the app's own readers reject, keeping the deployment's values", () => {
+    const env = settingsEnv(ENV, { INTERVIEW_TURN_UNFINISHED_MS: "1000", HOME_GOAL_APPLY: "5" });
+    expect(env.INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
+    expect(env.HOME_GOAL_APPLY).toBe("5");
+  });
+});
+
+describe("allowedModels", () => {
+  it("defaults to the preference lists, plus the deployment's own models", () => {
+    const allowed = allowedModels(ENV);
+    expect(allowed.has("google/gemini-3.8-flash")).toBe(true);
+    expect(allowed.has("mistral/mistral-medium-3.5")).toBe(true);
+    expect(allowed.has("anthropic/some-pricey-model")).toBe(false);
+  });
+  it("AI_GATEWAY_ALLOWED_MODELS replaces the preference lists", () => {
+    const allowed = allowedModels({ ...ENV, AI_GATEWAY_ALLOWED_MODELS: "google/gemini-3.8-flash, openai/gpt-6-luna" });
+    expect(allowed.has("openai/gpt-6-luna")).toBe(true);
+    expect(allowed.has("anthropic/claude-opus-5.5")).toBe(false);
+    expect(allowed.has("mistral/mistral-medium-3.5")).toBe(true);
+    for (const empty of ["", " , "]) {
+      const only = allowedModels({ ...ENV, AI_GATEWAY_ALLOWED_MODELS: empty });
+      expect(only.has("anthropic/claude-opus-5.5")).toBe(false);
+      expect(only.has("mistral/mistral-medium-3.5")).toBe(true);
+    }
+    expect(validateSettings({ ...ENV, AI_GATEWAY_ALLOWED_MODELS: "google/gemini-3.8-flash" }, { AI_GATEWAY_INTERVIEWER_MODEL: "anthropic/claude-opus-5.5" }).AI_GATEWAY_INTERVIEWER_MODEL).toBeTruthy();
   });
 });
 

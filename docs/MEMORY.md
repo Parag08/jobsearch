@@ -6,9 +6,17 @@ Keep this file updated at the end of every working session: what was done, decis
 
 Security finding fix: a public demo visitor's in-memory FakeDb now refuses writes past `DEMO_DB_LIMITS` in `lib/db/demo.ts` (500 rows per table, 200k characters per record, 2M characters per workspace; the seed is about 65k). The refusal comes back as a normal `{error}`. `GET /demo` allows 10 new visitor ids per client address per 10 minutes on each instance and answers 429 after that; an existing valid visitor cookie is never throttled.
 
+## 2026-11-27 - Posting length cap before the model
+
+Security finding (cost amplification): job-posting text reached the paid LLM with only a 40-character minimum. `extractRole` (lib/services/read-role.ts) now refuses text over `MAX_POSTING_CHARS` (30,000) with `PostingTooLongError` before any model call, so every path (`/api/jd`, `createFromJd`, `readPostingAction`, save-to-pipeline, MCP upserts, Role insights reads) is covered. `/api/jd` answers 413; the server actions return the error's message, and an over-long paste is not stored. Role insights batches skip postings over the cap so they never take a slot. A per-user daily quota against the token ledger is not done yet.
+
 ## 2026-11-27 - Interviewer ratings keyed per user
 
 Migration 0022 makes `interviewer_ratings` unique on (user_id, session_id, turn_index) and its "own rows" policy only accepts a row whose session belongs to the caller; it deletes existing rows that point at another user's session. `rateInterviewerLine` upserts on `user_id,session_id,turn_index`. Run `npm run db:migrate` to apply it to the live project.
+
+## 2026-11-27 - Settings checked on read
+
+Saved settings are now checked every time they are read, not only on save. A user can write their own `user_settings` row through PostgREST and skip the form. `settingsEnv` drops any stored value that breaks its registry bounds or choices, any group the app's own `*FromEnv` readers reject, and any model outside `allowedModels`. A dropped value falls back to the deployment's. The model allow-list is `AI_GATEWAY_ALLOWED_MODELS` when set, else the preference lists; the deployment's own models and the built-in defaults are always allowed. The Settings page offers only allowed models. Migration 0023 adds a `NOT VALID` check limiting `values` to at most 64 env-style keys with string values of at most 200 characters (mirrored in schema.sql). Run `npm run db:migrate` to apply it.
 
 ## 2026-11-26 - Workspace content polish
 

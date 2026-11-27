@@ -5,7 +5,7 @@ import { FakeDb } from "../repos/fake-db";
 import { getApplication, listApplications } from "../repos/applications";
 import { listSectors } from "../repos/sectors";
 import { upsertApplication } from "./agent-sync";
-import { readRole, readUnreadRoles, unreadRoleIds } from "./read-role";
+import { MAX_POSTING_CHARS, readRole, readUnreadRoles, unreadRoleIds } from "./read-role";
 
 const USER = "user-1";
 const TODAY = "2026-11-14";
@@ -116,5 +116,14 @@ describe("readUnreadRoles", () => {
     const second = await readUnreadRoles({ db, llm }, USER, 2);
     expect(second).toEqual({ read: 1, failed: 0, remaining: 0 });
     expect((await listApplications(db, USER)).filter((a) => a.jdExtract).length).toBe(3);
+  });
+
+  it("skips over-long postings so they never fill a batch ahead of readable ones", async () => {
+    const { db, llm } = fixtures();
+    await upsertApplication({ db }, USER, { company: "Readable", role: "FDE", jdRaw: POSTING }, TODAY);
+    await upsertApplication({ db }, USER, { company: "Huge", role: "FDE", jdRaw: "x".repeat(MAX_POSTING_CHARS + 1) }, "2026-11-15");
+
+    expect(await readUnreadRoles({ db, llm }, USER, 1)).toEqual({ read: 1, failed: 0, remaining: 0 });
+    expect(llm.calls).toHaveLength(1);
   });
 });

@@ -8,7 +8,7 @@ import type { Application } from "../types";
 import type { AtsKind } from "../watchlist/ats";
 import { boardFor } from "../watchlist/posting";
 import { processJd } from "./process-jd";
-import { readRole } from "./read-role";
+import { MAX_POSTING_CHARS, PostingTooLongError, readRole } from "./read-role";
 
 /**
  * Apply to a watchlist role in one step (docs/APPLY-FLOW.md steps 3-5). Always opens an
@@ -141,11 +141,13 @@ export async function readPostingInto(
   const application = await getApplication(db, userId, applicationId);
   if (application?.hasSourcingKit) return { read: false, error: "Safe kits do not store raw posting text." };
   const text = pasted.trim();
+  if (text.length > MAX_POSTING_CHARS) return { read: false, error: new PostingTooLongError(text.length).message };
   if (text) await setSyncFields(db, userId, applicationId, { jdRaw: text });
   else if (!(await getJdRaw(db, userId, applicationId))?.trim()) return { read: false, error: "Paste the posting's text first." };
   try {
     if (!(await readRole({ db, llm: deps.llm }, userId, applicationId))) return { read: false, error: "Paste the posting's text first." };
   } catch (err) {
+    if (err instanceof PostingTooLongError) return { read: false, error: err.message };
     console.error("readPostingInto: reading the posting failed", err);
     return { read: false, error: "The posting couldn't be read just now. It's saved: try again in a moment." };
   }
