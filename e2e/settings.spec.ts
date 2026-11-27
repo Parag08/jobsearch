@@ -1,4 +1,4 @@
-import { appLink, expect, test } from "./demo";
+import { appLink, enterDemo, expect, test } from "./demo";
 
 test("settings gear and section picker stay accessible on mobile", async ({ demo: page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -53,6 +53,31 @@ test("a failed save retains the draft and offers retry", async ({ demo: page }) 
   await page.unroute("**/app/settings");
   await page.getByRole("button", { name: "Retry save" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
+});
+
+test("Back protects a draft without the Navigation API", async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(window, "navigation", { value: undefined }));
+  await enterDemo(page);
+  await appLink(page, "Settings").click();
+  const target = page.getByLabel("Daily role maximum");
+  await target.fill("12");
+
+  await page.goBack();
+  const dialog = page.getByRole("dialog", { name: "Leave with unsaved changes?" });
+  await dialog.getByRole("button", { name: "Keep editing" }).click();
+  await expect(target).toHaveValue("12");
+  await expect(page).toHaveURL("/app/settings");
+
+  await page.goBack();
+  await dialog.getByRole("button", { name: "Discard" }).click();
+  await expect(page).toHaveURL("/app/home");
+
+  await appLink(page, "Settings").click();
+  await target.fill("14");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("button", { name: "Save changes" })).toBeHidden();
+  await page.goBack();
+  await expect(page).toHaveURL("/app/home");
 });
 
 test("pasting multiline sourcing preferences preserves separate terms after save", async ({ demo: page, context }) => {

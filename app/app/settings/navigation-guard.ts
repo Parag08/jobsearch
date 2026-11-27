@@ -10,10 +10,26 @@ export function useNavigationGuard(active: boolean, confirmLeave: (leave: () => 
   useEffect(() => {
     if (!active) return;
     let proceeding = false;
+    const navigation = (window as Window & { navigation?: EventTarget }).navigation;
+    const protectedUrl = location.href;
+    const pushGuardEntry = () => history.pushState(history.state, "");
+    const popGuardEntry = (callback: () => void) => {
+      window.addEventListener("popstate", (event) => {
+        event.stopImmediatePropagation();
+        callback();
+      }, { capture: true, once: true });
+      history.back();
+    };
     const allow = (callback: () => void) => {
       confirm.current(() => {
         proceeding = true;
         callback();
+      });
+    };
+    const allowNavigation = (callback: () => void) => {
+      allow(() => {
+        if (navigation) callback();
+        else popGuardEntry(callback);
       });
     };
     const unload = (event: BeforeUnloadEvent) => {
@@ -27,7 +43,7 @@ export function useNavigationGuard(active: boolean, confirmLeave: (leave: () => 
       if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download") || link.href === location.href) return;
       event.preventDefault();
       event.stopPropagation();
-      allow(() => {
+      allowNavigation(() => {
         const url = new URL(link.href);
         if (url.origin !== location.origin || link.dataset.settingsResult !== undefined) location.assign(url);
         else router.push(url.pathname + url.search + url.hash);
@@ -38,23 +54,37 @@ export function useNavigationGuard(active: boolean, confirmLeave: (leave: () => 
       const form = event.target;
       event.preventDefault();
       event.stopPropagation();
-      allow(() => form.requestSubmit(event.submitter ?? undefined));
+      allowNavigation(() => form.requestSubmit(event.submitter ?? undefined));
     };
-    const navigation = (window as Window & { navigation?: EventTarget }).navigation;
     const traverse = (event: Event) => {
       const entry = event as Event & { navigationType: string; destination: { key: string } };
       if (proceeding || !event.cancelable || entry.navigationType !== "traverse" || !entry.destination.key) return;
       event.preventDefault();
       allow(() => (navigation as EventTarget & { traverseTo: (key: string) => void }).traverseTo(entry.destination.key));
     };
+    const popstate = (event: PopStateEvent) => {
+      if (proceeding || location.href !== protectedUrl) return;
+      event.stopImmediatePropagation();
+      pushGuardEntry();
+      allow(() => history.go(-2));
+    };
     document.addEventListener("click", click, true);
     document.addEventListener("submit", submit, true);
-    navigation?.addEventListener("navigate", traverse);
+    if (navigation) navigation.addEventListener("navigate", traverse);
+    else {
+      // The guard entry keeps the first Back on this page, before Next handles the pop.
+      pushGuardEntry();
+      window.addEventListener("popstate", popstate, true);
+    }
     window.addEventListener("beforeunload", unload);
     return () => {
       document.removeEventListener("click", click, true);
       document.removeEventListener("submit", submit, true);
-      navigation?.removeEventListener("navigate", traverse);
+      if (navigation) navigation.removeEventListener("navigate", traverse);
+      else {
+        window.removeEventListener("popstate", popstate, true);
+        if (!proceeding && location.href === protectedUrl) popGuardEntry(() => {});
+      }
       window.removeEventListener("beforeunload", unload);
     };
   }, [active, router]);
