@@ -133,7 +133,7 @@ const MODEL_KEYS = SETTINGS.filter((s) => s.kind.type === "model").map((s) => s.
 
 /**
  * The models a user may pick, decided by the deployment: `AI_GATEWAY_ALLOWED_MODELS`
- * (comma-separated) when set, else every model in data/settings/model-preferences.json. The
+ * (comma-separated; set but empty = only the deployment's own) when set, else every model in data/settings/model-preferences.json. The
  * deployment's own model values and the built-in defaults are always allowed.
  */
 export function allowedModels(env: Env): ReadonlySet<string> {
@@ -141,7 +141,7 @@ export function allowedModels(env: Env): ReadonlySet<string> {
   const prefs = modelPreferences as unknown as Record<string, unknown>;
   const fromPrefs = MODEL_KEYS.flatMap((k) => (Array.isArray(prefs[k]) ? (prefs[k] as unknown[]).filter((m): m is string => typeof m === "string") : []));
   const deployment = MODEL_KEYS.map((k) => env[k]?.trim()).filter((m): m is string => !!m);
-  return new Set([...(listed?.length ? listed : fromPrefs), ...deployment, GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL]);
+  return new Set([...(listed ?? fromPrefs), ...deployment, GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL]);
 }
 
 const MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i;

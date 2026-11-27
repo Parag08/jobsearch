@@ -71,6 +71,11 @@ describe("allowedModels", () => {
     expect(allowed.has("openai/gpt-6-luna")).toBe(true);
     expect(allowed.has("anthropic/claude-opus-5.5")).toBe(false);
     expect(allowed.has("mistral/mistral-medium-3.5")).toBe(true);
+    for (const empty of ["", " , "]) {
+      const only = allowedModels({ ...ENV, AI_GATEWAY_ALLOWED_MODELS: empty });
+      expect(only.has("anthropic/claude-opus-5.5")).toBe(false);
+      expect(only.has("mistral/mistral-medium-3.5")).toBe(true);
+    }
     expect(validateSettings({ ...ENV, AI_GATEWAY_ALLOWED_MODELS: "google/gemini-3.8-flash" }, { AI_GATEWAY_INTERVIEWER_MODEL: "anthropic/claude-opus-5.5" }).AI_GATEWAY_INTERVIEWER_MODEL).toBeTruthy();
   });
 });
