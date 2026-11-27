@@ -1,19 +1,58 @@
-import { createLlm, type RoutedLlm } from "../adapters/llm-factory";
+import { createLlm } from "../adapters/llm-factory";
 import type { LlmUsage, UsageListener, UsageReportingLlm } from "../adapters/llm-http";
 import { streamGatewayText } from "../adapters/vercel-gateway-stream";
 import { cannedText, lexicalExtract, type CannedContext, type CannedTask } from "../demo/canned";
 import type { JdExtract } from "../types";
+import type { DbClient } from "../repos/db";
+import { takeAiCall } from "../repos/ai-calls";
 
 /**
  * The one door every server action and route uses to reach a model. A demo visitor
  * (`cannedAi`) gets lib/demo/canned.ts instead and never reaches a provider, so the public
- * demo cannot spend a token; everyone else streams from the AI Gateway as before.
+ * demo cannot spend a token; everyone else streams from the AI Gateway as before, within a
+ * per-user limit on provider calls (AI_CALL_LIMIT per AI_CALL_WINDOW_SECONDS), so one account
+ * cannot drain the deployment's shared key.
  */
 export interface AiCaller {
   cannedAi: boolean;
+  db: DbClient;
+  userId: string;
 }
 
 type Env = Record<string, string | undefined>;
+
+export interface AiCallLimit {
+  calls: number;
+  windowSeconds: number;
+}
+
+export const AI_CALL_LIMIT_DEFAULT: AiCallLimit = { calls: 100, windowSeconds: 3600 };
+
+const positiveInt = (v: string | undefined): number | null => {
+  const n = Number(v);
+  return v && Number.isInteger(n) && n > 0 ? n : null;
+};
+
+/** The limit is deployment-wide: read from process.env only, never from a user's settings. */
+export function aiCallLimitFromEnv(env: Env): AiCallLimit {
+  return {
+    calls: positiveInt(env.AI_CALL_LIMIT) ?? AI_CALL_LIMIT_DEFAULT.calls,
+    windowSeconds: Math.min(Math.max(positiveInt(env.AI_CALL_WINDOW_SECONDS) ?? AI_CALL_LIMIT_DEFAULT.windowSeconds, 60), 86_400),
+  };
+}
+
+export class AiCallLimitError extends Error {
+  constructor(readonly retryAfterSec: number) {
+    super(`You have reached the AI limit for now. Try again in ${retryAfterSec < 120 ? `${retryAfterSec}s` : `${Math.ceil(retryAfterSec / 60)} min`}.`);
+    this.name = "AiCallLimitError";
+  }
+}
+
+/** Count one provider call against the caller's window, or throw before the provider is reached. */
+async function takeCall(w: AiCaller): Promise<void> {
+  const d = await takeAiCall(w.db, w.userId, aiCallLimitFromEnv(process.env));
+  if (!d.allowed) throw new AiCallLimitError(d.retryAfterSec);
+}
 
 /** Whether a model can answer at all: always in the demo, else only with a gateway key. */
 export function aiReady(w: AiCaller, env: Env = process.env): boolean {
@@ -46,14 +85,31 @@ export async function aiWrite(
   }
   const apiKey = env.AI_GATEWAY_API_KEY;
   if (!apiKey) throw new Error("No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example).");
+  await takeCall(w);
   let out = "";
   for await (const d of streamGatewayText({ apiKey, ...opts })) out += d;
   return out;
 }
 
-/** The posting reader: the routed provider, or for a demo visitor a rules-only reader (no tokens). */
-export function aiLlm(w: AiCaller, demoTaxonomy: () => unknown, env: Env = process.env): RoutedLlm | UsageReportingLlm | null {
-  return w.cannedAi ? new RulesOnlyLlm(demoTaxonomy()) : createLlm(env);
+/** The posting reader: the routed provider (within the call limit), or for a demo visitor a rules-only reader (no tokens). */
+export function aiLlm(w: AiCaller, demoTaxonomy: () => unknown, env: Env = process.env): UsageReportingLlm | null {
+  if (w.cannedAi) return new RulesOnlyLlm(demoTaxonomy());
+  const llm = createLlm(env);
+  return llm ? withAiCallLimit(llm, w) : null;
+}
+
+/** Every call through `llm` first takes one call from the user's window; past it, the provider is never reached. */
+export function withAiCallLimit(llm: UsageReportingLlm, w: AiCaller): UsageReportingLlm {
+  return {
+    get lastUsage() {
+      return llm.lastUsage;
+    },
+    onUsage: (cb) => llm.onUsage(cb),
+    extractJdMeasured: async (rawJd) => (await takeCall(w), llm.extractJdMeasured(rawJd)),
+    summarizeNodeMeasured: async (nodeJson) => (await takeCall(w), llm.summarizeNodeMeasured(nodeJson)),
+    extractJd: async (rawJd) => (await takeCall(w), llm.extractJd(rawJd)),
+    summarizeNode: async (nodeJson) => (await takeCall(w), llm.summarizeNode(nodeJson)),
+  };
 }
 
 const NO_USAGE: LlmUsage = { tokensIn: 0, tokensOut: 0, model: "demo" };

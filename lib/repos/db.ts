@@ -9,6 +9,12 @@ export type CompanyImportRpc = {
   p_skipped?: number;
 };
 
+export type TakeAiCallRpc = {
+  p_user_id: string;
+  p_limit: number;
+  p_window_seconds: number;
+};
+
 /**
  * Structural subset of the supabase-js query-builder chain that the repos use.
  * Repos are written against THIS interface only; the real SupabaseClient
@@ -57,6 +63,8 @@ export interface DbTable<R> {
 export interface DbClient {
   from<T extends TableName>(table: T): DbTable<RowOf<T>>;
   rpc(name: "apply_company_import", args: CompanyImportRpc): PromiseLike<DbResult<CompanyImportRow>>;
+  /** 0 = allowed and recorded; n > 0 = refused, retry in n seconds; null = refused (not this user). */
+  rpc(name: "take_ai_call", args: TakeAiCallRpc): PromiseLike<DbResult<number>>;
 }
 
 /** Every repo call either returns typed data or throws this - raw {data,error} never leaks upward. */

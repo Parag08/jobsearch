@@ -1,5 +1,5 @@
 import { pgArray } from "./db";
-import type { CompanyImportRpc, DbClient, DbResult, DbTable } from "./db";
+import type { CompanyImportRpc, DbClient, DbResult, DbTable, TakeAiCallRpc } from "./db";
 import type { CompanyImportRow, RowOf, TableName } from "./rows";
 import { norm } from "../types";
 
@@ -37,7 +37,28 @@ export class FakeDb implements DbClient {
     return new FakeTable(this.tableRows(table), this.newRowId ?? (() => this.nextId())) as unknown as DbTable<RowOf<T>>;
   }
 
-  async rpc(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
+  rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>>;
+  rpc(name: "take_ai_call", args: TakeAiCallRpc): Promise<DbResult<number>>;
+  async rpc(name: "apply_company_import" | "take_ai_call", args: CompanyImportRpc | TakeAiCallRpc): Promise<DbResult<CompanyImportRow> | DbResult<number>> {
+    return name === "take_ai_call" ? this.takeAiCall(args as TakeAiCallRpc) : this.applyCompanyImport(args as CompanyImportRpc);
+  }
+
+  /** Mirrors public.take_ai_call (migration 0022): a sliding window over the user's calls. */
+  private takeAiCall({ p_user_id: user, p_limit, p_window_seconds }: TakeAiCallRpc): DbResult<number> {
+    const calls = this.tableRows("ai_calls");
+    const now = Date.now();
+    const limit = Math.max(1, p_limit);
+    const windowMs = Math.min(Math.max(p_window_seconds, 60), 86_400) * 1000;
+    const inWindow = calls.filter((c) => c.user_id === user && Date.parse(String(c.at)) > now - windowMs).map((c) => Date.parse(String(c.at))).sort((a, b) => a - b);
+    if (inWindow.length >= limit) {
+      const frees = inWindow[inWindow.length - limit];
+      return { data: Math.max(1, Math.ceil((frees + windowMs - now) / 1000)), error: null };
+    }
+    calls.push({ id: this.nextId(), user_id: user, at: new Date(now).toISOString() });
+    return { data: 0, error: null };
+  }
+
+  private async applyCompanyImport({ p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
     Promise<DbResult<CompanyImportRow>> {
     const receipts = this.tableRows("company_imports");
     const companies = this.tableRows("sourcing_companies");
