@@ -3,6 +3,22 @@ import { takeRequest, type RateWindow } from "../agent/rate-limit";
 /** How many new demo visitor ids one client address may start per window (GET /demo). */
 export const DEMO_MINT_LIMIT = { requests: 10, windowMs: 10 * 60_000 } as const;
 
+/** DEMO_MINTS_PER_WINDOW (.env.example) overrides the per-address count; unset = DEMO_MINT_LIMIT. */
+export function demoMintLimitFromEnv(env: Record<string, string | undefined>): { requests: number; windowMs: number } {
+  const raw = env.DEMO_MINTS_PER_WINDOW;
+  if (!raw) return DEMO_MINT_LIMIT;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) throw new Error(`DEMO_MINTS_PER_WINDOW must be a whole number >= 1, got "${raw}"`);
+  return { requests: n, windowMs: DEMO_MINT_LIMIT.windowMs };
+}
+
+const holder = globalThis as { __jobsearchDemoMints?: MintThrottle };
+
+/** The process-wide throttle, shared by /demo and workspace resolution (lib/db/index.ts). */
+export function demoMintThrottle(env: Record<string, string | undefined> = process.env): MintThrottle {
+  return (holder.__jobsearchDemoMints ??= new MintThrottle(demoMintLimitFromEnv(env)));
+}
+
 /**
  * A per-address fixed window on minting demo visitor ids, in memory like the visitor store it
  * protects (lib/demo/visitors.ts): one client cannot churn ids to push every other visitor out.

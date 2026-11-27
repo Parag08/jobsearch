@@ -10,7 +10,10 @@ import { getWorkspace } from "./index";
 
 vi.mock("server-only", () => ({}));
 const { getCookie, setCookie } = vi.hoisted(() => ({ getCookie: vi.fn(), setCookie: vi.fn() }));
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: getCookie, set: setCookie }) }));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: getCookie, set: setCookie }),
+  headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7" }),
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   notFound: () => { throw new Error("not found"); },
@@ -84,6 +87,24 @@ describe("getWorkspace", () => {
     await triageRole(role.id, "picked", "ranked");
     expect((w.db as FakeDb).rows("sourced_jobs").find((row) => row.id === role.id)?.sourcing_decision).toBe("picked");
     expect(setCookie).not.toHaveBeenCalled();
+  });
+
+  it("throttles new workspaces for unsigned visitor ids that never went through /demo", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+    vi.stubEnv("DEMO_MAX_VISITORS", "10");
+    vi.stubEnv("DEMO_MINTS_PER_WINDOW", "1");
+    vi.stubEnv("NEXT_SERVER_ACTIONS_ENCRYPTION_KEY", undefined);
+    vi.stubEnv("SUPABASE_SECRET_KEY", undefined);
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", undefined);
+    vi.stubGlobal("__jobsearchVisitors", undefined);
+    vi.stubGlobal("__jobsearchDemoMints", undefined);
+    getCookie.mockReturnValue({ value: "00000000-0000-0000-0000-00000000000a" });
+    await expect(getWorkspace()).resolves.toMatchObject({ mode: "demo" });
+    await expect(getWorkspace()).resolves.toMatchObject({ mode: "demo" });
+    getCookie.mockReturnValue({ value: "00000000-0000-0000-0000-00000000000b" });
+    await expect(getWorkspace()).resolves.toBeNull();
   });
 
   it("revisits a newly prepared public demo kit on a different instance", async () => {

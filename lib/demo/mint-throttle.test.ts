@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MintThrottle, clientAddress } from "./mint-throttle";
+import { DEMO_MINT_LIMIT, MintThrottle, clientAddress, demoMintLimitFromEnv } from "./mint-throttle";
 
 describe("MintThrottle", () => {
   it("refuses new ids from one address past the limit, until the window resets", () => {
@@ -23,5 +23,13 @@ describe("clientAddress", () => {
     expect(clientAddress(new Headers({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }))).toBe("1.2.3.4");
     expect(clientAddress(new Headers({ "x-real-ip": "5.6.7.8" }))).toBe("5.6.7.8");
     expect(clientAddress(new Headers())).toBe("unknown");
+  });
+});
+
+describe("demoMintLimitFromEnv", () => {
+  it("defaults, accepts a whole number, and is loud when wrong", () => {
+    expect(demoMintLimitFromEnv({})).toBe(DEMO_MINT_LIMIT);
+    expect(demoMintLimitFromEnv({ DEMO_MINTS_PER_WINDOW: "50" }).requests).toBe(50);
+    expect(() => demoMintLimitFromEnv({ DEMO_MINTS_PER_WINDOW: "0" })).toThrow();
   });
 });

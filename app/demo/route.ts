@@ -1,9 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_COOKIE, DEMO_KITS_COOKIE, demoMaxVisitorsFromEnv, newVisitorId } from "@/lib/demo/visitors";
 import { demoCookieOptions, demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "@/lib/demo/visitor-token";
-import { MintThrottle, clientAddress } from "@/lib/demo/mint-throttle";
-
-const holder = globalThis as { __jobsearchDemoMints?: MintThrottle };
+import { clientAddress, demoMintThrottle } from "@/lib/demo/mint-throttle";
 
 /**
  * GET /demo - start (or resume) the public demo: a cookie with a random visitor id, then the
@@ -18,7 +16,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const now = Date.now();
   const existing = await readDemoVisitor(req.cookies.get(DEMO_COOKIE)?.value, secret, now);
   if (!existing) {
-    const { allowed, retryAfterSec } = (holder.__jobsearchDemoMints ??= new MintThrottle()).take(clientAddress(req.headers), now);
+    const { allowed, retryAfterSec } = demoMintThrottle().take(clientAddress(req.headers), now);
     if (!allowed) {
       return new NextResponse("Too many new demo visits from this address. Try again in a few minutes.", {
         status: 429, headers: { "retry-after": String(retryAfterSec), "cache-control": "no-store" },

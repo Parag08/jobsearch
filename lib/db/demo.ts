@@ -83,6 +83,11 @@ export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): F
   return db;
 }
 
+/** Whether this server already holds a sample workspace for the visitor. */
+export function hasVisitorDemoDb(visitorId: string): boolean {
+  return visitors.__jobsearchVisitors?.has(visitorId) ?? false;
+}
+
 /** This visitor's own sample workspace (lib/demo/visitors.ts); edits stay theirs until it expires. */
 export function getVisitorDemoDb(visitorId: string, max: number): FakeDb {
   visitors.__jobsearchVisitors ??= new VisitorStore(() => freshVisitorDb(), { ttlMs: DEMO_TTL_SECONDS * 1000, max });
