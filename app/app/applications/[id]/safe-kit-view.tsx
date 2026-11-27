@@ -58,7 +58,7 @@ export function SafeKitView({ application: app, record, verified, researchStatus
             <CopySafeText text={evidenceText} label="Copy content" />
             <a className={ui.btn} href={"/api/export/safe-sourcing/" + id}>Download content</a>
           </div>}
-          {editable && <p><Link href="/app/settings/sourcing">Manage verified claims</Link></p>}
+          {editable && <p><a href="/app/settings?section=cv#evidence">Manage verified claims</a></p>}
         </section>
         {(["letter", "answer"] as const).map((section) => {
           const entry = kit[section];

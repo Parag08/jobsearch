@@ -1,9 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { SourcingRecipe } from "@/lib/watchlist/daily";
-import { addCompanyWebsite, addTargetCompany, connectTargetBoard, saveEvidence, saveSourcingRecipe } from "./sourcing-actions";
-import { Evidence, EVIDENCE_TEXT, type EvidenceCode } from "@/lib/watchlist/safe-kit";
+import { addCompanyWebsite, addTargetCompany, connectTargetBoard } from "./sourcing-actions";
 import { PendingButton } from "./sourcing-controls";
 import ui from "./ui.module.css";
 import s from "./sourcing.module.css";
@@ -54,44 +52,6 @@ export function AddCompanyWebsiteForm({ companyId }: { companyId: string }) {
   </form>;
 }
 
-export function RecipeForm({ recipe }: { recipe: SourcingRecipe }) {
-  const [state, action] = useActionState<{ error?: string }, FormData>(saveSourcingRecipe, {});
-  return (
-    <form action={action} className={s.form}>
-      <label className={s.field}>Daily target number
-        <input className={ui.input} name="target" type="number" min={1} max={2147483647} step={1} defaultValue={recipe.target} required />
-      </label>
-      <p className={ui.sub}>A maximum, never a quota. If fewer roles match, we’ll show fewer.</p>
-      <label className={s.field}>Cities
-        <textarea className={ui.input} name="cities" rows={2} defaultValue={recipe.cities.join(", ")} placeholder="Singapore" maxLength={2000} />
-      </label>
-      <label className={s.field}>Role families
-        <textarea className={ui.input} name="titles" rows={2} defaultValue={recipe.titles.join(", ")} placeholder="Product Manager, Chief of Staff" maxLength={2000} />
-      </label>
-      <label className={s.field}>Titles to skip
-        <textarea className={ui.input} name="excluded" rows={2} defaultValue={recipe.excluded.join(", ")} maxLength={2000} />
-      </label>
-      <p className={ui.sub}>Separate phrases with commas or new lines. Leave a field blank to skip that filter. Don’t include personal eligibility information.</p>
-      <FormError error={state.error} />
-      <div className={s.formFoot}><PendingButton label="Save preferences" primary /></div>
-    </form>
-  );
-}
-
 function FormError({ error }: { error?: string }) {
   return error ? <p className={s.notice} role="alert">{error}</p> : null;
-}
-
-export function EvidenceSettings({ evidence }: { evidence: EvidenceCode[] }) {
-  const [state, action] = useActionState<{ error?: string }, FormData>(saveEvidence, {});
-  return <form action={action} className={s.form}>
-    <fieldset className={s.checks}>
-      <legend>Verified claims</legend>
-      {Evidence.options.map((code) => <label key={code}><input type="checkbox" name="evidence" value={code}
-        defaultChecked={evidence.includes(code)} /> {EVIDENCE_TEXT[code]}</label>)}
-    </fieldset>
-    <label><input type="checkbox" name="attested" required /> Each selected claim describes work I actually did.</label>
-    <FormError error={state.error} />
-    <div><PendingButton label="Save verified claims" /></div>
-  </form>;
 }

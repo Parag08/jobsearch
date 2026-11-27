@@ -55,7 +55,8 @@ test.describe("phone navigation", () => {
     const links = menu.getByRole("link");
     await expect(links.nth(0)).toHaveText("Overview");
     await expect(links.nth(1)).toHaveText("Today");
-    await expect(links.nth(2)).toHaveText("Pipeline");
+    await expect(links.nth(2)).toHaveText("Companies");
+    await expect(links.nth(3)).toHaveText("Pipeline");
     await expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
     await menu.getByRole("link", { name: "Today", exact: true }).tap();
     await expect(demo).toHaveURL("/app/watchlist");

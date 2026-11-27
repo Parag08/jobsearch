@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Settings redesign
+
+The workspace gear opens Job search at `/app/settings`; other sections use `?section=`. Old Assistant and Sourcing URLs redirect. Settings saves patch the edited section’s registry keys against the latest stored row and validate the combined settings with the existing readers. Restore app defaults clears overrides, not deployment values. Verified claims remain in the profile and are managed in CV & evidence. Assistant keys keep the same MCP permissions and lifetimes and are shown only in the key-creation step.
+
 ## 2026-11-27 - Per-user AI call limit
 
 Code scan finding (signed-in users could make unlimited AI calls on the shared key). `aiWrite`, `aiLlm` and the MCP posting reader now take one call from a per-user sliding window before reaching a provider (`AI_CALL_LIMIT`, default 100, per `AI_CALL_WINDOW_SECONDS`, default 3600; deployment env only). The count lives in `ai_calls`, written only by `take_ai_call` (migration 0025, security definer, never resets inside the window). The quick mock interview session is stored in `interview_mock_sessions` and deleted once scored; `mockTurnAction`/`mockFeedbackAction` take `sessionId`. Run `npm run db:migrate` for 0025.

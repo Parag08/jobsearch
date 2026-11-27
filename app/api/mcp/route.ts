@@ -18,7 +18,7 @@ const rpcError = (status: number, code: number, message: string, headers?: Heade
 
 /**
  * POST /api/mcp - the JobSearch MCP server (Streamable HTTP, stateless JSON replies).
- * Auth is a personal token made on /app/agent, sent as `Authorization: Bearer jsk_...`.
+ * Auth is a personal token made in Settings → Assistant, sent as `Authorization: Bearer jsk_...`.
  * Everything else lives in lib/mcp (protocol + tools) and lib/services/agent-sync (rules).
  */
 export async function POST(request: Request): Promise<Response> {
@@ -33,9 +33,9 @@ export async function POST(request: Request): Promise<Response> {
           "Retry-After": String(auth.retryAfterSec),
         });
       case "expired":
-        return rpcError(401, -32001, "This token has expired. Create a new one on /app/agent.", { "WWW-Authenticate": "Bearer" });
+        return rpcError(401, -32001, "This token has expired. Create a new one in Settings → Assistant (/app/settings?section=assistant).", { "WWW-Authenticate": "Bearer" });
       default:
-        return rpcError(401, -32001, "Missing or invalid token. Create one on /app/agent.", { "WWW-Authenticate": "Bearer" });
+        return rpcError(401, -32001, "Missing or invalid token. Create one in Settings → Assistant (/app/settings?section=assistant).", { "WWW-Authenticate": "Bearer" });
     }
   }
 

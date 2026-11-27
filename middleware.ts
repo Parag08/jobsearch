@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { signedInRedirect } from "./lib/auth/routing";
+import { SETTINGS_PATH, settingsHref, settingsSection } from "./lib/settings/sections";
 import { requireWorkspaceEnv } from "./lib/db/supabase";
 import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv } from "./lib/demo/visitors";
 import { demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "./lib/demo/visitor-token";
@@ -35,16 +36,26 @@ async function renewDemoVisit(request: NextRequest, response: NextResponse) {
  * Explicit local demo mode has no session to refresh.
  */
 export async function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-jobsearch-settings");
+  if (pathname === SETTINGS_PATH || pathname === "/app/agent" || pathname === "/app/settings/sourcing") {
+    const section = pathname === "/app/agent" ? "assistant" : pathname === SETTINGS_PATH ? settingsSection(searchParams.get("section")) : "job-search";
+    requestHeaders.set("x-jobsearch-settings", settingsHref(section));
+  }
   const env = requireWorkspaceEnv();
-  if (!env) return renewDemoVisit(request, NextResponse.next());
+  if (!env) return renewDemoVisit(request, NextResponse.next({ request: { headers: requestHeaders } }));
 
-  let response = NextResponse.next({ request });
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
   const supabase = createServerClient(env.url, env.publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
         for (const { name, value } of list) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        const cookieHeader = request.headers.get("cookie");
+        if (cookieHeader) requestHeaders.set("cookie", cookieHeader);
+        else requestHeaders.delete("cookie");
+        response = NextResponse.next({ request: { headers: requestHeaders } });
         for (const { name, value, options } of list) response.cookies.set(name, value, options);
       },
     },

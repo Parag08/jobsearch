@@ -20,7 +20,8 @@ test("Today replaces Watchlist in navigation without changing its bookmarked URL
   const links = page.getByRole("navigation", { name: "App", exact: true }).getByRole("link");
   await expect(links.nth(0)).toHaveAccessibleName("JobSearch, overview");
   await expect(links.nth(1)).toHaveText("Today");
-  await expect(links.nth(2)).toHaveText("Pipeline");
+  await expect(links.nth(2)).toHaveText("Companies");
+  await expect(links.nth(3)).toHaveText("Pipeline");
   await expect(appLink(page, "Watchlist")).toHaveCount(0);
   await expect(appLink(page, "Today")).toHaveAttribute("href", "/app/watchlist");
   await page.goto("/app/watchlist");
@@ -39,8 +40,7 @@ test("workspace pages have one main title without repeating navigation in an eye
     ["Companies", "Target companies", /^Companies(\s*\/.*)?$/i],
     ["Network", "Network", /^Network$/i],
     ["Experience", "Experience", /^Experience$/i],
-    ["Assistant", "Connect an assistant", /^Assistant$/i],
-    ["Settings", "Settings", /^(User settings|Settings)$/i],
+    ["Settings", "Job search", /^(User settings|Settings)$/i],
   ] as const) {
     await test.step(nav, async () => {
       if (nav !== "Overview") await appLink(page, nav).click();
@@ -50,8 +50,13 @@ test("workspace pages have one main title without repeating navigation in an eye
   }
 
   await page.goto("/app/settings/sourcing");
-  await expect(heading).toHaveText("Sourcing preferences");
+  await expect(page).toHaveURL("/app/settings");
+  await expect(heading).toHaveText("Job search");
   await expect(main.getByRole("paragraph").filter({ hasText: /^(User settings|Settings)$/i })).toHaveCount(0);
+  await page.goto("/app/agent");
+  await expect(page).toHaveURL("/app/settings?section=assistant");
+  await expect(heading).toHaveText("Assistant");
+  await expect(main.getByRole("paragraph").filter({ hasText: /^Assistant$/i })).toHaveCount(0);
 
   await appLink(page, "Companies").click();
   await main.getByRole("link", { name: "Orchard Commerce", exact: true }).click();
@@ -155,9 +160,10 @@ test("Today persists triage, and Companies adds, removes, and restores a target"
 test("sourcing preferences control the shortlist maximum without padding", async ({ demo: page }) => {
   await appLink(page, "Today").click();
   await page.getByRole("link", { name: "Sourcing preferences" }).click();
-  await page.getByRole("spinbutton", { name: "Daily target number" }).fill("1");
-  await page.getByRole("button", { name: "Save preferences" }).click();
-  await page.getByRole("link", { name: "Back to Today" }).click();
+  await page.getByRole("spinbutton", { name: "Daily role maximum" }).fill("1");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await appLink(page, "Today").click();
   await expect(page.getByText("Your target:", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Ranked roles" }).getByRole("article")).toHaveCount(1);
 });
@@ -335,23 +341,27 @@ test("Experience creates, revises and deletes a point in the evidence bank", asy
 });
 
 test("Assistant shows setup instructions but does not issue keys to demo users", async ({ demo: page }) => {
-  await appLink(page, "Assistant").click();
-  await expect(page.getByRole("heading", { name: "Connect an assistant", exact: true })).toBeVisible();
+  await expect(appLink(page, "Assistant")).toHaveCount(0);
+  await appLink(page, "Settings").click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Assistant" }).click();
+  await expect(page.getByRole("heading", { name: "Assistant", exact: true })).toBeVisible();
   await page.getByText("Technical details", { exact: true }).click();
   await expect(page.getByText("It connects over MCP", { exact: false })).toBeVisible();
+  await page.getByText("Setup instructions", { exact: true }).click();
   await expect(page.getByRole("region", { name: "Connection steps" }).getByRole("listitem").first())
     .toHaveText("Sign in to create a key, then copy it.");
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/signin");
-  await expect(page.getByRole("button", { name: "Create key" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/signin?next=%2Fapp%2Fsettings%3Fsection%3Dassistant");
+  await expect(page.getByRole("button", { name: "Create access key" })).toHaveCount(0);
 });
 
 test("Settings saves a board preference across a reload", async ({ demo: page }) => {
   await appLink(page, "Settings").click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Goals & follow-ups" }).click();
   const goals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Weekly goals", exact: true }) });
   await expect(goals.getByText(/Your weekly target, shown under “This week” on the Overview streak card\./)).toHaveCount(3);
   const setting = page.getByLabel("Cards per column", { exact: false });
   await setting.fill("3");
-  await page.getByRole("button", { name: /Save settings/i }).click();
+  await page.getByRole("button", { name: /Save changes/i }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await page.reload();
   await expect(setting).toHaveValue("3");

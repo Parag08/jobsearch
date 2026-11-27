@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import Script from "next/script";
 import { themeBootScript } from "@/lib/theme";
+import { ThemeRuntime } from "./_components/theme-toggle";
 import "./globals.css";
 
 // Apple-style: San Francisco on Apple devices (the system font, nothing to load) and Inter,
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         ) : null}
       </head>
       <body>
+        <ThemeRuntime />
         {GTM_ID ? (
           <noscript>
             <iframe

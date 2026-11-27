@@ -1,7 +1,7 @@
 # Agent access (MCP)
 
 `POST /api/mcp` is a stateless MCP server (JSON-RPC, `lib/mcp/server.ts`). An agent calls it
-with a personal token made on `/app/agent`. Tools live in `lib/mcp/tools.ts`, and the rules
+with a personal token made in [Settings → Assistant](/app/settings?section=assistant). Tools live in `lib/mcp/tools.ts`, and the rules
 they enforce in `lib/services/agent-sync.ts` and `lib/services/agent-prep.ts`.
 
 **Rules every tool keeps:**

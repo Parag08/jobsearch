@@ -4,11 +4,12 @@ import { cookies, headers } from "next/headers";
 import { DEMO_COOKIE, DEMO_KITS_COOKIE } from "@/lib/demo/visitors";
 import { redirect } from "next/navigation";
 import { createServerSupabase, readSupabaseEnv } from "@/lib/db/supabase";
+import { safeNextPath } from "@/lib/auth/routing";
 
 export type Provider = "google" | "linkedin_oidc";
 
 /** Start the OAuth leg; the provider sends the browser back to /auth/callback. */
-export async function signInWith(provider: Provider): Promise<void> {
+export async function signInWith(provider: Provider, next?: string): Promise<void> {
   const env = readSupabaseEnv();
   if (!env) redirect("/signin?error=not_configured");
   // Signing in ends a demo visit, or the sample workspace would keep winning (lib/db getWorkspace).
@@ -20,7 +21,7 @@ export async function signInWith(provider: Provider): Promise<void> {
   const supabase = await createServerSupabase(env);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: `${origin}/auth/callback` },
+    options: { redirectTo: `${origin}/auth/callback${typeof next === "string" ? `?next=${encodeURIComponent(safeNextPath(next))}` : ""}` },
   });
   if (error || !data.url) redirect(`/signin?error=${encodeURIComponent(error?.message ?? "no_redirect_url")}`);
   redirect(data.url);

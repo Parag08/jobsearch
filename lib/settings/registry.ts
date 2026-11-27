@@ -190,7 +190,8 @@ export function validateSettings(env: Env, raw: Record<string, unknown>): Record
       r.read(merged);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const key = r.keys.find((k) => msg.includes(k)) ?? r.keys[0];
+      const key = r.keys.map((name) => ({ name, position: msg.indexOf(name) })).filter(({ position }) => position >= 0)
+        .sort((a, b) => a.position - b.position)[0]?.name ?? r.keys[0];
       errors[key] = inLabels(msg);
     }
   }

@@ -263,9 +263,9 @@ class FakeTable {
   insert(values: Row | Row[]): FakeQuery {
     return this.query("insert", asArray(values));
   }
-  upsert(values: Row | Row[], opts: { onConflict: string }): FakeQuery {
+  upsert(values: Row | Row[], opts: { onConflict: string; ignoreDuplicates?: boolean }): FakeQuery {
     const conflict = opts.onConflict.split(",").map((c) => c.trim());
-    return this.query("upsert", asArray(values), conflict);
+    return this.query("upsert", asArray(values), conflict, opts.ignoreDuplicates);
   }
   update(patch: Row): FakeQuery {
     return this.query("update", [patch]);
@@ -274,8 +274,8 @@ class FakeTable {
     return this.query("delete", []);
   }
 
-  private query(op: FakeQuery["op"], payload: Row[], conflict: string[] = []): FakeQuery {
-    return new FakeQuery(this.rows, op, payload, conflict, this.nextId, this.budget);
+  private query(op: FakeQuery["op"], payload: Row[], conflict: string[] = [], ignoreDuplicates = false): FakeQuery {
+    return new FakeQuery(this.rows, op, payload, conflict, this.nextId, this.budget, ignoreDuplicates);
   }
 }
 
@@ -295,6 +295,7 @@ class FakeQuery {
     private readonly conflict: string[],
     private readonly nextId: () => string,
     private readonly budget: WriteBudget | null = null,
+    private readonly ignoreDuplicates = false,
   ) {
     this.returning = op === "select";
   }
@@ -362,7 +363,7 @@ class FakeQuery {
         affected = this.payload.map((v) => this.insertRow(v));
         break;
       case "upsert":
-        affected = this.payload.map((v) => this.upsertRow(v));
+        affected = this.payload.flatMap((v) => this.ignoreDuplicates && this.conflictRow(v) ? [] : [this.upsertRow(v)]);
         break;
       case "update": {
         affected = this.rows.filter((r) => this.matches(r));
@@ -411,9 +412,10 @@ class FakeQuery {
       case "insert":
         return this.payload.map((v) => ({ after: { id: ID_PLACEHOLDER, ...v } }));
       case "upsert":
-        return this.payload.map((v) => {
+        return this.payload.flatMap((v) => {
           const before = this.conflictRow(v);
-          return before ? { before, after: { ...before, ...v } } : { after: { id: ID_PLACEHOLDER, ...v } };
+          if (before && this.ignoreDuplicates) return [];
+          return [before ? { before, after: { ...before, ...v } } : { after: { id: ID_PLACEHOLDER, ...v } }];
         });
       case "update":
         return this.rows.filter((r) => this.matches(r)).map((before) => ({ before, after: { ...before, ...this.payload[0] } }));

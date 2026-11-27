@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { Logo } from "../_components/logo";
 import { getWorkspace } from "@/lib/db";
 import { signOut } from "../signin/actions";
-import { ThemeToggle } from "../_components/theme-toggle";
-import { BrandLink, NavLinks } from "./nav-links";
+import { BrandLink, NavLinks, SettingsLink } from "./nav-links";
 import styles from "./app.module.css";
 
 /**
@@ -16,13 +16,11 @@ import styles from "./app.module.css";
 const NAV = [
   ["/app/home", "Overview"],
   ["/app/watchlist", "Today"],
-  ["/app", "Pipeline"],
-  ["/app/interview", "Interview"],
   ["/app/companies", "Companies"],
+  ["/app", "Pipeline"],
   ["/app/network", "Network"],
+  ["/app/interview", "Interview"],
   ["/app/bank", "Experience"],
-  ["/app/agent", "Assistant"],
-  ["/app/settings", "Settings"],
 ] as const;
 
 /**
@@ -34,7 +32,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const w = await getWorkspace();
-  if (!w) redirect("/signin");
+  if (!w) {
+    const next = (await headers()).get("x-jobsearch-settings");
+    redirect(next ? `/signin?next=${encodeURIComponent(next)}` : "/signin");
+  }
 
   return (
     <div className={styles.shell}>
@@ -46,7 +47,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </BrandLink>
           <NavLinks items={NAV} />
           <div className={styles.right}>
-            <ThemeToggle />
             <span className={styles.mode} data-mode={w.mode} title={w.cannedAi ? "A fictional person's workspace. Your changes last two idle hours." : w.mode === "demo" ? "You're looking at sample data. Changes reset when the server restarts." : w.email ?? ""}>
               {w.mode === "demo" ? "Sample data" : (w.email ?? "Signed in")}
             </span>
@@ -61,6 +61,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 Sign in
               </Link>
             )}
+            <SettingsLink />
           </div>
         </nav>
       </header>

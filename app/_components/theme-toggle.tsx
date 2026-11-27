@@ -7,15 +7,18 @@ import {
   nextPref,
   parsePref,
   resolveTheme,
+  SYSTEM_DARK,
   type ThemePref,
 } from "@/lib/theme";
 import styles from "./theme-toggle.module.css";
 
 const LABEL: Record<ThemePref, string> = {
   auto: "Auto (dark from 7pm to 7am, your local time)",
+  system: "System",
   light: "Light",
   dark: "Dark",
 };
+const THEME_CHANGED = "jobsearch-theme-change";
 
 function readPref(): ThemePref {
   try {
@@ -26,21 +29,50 @@ function readPref(): ThemePref {
 }
 
 function apply(pref: ThemePref) {
-  document.documentElement.setAttribute("data-theme", resolveTheme(pref, new Date()));
+  document.documentElement.setAttribute("data-theme", resolveTheme(pref, new Date(), matchMedia(SYSTEM_DARK).matches));
 }
 
-/**
- * One button that cycles Auto -> Light -> Dark. The first paint is already
- * right (themeBootScript in the root layout); this keeps it right afterwards -
- * on auto it re-applies at the next 7am/7pm switch and whenever the tab
- * comes back, so a laptop opened next morning is light again.
- */
-export function ThemeToggle({ className }: { className?: string }) {
+function useThemePreference() {
   const [pref, setPref] = useState<ThemePref | null>(null);
+  useEffect(() => {
+    setPref(readPref());
+    const change = (event: Event) => setPref((event as CustomEvent<ThemePref>).detail);
+    const storage = (event: StorageEvent) => {
+      if (event.key === THEME_STORAGE_KEY || event.key === null) setPref(readPref());
+    };
+    window.addEventListener(THEME_CHANGED, change);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener(THEME_CHANGED, change);
+      window.removeEventListener("storage", storage);
+    };
+  }, []);
+  return pref;
+}
 
-  useEffect(() => setPref(readPref()), []);
+function changeTheme(next: ThemePref) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch {
+    // storage blocked: the choice holds for this page only
+  }
+  apply(next);
+  window.dispatchEvent(new CustomEvent(THEME_CHANGED, { detail: next }));
+}
+
+export function ThemeRuntime() {
+  const pref = useThemePreference();
 
   useEffect(() => {
+    if (!pref) return;
+    if (pref === "system") {
+      const media = matchMedia(SYSTEM_DARK);
+      const update = () => apply(pref);
+      update();
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    apply(pref);
     if (pref !== "auto") return;
     let timer: ReturnType<typeof setTimeout>;
     const schedule = () => {
@@ -57,22 +89,31 @@ export function ThemeToggle({ className }: { className?: string }) {
     };
   }, [pref]);
 
-  function cycle() {
-    const next = nextPref(pref ?? "auto");
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // storage blocked: the choice holds for this page only
-    }
-    apply(next);
-    setPref(next);
-  }
+  return null;
+}
 
+export function AppearancePicker({ className }: { className?: string }) {
+  const pref = useThemePreference();
+  return (
+    <label className={className}>
+      <span>Appearance</span>
+      <select value={pref ?? "auto"} onChange={(event) => changeTheme(parsePref(event.target.value))}>
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="auto">{LABEL.auto}</option>
+      </select>
+    </label>
+  );
+}
+
+export function ThemeToggle({ className }: { className?: string }) {
+  const pref = useThemePreference();
   const current = pref ?? "auto";
   return (
     <button
       type="button"
-      onClick={cycle}
+      onClick={() => changeTheme(nextPref(current))}
       className={`${styles.toggle} ${className ?? ""}`}
       aria-label={`Theme: ${LABEL[current]}. Switch to ${nextPref(current)}.`}
       title={`Theme: ${LABEL[current]}`}
@@ -93,7 +134,7 @@ export function ThemeToggle({ className }: { className?: string }) {
  * small "A" beside it (a clock face for "auto" was a riddle; critique 1.7).
  */
 function Icon({ pref }: { pref: ThemePref }) {
-  const shown = resolveTheme(pref, new Date());
+  const shown = resolveTheme(pref, new Date(), matchMedia(SYSTEM_DARK).matches);
   const common = {
     width: 16,
     height: 16,

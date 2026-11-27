@@ -1,10 +1,9 @@
 /**
  * Theme choice (docs/DESIGN.md section 5, "Light by day, dark by night").
- * The user picks light, dark or auto; auto follows the viewer's LOCAL clock -
- * the browser's own time and timezone - not the OS colour scheme.
+ * Auto follows the viewer's local clock; System follows the OS colour scheme.
  */
 
-export type ThemePref = "auto" | "light" | "dark";
+export type ThemePref = "auto" | "system" | "light" | "dark";
 export type Theme = "light" | "dark";
 
 /** Auto is dark from DARK_FROM_HOUR (inclusive) until DARK_UNTIL_HOUR, local time. */
@@ -12,11 +11,12 @@ export const DARK_FROM_HOUR = 19;
 export const DARK_UNTIL_HOUR = 7;
 
 export const THEME_STORAGE_KEY = "jobsearch-theme";
+export const SYSTEM_DARK = "(prefers-color-scheme: dark)";
 
 const PREFS: readonly ThemePref[] = ["auto", "light", "dark"];
 
 export function parsePref(raw: string | null | undefined): ThemePref {
-  return PREFS.includes(raw as ThemePref) ? (raw as ThemePref) : "auto";
+  return raw === "system" || PREFS.includes(raw as ThemePref) ? (raw as ThemePref) : "auto";
 }
 
 export function nextPref(pref: ThemePref): ThemePref {
@@ -27,7 +27,8 @@ function isNight(hour: number): boolean {
   return hour >= DARK_FROM_HOUR || hour < DARK_UNTIL_HOUR;
 }
 
-export function resolveTheme(pref: ThemePref, now: Date): Theme {
+export function resolveTheme(pref: ThemePref, now: Date, systemDark = false): Theme {
+  if (pref === "system") return systemDark ? "dark" : "light";
   if (pref !== "auto") return pref;
   return isNight(now.getHours()) ? "dark" : "light";
 }
@@ -55,7 +56,8 @@ export function themeBootScript(): string {
   return (
     "(function(){var p='auto';" +
     `try{p=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||'auto'}catch(e){}` +
-    "var t=p;if(p!=='light'&&p!=='dark'){var h=new Date().getHours();" +
+    `var t=p;if(p==='system'){t=matchMedia(${JSON.stringify(SYSTEM_DARK)}).matches?'dark':'light'}` +
+    "else if(p!=='light'&&p!=='dark'){var h=new Date().getHours();" +
     `t=(h>=${DARK_FROM_HOUR}||h<${DARK_UNTIL_HOUR})?'dark':'light'}` +
     "document.documentElement.setAttribute('data-theme',t)})()"
   );
