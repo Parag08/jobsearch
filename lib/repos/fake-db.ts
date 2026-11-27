@@ -47,12 +47,20 @@ export class FakeDb implements DbClient {
   private takeAiCall({ p_user_id: user, p_limit, p_window_seconds }: TakeAiCallRpc): DbResult<number> {
     const calls = this.tableRows("ai_calls");
     const now = Date.now();
-    const limit = Math.max(1, p_limit);
+    const ceiling = 5000;
+    const day = 86_400_000;
+    const limit = Math.min(Math.max(1, p_limit), ceiling);
     const windowMs = Math.min(Math.max(p_window_seconds, 60), 86_400) * 1000;
-    const inWindow = calls.filter((c) => c.user_id === user && Date.parse(String(c.at)) > now - windowMs).map((c) => Date.parse(String(c.at))).sort((a, b) => a - b);
+    for (let i = calls.length - 1; i >= 0; i--) if (calls[i].user_id === user && Date.parse(String(calls[i].at)) <= now - day) calls.splice(i, 1);
+    const mine = calls.filter((c) => c.user_id === user).map((c) => Date.parse(String(c.at))).sort((a, b) => a - b);
+    const inWindow = mine.filter((at) => at > now - windowMs);
     if (inWindow.length >= limit) {
       const frees = inWindow[inWindow.length - limit];
       return { data: Math.max(1, Math.ceil((frees + windowMs - now) / 1000)), error: null };
+    }
+    if (mine.length >= ceiling) {
+      const frees = mine[mine.length - ceiling];
+      return { data: Math.max(1, Math.ceil((frees + day - now) / 1000)), error: null };
     }
     calls.push({ id: this.nextId(), user_id: user, at: new Date(now).toISOString() });
     return { data: 0, error: null };

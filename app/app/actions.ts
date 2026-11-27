@@ -651,6 +651,12 @@ export async function startMockAction(input: { questionId: string; tone: Tone; m
   return { sessionId: await createMockSession(db, userId, session, now), session };
 }
 
+/** Discard: the page drops the interview, so the server drops its copy too. */
+export async function discardMockAction(input: { sessionId: string }): Promise<void> {
+  const { db, userId } = await ws();
+  if (typeof input.sessionId === "string" && input.sessionId) await deleteMockSession(db, userId, input.sessionId).catch(() => undefined);
+}
+
 const LOST = "That interview could not be found. Start it again.";
 
 /** The stored session, or null when it is gone or unreadable. */

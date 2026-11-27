@@ -1,4 +1,4 @@
-import { parseJsonLoose, retryAfterSeconds } from "../adapters/llm-http";
+import { AiCallLimitError, parseJsonLoose, retryAfterSeconds } from "../adapters/llm-http";
 import {
   buildFullTurnPrompt,
   fallbackReply,
@@ -46,7 +46,7 @@ export async function chooseFullReply(
       const parsed = parseFullReply(parseJsonLoose(await call(m, prompt)), legal);
       return { reply: guardFullReply(parsed, s, latest, legal), model: m.model, raw: { move: parsed.move, say: parsed.say } };
     } catch (err) {
-      if (retryAfterSeconds(err) !== null) throw err;
+      if (retryAfterSeconds(err) !== null || err instanceof AiCallLimitError) throw err;
       onFail(m.model, err);
     }
   }

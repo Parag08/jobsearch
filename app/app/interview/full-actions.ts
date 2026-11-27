@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getWorkspace } from "@/lib/db";
 import { aiReady, aiWrite } from "@/lib/services/ai-write";
-import { parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
+import { AiCallLimitError, parseJsonLoose, retryAfterSeconds } from "@/lib/adapters/llm-http";
 import { GATEWAY_PREMIUM_MODEL } from "@/lib/adapters/vercel-gateway";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { estimateTokens } from "@/lib/token-meter";
@@ -157,6 +157,7 @@ export async function fullTurnAction(input: { sessionId: string; answer: string;
       reply = choice.reply;
       usedModel = w.cannedAi && choice.model !== "code" ? "demo" : choice.model;
     } catch (err) {
+      if (err instanceof AiCallLimitError) return { error: err.message, sessionId: stored.id, session: s };
       const wait = retryAfterSeconds(err);
       if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
       throw err;

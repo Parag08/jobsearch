@@ -5,6 +5,9 @@ import { cannedText, lexicalExtract, type CannedContext, type CannedTask } from 
 import type { JdExtract } from "../types";
 import type { DbClient } from "../repos/db";
 import { takeAiCall } from "../repos/ai-calls";
+import { AiCallLimitError } from "../adapters/llm-http";
+
+export { AiCallLimitError };
 
 /**
  * The one door every server action and route uses to reach a model. A demo visitor
@@ -26,6 +29,9 @@ export interface AiCallLimit {
   windowSeconds: number;
 }
 
+/** take_ai_call (migration 0022) never allows more than this per user per day. */
+export const AI_CALL_CEILING = 5000;
+
 export const AI_CALL_LIMIT_DEFAULT: AiCallLimit = { calls: 100, windowSeconds: 3600 };
 
 const positiveInt = (v: string | undefined): number | null => {
@@ -36,16 +42,9 @@ const positiveInt = (v: string | undefined): number | null => {
 /** The limit is deployment-wide: read from process.env only, never from a user's settings. */
 export function aiCallLimitFromEnv(env: Env): AiCallLimit {
   return {
-    calls: positiveInt(env.AI_CALL_LIMIT) ?? AI_CALL_LIMIT_DEFAULT.calls,
+    calls: Math.min(positiveInt(env.AI_CALL_LIMIT) ?? AI_CALL_LIMIT_DEFAULT.calls, AI_CALL_CEILING),
     windowSeconds: Math.min(Math.max(positiveInt(env.AI_CALL_WINDOW_SECONDS) ?? AI_CALL_LIMIT_DEFAULT.windowSeconds, 60), 86_400),
   };
-}
-
-export class AiCallLimitError extends Error {
-  constructor(readonly retryAfterSec: number) {
-    super(`You have reached the AI limit for now. Try again in ${retryAfterSec < 120 ? `${retryAfterSec}s` : `${Math.ceil(retryAfterSec / 60)} min`}.`);
-    this.name = "AiCallLimitError";
-  }
 }
 
 /** Count one provider call against the caller's window, or throw before the provider is reached. */

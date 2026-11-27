@@ -11,7 +11,7 @@ vi.mock("next/navigation", () => ({ redirect: () => { throw new Error("redirect"
 let db = new FakeDb();
 vi.mock("@/lib/db", () => ({ getWorkspace: async () => ({ db, userId: "u1", mode: "live", email: null, files: null, cannedAi: false }) }));
 
-const { startMockAction, mockTurnAction } = await import("../../app/app/actions");
+const { discardMockAction, startMockAction, mockTurnAction } = await import("../../app/app/actions");
 const QUESTION = "custom:q1";
 
 beforeEach(() => {
@@ -54,5 +54,12 @@ describe("mockTurnAction", () => {
     expect(again.session?.status).toBe("done");
     expect(await mockTurnAction({ sessionId: sessionId!, answer: "Again." })).toMatchObject({ error: "This interview has finished." });
     expect(stream).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops the server's copy when the interview is discarded", async () => {
+    const { sessionId } = await startMockAction({ questionId: QUESTION, tone: "neutral", maxFollowUps: 4 });
+    await discardMockAction({ sessionId: sessionId! });
+    expect(await mockTurnAction({ sessionId: sessionId!, answer: "We sorted it out." })).toMatchObject({ error: expect.stringMatching(/could not be found/) });
+    expect(stream).not.toHaveBeenCalled();
   });
 });

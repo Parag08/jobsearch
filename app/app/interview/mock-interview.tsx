@@ -2,7 +2,7 @@
 
 import { endOfTurnMs, type TurnSettings } from "@/lib/interview/turn-taking";
 import { useEffect, useRef, useState } from "react";
-import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
+import { discardMockAction, mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
 import { combineVoice, deliveryNotes, FILLERS_PER_100_LIMIT, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
@@ -244,6 +244,8 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     pausedRef.current = false;
     setPaused(false);
     pendingLine.current = null;
+    // Discarded before scoring: drop the server's copy too.
+    if (sessionIdRef.current) void discardMockAction({ sessionId: sessionIdRef.current });
     sessionIdRef.current = null;
     setSession(null);
     setDraft("");

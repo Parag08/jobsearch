@@ -845,7 +845,8 @@ grant execute on function public.apply_company_import(uuid, uuid, jsonb, integer
 -- holds the running quick mock interview so the browser never sends it back.
 create table if not exists public.ai_calls (
   id bigint generated always as identity primary key,
-  user_id uuid not null references public.profiles (user_id) on delete cascade,
+  -- auth.users, not profiles: a user may delete their own profile row, and that must not clear the count.
+  user_id uuid not null references auth.users (id) on delete cascade,
   at timestamptz not null default now()
 );
 create index if not exists ai_calls_user_at on public.ai_calls (user_id, at);
@@ -856,7 +857,9 @@ revoke all on public.ai_calls from anon, authenticated;
 create or replace function public.take_ai_call(p_user_id uuid, p_limit integer, p_window_seconds integer)
 returns integer language plpgsql security definer set search_path = '' as $$
 declare
-  lim integer := greatest(coalesce(p_limit, 1), 1);
+  -- A hard ceiling on rows per user per day, whatever limit a direct caller passes.
+  ceiling constant integer := 5000;
+  lim integer := least(greatest(coalesce(p_limit, 1), 1), ceiling);
   win interval := make_interval(secs => least(greatest(coalesce(p_window_seconds, 3600), 60), 86400));
   now_ timestamptz := clock_timestamp();
   used integer;
@@ -866,12 +869,18 @@ begin
     return null;
   end if;
   perform pg_advisory_xact_lock(hashtextextended('take_ai_call:' || p_user_id::text, 0));
-  delete from public.ai_calls where user_id = p_user_id and at < now_ - interval '2 days';
+  -- The window is at most a day, so older rows never count again.
+  delete from public.ai_calls where user_id = p_user_id and at <= now_ - interval '1 day';
   select count(*) into used from public.ai_calls where user_id = p_user_id and at > now_ - win;
   if used >= lim then
     select at into frees from public.ai_calls where user_id = p_user_id and at > now_ - win
       order by at asc offset used - lim limit 1;
     return greatest(1, ceil(extract(epoch from (frees + win - now_)))::integer);
+  end if;
+  select count(*) into used from public.ai_calls where user_id = p_user_id;
+  if used >= ceiling then
+    select at into frees from public.ai_calls where user_id = p_user_id order by at asc offset used - ceiling limit 1;
+    return greatest(1, ceil(extract(epoch from (frees + interval '1 day' - now_)))::integer);
   end if;
   insert into public.ai_calls (user_id, at) values (p_user_id, now_);
   return 0;

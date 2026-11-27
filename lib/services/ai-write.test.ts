@@ -109,6 +109,16 @@ describe("the per-user AI call limit", () => {
     expect(stream).not.toHaveBeenCalled();
   });
 
+  it("never lets a direct caller record more than the daily ceiling", async () => {
+    const { takeAiCall } = await import("../repos/ai-calls");
+    const at = new Date(Date.now() - 3_600_000).toISOString();
+    db.seed("ai_calls", Array.from({ length: 4998 }, () => ({ user_id: "u1", at })));
+    let allowed = 0;
+    for (let i = 0; i < 5; i++) if ((await takeAiCall(db, "u1", { calls: 1_000_000, windowSeconds: 60 })).allowed) allowed++;
+    expect(allowed).toBe(2);
+    expect(aiCallLimitFromEnv({ AI_CALL_LIMIT: "999999" }).calls).toBe(5000);
+  });
+
   it("reads its limit from the deployment env, with safe defaults", () => {
     expect(aiCallLimitFromEnv({})).toEqual({ calls: 100, windowSeconds: 3600 });
     expect(aiCallLimitFromEnv({ AI_CALL_LIMIT: "20", AI_CALL_WINDOW_SECONDS: "600" })).toEqual({ calls: 20, windowSeconds: 600 });
