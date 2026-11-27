@@ -9,7 +9,7 @@ export type CompanyImportRpc = {
   p_skipped?: number;
 };
 
-/** Arguments of create_api_token (migration 0023), the only way a token row is made. */
+/** Arguments of create_api_token (migration 0024), the only way a token row is made. */
 export type CreateApiTokenRpc = {
   p_user_id: string;
   p_name: string;

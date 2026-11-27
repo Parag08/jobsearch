@@ -5,6 +5,82 @@ import { norm } from "../types";
 
 type Row = Record<string, unknown>;
 
+/** Caps on what writes may add to a FakeDb (the public demo, lib/db/demo.ts). Sizes are JSON characters. */
+export interface FakeDbLimits {
+  maxRowsPerTable: number;
+  maxRowChars: number;
+  maxTotalChars: number;
+}
+
+interface PendingWrite {
+  before?: Row;
+  after: Row;
+}
+
+const ID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
+const rowChars = (row: Row) => JSON.stringify(row)?.length ?? 0;
+
+/** Tracks every stored row's size so a write past a limit is refused before it lands. */
+class WriteBudget {
+  private sizes = new WeakMap<Row, number>();
+  private used = 0;
+
+  constructor(private readonly limits: FakeDbLimits, tables: Iterable<Row[]>) {
+    this.recount(tables);
+  }
+
+  recount(tables: Iterable<Row[]>): void {
+    this.used = 0;
+    for (const rows of tables) for (const row of rows) this.used += this.measure(row);
+  }
+
+  check(rows: Row[], writes: PendingWrite[]): string | null {
+    const added = writes.filter((w) => !w.before).length;
+    if (added > 0 && rows.length + added > this.limits.maxRowsPerTable) {
+      return `demo workspace limit: at most ${this.limits.maxRowsPerTable} rows per table`;
+    }
+    let delta = 0;
+    for (const w of writes) {
+      const n = rowChars(w.after);
+      if (n > this.limits.maxRowChars) return `demo workspace limit: a record may hold at most ${this.limits.maxRowChars} characters`;
+      delta += n - (w.before ? this.sizes.get(w.before) ?? 0 : 0);
+    }
+    if (delta > 0 && this.used + delta > this.limits.maxTotalChars) return "demo workspace limit: this sample workspace is full";
+    return null;
+  }
+
+  /** Why the stored rows break a limit, or null when they fit. */
+  exceeded(tables: Iterable<Row[]>): string | null {
+    for (const rows of tables) {
+      if (rows.length > this.limits.maxRowsPerTable) return `demo workspace limit: at most ${this.limits.maxRowsPerTable} rows per table`;
+      if (rows.some((row) => (this.sizes.get(row) ?? 0) > this.limits.maxRowChars)) {
+        return `demo workspace limit: a record may hold at most ${this.limits.maxRowChars} characters`;
+      }
+    }
+    return this.used > this.limits.maxTotalChars ? "demo workspace limit: this sample workspace is full" : null;
+  }
+
+  wrote(rows: Row[]): void {
+    for (const row of rows) {
+      const old = this.sizes.get(row) ?? 0;
+      this.used += this.measure(row) - old;
+    }
+  }
+
+  removed(rows: Row[]): void {
+    for (const row of rows) {
+      this.used -= this.sizes.get(row) ?? 0;
+      this.sizes.delete(row);
+    }
+  }
+
+  private measure(row: Row): number {
+    const n = rowChars(row);
+    this.sizes.set(row, n);
+    return n;
+  }
+}
+
 /**
  * In-memory test double for the DbClient chain (the FakeLlm pattern, for the
  * DB). Mirrors supabase-js semantics: thenable builders resolving {data,error},
@@ -14,8 +90,14 @@ type Row = Record<string, unknown>;
 export class FakeDb implements DbClient {
   private tables = new Map<string, Row[]>();
   private seq = 0;
+  private budget: WriteBudget | null = null;
 
   constructor(private readonly newRowId?: () => string) {}
+
+  /** From now on, refuse writes through from()/rpc() that would pass `limits` (seeded rows count toward the total). */
+  limitWrites(limits: FakeDbLimits): void {
+    this.budget = new WriteBudget(limits, this.tables.values());
+  }
 
   /** Inspect a table's raw rows (assertions on DB-only columns like jd_raw). */
   rows<T extends TableName>(table: T): RowOf<T>[] {
@@ -25,27 +107,40 @@ export class FakeDb implements DbClient {
   patchRows<T extends TableName>(table: T, match: Partial<RowOf<T>>, patch: Partial<RowOf<T>>): void {
     const keys = Object.entries(match);
     for (const row of this.tableRows(table)) {
-      if (keys.every(([key, value]) => row[key] === value)) Object.assign(row, structuredClone(patch));
+      if (keys.every(([key, value]) => row[key] === value)) {
+        Object.assign(row, structuredClone(patch));
+        this.budget?.wrote([row]);
+      }
     }
   }
 
   seed<T extends TableName>(table: T, rows: Partial<RowOf<T>>[]): void {
-    for (const r of rows) this.tableRows(table).push({ id: this.nextId(), ...structuredClone(r) });
+    const added = rows.map((r) => ({ id: this.nextId(), ...structuredClone(r) }));
+    this.tableRows(table).push(...added);
+    this.budget?.wrote(added);
   }
 
   from<T extends TableName>(table: T): DbTable<RowOf<T>> {
-    return new FakeTable(this.tableRows(table), this.newRowId ?? (() => this.nextId())) as unknown as DbTable<RowOf<T>>;
+    return new FakeTable(this.tableRows(table), this.newRowId ?? (() => this.nextId()), this.budget) as unknown as DbTable<RowOf<T>>;
   }
 
   rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>>;
   rpc(name: "create_api_token", args: CreateApiTokenRpc): Promise<DbResult<ApiTokenRow>>;
   async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow>> {
-    return name === "create_api_token"
-      ? this.createApiToken(args as CreateApiTokenRpc)
-      : this.applyCompanyImport(args as CompanyImportRpc);
+    if (name === "create_api_token") return this.createApiToken(args as CreateApiTokenRpc);
+    const importArgs = args as CompanyImportRpc;
+    if (!this.budget) return this.applyCompanyImport("apply_company_import", importArgs);
+    // The import touches several tables at once, so measure the result and roll back if it does not fit.
+    const before = structuredClone(this.tables);
+    const result = await this.applyCompanyImport("apply_company_import", importArgs);
+    this.budget.recount(this.tables.values());
+    const error = this.budget.exceeded(this.tables.values());
+    if (!error) return result;
+    this.tables = before;
+    this.budget.recount(this.tables.values());
+    return { data: null, error: { message: error } };
   }
-
-  /** Mirrors create_api_token (0023): the server sets expiry and the rate-limit window. */
+  /** Mirrors create_api_token (0024): the server sets expiry and the rate-limit window. */
   private async createApiToken({ p_user_id, p_name, p_token_hash, p_scope, p_days }: CreateApiTokenRpc):
     Promise<DbResult<ApiTokenRow>> {
     if (p_name.length < 1 || p_name.length > 60 || !/^[0-9a-f]{64}$/.test(p_token_hash) ||
@@ -60,7 +155,7 @@ export class FakeDb implements DbClient {
     return { data: structuredClone(row) as unknown as ApiTokenRow, error: null };
   }
 
-  private async applyCompanyImport({ p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
+  private async applyCompanyImport(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
     Promise<DbResult<CompanyImportRow>> {
     const receipts = this.tableRows("company_imports");
     const companies = this.tableRows("sourcing_companies");
@@ -134,23 +229,28 @@ class FakeTable {
   constructor(
     private readonly rows: Row[],
     private readonly nextId: () => string,
+    private readonly budget: WriteBudget | null,
   ) {}
 
   select(_columns?: string): FakeQuery {
-    return new FakeQuery(this.rows, "select", [], [], this.nextId);
+    return this.query("select", []);
   }
   insert(values: Row | Row[]): FakeQuery {
-    return new FakeQuery(this.rows, "insert", asArray(values), [], this.nextId);
+    return this.query("insert", asArray(values));
   }
   upsert(values: Row | Row[], opts: { onConflict: string }): FakeQuery {
     const conflict = opts.onConflict.split(",").map((c) => c.trim());
-    return new FakeQuery(this.rows, "upsert", asArray(values), conflict, this.nextId);
+    return this.query("upsert", asArray(values), conflict);
   }
   update(patch: Row): FakeQuery {
-    return new FakeQuery(this.rows, "update", [patch], [], this.nextId);
+    return this.query("update", [patch]);
   }
   delete(): FakeQuery {
-    return new FakeQuery(this.rows, "delete", [], [], this.nextId);
+    return this.query("delete", []);
+  }
+
+  private query(op: FakeQuery["op"], payload: Row[], conflict: string[] = []): FakeQuery {
+    return new FakeQuery(this.rows, op, payload, conflict, this.nextId, this.budget);
   }
 }
 
@@ -165,10 +265,11 @@ class FakeQuery {
 
   constructor(
     private readonly rows: Row[],
-    private readonly op: "select" | "insert" | "upsert" | "update" | "delete",
+    readonly op: "select" | "insert" | "upsert" | "update" | "delete",
     private readonly payload: Row[],
     private readonly conflict: string[],
     private readonly nextId: () => string,
+    private readonly budget: WriteBudget | null = null,
   ) {
     this.returning = op === "select";
   }
@@ -225,6 +326,8 @@ class FakeQuery {
 
   private run(): DbResult<unknown> {
     if (this.filterError) return { data: null, error: { message: this.filterError } };
+    const overBudget = this.budget?.check(this.rows, this.pendingWrites());
+    if (overBudget) return { data: null, error: { message: overBudget } };
     let affected: Row[];
     switch (this.op) {
       case "select":
@@ -244,9 +347,11 @@ class FakeQuery {
       case "delete": {
         affected = this.rows.filter((r) => this.matches(r));
         for (const r of affected) this.rows.splice(this.rows.indexOf(r), 1);
+        this.budget?.removed(affected);
         break;
       }
     }
+    if (this.op !== "select" && this.op !== "delete") this.budget?.wrote(affected);
     if (this.orderBy) {
       const { col, ascending } = this.orderBy;
       affected = [...affected].sort((x, y) => {
@@ -276,6 +381,27 @@ class FakeQuery {
     return { data: out, error: null };
   }
 
+  private pendingWrites(): PendingWrite[] {
+    switch (this.op) {
+      case "insert":
+        return this.payload.map((v) => ({ after: { id: ID_PLACEHOLDER, ...v } }));
+      case "upsert":
+        return this.payload.map((v) => {
+          const before = this.conflictRow(v);
+          return before ? { before, after: { ...before, ...v } } : { after: { id: ID_PLACEHOLDER, ...v } };
+        });
+      case "update":
+        return this.rows.filter((r) => this.matches(r)).map((before) => ({ before, after: { ...before, ...this.payload[0] } }));
+      default:
+        return [];
+    }
+  }
+
+  private conflictRow(values: Row): Row | undefined {
+    const usable = this.conflict.length > 0 && this.conflict.every((c) => values[c] != null);
+    return usable ? this.rows.find((r) => this.conflict.every((c) => same(r[c], values[c]))) : undefined;
+  }
+
   private matches(row: Row): boolean {
     return this.filters.every((f) => f.values.some((v) => same(row[f.col], v)));
   }
@@ -287,10 +413,7 @@ class FakeQuery {
   }
 
   private upsertRow(values: Row): Row {
-    const usable = this.conflict.length > 0 && this.conflict.every((c) => values[c] != null);
-    const existing = usable
-      ? this.rows.find((r) => this.conflict.every((c) => same(r[c], values[c])))
-      : undefined;
+    const existing = this.conflictRow(values);
     if (existing) {
       Object.assign(existing, structuredClone(values));
       return existing;

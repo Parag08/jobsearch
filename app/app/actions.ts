@@ -12,8 +12,7 @@ import { markApplied } from "@/lib/services/mark-applied";
 import { tailorCv } from "@/lib/services/tailor-cv";
 import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "@/lib/cv-page-settings";
 import { draftCoverLetter, editCoverLetter } from "@/lib/services/cover-letter";
-import { parseLetterBank } from "@/lib/cover-letter";
-import letterBank from "@/data/cvbuilder/letter-bank.json";
+import { letterBankFor } from "@/lib/cover-letter/bank";
 import { listAnswers, saveAttempt, upsertAnswer } from "@/lib/repos/answers";
 import { buildRewritePrompt, guardRewrite } from "@/lib/interview/model-answer";
 import { setModelAnswer } from "@/lib/services/model-answers";
@@ -71,6 +70,7 @@ import { withLedger } from "@/lib/adapters/llm-factory";
 import type { LlmProvider } from "@/lib/adapters/llm";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
+import { MAX_POSTING_CHARS, PostingTooLongError } from "@/lib/services/read-role";
 
 async function ws() {
   const w = await getWorkspace();
@@ -154,7 +154,7 @@ export async function draftCoverLetterAction(applicationId: string, formData: Fo
   let message: string | null = null;
   try {
     const result = await draftCoverLetter(
-      { db, write, bank: parseLetterBank(letterBank), model },
+      { db, write, bank: letterBankFor(w), model },
       userId,
       applicationId,
       inputs,
@@ -172,9 +172,10 @@ export async function draftCoverLetterAction(applicationId: string, formData: Fo
 
 /** Save the user's edit of the letter body and re-run the voice checks. */
 export async function editCoverLetterAction(applicationId: string, formData: FormData): Promise<void> {
-  const { db, userId } = await ws();
+  const w = await ws();
+  const { db, userId } = w;
   try {
-    await editCoverLetter({ db, bank: parseLetterBank(letterBank) }, userId, applicationId, String(formData.get("body") ?? ""));
+    await editCoverLetter({ db, bank: letterBankFor(w) }, userId, applicationId, String(formData.get("body") ?? ""));
   } catch (err) {
     letterError(applicationId, err instanceof Error ? err.message : "Saving failed.");
   }
@@ -225,6 +226,7 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
   const { db, userId } = w;
   const jd = String(formData.get("jd") ?? "").trim();
   if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
+  if (jd.length > MAX_POSTING_CHARS) return new PostingTooLongError(jd.length).message;
 
   const base = aiLlm(w, demoTaxonomy, await envFor(db, userId));
   if (!base) return "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY.";

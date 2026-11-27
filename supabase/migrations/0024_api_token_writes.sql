@@ -1,4 +1,4 @@
--- 0023: owners may read, revoke and delete their agent tokens, nothing else.
+-- 0024: owners may read, revoke and delete their agent tokens, nothing else.
 --
 -- Until now api_tokens had the generic "own rows" policy for all operations, so a
 -- signed-in owner could PATCH window_count / window_start (the rate limit), expires_at,

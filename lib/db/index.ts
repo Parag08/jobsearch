@@ -2,8 +2,9 @@ import "server-only";
 import type { DbClient } from "../repos/db";
 import type { FileStore } from "../export/file-store";
 import { cache } from "react";
-import { cookies } from "next/headers";
-import { DEMO_USER_ID, getDemoDb, getVisitorDemoDb } from "./demo";
+import { cookies, headers } from "next/headers";
+import { DEMO_USER_ID, getDemoDb, getVisitorDemoDb, hasVisitorDemoDb } from "./demo";
+import { clientAddress, demoMintThrottle } from "../demo/mint-throttle";
 import { DEMO_COOKIE, DEMO_KITS_COOKIE, demoMaxVisitorsFromEnv } from "../demo/visitors";
 import { demoCookieOptions, demoSigningSecret } from "../demo/visitor-token";
 import { readNodeDemoVisitor } from "../demo/node-mac";
@@ -49,6 +50,8 @@ async function resolveWorkspace(): Promise<Workspace | null> {
   const secret = maxVisitors ? demoSigningSecret() : undefined;
   const visitor = maxVisitors ? readNodeDemoVisitor(jar.get(DEMO_COOKIE)?.value, secret) : null;
   if (visitor && maxVisitors) {
+    // Unsigned ids can be made up without /demo, so a new workspace for one counts against the same throttle.
+    if (!secret && !hasVisitorDemoDb(visitor.id) && !demoMintThrottle().take(clientAddress(await headers())).allowed) return null;
     const db = getVisitorDemoDb(visitor.id, maxVisitors);
     const journal = jar.get(DEMO_KITS_COOKIE)?.value;
     if (secret && journal && visitor.expiresAt !== null) restoreDemoKits(db, journal, visitor.id, secret);

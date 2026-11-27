@@ -466,10 +466,24 @@ create table interview_role_plays (
   unique (user_id, question_id)
 );
 
--- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count.
+-- Per-user settings (0018): env key -> the user's own value; only keys in lib/settings/registry.ts count,
+-- and each is checked again on read. The column holds short text values only (0023).
+create or replace function public.user_settings_values_ok(v jsonb) returns boolean
+language sql immutable set search_path = '' as $$
+  select jsonb_typeof(v) = 'object'
+     and (select count(*) from jsonb_object_keys(v)) <= 64
+     and not exists (
+       select 1 from jsonb_each(v) e
+       where e.key !~ '^[A-Z][A-Z0-9_]{0,63}$'
+          or jsonb_typeof(e.value) <> 'string'
+          or length(e.value #>> '{}') > 200
+     );
+$$;
+
 create table user_settings (
   user_id uuid primary key references profiles (user_id) on delete cascade,
-  values jsonb not null default '{}'::jsonb,
+  values jsonb not null default '{}'::jsonb
+    constraint user_settings_values_ok check (public.user_settings_values_ok(values)),
   updated_at timestamptz not null default now()
 );
 
@@ -548,7 +562,7 @@ create policy "own rows" on interviewer_ratings for all
     and exists (select 1 from interview_full_sessions s where s.id = session_id and s.user_id = auth.uid())
   );
 
--- Agent tokens are the exception to "own rows" (0023): resolveApiToken trusts scope,
+-- Agent tokens are the exception to "own rows" (0024): resolveApiToken trusts scope,
 -- expiry, revocation and the rate-limit window, so the owner may only read, revoke and
 -- delete. A token is created through create_api_token; the window is written by the MCP
 -- route with the secret key.
