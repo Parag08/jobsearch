@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
 import { envFor, loadCatalog, saveSettings } from "./settings";
+import { putUserSettings } from "../repos/user-settings";
+import { roleReadBatchFromEnv } from "../insights/settings";
 
 const BASE = { AI_GATEWAY_API_KEY: "k", INTERVIEW_TURN_SILENCE_MS: "2500", INTERVIEW_TURN_UNFINISHED_MS: "6000", INTERVIEW_TURN_MIN_WORDS: "40", INTERVIEW_TURN_RAMBLE_WORDS: "280", INTERVIEW_TURN_QUIET_LEVEL: "0.05" };
 
@@ -17,6 +19,14 @@ describe("settings service", () => {
     expect(r.saved).toBe(false);
     expect(r.errors.INTERVIEW_TURN_UNFINISHED_MS).toBeTruthy();
     expect(db.rows("user_settings")).toHaveLength(0);
+  });
+  it("a row written around the form is checked again on read", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { ROLE_READ_BATCH: "100000", AI_GATEWAY_INTERVIEWER_MODEL: "anthropic/some-pricey-model" });
+    const env = await envFor(db, "u1", { ...BASE, ROLE_READ_BATCH: "10" });
+    expect(env.ROLE_READ_BATCH).toBe("10");
+    expect(roleReadBatchFromEnv(env)).toBe(10);
+    expect(env.AI_GATEWAY_INTERVIEWER_MODEL).toBeUndefined();
   });
 });
 

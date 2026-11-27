@@ -8,6 +8,7 @@ import { applyFollowUpDaysFromEnv } from "../apply/follow-up";
 import { pipelineColumnMaxFromEnv, pipelineRecentDaysFromEnv } from "../pipeline-settings";
 import { rolePlanMaxGapsFromEnv, roleReadBatchFromEnv } from "../insights/settings";
 import { GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL } from "../adapters/vercel-gateway";
+import modelPreferences from "../../data/settings/model-preferences.json";
 
 /**
  * Every setting a user may change on the Settings page (/app/settings).
@@ -99,16 +100,55 @@ export function cleanValues(raw: Record<string, unknown>): Record<string, string
   return out;
 }
 
-/** The env this user's code reads: the deployment's, with the user's registered values on top. */
+/** The deployment env with the given values on top, unchecked. */
+function overlay(env: Env, values: Record<string, string>): Env {
+  return { ...env, ...values };
+}
+
+/**
+ * The env this user's code reads: the deployment's, with the user's registered values on top.
+ * Stored values are checked again here, not only on save (the row can be written outside the
+ * form): a value that fails its field's rules, or a group the app's own readers reject, is
+ * dropped and the deployment's value is used.
+ */
 export function settingsEnv(env: Env, values: Record<string, unknown>): Env {
-  return { ...env, ...cleanValues(values) };
+  const allowed = allowedModels(env);
+  const own = Object.fromEntries(Object.entries(cleanValues(values)).filter(([k, v]) => !fieldError(BY_KEY.get(k)!, v, allowed)));
+  const merged = overlay(env, own);
+  for (const r of READERS) {
+    try {
+      r.read(merged);
+    } catch {
+      for (const k of r.keys) {
+        if (!(k in own)) continue;
+        if (env[k] === undefined) delete merged[k];
+        else merged[k] = env[k];
+      }
+    }
+  }
+  return merged;
+}
+
+const MODEL_KEYS = SETTINGS.filter((s) => s.kind.type === "model").map((s) => s.key);
+
+/**
+ * The models a user may pick, decided by the deployment: `AI_GATEWAY_ALLOWED_MODELS`
+ * (comma-separated) when set, else every model in data/settings/model-preferences.json. The
+ * deployment's own model values and the built-in defaults are always allowed.
+ */
+export function allowedModels(env: Env): ReadonlySet<string> {
+  const listed = env.AI_GATEWAY_ALLOWED_MODELS?.split(/[\s,]+/).filter(Boolean);
+  const prefs = modelPreferences as unknown as Record<string, unknown>;
+  const fromPrefs = MODEL_KEYS.flatMap((k) => (Array.isArray(prefs[k]) ? (prefs[k] as unknown[]).filter((m): m is string => typeof m === "string") : []));
+  const deployment = MODEL_KEYS.map((k) => env[k]?.trim()).filter((m): m is string => !!m);
+  return new Set([...(listed?.length ? listed : fromPrefs), ...deployment, GATEWAY_PREMIUM_MODEL, GATEWAY_SMALL_MODEL]);
 }
 
 const MODEL_ID = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i;
 
-function fieldError(s: Setting, v: string): string | null {
+function fieldError(s: Setting, v: string, allowed: ReadonlySet<string>): string | null {
   const k = s.kind;
-  if (k.type === "model") return MODEL_ID.test(v) ? null : "Pick a model from the list (provider/model).";
+  if (k.type === "model") return MODEL_ID.test(v) && allowed.has(v) ? null : "Pick a model from the list.";
   if (k.type === "choice") return k.options.includes(v) ? null : `One of ${k.options.join(", ")}.`;
   const n = Number(v);
   if (k.type === "int" && !Number.isInteger(n)) return "A whole number.";
@@ -137,13 +177,14 @@ const READERS: { keys: string[]; read: (env: Env) => unknown }[] = [
 export function validateSettings(env: Env, raw: Record<string, unknown>): Record<string, string> {
   const values = cleanValues(raw);
   const errors: Record<string, string> = {};
+  const allowed = allowedModels(env);
   for (const [k, v] of Object.entries(values)) {
-    const e = fieldError(BY_KEY.get(k)!, v);
+    const e = fieldError(BY_KEY.get(k)!, v, allowed);
     if (e) errors[k] = e;
   }
   if (Object.keys(errors).length) return errors;
 
-  const merged = settingsEnv(env, values);
+  const merged = overlay(env, values);
   for (const r of READERS) {
     try {
       r.read(merged);
