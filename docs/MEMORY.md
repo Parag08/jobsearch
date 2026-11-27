@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Demo workspace budget
+
+Security finding fix: a public demo visitor's in-memory FakeDb now refuses writes past `DEMO_DB_LIMITS` in `lib/db/demo.ts` (500 rows per table, 200k characters per record, 2M characters per workspace; the seed is about 65k). The refusal comes back as a normal `{error}`. `GET /demo` allows 10 new visitor ids per client address per 10 minutes on each instance and answers 429 after that; an existing valid visitor cookie is never throttled.
+
 ## 2026-11-27 - Posting length cap before the model
 
 Security finding (cost amplification): job-posting text reached the paid LLM with only a 40-character minimum. `extractRole` (lib/services/read-role.ts) now refuses text over `MAX_POSTING_CHARS` (30,000) with `PostingTooLongError` before any model call, so every path (`/api/jd`, `createFromJd`, `readPostingAction`, save-to-pipeline, MCP upserts, Role insights reads) is covered. `/api/jd` answers 413; the server actions return the error's message, and an over-long paste is not stored. Role insights batches skip postings over the cap so they never take a slot. A per-user daily quota against the token ledger is not done yet.

@@ -1,11 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { FakeDb } from "../repos/fake-db";
+import { FakeDb, type FakeDbLimits } from "../repos/fake-db";
 import { importCvbuilder } from "../import/cvbuilder";
 import { seedFakeDb } from "./seed-fake-db";
 import type { ImportedWorkspace } from "../import/cvbuilder";
 import { seedDemoExtras, stageDemoApplications } from "../demo/extras";
-import { DEMO_TTL_SECONDS, VisitorStore } from "../demo/visitors";
+import { DEMO_TTL_SECONDS, VisitorStore, newVisitorId } from "../demo/visitors";
+import { demoMintThrottle } from "../demo/mint-throttle";
 import { DEMO_SOURCE } from "../demo/corpus";
 
 /** The demo workspace's owner id - a fixed placeholder, never a real auth user. */
@@ -69,6 +70,9 @@ export function demoTaxonomy(): unknown {
   return DEMO_SOURCE.taxonomy;
 }
 
+/** What one visitor's writes may add to their sample workspace (the seed is about 65k characters). */
+export const DEMO_DB_LIMITS: FakeDbLimits = { maxRowsPerTable: 500, maxRowChars: 200_000, maxTotalChars: 2_000_000 };
+
 /** A fresh sample workspace: the fictional corpus, staged along the pipeline, plus watchlist and practice. */
 export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): FakeDb {
   const db = new FakeDb(() => crypto.randomUUID());
@@ -76,7 +80,25 @@ export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): F
     sourcing_evidence: ["discovery", "delivery", "measurement"],
   });
   seedDemoExtras(db, DEMO_USER_ID, today);
+  db.limitWrites(DEMO_DB_LIMITS);
   return db;
+}
+
+/**
+ * GET /demo: a new visitor id for this client address, if the mint throttle allows one. The workspace
+ * is made now, so following the redirect is not charged again for an unsigned id (lib/db/index.ts).
+ */
+export function mintVisitorDemoDb(address: string, max: number, now = Date.now()): { id: string } | { retryAfterSec: number } {
+  const { allowed, retryAfterSec } = demoMintThrottle().take(address, now);
+  if (!allowed) return { retryAfterSec };
+  const id = newVisitorId();
+  getVisitorDemoDb(id, max);
+  return { id };
+}
+
+/** Whether this server already holds a sample workspace for the visitor. */
+export function hasVisitorDemoDb(visitorId: string): boolean {
+  return visitors.__jobsearchVisitors?.has(visitorId) ?? false;
 }
 
 /** This visitor's own sample workspace (lib/demo/visitors.ts); edits stay theirs until it expires. */
