@@ -47,7 +47,8 @@ export default async function SettingsPage() {
       help: s.help,
       unit: s.unit,
       kind: s.kind,
-      saved: saved[s.key] ?? "",
+      // A saved model no longer allowed is ignored on read; show it as blank so saving clears it.
+      saved: s.kind.type === "model" && saved[s.key] && !allowed.has(saved[s.key]) ? "" : saved[s.key] ?? "",
       fallback: process.env[s.key] ?? "",
       blank: s.blank,
     };
