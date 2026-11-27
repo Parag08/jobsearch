@@ -182,10 +182,9 @@ export function validateSettings(env: Env, raw: Record<string, unknown>): Record
     const e = fieldError(BY_KEY.get(k)!, v, allowed);
     if (e) errors[k] = e;
   }
-  if (Object.keys(errors).length) return errors;
-
   const merged = overlay(env, values);
   for (const r of READERS) {
+    if (r.keys.some((key) => Object.hasOwn(errors, key))) continue;
     try {
       r.read(merged);
     } catch (err) {

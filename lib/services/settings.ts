@@ -44,7 +44,9 @@ export async function saveSettingsSection(
       if (value) merged[key] = value;
       else delete merged[key];
     }
-    const errors = validateSettings(base, merged);
+    const baselineErrors = validateSettings(base, current.values);
+    const errors = Object.fromEntries(Object.entries(validateSettings(base, merged)).filter(([key, message]) =>
+      settingLocation(key).section === section || baselineErrors[key] !== message));
     if (Object.keys(errors).length) return { saved: false, errors };
     if (!keys.length || await putUserSettingsVersion(db, userId, current, merged)) return { saved: true, errors: {} };
   }

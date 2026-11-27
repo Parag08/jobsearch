@@ -74,6 +74,21 @@ describe("settings service", () => {
     expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
     expect(db.rows("user_settings")).toHaveLength(0);
   });
+  it("lets an unrelated section save without replacing an existing invalid pause", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect(await saveSettingsSection(db, "u1", "goals", { HOME_GOAL_APPLY: "4" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await getUserSettings(db, "u1")).toEqual({ HOME_GOAL_APPLY: "4", INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
+  });
+  it("still rejects a newly invalid pair if an unrelated stored field is malformed", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { HOME_GOAL_APPLY: "stale" });
+    const result = await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_UNFINISHED_MS: "2000" }, BASE);
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
+  });
 });
 
 describe("loadCatalog", () => {
