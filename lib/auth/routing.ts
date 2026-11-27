@@ -15,7 +15,8 @@ export function signedInRedirect(pathname: string, signedIn: boolean): string | 
 /**
  * The `next` page to land on after sign-in, accepted only when it is a path on this
  * site: a single leading slash, no backslash or control character (browsers treat
- * `/\host` and `/\t/host` as `//host`), and resolving to the same origin.
+ * `/\host` and `/\t/host` as `//host`), resolving to the same origin, and not
+ * normalizing to `//host` (`/.//host`).
  * Anything else falls back to the overview, so the callback never redirects off-site.
  */
 export function safeNextPath(next: string | null | undefined): string {
@@ -24,7 +25,8 @@ export function safeNextPath(next: string | null | undefined): string {
   const base = "http://same-origin.invalid";
   try {
     const url = new URL(next, base);
-    return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : APP_HOME;
+    if (url.origin !== base || url.pathname.startsWith("//")) return APP_HOME;
+    return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return APP_HOME;
   }

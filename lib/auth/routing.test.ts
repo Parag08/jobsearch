@@ -40,6 +40,9 @@ describe("safeNextPath", () => {
       "\\\\evil.example",
       "/\t/evil.example",
       "/\n/evil.example",
+      "/.//evil.example",
+      "/a/..//evil.example",
+      "/./%2e%2e//evil.example",
       "app/bank",
       "evil.example",
     ]) {
