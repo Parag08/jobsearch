@@ -1,6 +1,6 @@
 import { fullInterviewSettingsFromEnv } from "../interview/full-plan";
-import { turnSettingsFromEnv } from "../interview/turn-taking";
 import { interviewerModels, REPLY_TOKENS } from "../interview/interviewer-model";
+import { turnSettingsFromEnv, validateTurnPauses } from "../interview/turn-taking";
 import { customQuestionMaxCharsFromEnv } from "../interview/custom-questions";
 import { cvPageSettingsFromEnv, cvSelectionSettingsFromEnv } from "../cv-page-settings";
 import { homeGoalsFromEnv } from "../home/settings";
@@ -160,7 +160,9 @@ function fieldError(s: Setting, v: string, allowed: ReadonlySet<string>): string
 /** The app's own readers, run on the combined env: they own the rules that span fields. */
 const READERS: { keys: string[]; read: (env: Env) => unknown }[] = [
   { keys: ["AI_GATEWAY_INTERVIEWER_MAX_TOKENS", "AI_GATEWAY_INTERVIEWER_EFFORT", "AI_GATEWAY_INTERVIEWER_MODEL"], read: (e) => interviewerModels(e) },
-  { keys: ["INTERVIEW_TURN_UNFINISHED_MS", "INTERVIEW_TURN_SILENCE_MS", "INTERVIEW_TURN_MIN_WORDS", "INTERVIEW_TURN_RAMBLE_WORDS", "INTERVIEW_TURN_QUIET_LEVEL"], read: turnSettingsFromEnv },
+  { keys: ["INTERVIEW_TURN_UNFINISHED_MS", "INTERVIEW_TURN_SILENCE_MS", "INTERVIEW_TURN_MIN_WORDS", "INTERVIEW_TURN_RAMBLE_WORDS", "INTERVIEW_TURN_QUIET_LEVEL"], read: (env) => {
+    return turnSettingsFromEnv(env) ?? validateTurnPauses(env);
+  } },
   { keys: ["INTERVIEW_FULL_MAX_TOPICS", "INTERVIEW_FULL_TOPIC_FOLLOW_UPS", "INTERVIEW_FULL_TOTAL_FOLLOW_UPS"], read: fullInterviewSettingsFromEnv },
   { keys: ["INTERVIEW_CUSTOM_QUESTION_MAX_CHARS"], read: customQuestionMaxCharsFromEnv },
   { keys: ["APPLY_FOLLOW_UP_DAYS"], read: applyFollowUpDaysFromEnv },
