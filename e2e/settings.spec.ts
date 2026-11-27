@@ -146,9 +146,13 @@ test("Interview rejects an unfinished-answer pause shorter than the finished-ans
   await expect(unfinished).toHaveValue("1");
 });
 
-test("signed-out Assistant links retain the destination after sign-in", async ({ page }) => {
+test("signed-out Assistant and Settings links retain the destination after sign-in", async ({ page }) => {
   await page.goto("/app/agent");
   await expect(page).toHaveURL("/signin?next=%2Fapp%2Fsettings%3Fsection%3Dassistant");
+  await page.goto("/app/settings/sourcing");
+  await expect(page).toHaveURL("/signin?next=%2Fapp%2Fsettings");
+  await page.goto("/app/settings?section=advanced");
+  await expect(page).toHaveURL("/signin?next=%2Fapp%2Fsettings%3Fsection%3Dadvanced");
 });
 
 test("Settings distinguishes configured numeric defaults from unset weekly goals", async ({ demo: page }) => {
@@ -182,4 +186,124 @@ test("changes to verified claims require a fresh attestation", async ({ demo: pa
   await page.reload();
   await page.getByText("Verified experience and matching evidence", { exact: true }).click();
   await expect(claim).not.toBeChecked();
+});
+
+test("saving and resetting one section preserves overrides in other sections", async ({ demo: page }) => {
+  const nav = page.getByRole("navigation", { name: "Settings sections" });
+  await appLink(page, "Settings").click();
+  await nav.getByRole("link", { name: "Goals & follow-ups", exact: true }).click();
+  const apps = page.getByRole("spinbutton", { name: "Applications", exact: true });
+  const followUp = page.getByRole("spinbutton", { name: "Application follow-up", exact: true });
+  await apps.fill("6");
+  await followUp.fill("10");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await page.reload();
+  await expect(apps).toHaveValue("6");
+  await expect(followUp).toHaveValue("10");
+
+  await page.getByRole("button", { name: "Use app default" }).first().click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await page.reload();
+  await expect(apps).toHaveValue("");
+  await expect(followUp).toHaveValue("10");
+
+  await nav.getByRole("link", { name: "Interview", exact: true }).click();
+  const topics = page.getByRole("spinbutton", { name: "Topics per interview", exact: true });
+  await topics.fill("4");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+
+  await nav.getByRole("link", { name: "Advanced", exact: true }).click();
+  await page.getByText("CV fitting", { exact: true }).click();
+  const orgShare = page.getByRole("spinbutton", { name: "Maximum share for one employer", exact: true });
+  await orgShare.fill("40");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await page.reload();
+  await page.getByText("CV fitting", { exact: true }).click();
+  await expect(orgShare).toHaveValue("40");
+
+  await page.getByRole("button", { name: "Restore app defaults for Advanced" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await page.reload();
+  await page.getByText("CV fitting", { exact: true }).click();
+  await expect(orgShare).not.toHaveValue("40");
+
+  await nav.getByRole("link", { name: "Goals & follow-ups", exact: true }).click();
+  await expect(followUp).toHaveValue("10");
+  await nav.getByRole("link", { name: "Interview", exact: true }).click();
+  await expect(topics).toHaveValue("4");
+});
+
+test("CV & evidence persists export preferences and jumps to CV layout tuning", async ({ demo: page }) => {
+  await appLink(page, "Settings").click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "CV & evidence", exact: true }).click();
+  const pageSize = page.getByRole("combobox", { name: "Page size", exact: true });
+  const maxBullets = page.getByRole("spinbutton", { name: "Maximum bullet points", exact: true });
+  await pageSize.selectOption("Letter");
+  await maxBullets.fill("18");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await page.reload();
+  await expect(pageSize).toHaveValue("Letter");
+  await expect(maxBullets).toHaveValue("18");
+
+  await page.getByRole("link", { name: /Open CV layout tuning/ }).click();
+  await expect(page).toHaveURL("/app/settings?section=advanced#cv-fitting");
+  await expect(page.getByRole("spinbutton", { name: "Maximum share for one employer", exact: true })).toBeVisible();
+});
+
+test("Assistant demo shows setup instructions and unknown sections fall back to Job search", async ({ demo: page }) => {
+  await appLink(page, "Settings").click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Assistant", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/signin?next=%2Fapp%2Fsettings%3Fsection%3Dassistant");
+  await page.getByText("Setup instructions", { exact: true }).click();
+  await expect(page.getByText(/claude mcp add --transport http jobsearch .*<YOUR_KEY>/)).toBeVisible();
+  await page.getByRole("combobox", { name: "Assistant", exact: true }).selectOption("other");
+  await expect(page.getByText("Authorization: Bearer <YOUR_KEY>", { exact: true })).toBeVisible();
+  await page.getByText("Technical details", { exact: true }).click();
+  await expect(page.getByText(/\/api\/mcp/).first()).toBeVisible();
+
+  await page.goto("/app/settings?section=unknown");
+  await expect(page.getByRole("heading", { level: 1, name: "Job search", exact: true })).toBeVisible();
+});
+
+test("search-result navigation with unsaved changes shows the confirmation dialog", async ({ demo: page }) => {
+  await appLink(page, "Settings").click();
+  const target = page.getByLabel("Daily role maximum");
+  await target.fill("3");
+  const search = page.getByRole("searchbox", { name: "Find a setting" });
+  await search.fill("same-story overlap");
+  await page.getByRole("link", { name: /Same-story overlap/ }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Leave with unsaved changes?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Keep editing" }).click();
+  await expect(target).toBeVisible();
+  await expect(target).toHaveValue("3");
+
+  await search.fill("same-story overlap");
+  await page.getByRole("link", { name: /Same-story overlap/ }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Save and continue" }).click();
+  const overlap = page.getByLabel("Same-story overlap", { exact: true });
+  await expect(overlap).toBeVisible();
+  await expect(overlap).toBeFocused();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "Job search", exact: true }).click();
+  await expect(target).toHaveValue("3");
+});
+
+test("mobile Assistant controls meet the 44px touch target minimum", async ({ demo: page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/app/settings?section=assistant");
+  const signIn = page.getByRole("main").getByRole("link", { name: "Sign in", exact: true });
+  expect((await signIn.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await page.getByText("Setup instructions", { exact: true }).click();
+  const client = page.getByRole("combobox", { name: "Assistant", exact: true });
+  const copy = page.getByRole("button", { name: "Copy command", exact: true });
+  expect((await client.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  expect((await copy.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 });
