@@ -30,7 +30,7 @@ function toApiToken(r: ApiTokenRow): ApiToken {
 }
 
 /**
- * Make a token through create_api_token (migration 0022). The owner cannot write api_tokens
+ * Make a token through create_api_token (migration 0023). The owner cannot write api_tokens
  * directly: the database sets the expiry from the lifetime and starts the rate-limit window.
  */
 export async function insertApiToken(

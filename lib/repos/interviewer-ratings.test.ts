@@ -25,4 +25,14 @@ describe("interviewer ratings repo", () => {
     expect(await listInterviewerRatings(db, "u1")).toEqual([expect.objectContaining({ sessionId: "s1", rating: "good", better: null })]);
     expect(await listInterviewerRatings(db, "u1", "s9")).toEqual([]);
   });
+
+  it("keys a verdict on the user too, so another user's row on the same line never replaces or blocks yours", async () => {
+    const db = new FakeDb();
+    await rateInterviewerLine(db, "u2", { sessionId: "s1", turnIndex: 2, rating: "good" });
+    await rateInterviewerLine(db, "u1", { sessionId: "s1", turnIndex: 2, rating: "bad", better: "Ask about the trade-off." });
+    expect(await listInterviewerRatings(db, "u1", "s1")).toEqual([
+      { sessionId: "s1", turnIndex: 2, rating: "bad", better: "Ask about the trade-off." },
+    ]);
+    expect(await listInterviewerRatings(db, "u2", "s1")).toEqual([expect.objectContaining({ rating: "good" })]);
+  });
 });

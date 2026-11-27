@@ -482,7 +482,7 @@ create table interviewer_ratings (
   rating text not null check (rating in ('good', 'bad')),
   better text,
   updated_at timestamptz not null default now(),
-  unique (session_id, turn_index)
+  unique (user_id, session_id, turn_index)
 );
 create index interviewer_ratings_user on interviewer_ratings (user_id);
 
@@ -534,14 +534,21 @@ begin
                            'watchlist','stories','token_ledger',
                            'interview_answers','interview_attempts','case_sessions','role_plans',
                            'interview_custom_questions','interview_role_questions','interview_model_answers',
-                           'interview_full_sessions','interview_role_plays','user_settings','interviewer_ratings']
+                           'interview_full_sessions','interview_role_plays','user_settings']
   loop
     execute format(
       'create policy "own rows" on %I for all using (user_id = auth.uid()) with check (user_id = auth.uid());', t);
   end loop;
 end $$;
+-- a rating may only point at one of your own interviews (0022)
+create policy "own rows" on interviewer_ratings for all
+  using (user_id = auth.uid())
+  with check (
+    user_id = auth.uid()
+    and exists (select 1 from interview_full_sessions s where s.id = session_id and s.user_id = auth.uid())
+  );
 
--- Agent tokens are the exception to "own rows" (0022): resolveApiToken trusts scope,
+-- Agent tokens are the exception to "own rows" (0023): resolveApiToken trusts scope,
 -- expiry, revocation and the rate-limit window, so the owner may only read, revoke and
 -- delete. A token is created through create_api_token; the window is written by the MCP
 -- route with the secret key.

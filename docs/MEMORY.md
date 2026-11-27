@@ -4,7 +4,11 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## 2026-11-27 - Agent token columns are server-managed
 
-Migration 0022 replaces the `own rows` policy on `api_tokens`: owners may select, delete and set `revoked_at` (not clear it). Tokens are made only through `create_api_token(p_user_id, p_name, p_token_hash, p_scope, p_days)`, which accepts 30/90/365 days and sets expiry and the rate-limit window itself; `insertApiToken` calls it. A signed-in user can no longer PATCH `window_count`, `expires_at` or `scope` over REST. Check on a disposable Supabase database with `psql -f supabase/tests/api_tokens.sql`; run `npm run db:migrate` on the live project after merge.
+Migration 0023 replaces the `own rows` policy on `api_tokens`: owners may select, delete and set `revoked_at` (not clear it). Tokens are made only through `create_api_token(p_user_id, p_name, p_token_hash, p_scope, p_days)`, which accepts 30/90/365 days and sets expiry and the rate-limit window itself; `insertApiToken` calls it. A signed-in user can no longer PATCH `window_count`, `expires_at` or `scope` over REST. Check on a disposable Supabase database with `psql -f supabase/tests/api_tokens.sql`; run `npm run db:migrate` on the live project after merge.
+
+## 2026-11-27 - Interviewer ratings keyed per user
+
+Migration 0022 makes `interviewer_ratings` unique on (user_id, session_id, turn_index) and its "own rows" policy only accepts a row whose session belongs to the caller; it deletes existing rows that point at another user's session. `rateInterviewerLine` upserts on `user_id,session_id,turn_index`. Run `npm run db:migrate` to apply it to the live project.
 
 ## 2026-11-26 - Workspace content polish
 

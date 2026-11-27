@@ -45,7 +45,7 @@ export class FakeDb implements DbClient {
       : this.applyCompanyImport(args as CompanyImportRpc);
   }
 
-  /** Mirrors create_api_token (0022): the server sets expiry and the rate-limit window. */
+  /** Mirrors create_api_token (0023): the server sets expiry and the rate-limit window. */
   private async createApiToken({ p_user_id, p_name, p_token_hash, p_scope, p_days }: CreateApiTokenRpc):
     Promise<DbResult<ApiTokenRow>> {
     if (p_name.length < 1 || p_name.length > 60 || !/^[0-9a-f]{64}$/.test(p_token_hash) ||
