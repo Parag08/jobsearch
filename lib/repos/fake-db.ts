@@ -1,6 +1,6 @@
 import { pgArray } from "./db";
-import type { CompanyImportRpc, DbClient, DbResult, DbTable } from "./db";
-import type { CompanyImportRow, RowOf, TableName } from "./rows";
+import type { CompanyImportRpc, CreateApiTokenRpc, DbClient, DbResult, DbTable } from "./db";
+import type { ApiTokenRow, CompanyImportRow, RowOf, TableName } from "./rows";
 import { norm } from "../types";
 
 type Row = Record<string, unknown>;
@@ -124,17 +124,35 @@ export class FakeDb implements DbClient {
     return new FakeTable(this.tableRows(table), this.newRowId ?? (() => this.nextId()), this.budget) as unknown as DbTable<RowOf<T>>;
   }
 
-  async rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>> {
-    if (!this.budget) return this.applyCompanyImport(name, args);
+  rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>>;
+  rpc(name: "create_api_token", args: CreateApiTokenRpc): Promise<DbResult<ApiTokenRow>>;
+  async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow>> {
+    if (name === "create_api_token") return this.createApiToken(args as CreateApiTokenRpc);
+    const importArgs = args as CompanyImportRpc;
+    if (!this.budget) return this.applyCompanyImport("apply_company_import", importArgs);
     // The import touches several tables at once, so measure the result and roll back if it does not fit.
     const before = structuredClone(this.tables);
-    const result = await this.applyCompanyImport(name, args);
+    const result = await this.applyCompanyImport("apply_company_import", importArgs);
     this.budget.recount(this.tables.values());
     const error = this.budget.exceeded(this.tables.values());
     if (!error) return result;
     this.tables = before;
     this.budget.recount(this.tables.values());
     return { data: null, error: { message: error } };
+  }
+  /** Mirrors create_api_token (0024): the server sets expiry and the rate-limit window. */
+  private async createApiToken({ p_user_id, p_name, p_token_hash, p_scope, p_days }: CreateApiTokenRpc):
+    Promise<DbResult<ApiTokenRow>> {
+    if (p_name.length < 1 || p_name.length > 60 || !/^[0-9a-f]{64}$/.test(p_token_hash) ||
+      !["read", "write"].includes(p_scope) || ![30, 90, 365].includes(p_days)) return { data: null, error: null };
+    const now = Date.now();
+    const row: Row = {
+      id: this.newRowId?.() ?? this.nextId(), user_id: p_user_id, name: p_name, token_hash: p_token_hash,
+      created_at: new Date(now).toISOString(), last_used_at: null, revoked_at: null, scope: p_scope,
+      expires_at: new Date(now + p_days * 24 * 60 * 60 * 1000).toISOString(), window_start: null, window_count: 0,
+    };
+    this.tableRows("api_tokens").push(row);
+    return { data: structuredClone(row) as unknown as ApiTokenRow, error: null };
   }
 
   private async applyCompanyImport(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):

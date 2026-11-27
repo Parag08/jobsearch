@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Agent token columns are server-managed
+
+Migration 0024 replaces the `own rows` policy on `api_tokens`: owners may select, delete and set `revoked_at` (not clear it). Tokens are made only through `create_api_token(p_user_id, p_name, p_token_hash, p_scope, p_days)`, which accepts 30/90/365 days and sets expiry and the rate-limit window itself; `insertApiToken` calls it. A signed-in user can no longer PATCH `window_count`, `expires_at` or `scope` over REST. Check on a disposable Supabase database with `psql -f supabase/tests/api_tokens.sql`; run `npm run db:migrate` on the live project after merge.
+
 ## 2026-11-27 - Demo workspace budget
 
 Security finding fix: a public demo visitor's in-memory FakeDb now refuses writes past `DEMO_DB_LIMITS` in `lib/db/demo.ts` (500 rows per table, 200k characters per record, 2M characters per workspace; the seed is about 65k). The refusal comes back as a normal `{error}`. `GET /demo` allows 10 new visitor ids per client address per 10 minutes on each instance and answers 429 after that; an existing valid visitor cookie is never throttled.

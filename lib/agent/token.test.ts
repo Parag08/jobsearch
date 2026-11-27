@@ -22,7 +22,7 @@ describe("agent tokens", () => {
     expect(bearerToken(null)).toBeNull();
   });
 
-  const opts = { scope: "write" as const, expiresAt: "2027-01-01T00:00:00.000Z" };
+  const opts = { scope: "write" as const, days: 365 };
 
   it("resolves a stored hash to its owner and scope, stamps last use, and stops after revocation", async () => {
     const db = new FakeDb();
@@ -41,10 +41,22 @@ describe("agent tokens", () => {
   it("keeps a read-only scope and refuses a token once it has expired", async () => {
     const db = new FakeDb();
     const token = generateToken();
-    const made = await insertApiToken(db, "user-1", "reader", hashToken(token), { scope: "read", expiresAt: "2026-12-01T00:00:00.000Z" });
-    expect(made).toMatchObject({ scope: "read", expiresAt: "2026-12-01T00:00:00.000Z" });
+    const made = await insertApiToken(db, "user-1", "reader", hashToken(token), { scope: "read", days: 30 });
+    expect(made.scope).toBe("read");
+    expect(Date.parse(made.expiresAt!) - Date.parse(made.createdAt!)).toBe(30 * 24 * 60 * 60 * 1000);
+    db.patchRows("api_tokens", { id: made.id }, { expires_at: "2026-12-01T00:00:00.000Z" });
     expect(await resolveApiToken(db, hashToken(token), "2026-11-30T23:59:59.000Z")).toEqual({ ok: true, userId: "user-1", scope: "read" });
     expect(await resolveApiToken(db, hashToken(token), "2026-12-01T00:00:00.000Z")).toEqual({ ok: false, reason: "expired" });
+  });
+
+  it("makes tokens only with an allowed lifetime and a well-formed hash, starting a fresh window", async () => {
+    const db = new FakeDb();
+    const hash = hashToken(generateToken());
+    await expect(insertApiToken(db, "user-1", "x", hash, { scope: "write", days: 36500 })).rejects.toThrow("api_tokens.insert");
+    await expect(insertApiToken(db, "user-1", "x", "chosen", { scope: "write", days: 90 })).rejects.toThrow("api_tokens.insert");
+    await expect(insertApiToken(db, "user-1", "", hash, { scope: "write", days: 90 })).rejects.toThrow("api_tokens.insert");
+    await insertApiToken(db, "user-1", "x", hash, { scope: "write", days: 90 });
+    expect(db.rows("api_tokens")).toMatchObject([{ window_count: 0, window_start: null, revoked_at: null }]);
   });
 
   it("treats a row without an explicit write scope or expiry as read-only and expired", async () => {
