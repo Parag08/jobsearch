@@ -71,6 +71,7 @@ import { withLedger } from "@/lib/adapters/llm-factory";
 import type { LlmProvider } from "@/lib/adapters/llm";
 import { logTokens } from "@/lib/repos/token-ledger";
 import { processJd } from "@/lib/services/process-jd";
+import { MAX_POSTING_CHARS, PostingTooLongError } from "@/lib/services/read-role";
 
 async function ws() {
   const w = await getWorkspace();
@@ -225,6 +226,7 @@ export async function createFromJd(_prev: string | null, formData: FormData): Pr
   const { db, userId } = w;
   const jd = String(formData.get("jd") ?? "").trim();
   if (jd.length < 40) return "Paste the full posting - that looks too short to parse.";
+  if (jd.length > MAX_POSTING_CHARS) return new PostingTooLongError(jd.length).message;
 
   const base = aiLlm(w, demoTaxonomy, await envFor(db, userId));
   if (!base) return "No AI provider configured yet. Set AI_GATEWAY_API_KEY (Vercel AI Gateway, uses your included credit) or GEMINI_API_KEY / GROQ_API_KEY.";

@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-27 - Posting length cap before the model
+
+Security finding (cost amplification): job-posting text reached the paid LLM with only a 40-character minimum. `extractRole` (lib/services/read-role.ts) now refuses text over `MAX_POSTING_CHARS` (30,000) with `PostingTooLongError` before any model call, so every path (`/api/jd`, `createFromJd`, `readPostingAction`, save-to-pipeline, MCP upserts, Role insights reads) is covered. `/api/jd` answers 413; the server actions return the error's message, and an over-long paste is not stored. A per-user daily quota against the token ledger is not done yet.
+
 ## 2026-11-26 - Workspace content polish
 
 Today is the first workspace tab after JobSearch (Overview) and before Pipeline. Overview remains the default workspace landing page.
