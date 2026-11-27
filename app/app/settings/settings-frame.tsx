@@ -79,7 +79,7 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
       </div>
       <div className={styles.content}>
         {needle && <section className={styles.results} aria-label="Find a setting">
-          <div className={styles.resultHeading}><h2>Find a setting</h2><span role="status">{results.length} results</span></div>
+          <div className={styles.resultHeading}><h2>Find a setting</h2><span role="status">{results.length} {results.length === 1 ? "result" : "results"}</span></div>
           {results.length ? results.map(({ key, label, section }) =>
             <a className={styles.result} key={key} href={`${settingsHref(section)}#${key}`} data-settings-result
               onClick={() => setQuery("")}>

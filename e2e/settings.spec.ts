@@ -122,7 +122,11 @@ test("settings search opens and focuses a control in a collapsed section", async
   const search = page.getByRole("searchbox", { name: "Find a setting" });
   await search.fill("no matching setting");
   await expect(page.getByText("No matching settings")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("0 results");
+  await search.fill("weekly goals");
+  await expect(page.getByRole("status")).toHaveText("3 results");
   await search.fill("cities");
+  await expect(page.getByRole("status")).toHaveText("1 result");
   await page.getByRole("link", { name: /Cities/ }).click();
   await expect(page.getByLabel("Cities", { exact: true })).toBeFocused();
   await search.fill("microphone quiet level");
@@ -308,9 +312,11 @@ test("mobile Assistant controls meet the 44px touch target minimum", async ({ de
   expect((await copy.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 });
 
-test("dark Settings placeholders meet 4.5:1 contrast", async ({ demo: page }) => {
+test("dark Settings placeholders meet 4.5:1 contrast", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("jobsearch-theme", "dark"));
+  await enterDemo(page);
   await appLink(page, "Settings").click();
-  await page.getByRole("group", { name: "Appearance", exact: true }).getByRole("button", { name: "Dark", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   for (const label of ["Find a setting", "Cities"] as const) {
     const field = page.getByLabel(label, { exact: true });
     const contrast = await field.evaluate((input) => {

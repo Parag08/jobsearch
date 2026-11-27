@@ -197,8 +197,9 @@ export function SettingsForm({ section, sourcing, fields, evidence = [], catalog
             {members.map((field) => <SettingInput key={field.key} field={field} value={draft[field.key]} error={state.errors?.[field.key]}
               onChange={(value) => set(field.key, value)} />)}
           </>;
+          // The browser can open a disclosure for a URL fragment before React hydrates.
           return section === "advanced" ?
-            <details className={styles.panel} key={group} open={group === "AI models"}>
+            <details className={styles.panel} key={group} open={group === "AI models"} suppressHydrationWarning={group !== "AI models"}>
               <summary id={group === "CV fitting" ? "cv-fitting" : undefined}>{group}</summary>{rows}
             </details> :
             <section className={styles.panel} key={group} aria-label={group}><h2>{group}</h2>{rows}</section>;
