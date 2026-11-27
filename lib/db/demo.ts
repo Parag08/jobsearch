@@ -5,7 +5,8 @@ import { importCvbuilder } from "../import/cvbuilder";
 import { seedFakeDb } from "./seed-fake-db";
 import type { ImportedWorkspace } from "../import/cvbuilder";
 import { seedDemoExtras, stageDemoApplications } from "../demo/extras";
-import { DEMO_TTL_SECONDS, VisitorStore } from "../demo/visitors";
+import { DEMO_TTL_SECONDS, VisitorStore, newVisitorId } from "../demo/visitors";
+import { demoMintThrottle } from "../demo/mint-throttle";
 import { DEMO_SOURCE } from "../demo/corpus";
 
 /** The demo workspace's owner id - a fixed placeholder, never a real auth user. */
@@ -81,6 +82,18 @@ export function freshVisitorDb(today = new Date().toISOString().slice(0, 10)): F
   seedDemoExtras(db, DEMO_USER_ID, today);
   db.limitWrites(DEMO_DB_LIMITS);
   return db;
+}
+
+/**
+ * GET /demo: a new visitor id for this client address, if the mint throttle allows one. The workspace
+ * is made now, so following the redirect is not charged again for an unsigned id (lib/db/index.ts).
+ */
+export function mintVisitorDemoDb(address: string, max: number, now = Date.now()): { id: string } | { retryAfterSec: number } {
+  const { allowed, retryAfterSec } = demoMintThrottle().take(address, now);
+  if (!allowed) return { retryAfterSec };
+  const id = newVisitorId();
+  getVisitorDemoDb(id, max);
+  return { id };
 }
 
 /** Whether this server already holds a sample workspace for the visitor. */

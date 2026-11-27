@@ -7,6 +7,7 @@ import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS } from "../demo/visitor
 import { demoVisitorToken } from "../demo/visitor-token";
 import { confirmManualSubmission, prepareDailyBatch, saveKitEvidence, toggleTargetCompany, triageRole } from "../../app/app/sourcing-actions";
 import { getWorkspace } from "./index";
+import { mintVisitorDemoDb } from "./demo";
 
 vi.mock("server-only", () => ({}));
 const { getCookie, setCookie } = vi.hoisted(() => ({ getCookie: vi.fn(), setCookie: vi.fn() }));
@@ -87,6 +88,24 @@ describe("getWorkspace", () => {
     await triageRole(role.id, "picked", "ranked");
     expect((w.db as FakeDb).rows("sourced_jobs").find((row) => row.id === role.id)?.sourcing_decision).toBe("picked");
     expect(setCookie).not.toHaveBeenCalled();
+  });
+
+  it("does not charge the mint throttle twice for an unsigned visitor that came through /demo", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+    vi.stubEnv("DEMO_MAX_VISITORS", "10");
+    vi.stubEnv("DEMO_MINTS_PER_WINDOW", "1");
+    vi.stubEnv("NEXT_SERVER_ACTIONS_ENCRYPTION_KEY", undefined);
+    vi.stubEnv("SUPABASE_SECRET_KEY", undefined);
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", undefined);
+    vi.stubGlobal("__jobsearchVisitors", undefined);
+    vi.stubGlobal("__jobsearchDemoMints", undefined);
+    const minted = mintVisitorDemoDb("203.0.113.7", 10);
+    if (!("id" in minted)) throw new Error("first mint was throttled");
+    getCookie.mockReturnValue({ value: minted.id });
+    await expect(getWorkspace()).resolves.toMatchObject({ mode: "demo" });
+    expect(mintVisitorDemoDb("203.0.113.7", 10)).toHaveProperty("retryAfterSec");
   });
 
   it("throttles new workspaces for unsigned visitor ids that never went through /demo", async () => {
