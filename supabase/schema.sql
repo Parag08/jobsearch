@@ -907,6 +907,14 @@ create table if not exists public.ai_calls (
 create index if not exists ai_calls_user_at on public.ai_calls (user_id, at);
 alter table public.ai_calls enable row level security;
 revoke all on public.ai_calls from anon, authenticated;
+-- The invariant's own-rows policy (read only). Grants stay revoked, so it is not a door today;
+-- writes go only through take_ai_call.
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ai_calls' and policyname = 'own rows') then
+    create policy "own rows" on public.ai_calls for select using (user_id = auth.uid());
+  end if;
+end $$;
 
 -- 0 = allowed and recorded; n > 0 = refused, retry in n seconds; null = not this caller's user.
 create or replace function public.take_ai_call(p_user_id uuid, p_limit integer, p_window_seconds integer)
