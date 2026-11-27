@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getWorkspace } from "@/lib/db";
-import { generateToken, hashToken, tokenExpiry, tokenOptions } from "@/lib/agent/token";
+import { generateToken, hashToken, tokenOptions } from "@/lib/agent/token";
 import { insertApiToken, revokeApiToken } from "@/lib/repos/api-tokens";
 
 export interface NewTokenState {
@@ -18,7 +18,7 @@ export async function createTokenAction(_prev: NewTokenState | null, formData: F
   const name = String(formData.get("name") ?? "").trim().slice(0, 60) || "Agent";
   const { scope, days } = tokenOptions(formData.get("scope"), formData.get("days"));
   const token = generateToken();
-  await insertApiToken(w.db, w.userId, name, hashToken(token), { scope, expiresAt: tokenExpiry(new Date().toISOString(), days) });
+  await insertApiToken(w.db, w.userId, name, hashToken(token), { scope, days });
   revalidatePath("/app/agent");
   return { token };
 }
