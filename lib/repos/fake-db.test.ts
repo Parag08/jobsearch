@@ -197,3 +197,23 @@ describe("FakeDb.limitWrites", () => {
     expect(db.rows("briefs")).toHaveLength(20);
   });
 });
+
+describe("FakeDb.limitWrites with apply_company_import", () => {
+  const importId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const plan = (...names: string[]) => names.map((n) => ({ id: null, name: n, identity: n.toLowerCase(), website: null, active: null }));
+
+  it("rolls back an import that does not fit, and still answers a retry of one that did", async () => {
+    const db = new FakeDb();
+    db.limitWrites({ maxRowsPerTable: 2, maxRowChars: 10_000, maxTotalChars: 100_000 });
+    const tooBig = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B", "C"), p_skipped: 0 });
+    expect(tooBig.error?.message).toMatch(/demo workspace limit/);
+    expect(db.rows("sourcing_companies")).toEqual([]);
+    expect(db.rows("company_imports")).toEqual([]);
+
+    const saved = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B"), p_skipped: 0 });
+    expect(saved.error).toBeNull();
+    const retry = await db.rpc("apply_company_import", { p_user_id: "u1", p_id: importId, p_plan: plan("A", "B"), p_skipped: 0 });
+    expect(retry).toEqual(saved);
+    expect(db.rows("sourcing_companies")).toHaveLength(2);
+  });
+});

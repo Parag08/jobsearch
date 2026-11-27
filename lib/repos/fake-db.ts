@@ -49,6 +49,17 @@ class WriteBudget {
     return null;
   }
 
+  /** Why the stored rows break a limit, or null when they fit. */
+  exceeded(tables: Iterable<Row[]>): string | null {
+    for (const rows of tables) {
+      if (rows.length > this.limits.maxRowsPerTable) return `demo workspace limit: at most ${this.limits.maxRowsPerTable} rows per table`;
+      if (rows.some((row) => (this.sizes.get(row) ?? 0) > this.limits.maxRowChars)) {
+        return `demo workspace limit: a record may hold at most ${this.limits.maxRowChars} characters`;
+      }
+    }
+    return this.used > this.limits.maxTotalChars ? "demo workspace limit: this sample workspace is full" : null;
+  }
+
   wrote(rows: Row[]): void {
     for (const row of rows) {
       const old = this.sizes.get(row) ?? 0;
@@ -114,15 +125,16 @@ export class FakeDb implements DbClient {
   }
 
   async rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>> {
-    if (this.budget && args.p_plan) {
-      const writes = args.p_plan.filter((r) => r.id === null).map((r) => ({ after: { ...r, research: [] } as Row }));
-      const error = this.budget.check(this.tableRows("sourcing_companies"), writes) ??
-        this.budget.check(this.tableRows("company_imports"), [{ after: { company_ids: args.p_plan.map((r) => r.id ?? "") } }]);
-      if (error) return { data: null, error: { message: error } };
-    }
+    if (!this.budget) return this.applyCompanyImport(name, args);
+    // The import touches several tables at once, so measure the result and roll back if it does not fit.
+    const before = structuredClone(this.tables);
     const result = await this.applyCompanyImport(name, args);
-    this.budget?.recount(this.tables.values());
-    return result;
+    this.budget.recount(this.tables.values());
+    const error = this.budget.exceeded(this.tables.values());
+    if (!error) return result;
+    this.tables = before;
+    this.budget.recount(this.tables.values());
+    return { data: null, error: { message: error } };
   }
 
   private async applyCompanyImport(_name: "apply_company_import", { p_user_id: user, p_id: id, p_plan: plan, p_skipped: skipped }: CompanyImportRpc):
