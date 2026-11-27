@@ -42,7 +42,7 @@ export async function rateInterviewerLine(
       .from(TABLE)
       .upsert(
         { user_id: userId, session_id: input.sessionId, turn_index: input.turnIndex, rating: input.rating, better, updated_at: new Date().toISOString() },
-        { onConflict: "session_id,turn_index" },
+        { onConflict: "user_id,session_id,turn_index" },
       )
       .select()
       .single(),
