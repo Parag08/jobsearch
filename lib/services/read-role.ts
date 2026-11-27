@@ -84,8 +84,10 @@ export async function readUnreadRoles(deps: ReadRoleDeps, userId: string, limit:
   return { read, failed, remaining: unread.length - read };
 }
 
-/** Applications with posting text and no extract. */
+/** Applications with posting text the reader accepts and no extract. An over-long posting never reads, so it never takes a batch slot. */
 export async function unreadRoleIds(db: DbClient, userId: string): Promise<string[]> {
   const postings = await listUnextractedPostings(db, userId);
-  return postings.filter((posting) => posting.jd_raw?.trim()).map((posting) => posting.id);
+  return postings
+    .filter((posting) => posting.jd_raw?.trim() && posting.jd_raw.length <= MAX_POSTING_CHARS)
+    .map((posting) => posting.id);
 }
