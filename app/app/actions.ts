@@ -61,7 +61,8 @@ import {
   type Tone,
 } from "@/lib/interview/mock";
 import { fillerLine, fillerReport, hedgeCounts, parseVoiceSummary, voicePromptLine, type FillerReport, type VoiceSummary } from "@/lib/interview/voice";
-import { aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
+import { AiCallLimitError, aiLlm, aiReady, aiWrite } from "@/lib/services/ai-write";
+import { createMockSession, deleteMockSession, getMockSession, saveMockSession } from "@/lib/repos/mock-sessions";
 import { readPostingInto } from "@/lib/services/save-to-pipeline";
 import { applyFollowUpDaysFromEnv, followUpAfterApplying } from "@/lib/apply/follow-up";
 import { demoTaxonomy } from "@/lib/db/demo";
@@ -624,6 +625,8 @@ export async function finishCaseAction(sessionId: string): Promise<CaseDebriefRe
 export interface MockTurnResult {
   error?: string;
   retryAfter?: number;
+  /** The server-side session row; the page sends this back, never the session itself. */
+  sessionId?: string;
   session?: MockSession;
 }
 
@@ -640,10 +643,33 @@ export async function startMockAction(input: { questionId: string; tone: Tone; m
   const found = await findQuestion(db, userId, input.questionId);
   if (!found) return { error: "Unknown question." };
   const { question } = found;
+  const now = new Date().toISOString();
+  let session: MockSession;
   try {
-    return { session: startMock(question, { tone: input.tone, maxFollowUps: input.maxFollowUps }, new Date().toISOString()) };
+    session = startMock(question, { tone: input.tone, maxFollowUps: input.maxFollowUps }, now);
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not start." };
+  }
+  return { sessionId: await createMockSession(db, userId, session, now), session };
+}
+
+/** Discard: the page drops the interview, so the server drops its copy too. */
+export async function discardMockAction(input: { sessionId: string }): Promise<void> {
+  const { db, userId } = await ws();
+  if (typeof input.sessionId === "string" && input.sessionId) await deleteMockSession(db, userId, input.sessionId).catch(() => undefined);
+}
+
+const LOST = "That interview could not be found. Start it again.";
+
+/** The stored session, or null when it is gone or unreadable. */
+async function loadMock(db: Parameters<typeof getMockSession>[0], userId: string, sessionId: unknown): Promise<MockSession | null> {
+  if (typeof sessionId !== "string" || !sessionId) return null;
+  const raw = await getMockSession(db, userId, sessionId).catch(() => null);
+  if (!raw) return null;
+  try {
+    return parseMockSession(raw);
+  } catch {
+    return null;
   }
 }
 
@@ -651,17 +677,14 @@ export async function startMockAction(input: { questionId: string; tone: Tone; m
  * One answer in, one follow-up out. Code finds the weaknesses and decides whether to probe
  * or close; the model only phrases the probe, and a line stating a number nobody said is
  * replaced. If the model fails, a safe stock follow-up keeps the interview moving. The
- * session lives in the page until feedback, when the whole conversation is saved.
+ * session is kept on the server and saved every turn, so it only ever moves forward.
  */
-export async function mockTurnAction(input: { session: unknown; answer: string }): Promise<MockTurnResult> {
+export async function mockTurnAction(input: { sessionId: string; answer: string }): Promise<MockTurnResult> {
   const w = await ws();
   const { db, userId } = w;
-  let s: MockSession;
-  try {
-    s = parseMockSession(input.session);
-  } catch {
-    return { error: "That interview could not be read. Start it again." };
-  }
+  const s = await loadMock(db, userId, input.sessionId);
+  if (!s) return { error: LOST };
+  const sessionId = input.sessionId;
   if (s.status === "done") return { error: "This interview has finished." };
   const found = await findQuestion(db, userId, s.questionId);
   if (!found) return { error: "Unknown question." };
@@ -672,7 +695,11 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
   const written = await writtenAnswerFor(question.id);
   const now = new Date().toISOString();
   const step = nextStep(s, answer, written);
-  if (step.kind === "close") return { session: closeMock(s, answer, now) };
+  if (step.kind === "close") {
+    const closed = closeMock(s, answer, now);
+    await saveMockSession(db, userId, sessionId, closed, now);
+    return { sessionId, session: closed };
+  }
 
   if (!aiReady(w)) return { error: "No AI provider configured. Set AI_GATEWAY_API_KEY (see .env.example)." };
 
@@ -703,6 +730,7 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
       model = m.model;
       break;
     } catch (err) {
+      if (err instanceof AiCallLimitError) return { error: err.message };
       const wait = retryAfterSeconds(err);
       if (wait !== null) return { error: `The interviewer is catching up - trying again in ${wait}s.`, retryAfter: wait };
       console.error(`[mock-turn] ${m.model} failed: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
@@ -711,7 +739,9 @@ export async function mockTurnAction(input: { session: unknown; answer: string }
   reply ??= { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
 
   await logTokens(db, userId, { date: today(), module: "interview-follow-up", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
-  return { session: applyFollowUp(s, answer, reply, now) };
+  const next = applyFollowUp(s, answer, reply, now);
+  await saveMockSession(db, userId, sessionId, next, now);
+  return { sessionId, session: next };
 }
 
 export interface MockFeedbackResult extends ScoreResult {
@@ -731,23 +761,24 @@ export interface MockFeedbackResult extends ScoreResult {
  * the premium tier (token rule #5). Saved as an attempt, so it joins the score history.
  */
 export async function mockFeedbackAction(input: {
-  session: unknown;
+  sessionId: string;
   answer?: string;
   /** Delivery numbers from the page - never audio. Validated; ignored if malformed. */
   voice?: unknown;
 }): Promise<MockFeedbackResult> {
   const w = await ws();
   const { db, userId } = w;
-  let s: MockSession;
-  try {
-    s = parseMockSession(input.session);
-  } catch {
-    return { error: "That interview could not be read. Start it again." };
-  }
+  const stored = await loadMock(db, userId, input.sessionId);
+  if (!stored) return { error: LOST };
+  let s: MockSession = stored;
   const found = await findQuestion(db, userId, s.questionId);
   if (!found) return { error: "Unknown question." };
   const { question, context } = found;
-  if (s.status === "running") s = closeMock(s, input.answer ?? null, new Date().toISOString());
+  if (s.status === "running") {
+    const now = new Date().toISOString();
+    s = closeMock(s, input.answer ?? null, now);
+    await saveMockSession(db, userId, input.sessionId, s, now);
+  }
 
   const said = s.turns.filter((t) => t.role === "candidate").map((t) => t.text).join(" ");
   if (!canScore(s)) {
@@ -807,6 +838,7 @@ export async function mockFeedbackAction(input: {
     model,
   });
   await logTokens(db, userId, { date: today(), module: "interview-mock-debrief", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
+  await deleteMockSession(db, userId, input.sessionId).catch(() => undefined);
   revalidatePath("/app/interview");
   return {
     overall,

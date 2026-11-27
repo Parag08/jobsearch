@@ -9,6 +9,12 @@ export type CompanyImportRpc = {
   p_skipped?: number;
 };
 
+export type TakeAiCallRpc = {
+  p_user_id: string;
+  p_limit: number;
+  p_window_seconds: number;
+};
+
 /** Arguments of create_api_token (migration 0024), the only way a token row is made. */
 export type CreateApiTokenRpc = {
   p_user_id: string;
@@ -66,6 +72,8 @@ export interface DbTable<R> {
 export interface DbClient {
   from<T extends TableName>(table: T): DbTable<RowOf<T>>;
   rpc(name: "apply_company_import", args: CompanyImportRpc): PromiseLike<DbResult<CompanyImportRow>>;
+  /** 0 = allowed and recorded; n > 0 = refused, retry in n seconds; null = refused (not this user). */
+  rpc(name: "take_ai_call", args: TakeAiCallRpc): PromiseLike<DbResult<number>>;
   rpc(name: "create_api_token", args: CreateApiTokenRpc): PromiseLike<DbResult<ApiTokenRow>>;
 }
 

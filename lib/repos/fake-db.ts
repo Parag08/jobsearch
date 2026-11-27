@@ -1,5 +1,5 @@
 import { pgArray } from "./db";
-import type { CompanyImportRpc, CreateApiTokenRpc, DbClient, DbResult, DbTable } from "./db";
+import type { CompanyImportRpc, CreateApiTokenRpc, DbClient, DbResult, DbTable, TakeAiCallRpc } from "./db";
 import type { ApiTokenRow, CompanyImportRow, RowOf, TableName } from "./rows";
 import { norm } from "../types";
 
@@ -126,8 +126,10 @@ export class FakeDb implements DbClient {
 
   rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>>;
   rpc(name: "create_api_token", args: CreateApiTokenRpc): Promise<DbResult<ApiTokenRow>>;
-  async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow>> {
+  rpc(name: "take_ai_call", args: TakeAiCallRpc): Promise<DbResult<number>>;
+  async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc | TakeAiCallRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow | number>> {
     if (name === "create_api_token") return this.createApiToken(args as CreateApiTokenRpc);
+    if (name === "take_ai_call") return this.takeAiCall(args as TakeAiCallRpc);
     const importArgs = args as CompanyImportRpc;
     if (!this.budget) return this.applyCompanyImport("apply_company_import", importArgs);
     // The import touches several tables at once, so measure the result and roll back if it does not fit.
@@ -140,6 +142,29 @@ export class FakeDb implements DbClient {
     this.budget.recount(this.tables.values());
     return { data: null, error: { message: error } };
   }
+  /** Mirrors public.take_ai_call (migration 0025): a sliding window over the user's calls. */
+  private takeAiCall({ p_user_id: user, p_limit, p_window_seconds }: TakeAiCallRpc): DbResult<number> {
+    const calls = this.tableRows("ai_calls");
+    const now = Date.now();
+    const ceiling = 5000;
+    const day = 86_400_000;
+    const limit = Math.min(Math.max(1, p_limit), ceiling);
+    const windowMs = Math.min(Math.max(p_window_seconds, 60), 86_400) * 1000;
+    for (let i = calls.length - 1; i >= 0; i--) if (calls[i].user_id === user && Date.parse(String(calls[i].at)) <= now - day) calls.splice(i, 1);
+    const mine = calls.filter((c) => c.user_id === user).map((c) => Date.parse(String(c.at))).sort((a, b) => a - b);
+    const inWindow = mine.filter((at) => at > now - windowMs);
+    if (inWindow.length >= limit) {
+      const frees = inWindow[inWindow.length - limit];
+      return { data: Math.max(1, Math.ceil((frees + windowMs - now) / 1000)), error: null };
+    }
+    if (mine.length >= ceiling) {
+      const frees = mine[mine.length - ceiling];
+      return { data: Math.max(1, Math.ceil((frees + day - now) / 1000)), error: null };
+    }
+    calls.push({ id: this.nextId(), user_id: user, at: new Date(now).toISOString() });
+    return { data: 0, error: null };
+  }
+
   /** Mirrors create_api_token (0024): the server sets expiry and the rate-limit window. */
   private async createApiToken({ p_user_id, p_name, p_token_hash, p_scope, p_days }: CreateApiTokenRpc):
     Promise<DbResult<ApiTokenRow>> {

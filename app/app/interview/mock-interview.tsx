@@ -2,7 +2,7 @@
 
 import { endOfTurnMs, type TurnSettings } from "@/lib/interview/turn-taking";
 import { useEffect, useRef, useState } from "react";
-import { mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
+import { discardMockAction, mockFeedbackAction, mockTurnAction, startMockAction, type MockFeedbackResult } from "../actions";
 import { MAX_FOLLOW_UPS, MIN_FOLLOW_UPS, TONES, canScore, closeMock, type MockSession, type ProbeKind, type Tone, type Verdict } from "@/lib/interview/mock";
 import { agentState, captionWindow, rmsLevel, type AgentState } from "@/lib/interview/agent";
 import { combineVoice, deliveryNotes, FILLERS_PER_100_LIMIT, pitchHz, summarizeVoice, type VoiceFrame, type VoiceSummary } from "@/lib/interview/voice";
@@ -134,6 +134,8 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
   const draftRef = useRef("");
   const interimRef = useRef("");
   const sessionRef = useRef<MockSession | null>(null);
+  /** The session lives on the server; the page holds only its id. */
+  const sessionIdRef = useRef<string | null>(null);
   const handsFreeRef = useRef(handsFree);
   const mic = useRef<MicMeter | null>(null);
   // Delivery: numbers per frame while you speak (never audio), one summary per spoken answer.
@@ -242,6 +244,9 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     pausedRef.current = false;
     setPaused(false);
     pendingLine.current = null;
+    // Discarded before scoring: drop the server's copy too.
+    if (sessionIdRef.current) void discardMockAction({ sessionId: sessionIdRef.current });
+    sessionIdRef.current = null;
     setSession(null);
     setDraft("");
     setInterim("");
@@ -382,7 +387,8 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     const r = await startMockAction({ questionId, tone, maxFollowUps });
     if (g !== gen.current) return;
     setBusy(null);
-    if (r.error || !r.session) return setError(r.error ?? "Could not start.");
+    if (r.error || !r.session || !r.sessionId) return setError(r.error ?? "Could not start.");
+    sessionIdRef.current = r.sessionId;
     setSession(r.session);
     sessionRef.current = r.session;
     setStartedAt(Date.now());
@@ -391,8 +397,9 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
 
   async function send() {
     const s = sessionRef.current;
+    const sessionId = sessionIdRef.current;
     const answer = `${draftRef.current} ${interimRef.current}`.trim();
-    if (!s || !answer || s.status === "done" || busyRef.current) return;
+    if (!s || !sessionId || !answer || s.status === "done" || busyRef.current) return;
     // Taken at once, before any await: a second send (a late timer, a double click) finds no answer.
     busyRef.current = "turn";
     draftRef.current = "";
@@ -403,7 +410,7 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     setDraft("");
     setError(null);
     const g = gen.current;
-    const r = await mockTurnAction({ session: s, answer });
+    const r = await mockTurnAction({ sessionId, answer });
     if (endedRef.current || g !== gen.current) return; // you left the call while it was thinking
     const restore = () => {
       draftRef.current = answer;
@@ -439,7 +446,8 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
   }
 
   async function getFeedback(s = sessionRef.current) {
-    if (!s) return;
+    const sessionId = sessionIdRef.current;
+    if (!s || !sessionId) return;
     stopListening();
     stopSpeaking();
     setBusy("feedback");
@@ -449,7 +457,7 @@ export function MockInterview({ questionId, questionText, turn }: { questionId: 
     const v = answer ? voiceFor(answer) : null;
     const voiceSummary = combineVoice(v ? [...spoken.current, v] : spoken.current);
     const g = gen.current;
-    const r = await mockFeedbackAction({ session: s, answer: answer || undefined, voice: voiceSummary });
+    const r = await mockFeedbackAction({ sessionId, answer: answer || undefined, voice: voiceSummary });
     if (g !== gen.current) return;
     setBusy(null);
     busyRef.current = null;

@@ -5,6 +5,7 @@ import { capReads, handleBody, MAX_READS_PER_REQUEST } from "@/lib/mcp/server";
 import { createLlm, withLedger } from "@/lib/adapters/llm-factory";
 import { customQuestionMaxCharsFromEnv } from "@/lib/interview/custom-questions";
 import { logTokens } from "@/lib/repos/token-ledger";
+import { withAiCallLimit } from "@/lib/services/ai-write";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +53,8 @@ export async function POST(request: Request): Promise<Response> {
     // The small-tier reader for postings; absent (undefined) when no provider is configured.
     const { db, userId } = auth.workspace;
     const env = await envFor(db, userId);
-    const base = createLlm(env);
+    const routed = createLlm(env);
+    const base = routed ? withAiCallLimit(routed, { cannedAi: false, db, userId }) : null;
     const date = nowIso.slice(0, 10);
     const llm = base
       ? capReads(

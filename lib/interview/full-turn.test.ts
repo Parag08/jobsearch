@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { LlmHttpError } from "../adapters/llm-http";
+import { AiCallLimitError, LlmHttpError } from "../adapters/llm-http";
 import type { FullPlan } from "./full-plan";
 import { startFull, type FullSession } from "./full-session";
 import { chooseFullReply } from "./full-turn";
@@ -64,6 +64,17 @@ describe("chooseFullReply (one turn, shared by the app and the eval)", () => {
         throw new LlmHttpError("gateway", 429, "Retry after 7s");
       }),
     ).rejects.toBeInstanceOf(LlmHttpError);
+  });
+
+  it("stops at once at the user's AI call limit, rather than a silent stock line", async () => {
+    let calls = 0;
+    await expect(
+      chooseFullReply({ session: s, latest, legal }, models, async () => {
+        calls += 1;
+        throw new AiCallLimitError(60);
+      }),
+    ).rejects.toBeInstanceOf(AiCallLimitError);
+    expect(calls).toBe(1);
   });
 
   it("falls back to code when every model fails", async () => {

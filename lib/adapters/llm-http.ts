@@ -148,6 +148,14 @@ export function validateJdExtract(json: unknown): JdExtract {
 }
 
 /** Non-2xx from a provider. `status` lets callers distinguish quota (429) from auth (401/403) etc. */
+/** The user's own AI call limit (lib/services/ai-write.ts) is used up; no provider was called. */
+export class AiCallLimitError extends Error {
+  constructor(readonly retryAfterSec: number) {
+    super(`You have reached the AI limit for now. Try again in ${retryAfterSec < 120 ? `${retryAfterSec}s` : `${Math.ceil(retryAfterSec / 60)} min`}.`);
+    this.name = "AiCallLimitError";
+  }
+}
+
 export class LlmHttpError extends Error {
   readonly status: number;
   readonly provider: string;

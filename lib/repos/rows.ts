@@ -330,6 +330,26 @@ export interface RowMap {
   interview_role_plays: InterviewRolePlayRow;
   user_settings: UserSettingsRow;
   interviewer_ratings: InterviewerRatingRow;
+  ai_calls: AiCallRow;
+  interview_mock_sessions: InterviewMockSessionRow;
+}
+
+/** One model call made for a user (migration 0025); written only by the take_ai_call function. */
+export interface AiCallRow {
+  id: string;
+  user_id: string;
+  at: string;
+}
+
+/** A running quick mock interview (migration 0025), kept on the server until it is scored. */
+export interface InterviewMockSessionRow {
+  id: string;
+  user_id: string;
+  question_id: string;
+  status: "running" | "done";
+  session: unknown;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SourcingCompanyRow {
