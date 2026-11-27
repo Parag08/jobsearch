@@ -3,7 +3,7 @@ import { getWorkspace } from "@/lib/db";
 import { getUserSettings } from "@/lib/repos/user-settings";
 import { getSafeEvidence, getSourcingRecipe } from "@/lib/repos/sourcing";
 import { loadCatalog } from "@/lib/services/settings";
-import { SETTINGS, allowedModels, settingsEnv } from "@/lib/settings/registry";
+import { SETTINGS, allowedModels } from "@/lib/settings/registry";
 import { interviewCost, modelChoices } from "@/lib/settings/models";
 import { displayNumber, settingLocation, settingsHref, settingsSection, SOURCING_FIELDS } from "@/lib/settings/sections";
 import preferences from "@/data/settings/model-preferences.json";
@@ -38,7 +38,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         section === "advanced" ? loadCatalog(w.mode === "live" ? process.env.AI_GATEWAY_API_KEY : undefined) : null,
       ]);
       const deployment = process.env;
-      const effective = settingsEnv(deployment, saved);
       const allowed = allowedModels(deployment);
       const offered = (catalog?.models ?? []).filter((m) => allowed.has(m.id));
       const option = (m: (typeof offered)[number], recommended: string | null): ModelOption => ({
@@ -48,7 +47,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       const fields: FieldView[] = SETTINGS.filter(({ key }) => settingLocation(key).section === section).map((field) => {
         const { key, kind } = field;
         const numeric = kind.type === "int" || kind.type === "decimal";
-        const savedValue = effective[key] === saved[key] ? saved[key] ?? "" : "";
+        const savedValue = saved[key]?.trim() ?? "";
         const fallback = deployment[key]?.trim() ?? "";
         const base = {
           ...field, group: settingLocation(key).group,

@@ -38,19 +38,13 @@ export async function saveSettingsSection(
   const keys = SETTINGS.filter(({ key }) => settingLocation(key).section === section && typeof raw[key] === "string").map(({ key }) => key);
   for (let attempt = 0; attempt < 4; attempt++) {
     const current = await getUserSettingsVersion(db, userId);
-    const effective = settingsEnv(base, current.values);
     const merged = { ...current.values };
-    const overrides = Object.fromEntries(SETTINGS.filter(({ key }) => effective[key] !== base[key])
-      .map(({ key }) => [key, effective[key]]));
     for (const key of keys) {
       const value = (raw[key] as string).trim();
-      if (value) merged[key] = overrides[key] = value;
-      else {
-        delete merged[key];
-        delete overrides[key];
-      }
+      if (value) merged[key] = value;
+      else delete merged[key];
     }
-    const errors = validateSettings(base, overrides);
+    const errors = validateSettings(base, merged);
     if (Object.keys(errors).length) return { saved: false, errors };
     if (!keys.length || await putUserSettingsVersion(db, userId, current, merged)) return { saved: true, errors: {} };
   }

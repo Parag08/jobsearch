@@ -29,6 +29,9 @@ export function turnSettingsFromEnv(env: Record<string, string | undefined>): Tu
     quietLevel: "INTERVIEW_TURN_QUIET_LEVEL",
   } as const;
   const raw = Object.fromEntries(Object.entries(names).map(([k, n]) => [k, env[n]?.trim()])) as Record<keyof TurnSettings, string | undefined>;
+  if (raw.unfinishedMs && raw.silenceMs && Number(raw.unfinishedMs) < Number(raw.silenceMs)) {
+    throw new Error(`${names.unfinishedMs} must be at least ${names.silenceMs}`);
+  }
   if (Object.values(raw).some((v) => !v)) return null;
   const int = (k: keyof TurnSettings) => {
     const n = Number(raw[k]);
@@ -42,7 +45,6 @@ export function turnSettingsFromEnv(env: Record<string, string | undefined>): Tu
     rambleWords: int("rambleWords"),
     quietLevel: Number(raw.quietLevel),
   };
-  if (out.unfinishedMs < out.silenceMs) throw new Error(`${names.unfinishedMs} must be at least ${names.silenceMs}`);
   if (!(out.quietLevel > 0 && out.quietLevel < 1)) throw new Error(`${names.quietLevel} must be between 0 and 1, got "${raw.quietLevel}"`);
   return out;
 }

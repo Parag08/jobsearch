@@ -52,6 +52,28 @@ describe("settings service", () => {
     expect(results.every(({ saved }) => saved)).toBe(true);
     expect(await getUserSettings(db, "u1")).toEqual({ HOME_GOAL_APPLY: "5", ROLE_READ_BATCH: "8" });
   });
+  it("validates the saved pause pair against the actual stored overrides after deployment defaults change", async () => {
+    const db = new FakeDb();
+    await putUserSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+    expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_UNFINISHED_MS).toBe("6000");
+    const result = await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_SILENCE_MS: "3000" }, BASE);
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
+    expect(await getUserSettings(db, "u1")).toEqual({ INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+
+    expect(await saveSettingsSection(db, "u1", "interview", { INTERVIEW_TURN_SILENCE_MS: "1500" }, BASE))
+      .toEqual({ saved: true, errors: {} });
+    expect(await envFor(db, "u1", BASE)).toMatchObject({ INTERVIEW_TURN_SILENCE_MS: "1500", INTERVIEW_TURN_UNFINISHED_MS: "2000" });
+  });
+  it("rejects a shorter unfinished pause even with hands-free turn-taking disabled", async () => {
+    const db = new FakeDb();
+    const result = await saveSettingsSection(db, "u1", "interview", {
+      INTERVIEW_TURN_SILENCE_MS: "2500", INTERVIEW_TURN_UNFINISHED_MS: "1000",
+    }, {});
+    expect(result.saved).toBe(false);
+    expect(result.errors.INTERVIEW_TURN_UNFINISHED_MS).toContain("must be");
+    expect(db.rows("user_settings")).toHaveLength(0);
+  });
 });
 
 describe("loadCatalog", () => {
