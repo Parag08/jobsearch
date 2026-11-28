@@ -127,9 +127,19 @@ test("settings search opens and focuses a control in a collapsed section", async
   await expect(page.getByRole("status")).toHaveText("3 results");
   await search.fill("cities");
   await expect(page.getByRole("status")).toHaveText("1 result");
+  const releaseHashChange = await page.evaluateHandle(() => {
+    const pending = new Promise<HashChangeEvent>((resolve) => {
+      window.addEventListener("hashchange", (event) => {
+        event.stopImmediatePropagation();
+        resolve(event);
+      }, { capture: true, once: true });
+    });
+    return async () => window.dispatchEvent(new HashChangeEvent("hashchange", await pending));
+  });
   await page.getByRole("link", { name: /Cities/ }).click();
   await expect(page.getByLabel("Cities", { exact: true })).toBeFocused();
   await search.fill("microphone quiet level");
+  await releaseHashChange.evaluate((release) => release());
   await page.getByRole("link", { name: /Microphone quiet level/ }).click();
   const control = page.getByLabel("Microphone quiet level", { exact: true });
   await expect(control).toBeVisible();
