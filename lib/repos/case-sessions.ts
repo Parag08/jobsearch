@@ -1,5 +1,5 @@
 import type { CaseDimension, CaseSession } from "../interview/case-session";
-import { LIST_LIMIT, many, one, oneOrNull, type DbClient } from "./db";
+import { manyByPage, one, oneOrNull, type DbClient } from "./db";
 import type { CaseSessionRow } from "./rows";
 
 export type { CaseSessionRow };
@@ -118,7 +118,7 @@ export async function finishCaseSession(db: DbClient, userId: string, id: string
 export async function listCaseSessions(db: DbClient, userId: string, caseId?: string): Promise<{ caseId: string; updatedAt: string; turnTimes: string[] }[]> {
   let q = db.from("case_sessions").select("case_id,session:session->turns,updated_at").eq("user_id", userId);
   if (caseId) q = q.eq("case_id", caseId);
-  const rows = await many(q.order("created_at", { ascending: false }).limit(LIST_LIMIT), "case_sessions", "list");
+  const rows = await manyByPage(q.order("created_at", { ascending: false }).order("id"), "case_sessions", "list");
   return rows.map((r) => ({
     caseId: r.case_id,
     updatedAt: r.updated_at ?? "",
@@ -129,8 +129,8 @@ export async function listCaseSessions(db: DbClient, userId: string, caseId?: st
 export type CaseSessionSummary = Pick<StoredCaseSession, "caseId" | "status" | "overall">;
 
 export async function listCaseSessionSummaries(db: DbClient, userId: string): Promise<CaseSessionSummary[]> {
-  const rows = await many(db.from("case_sessions").select("case_id,status,overall").eq("user_id", userId)
-    .order("created_at", { ascending: false }).limit(LIST_LIMIT), "case_sessions", "list summaries");
+  const rows = await manyByPage(db.from("case_sessions").select("case_id,status,overall").eq("user_id", userId)
+    .order("created_at", { ascending: false }).order("id"), "case_sessions", "list summaries");
   return rows.map((r) => ({ caseId: r.case_id, status: r.status, overall: r.overall == null ? null : Number(r.overall) }));
 }
 

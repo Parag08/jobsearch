@@ -30,7 +30,7 @@ function planFor(app: Application, apps: Application[], stored: Awaited<ReturnTy
   }
 }
 
-/** Best overall per question id, from recent mock attempts. */
+/** Best overall per question id, from every mock attempt. */
 async function bestScores(db: DbClient, userId: string): Promise<Map<string, number>> {
   const best = new Map<string, number>();
   for (const a of await listAttemptScores(db, userId).catch(() => [])) best.set(a.questionId, Math.max(best.get(a.questionId) ?? 0, a.overall));
@@ -61,7 +61,7 @@ export interface FullInterviewCard {
   /** The newest finished session, and the best overall so far. */
   lastDoneId: string | null;
   best: number | null;
-  /** Recent finished, scored interviews, newest first: the reports you can open again. */
+  /** Every finished, scored interview, newest first: the reports you can open again. */
   history: PastInterview[];
 }
 

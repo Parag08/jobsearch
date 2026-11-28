@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { listAnswers, listAttempts, saveAttempt, upsertAnswer } from "./answers";
+import { listAnswers, listAttemptScores, listAttempts, saveAttempt, upsertAnswer } from "./answers";
 import { LIST_LIMIT } from "./db";
 
 const answer = {
@@ -83,6 +83,18 @@ describe("answers repo", () => {
     const attempts = await listAttempts(db, "u1", "resilience-failure");
     expect(attempts).toHaveLength(2);
     expect(attempts.map((a) => a.overall).sort()).toEqual([3.8, 4.2]);
+  });
+
+  it("keeps older attempts in practice history and best-score inputs", async () => {
+    const db = new FakeDb();
+    const attempt = { user_id: "u1", transcript: "An answer", scores, duration_seconds: null, overall: 3,
+      strengths: [], improvements: [], model: "test" };
+    await db.from("interview_attempts").insert([
+      { ...attempt, question_id: "older", created_at: "2026-01-01", overall: 5 },
+      ...Array.from({ length: LIST_LIMIT }, () => ({ ...attempt, question_id: "newer", created_at: "2026-02-01" })),
+    ]);
+    expect((await listAttempts(db, "u1")).at(-1)).toMatchObject({ questionId: "older", transcript: "An answer" });
+    expect((await listAttemptScores(db, "u1")).at(-1)).toEqual({ questionId: "older", overall: 5 });
   });
 
   it("lists attempts across all questions when none is given", async () => {

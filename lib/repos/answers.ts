@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SCORE_DIMENSIONS, type Scores } from "../interview/score";
-import { LIST_LIMIT, many, manyByPage, one, type DbClient } from "./db";
+import { manyByPage, one, type DbClient } from "./db";
 import type { InterviewAnswerRow, InterviewAttemptRow } from "./rows";
 
 export type { InterviewAnswerRow, InterviewAttemptRow };
@@ -144,12 +144,12 @@ export async function saveAttempt(db: DbClient, userId: string, a: NewAttempt): 
 export async function listAttempts(db: DbClient, userId: string, questionId?: string): Promise<Attempt[]> {
   let q = db.from("interview_attempts").select("id,question_id,transcript,duration_seconds,scores,overall,strengths,improvements,model,created_at").eq("user_id", userId);
   if (questionId) q = q.eq("question_id", questionId);
-  const rows = await many(q.order("created_at", { ascending: false }).limit(LIST_LIMIT), "interview_attempts", "list");
+  const rows = await manyByPage(q.order("created_at", { ascending: false }).order("id"), "interview_attempts", "list");
   return rows.map(toAttempt);
 }
 
 export async function listAttemptScores(db: DbClient, userId: string): Promise<Pick<Attempt, "questionId" | "overall">[]> {
-  const rows = await many(db.from("interview_attempts").select("question_id,overall").eq("user_id", userId)
-    .order("created_at", { ascending: false }).limit(LIST_LIMIT), "interview_attempts", "list scores");
+  const rows = await manyByPage(db.from("interview_attempts").select("question_id,overall").eq("user_id", userId)
+    .order("created_at", { ascending: false }).order("id"), "interview_attempts", "list scores");
   return rows.map((r) => ({ questionId: r.question_id, overall: Number(r.overall) }));
 }
