@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-28 - Skip middleware auth without a session cookie
+
+Middleware skips the Supabase client when there is no session cookie or chunk. Settings return paths and public demo lease renewal still run; workspace pages and APIs still enforce access through `getWorkspace()`.
+
 ## Quick mock interview token ledger
 
 Quick mock follow-ups request usage in the AI Gateway stream and log the reported prompt and completion counts to `interview-follow-up`, even when a completed reply cannot be parsed and another model is tried. Canned demo and code-only replies do not generate a ledger entry.
