@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import type { TurnSettings } from "@/lib/interview/turn-taking";
 import { ScoreCard } from "./score-card";
 import { useSearchParams } from "next/navigation";
@@ -12,10 +13,11 @@ import { addCustomQuestionAction, removeCustomQuestionAction, type AddQuestionSt
 import { AnswerEditor } from "./answer-editor";
 import { ModelAnswerPanel } from "./model-answer-panel";
 import { SOURCE_LABEL, type ModelAnswer } from "@/lib/interview/model-answer";
-import { MockInterview } from "./mock-interview";
-import { RolePlayPanel } from "./role-play-panel";
 import type { RolePlay } from "@/lib/interview/role-play";
 import ui from "../ui.module.css";
+
+const MockInterview = dynamic(() => import("./mock-interview").then((mod) => mod.MockInterview));
+const RolePlayPanel = dynamic(() => import("./role-play-panel").then((mod) => mod.RolePlayPanel));
 
 /**
  * The behavioural working surface: the question list, and the selected question with the

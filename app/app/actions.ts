@@ -117,8 +117,9 @@ export async function tailorCvAction(applicationId: string): Promise<void> {
   const { db, userId } = await ws();
   let failure: string | null = null;
   try {
+    const env = await envFor(db, userId);
     await tailorCv(
-      { db, page: cvPageSettingsFromEnv((await envFor(db, userId))), select: cvSelectionSettingsFromEnv((await envFor(db, userId))) },
+      { db, page: cvPageSettingsFromEnv(env), select: cvSelectionSettingsFromEnv(env) },
       userId,
       applicationId,
       today(),
@@ -198,7 +199,8 @@ async function applyDeps(w: NonNullable<Awaited<ReturnType<typeof getWorkspace>>
       })
     : NO_AI;
   const buildCv = async (applicationId: string) => {
-    await tailorCv({ db, page: cvPageSettingsFromEnv((await envFor(db, userId))), select: cvSelectionSettingsFromEnv((await envFor(db, userId))) }, userId, applicationId, day);
+    const env = await envFor(db, userId);
+    await tailorCv({ db, page: cvPageSettingsFromEnv(env), select: cvSelectionSettingsFromEnv(env) }, userId, applicationId, day);
   };
   return { db, llm, buildCv };
 }

@@ -13,6 +13,12 @@ describe("settings service", () => {
     expect((await envFor(db, "u1", BASE)).INTERVIEW_TURN_SILENCE_MS).toBe("3000");
     expect((await envFor(db, "u2", BASE)).INTERVIEW_TURN_SILENCE_MS).toBe("2500");
   });
+  it("lays the saved values over whichever base each call passes", async () => {
+    const db = new FakeDb();
+    await saveSettings(db, "u1", { INTERVIEW_TURN_SILENCE_MS: "3000" }, BASE);
+    expect(await envFor(db, "u1", { ...BASE, ROLE_READ_BATCH: "7" })).toMatchObject({ INTERVIEW_TURN_SILENCE_MS: "3000", ROLE_READ_BATCH: "7" });
+    expect((await envFor(db, "u1", BASE)).ROLE_READ_BATCH).toBeUndefined();
+  });
   it("saves nothing when a value is wrong", async () => {
     const db = new FakeDb();
     const r = await saveSettings(db, "u1", { INTERVIEW_TURN_UNFINISHED_MS: "1000" }, BASE);

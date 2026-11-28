@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { FakeDb } from "./fake-db";
 import { getRoleQuestion, listRoleQuestions, removeRoleQuestions, upsertRoleQuestions, type RoleQuestionWrite } from "./role-questions";
 
@@ -56,5 +56,20 @@ describe("role questions repo", () => {
     await upsertRoleQuestions(db, "u1", "app-1", [q(), q({ externalRef: "cog:agents", position: 1 })], NOW);
     expect(await removeRoleQuestions(db, "u1", ["cog:deep-dive", "cog:missing"])).toBe(1);
     expect((await listRoleQuestions(db, "u1")).map((x) => x.externalRef)).toEqual(["cog:agents"]);
+  });
+
+  it("deletes multiple matched refs in one write and skips the write if none match", async () => {
+    const db = new FakeDb();
+    await upsertRoleQuestions(db, "u1", "app-1", [q(), q({ externalRef: "cog:agents" }), q({ externalRef: "cog:keep" })], NOW);
+    await upsertRoleQuestions(db, "u2", "app-2", [q()], NOW);
+    const from = vi.spyOn(db, "from");
+
+    expect(await removeRoleQuestions(db, "u1", ["cog:deep-dive", "cog:agents", "cog:agents", "cog:missing"])).toBe(2);
+    expect(from).toHaveBeenCalledTimes(2); // One read and one delete.
+    from.mockClear();
+    expect(await removeRoleQuestions(db, "u1", [])).toBe(0);
+    expect(from).toHaveBeenCalledTimes(1);
+    expect((await listRoleQuestions(db, "u1")).map((x) => x.externalRef)).toEqual(["cog:keep"]);
+    expect((await listRoleQuestions(db, "u2")).map((x) => x.externalRef)).toEqual(["cog:deep-dive"]);
   });
 });

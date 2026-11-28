@@ -26,14 +26,16 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
   const [menu, setMenu] = useState(false);
   const [jump, setJump] = useState("");
   const dialogHost = useRef<HTMLDivElement>(null);
+  const queryHash = useRef("");
   const needle = query.trim().toLowerCase();
   const results = needle ? searchable.filter(({ label, section, group }) =>
     `${label} ${SECTIONS[section]} ${group}`.toLowerCase().includes(needle)) : [];
 
   useEffect(() => {
     const onHashChange = () => {
-      setQuery("");
-      setJump(location.hash.slice(1));
+      const hash = location.hash;
+      if (queryHash.current !== hash) setQuery("");
+      setJump(hash.slice(1));
     };
     onHashChange();
     window.addEventListener("hashchange", onHashChange);
@@ -59,7 +61,10 @@ export function SettingsFrame({ section, searchable, loadFailed, children }: {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
           </svg>
-          <input aria-label="Find a setting" placeholder="Find a setting" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+          <input aria-label="Find a setting" placeholder="Find a setting" type="search" value={query} onChange={(event) => {
+            queryHash.current = location.hash;
+            setQuery(event.target.value);
+          }}
             onKeyDown={(event) => { if (event.key === "Escape") setQuery(""); }} />
         </label>
         <button type="button" className={styles.sectionPicker} aria-label={`Settings section: ${SECTIONS[section]}`}

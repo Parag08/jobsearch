@@ -1,5 +1,5 @@
 import { pgArray } from "./db";
-import type { CompanyImportRpc, CreateApiTokenRpc, DbClient, DbResult, DbTable, TakeAiCallRpc } from "./db";
+import type { ApplySourcedJobRetirementRpc, CompanyImportRpc, CreateApiTokenRpc, DbClient, DbResult, DbTable, TakeAiCallRpc } from "./db";
 import type { ApiTokenRow, CompanyImportRow, RowOf, TableName } from "./rows";
 import { norm } from "../types";
 
@@ -127,9 +127,11 @@ export class FakeDb implements DbClient {
   rpc(name: "apply_company_import", args: CompanyImportRpc): Promise<DbResult<CompanyImportRow>>;
   rpc(name: "create_api_token", args: CreateApiTokenRpc): Promise<DbResult<ApiTokenRow>>;
   rpc(name: "take_ai_call", args: TakeAiCallRpc): Promise<DbResult<number>>;
-  async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc | TakeAiCallRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow | number>> {
+  rpc(name: "apply_sourced_job_retirement", args: ApplySourcedJobRetirementRpc): Promise<DbResult<null>>;
+  async rpc(name: string, args: CompanyImportRpc | CreateApiTokenRpc | TakeAiCallRpc | ApplySourcedJobRetirementRpc): Promise<DbResult<CompanyImportRow | ApiTokenRow | number | null>> {
     if (name === "create_api_token") return this.createApiToken(args as CreateApiTokenRpc);
     if (name === "take_ai_call") return this.takeAiCall(args as TakeAiCallRpc);
+    if (name === "apply_sourced_job_retirement") return this.applySourcedJobRetirement(args as ApplySourcedJobRetirementRpc);
     const importArgs = args as CompanyImportRpc;
     if (!this.budget) return this.applyCompanyImport("apply_company_import", importArgs);
     // The import touches several tables at once, so measure the result and roll back if it does not fit.
@@ -142,6 +144,23 @@ export class FakeDb implements DbClient {
     this.budget.recount(this.tables.values());
     return { data: null, error: { message: error } };
   }
+
+  private applySourcedJobRetirement({ p_user_id, p_updates }: ApplySourcedJobRetirementRpc): DbResult<null> {
+    const rows = this.tableRows("sourced_jobs");
+    const plan = new Map(p_updates.map((update) => [update.id, update]));
+    const writes = rows.flatMap((before) => {
+      const update = plan.get(before.id as string);
+      if (!update || before.user_id !== p_user_id || before.status !== update.prior_status ||
+        (before.sourcing_board_url ?? null) !== update.sourcing_board_url) return [];
+      return [{ before, after: { ...before, missed_refreshes: update.missed_refreshes, status: update.status } }];
+    });
+    const error = this.budget?.check(rows, writes);
+    if (error) return { data: null, error: { message: error } };
+    for (const { before, after } of writes) Object.assign(before, after);
+    this.budget?.wrote(writes.map(({ before }) => before));
+    return { data: null, error: null };
+  }
+
   /** Mirrors public.take_ai_call (migration 0025): a sliding window over the user's calls. */
   private takeAiCall({ p_user_id: user, p_limit, p_window_seconds }: TakeAiCallRpc): DbResult<number> {
     const calls = this.tableRows("ai_calls");
