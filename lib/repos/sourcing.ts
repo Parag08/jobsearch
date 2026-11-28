@@ -5,7 +5,7 @@ import { detectAts } from "../watchlist/ats";
 import { Evidence, RankReview, type EvidenceCode } from "../watchlist/safe-kit";
 import { parseTargetList } from "../watchlist/targets";
 import { listCompanies } from "./companies";
-import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, one, oneOrNull, RepoError, type DbClient } from "./db";
 import { addWatchlistEntry, listWatchlist } from "./watchlist";
 import type { SourcingCompanyRow } from "./rows";
 
@@ -29,15 +29,12 @@ export function sourcingTerms(raw: string): string[] | null {
     terms.every((t) => /^[\p{L}\p{M} .()&+/-]{1,100}$/u.test(t)) ? terms : null;
 }
 
-export async function listSourcingCompanies(db: DbClient, userId: string) {
-  const companies: SourcingCompanyRow[] = [];
-  const size = 500;
-  for (let start = 0; ; start += size) {
-    const page = await many(db.from("sourcing_companies").select().eq("user_id", userId)
-      .order("id").range(start, start + size - 1), "sourcing_companies", "list");
-    companies.push(...page);
-    if (page.length < size) return companies.sort((a, b) => a.name.localeCompare(b.name));
-  }
+type SourcingCompanySummary = Pick<SourcingCompanyRow, "id" | "name" | "identity" | "website" | "active" | "research_version" | "research_requested">;
+
+export async function listSourcingCompanies(db: DbClient, userId: string): Promise<SourcingCompanySummary[]> {
+  const companies = await manyByPage(db.from("sourcing_companies").select("id,name,identity,website,active,research_version,research_requested")
+    .eq("user_id", userId).order("id"), "sourcing_companies", "list");
+  return companies.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getSourcingCompany(db: DbClient, userId: string, id: string) {
@@ -86,7 +83,8 @@ export async function setSourcingCompanyActive(db: DbClient, userId: string, id:
   const company = await one(db.from("sourcing_companies").update({ active, import_id: null }).eq("user_id", userId).eq("id", id)
     .select().single(), "sourcing_companies", "set target");
   if (!active) {
-    const jobs = await many(db.from("sourced_jobs").select().eq("user_id", userId).eq("company_id", id),
+    const jobs = await manyByPage(db.from("sourced_jobs").select("id,sourcing_decision,status")
+      .eq("user_id", userId).eq("company_id", id).order("id"),
       "sourced_jobs", "find company picks");
     for (const job of jobs.filter((j) => j.sourcing_decision === "picked" || (!j.sourcing_decision && j.status === "shortlisted"))) {
       await setSourcingDecision(db, userId, job.id, "available");
@@ -139,7 +137,7 @@ export async function putSafeEvidence(db: DbClient, userId: string, evidence: Ev
 
 export async function getSourcingTriage(db: DbClient, userId: string) {
   const [jobs, evidence] = await Promise.all([
-    many(db.from("sourced_jobs").select("id,sourcing_decision,sourcing_review").eq("user_id", userId), "sourced_jobs", "triage"),
+    manyByPage(db.from("sourced_jobs").select("id,sourcing_decision,sourcing_review").eq("user_id", userId).order("id"), "sourced_jobs", "triage"),
     getSafeEvidence(db, userId),
   ]);
   return {

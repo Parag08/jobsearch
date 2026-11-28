@@ -74,8 +74,8 @@ export async function listInterviewPractice(deps: AgentDeps, userId: string, q: 
     };
   });
   // Full mock interviews: one application's, or (no application given) every one since `since`.
-  const sessions = (await listFullSessions(db, userId).catch(() => []))
-    .filter((f) => (appId ? f.applicationId === appId : !q.questionIds?.length && f.createdAt >= since))
+  const sessions = (await listFullSessions(db, userId, appId ?? undefined).catch(() => []))
+    .filter((f) => appId || (!q.questionIds?.length && f.createdAt >= since))
     .slice(0, q.attemptsPerQuestion);
   const fullInterviews = sessions.map((f) => {
     const s = f.session;

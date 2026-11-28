@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { z } from "zod";
 import { getWorkspace } from "@/lib/db";
 import { listContacts } from "@/lib/repos/contacts";
+import { getSourcingCompany } from "@/lib/repos/sourcing";
 import { loadDailySourcing } from "@/lib/services/daily-sourcing";
 import { norm } from "@/lib/types";
 import { AddCompanyWebsiteForm, ConnectBoardForm } from "../../sourcing-forms";
@@ -21,10 +23,11 @@ export default async function CompanyPage({ params, searchParams }: {
 }) {
   const w = await getWorkspace();
   if (!w) redirect("/signin");
-  const [{ id }, sp, source, contacts] = await Promise.all([
-    params, searchParams, loadDailySourcing(w.db, w.userId), listContacts(w.db, w.userId),
+  const { id } = await params;
+  if (w.mode === "live" && !z.uuid().safeParse(id).success) notFound();
+  const [sp, source, contacts, company] = await Promise.all([
+    searchParams, loadDailySourcing(w.db, w.userId), listContacts(w.db, w.userId), getSourcingCompany(w.db, w.userId, id),
   ]);
-  const company = source.companies.find((c) => c.id === id);
   if (!company) notFound();
   const view = sp.view === "research" || sp.view === "network" ? sp.view : "overview";
   const path = "/app/companies/" + id;

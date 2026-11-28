@@ -1,4 +1,4 @@
-import { many, one, RepoError, type DbClient } from "./db";
+import { LIST_LIMIT, many, one, RepoError, type DbClient } from "./db";
 
 /**
  * Your verdict on the interviewer's lines in a full mock interview (migration 0019): good or
@@ -18,9 +18,9 @@ export interface InterviewerRating {
 }
 
 export async function listInterviewerRatings(db: DbClient, userId: string, sessionId?: string): Promise<InterviewerRating[]> {
-  let q = db.from(TABLE).select().eq("user_id", userId);
+  let q = db.from(TABLE).select("session_id,turn_index,rating,better").eq("user_id", userId);
   if (sessionId) q = q.eq("session_id", sessionId);
-  const rows = await many(q, TABLE, "list");
+  const rows = await many(q.order("updated_at", { ascending: false }).limit(LIST_LIMIT), TABLE, "list");
   return rows
     .map((r) => ({ sessionId: r.session_id, turnIndex: r.turn_index, rating: r.rating, better: r.better ?? null }))
     .sort((a, b) => a.sessionId.localeCompare(b.sessionId) || a.turnIndex - b.turnIndex);

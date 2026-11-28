@@ -77,6 +77,9 @@ export interface DbClient {
   rpc(name: "create_api_token", args: CreateApiTokenRpc): PromiseLike<DbResult<ApiTokenRow>>;
 }
 
+export const LIST_LIMIT = 500;
+export const HISTORY_LIMIT = 100;
+
 /** Every repo call either returns typed data or throws this - raw {data,error} never leaks upward. */
 export class RepoError extends Error {
   constructor(
@@ -97,6 +100,15 @@ export async function many<T>(
   const { data, error } = await q;
   if (error) throw new RepoError(table, op, error.message);
   return data ?? [];
+}
+
+export async function manyByPage<T>(query: DbSelect<T>, table: TableName, op: string): Promise<T[]> {
+  const rows: T[] = [];
+  for (let offset = 0; ; offset += LIST_LIMIT) {
+    const page = await many(query.range(offset, offset + LIST_LIMIT - 1), table, op);
+    rows.push(...page);
+    if (page.length < LIST_LIMIT) return rows;
+  }
 }
 
 export async function one<T>(

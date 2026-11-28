@@ -1,5 +1,5 @@
 import type { Contact, Interaction } from "../types";
-import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
+import { LIST_LIMIT, many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import { contactPatch, contactRow, interactionRow, toContact, toInteraction } from "./rows";
 
 export type NewContact = Omit<Contact, "id" | "interactions">;
@@ -24,23 +24,28 @@ export async function getContact(db: DbClient, userId: string, id: string): Prom
   return toContact(row, await listInteractions(db, userId, id));
 }
 
-/** The date of every interaction the user logged - what the Overview counts as people reached. */
+/** Recent interaction dates, used by the Overview to count people reached. */
 export async function listInteractionDates(db: DbClient, userId: string): Promise<string[]> {
-  const rows = await many(db.from("interactions").select("date").eq("user_id", userId), "interactions", "list dates");
+  const rows = await many(db.from("interactions").select("date").eq("user_id", userId)
+    .order("date", { ascending: false }).limit(LIST_LIMIT), "interactions", "list dates");
   return rows.map((r) => r.date);
 }
 
+const CONTACT_COLUMNS = "id,name,network,company,role,location,warmth,status,interests,next_followup,external_ref,linkedin_url,company_id";
+const INTERACTION_COLUMNS = "id,date,channel,summary";
+
 /** Contacts without their interaction logs - load one via getContact when composing messages. */
 export async function listContacts(db: DbClient, userId: string): Promise<Contact[]> {
-  const rows = await many(db.from("contacts").select().eq("user_id", userId), "contacts", "list");
+  const rows = await many(db.from("contacts").select(CONTACT_COLUMNS).eq("user_id", userId).order("id").limit(LIST_LIMIT), "contacts", "list");
   return rows.map((r) => toContact(r, []));
 }
 
-/** Every contact with their log, newest first: two queries, for the Network tab. */
+/** Contacts and recent log entries, newest entry first: two queries for the Network tab. */
 export async function listContactsWithInteractions(db: DbClient, userId: string): Promise<Contact[]> {
   const [contacts, rows] = await Promise.all([
-    many(db.from("contacts").select().eq("user_id", userId), "contacts", "list"),
-    many(db.from("interactions").select().eq("user_id", userId).order("date", { ascending: false }), "interactions", "list all"),
+    many(db.from("contacts").select(CONTACT_COLUMNS).eq("user_id", userId).order("id").limit(LIST_LIMIT), "contacts", "list"),
+    many(db.from("interactions").select(`${INTERACTION_COLUMNS},contact_id`).eq("user_id", userId)
+      .order("date", { ascending: false }).limit(LIST_LIMIT), "interactions", "list all"),
   ]);
   const byContact = new Map<string, Interaction[]>();
   for (const r of rows) byContact.set(r.contact_id, [...(byContact.get(r.contact_id) ?? []), toInteraction(r)]);
@@ -79,10 +84,11 @@ export async function listInteractions(
   const rows = await many(
     db
       .from("interactions")
-      .select()
+      .select(INTERACTION_COLUMNS)
       .eq("user_id", userId)
       .eq("contact_id", contactId)
-      .order("date", { ascending: false }),
+      .order("date", { ascending: false })
+      .limit(LIST_LIMIT),
     "interactions",
     "list",
   );

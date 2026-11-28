@@ -1,5 +1,5 @@
 import type { StoredRoleQuestion } from "../interview/role-questions";
-import { many, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, many, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewRoleQuestionRow } from "./rows";
 
 /**
@@ -42,7 +42,8 @@ const TABLE = "interview_role_questions";
 
 /** All of one user's role questions, every application, application then position order. */
 export async function listRoleQuestions(db: DbClient, userId: string): Promise<StoredRoleQuestion[]> {
-  const rows = await many(db.from(TABLE).select().eq("user_id", userId), TABLE, "list");
+  const rows = await manyByPage(db.from(TABLE).select("id,application_id,external_ref,round,interviewer,position,competency,text,short,look_for,context,source,updated_at")
+    .eq("user_id", userId).order("id"), TABLE, "list");
   return rows
     .map(toStored)
     .sort((a, b) => (a.applicationId === b.applicationId ? a.position - b.position : a.applicationId < b.applicationId ? -1 : 1));

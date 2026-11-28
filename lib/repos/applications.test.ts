@@ -84,7 +84,25 @@ describe("applications repo", () => {
       select: "id,jd_raw",
       user_id: "eq.u1",
       jd_extract: "is.null",
-      order: "updated_at.desc",
+      order: "updated_at.desc,id.asc",
+      limit: "500",
+      offset: "0",
     });
+  });
+
+  it("bounds the application list without requesting raw postings or cover letters", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json([]));
+    const db = asDbClient(createClient("https://supabase.example", "test-key", { global: { fetch } }));
+
+    await listApplications(db, "u1");
+    const params = new URL(String(fetch.mock.calls[0]![0])).searchParams;
+    expect(params.get("select")?.split(",")).toEqual([
+      "id", "company", "role", "sector_id", "stage", "closed_reason", "jd_extract", "cv_id",
+      "referral_contact_id", "next_action", "saved_at", "applied_at", "updated_at", "external_ref",
+      "apply_url", "status_note", "company_id", "sourcing_kit",
+    ]);
+    expect(params.get("limit")).toBe("500");
+    expect(params.get("order")).toBe("updated_at.desc");
+    expect(params.get("user_id")).toBe("eq.u1");
   });
 });

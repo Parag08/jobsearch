@@ -1,5 +1,5 @@
 import { WatchlistEntrySchema, type NewWatchlistEntry, type WatchlistEntry } from "../watchlist/types";
-import { many, one, RepoError, type DbClient } from "./db";
+import { manyByPage, many, one, RepoError, type DbClient } from "./db";
 import type { WatchlistRow } from "./rows";
 
 export type { WatchlistRow };
@@ -66,9 +66,9 @@ export async function listWatchlist(
   userId: string,
   opts: { active?: boolean } = {},
 ): Promise<WatchlistEntry[]> {
-  let q = db.from("watchlist").select().eq("user_id", userId);
+  let q = db.from("watchlist").select("id,company_id,last_success_at,last_attempt_at,last_check_failed,company,careers_url,ats,token,active,added_at").eq("user_id", userId);
   if (opts.active !== undefined) q = q.eq("active", opts.active);
-  const rows = await many(q.order("company", { ascending: true }), "watchlist", "list");
+  const rows = await manyByPage(q.order("company").order("id"), "watchlist", "list");
   return rows.map(toWatchlistEntry);
 }
 

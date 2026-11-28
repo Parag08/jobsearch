@@ -2,7 +2,7 @@ import type { LlmProvider } from "../adapters/llm";
 import type { DbClient } from "../repos/db";
 import { findApplicationByExternalRef, getApplication, getJdRaw, insertApplication, setSyncFields } from "../repos/applications";
 import { listCompanies } from "../repos/companies";
-import { listSourcedJobs, setSourcedJobStatus } from "../repos/sourced-jobs";
+import { getSourcedJob, setSourcedJobStatus } from "../repos/sourced-jobs";
 import { listWatchlist } from "../repos/watchlist";
 import type { Application } from "../types";
 import type { AtsKind } from "../watchlist/ats";
@@ -59,7 +59,7 @@ export async function saveToPipeline(
   now: string,
 ): Promise<SaveToPipelineResult> {
   const { db } = deps;
-  const job = (await listSourcedJobs(db, userId)).find((j) => j.id === jobId);
+  const job = await getSourcedJob(db, userId, jobId);
   if (!job) throw new Error(`saveToPipeline: role ${jobId} not found`);
 
   const existing = await findApplicationByExternalRef(db, userId, sourcedRef(job.id));

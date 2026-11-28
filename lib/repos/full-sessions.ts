@@ -1,6 +1,6 @@
-import type { FullSession, Moment, TopicVerdict } from "../interview/full-session";
+import { topicsAsked, type FullSession, type Moment, type TopicVerdict } from "../interview/full-session";
 import type { Scores } from "../interview/score";
-import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
+import { HISTORY_LIMIT, many, one, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewFullSessionRow } from "./rows";
 
 /**
@@ -106,10 +106,31 @@ export async function finishFullSession(db: DbClient, userId: string, id: string
 
 /** Newest first; pass an application id for one application's interviews, or null for general practice ones. */
 export async function listFullSessions(db: DbClient, userId: string, applicationId?: string | null): Promise<StoredFullSession[]> {
-  let q = db.from(TABLE).select().eq("user_id", userId);
-  if (applicationId) q = q.eq("application_id", applicationId);
-  const all = (await many(q.order("created_at", { ascending: false }), TABLE, "list")).map(toStored);
-  return applicationId === null ? all.filter((s) => s.applicationId === null) : all;
+  const columns = "id,application_id,status,session,scores,overall,strengths,improvements,per_topic,moments,model,created_at,updated_at";
+  return (await many(fullSessionList(db, userId, applicationId, columns), TABLE, "list")).map(toStored);
+}
+
+export type FullSessionSummary = Pick<StoredFullSession, "id" | "applicationId" | "status" | "overall" | "createdAt" | "updatedAt"> & { topics: number };
+
+export async function listFullSessionSummaries(db: DbClient, userId: string, applicationId?: string | null): Promise<FullSessionSummary[]> {
+  const columns = "id,application_id,status,overall,created_at,updated_at,session:session->turns";
+  const rows = await many(fullSessionList(db, userId, applicationId, columns), TABLE, "list summaries");
+  return rows.map((r) => ({
+    id: r.id,
+    applicationId: r.application_id,
+    status: r.status,
+    overall: r.overall == null ? null : Number(r.overall),
+    createdAt: r.created_at ?? "",
+    updatedAt: r.updated_at ?? "",
+    topics: topicsAsked({ turns: (r.session as FullSession["turns"] | null) ?? [] }).length,
+  }));
+}
+
+function fullSessionList(db: DbClient, userId: string, applicationId: string | null | undefined, columns: string) {
+  let q = db.from(TABLE).select(columns).eq("user_id", userId);
+  if (applicationId === null) q = q.is("application_id", null);
+  else if (applicationId !== undefined) q = q.eq("application_id", applicationId);
+  return q.order("created_at", { ascending: false }).limit(HISTORY_LIMIT);
 }
 
 /**

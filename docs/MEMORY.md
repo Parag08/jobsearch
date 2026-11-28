@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## List query bounds
+
+Repository lists request named columns. Recent-history reads have explicit limits; complete sets used for sourcing, matching and export read in ordered pages. The case library loads progress only and fetches one session when a case is opened.
+
 ## 2026-11-27 - Settings redesign
 
 QA follow-up for PR #61: Settings dialogs portal to the Settings frame so search cannot hide them; canceling a guarded jump shows the unsaved draft. Dark placeholders use the Settings secondary text color, and mobile controls use a 44px minimum. Browsers can open an Advanced disclosure for a URL fragment before hydration, so only those closed-by-default disclosures ignore the expected attribute difference.

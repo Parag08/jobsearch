@@ -1,5 +1,5 @@
 import type { Bullet, Project } from "../types";
-import { many, one, RepoError, type DbClient } from "./db";
+import { manyByPage, many, one, RepoError, type DbClient } from "./db";
 import { bulletRow, projectRow, toBullet, toProject } from "./rows";
 
 export type NewProject = Omit<Project, "id" | "bullets">;
@@ -31,8 +31,8 @@ export async function insertBullets(
 /** Projects with their bullets composed (two queries, grouped client-side). */
 export async function listProjects(db: DbClient, userId: string): Promise<Project[]> {
   const [projectRows, bulletRows] = await Promise.all([
-    many(db.from("projects").select().eq("user_id", userId), "projects", "list"),
-    many(db.from("bullets").select().eq("user_id", userId), "bullets", "list"),
+    manyByPage(db.from("projects").select("id,name,org,dates,role,narrative,outcomes,skills,sector_tags").eq("user_id", userId).order("id"), "projects", "list"),
+    manyByPage(db.from("bullets").select("id,project_id,role_family,text,skills,variants,strength").eq("user_id", userId).order("id"), "bullets", "list"),
   ]);
   const byProject = new Map<string, Bullet[]>();
   for (const r of bulletRows) {

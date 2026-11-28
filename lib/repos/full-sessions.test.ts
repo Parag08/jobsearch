@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { createFullSession, discardFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
+import { createFullSession, discardFullSession, finishFullSession, getFullSession, listFullSessions, listFullSessionSummaries, saveFullSession } from "./full-sessions";
 import { startFull } from "../interview/full-session";
 import type { FullPlan } from "../interview/full-plan";
 
@@ -18,6 +18,21 @@ const session = startFull(plan, { maxTopics: 2, topicFollowUps: 1, totalFollowUp
 const scores = { structure: 4, ownership: 3, specificity: 3, impact: 4, reflection: 2, relevance: 4 };
 
 describe("full sessions repo", () => {
+  it("summarizes only general practice interviews and counts distinct topics asked", async () => {
+    const db = new FakeDb();
+    const general = await createFullSession(db, "u1", {
+      ...session,
+      plan: { ...plan, applicationId: null },
+      turns: [...session.turns, session.turns[0]!, { role: "candidate", topicId: "t2", text: "answer", at: "x" }],
+    });
+    await createFullSession(db, "u1", session);
+    await createFullSession(db, "u2", general.session);
+    expect(await listFullSessionSummaries(db, "u1", null)).toEqual([{
+      id: general.id, applicationId: null, status: "running", overall: null,
+      createdAt: general.createdAt, updatedAt: general.updatedAt, topics: 1,
+    }]);
+  });
+
   it("creates, saves in place, finishes and lists newest first per user", async () => {
     const db = new FakeDb();
     const s = await createFullSession(db, "u1", session);

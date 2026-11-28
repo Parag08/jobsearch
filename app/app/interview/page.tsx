@@ -26,7 +26,7 @@ import { fullInterviewsFor, generalInterviewCard, type FullInterviewCard } from 
 import { outOfFive } from "@/lib/interview/score";
 import { BehaviouralView } from "./behavioural-view";
 import { FullInterview } from "./full-interview";
-import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
+import { getLatestCaseSession, listCaseSessionSummaries, type CaseSessionSummary, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
 import { caseProgress, type CaseProgress } from "@/lib/interview/case-progress";
 import { CaseRoom } from "./case-room";
@@ -80,13 +80,15 @@ export default async function Interview({ searchParams }: { searchParams: Promis
   const tab: Tab = entry ? "behavioural" : TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : "behavioural";
 
   const needQuestions = tab === "behavioural";
-  const needCases = tab === "casing" || entry?.kind === "consulting";
-  const [projects, profile, answers, attempts, caseSessions, customQs, modelAnswers, rolePlays, fullCards, generalCard] = await Promise.all([
+  const needCases = tab === "casing" || (entry?.kind === "consulting" && params.full !== "1");
+  const selectedCase = needCases && caseLibrary.cases.find((c) => c.id === params.case);
+  const [projects, profile, answers, attempts, caseSessions, latestCase, customQs, modelAnswers, rolePlays, fullCards, generalCard] = await Promise.all([
     listProjects(db, userId),
     getProfile(db, userId),
-    listAnswers(db, userId),
-    listAttempts(db, userId),
-    needCases ? listCaseSessions(db, userId) : Promise.resolve([]),
+    needQuestions && params.full !== "1" ? listAnswers(db, userId) : Promise.resolve([]),
+    needQuestions && params.full !== "1" ? listAttempts(db, userId) : Promise.resolve([]),
+    needCases && !selectedCase ? listCaseSessionSummaries(db, userId) : Promise.resolve([]),
+    selectedCase ? getLatestCaseSession(db, userId, selectedCase.id) : Promise.resolve(null),
     needQuestions && !entry ? listCustomQuestions(db, userId) : Promise.resolve([]),
     needQuestions ? listModelAnswers(db, userId).catch(() => []) : Promise.resolve([]),
     needQuestions ? listRolePlays(db, userId).catch(() => []) : Promise.resolve([]),
@@ -128,6 +130,7 @@ export default async function Interview({ searchParams }: { searchParams: Promis
           modelAnswers={modelAnswers}
           rolePlays={rolePlays}
           sessions={caseSessions}
+          latestCase={latestCase}
           caseId={params.case}
           caseType={params.type}
         />
@@ -166,7 +169,7 @@ export default async function Interview({ searchParams }: { searchParams: Promis
               )}
             </>
           )}
-          {tab === "casing" && <Casing bullets={bullets} sessions={caseSessions} selectedId={params.case} type={params.type} base={{ prep: GENERAL, tab: "casing" }} />}
+          {tab === "casing" && <Casing bullets={bullets} sessions={caseSessions} latest={latestCase} selectedId={params.case} type={params.type} base={{ prep: GENERAL, tab: "casing" }} />}
           {tab === "technical" && <Technical bullets={bullets} extras={(profile?.cvExtras ?? []) as CvExtra[]} />}
         </>
       )}
@@ -241,6 +244,7 @@ function CompanyPrep({
   modelAnswers,
   rolePlays,
   sessions,
+  latestCase,
   caseId,
   caseType,
 }: {
@@ -255,7 +259,8 @@ function CompanyPrep({
   bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[];
   modelAnswers: ModelAnswer[];
   rolePlays: RolePlay[];
-  sessions: StoredCaseSession[];
+  sessions: CaseSessionSummary[];
+  latestCase: StoredCaseSession | null;
   caseId?: string;
   caseType?: string;
 }) {
@@ -297,7 +302,7 @@ function CompanyPrep({
       {!full && entry.kind === "consulting" && (
         <section className={ui.stack} aria-label="Cases">
           <h2>Case interview</h2>
-          <Casing bullets={bullets} sessions={sessions} selectedId={caseId} type={caseType} base={base} />
+          <Casing bullets={bullets} sessions={sessions} latest={latestCase} selectedId={caseId} type={caseType} base={base} />
         </section>
       )}
     </>
@@ -378,12 +383,14 @@ const pretty = (s: string) => s.replace(/-/g, " ");
 function Casing({
   bullets,
   sessions,
+  latest,
   selectedId,
   type,
   base,
 }: {
   bullets: { id: string; text: string; skills: string[]; projectId: string; roleFamily: string }[];
-  sessions: StoredCaseSession[];
+  sessions: CaseSessionSummary[];
+  latest: StoredCaseSession | null;
   selectedId?: string;
   type?: string;
   /** The page's own URL params (Practice > Cases, or a consulting firm's page). */
@@ -395,7 +402,6 @@ function Casing({
   const selected = caseLibrary.cases.find((c) => c.id === selectedId);
 
   const progress = caseProgress(sessions);
-  const latest = selected ? sessions.find((s) => s.caseId === selected.id) : undefined; // newest first
 
   const link = (next: { case?: string; type?: string }) => {
     const sp = new URLSearchParams(base);

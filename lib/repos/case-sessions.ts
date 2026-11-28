@@ -1,5 +1,5 @@
 import type { CaseDimension, CaseSession } from "../interview/case-session";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { LIST_LIMIT, many, one, oneOrNull, type DbClient } from "./db";
 import type { CaseSessionRow } from "./rows";
 
 export type { CaseSessionRow };
@@ -115,9 +115,29 @@ export async function finishCaseSession(db: DbClient, userId: string, id: string
 }
 
 /** Newest first. Pass a case id to see one case's history. */
-export async function listCaseSessions(db: DbClient, userId: string, caseId?: string): Promise<StoredCaseSession[]> {
-  let q = db.from("case_sessions").select().eq("user_id", userId);
+export async function listCaseSessions(db: DbClient, userId: string, caseId?: string): Promise<{ caseId: string; updatedAt: string; turnTimes: string[] }[]> {
+  let q = db.from("case_sessions").select("case_id,session:session->turns,updated_at").eq("user_id", userId);
   if (caseId) q = q.eq("case_id", caseId);
-  const rows = await many(q.order("created_at", { ascending: false }), "case_sessions", "list");
-  return rows.map(toStoredCaseSession);
+  const rows = await many(q.order("created_at", { ascending: false }).limit(LIST_LIMIT), "case_sessions", "list");
+  return rows.map((r) => ({
+    caseId: r.case_id,
+    updatedAt: r.updated_at ?? "",
+    turnTimes: ((r.session as CaseSession["turns"] | null) ?? []).map((t) => t.at),
+  }));
+}
+
+export type CaseSessionSummary = Pick<StoredCaseSession, "caseId" | "status" | "overall">;
+
+export async function listCaseSessionSummaries(db: DbClient, userId: string): Promise<CaseSessionSummary[]> {
+  const rows = await many(db.from("case_sessions").select("case_id,status,overall").eq("user_id", userId)
+    .order("created_at", { ascending: false }).limit(LIST_LIMIT), "case_sessions", "list summaries");
+  return rows.map((r) => ({ caseId: r.case_id, status: r.status, overall: r.overall == null ? null : Number(r.overall) }));
+}
+
+export async function getLatestCaseSession(db: DbClient, userId: string, caseId: string): Promise<StoredCaseSession | null> {
+  const row = await oneOrNull(db.from("case_sessions")
+    .select("id,case_id,status,session,scores,overall,strengths,improvements,per_question,model,created_at,updated_at")
+    .eq("user_id", userId).eq("case_id", caseId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    "case_sessions", "get latest");
+  return row ? toStoredCaseSession(row) : null;
 }

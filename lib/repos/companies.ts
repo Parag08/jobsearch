@@ -1,5 +1,5 @@
 import { CompanySchema, type Company, type NewCompany } from "../companies/types";
-import { many, type DbClient } from "./db";
+import { manyByPage, many, type DbClient } from "./db";
 import type { CompanyRow } from "./rows";
 
 export type { CompanyRow };
@@ -55,9 +55,9 @@ export interface ListCompaniesOptions {
 }
 
 export async function listCompanies(db: DbClient, opts: ListCompaniesOptions = {}): Promise<Company[]> {
-  let q = db.from("companies").select();
+  let q = db.from("companies").select("id,name,type,careers_url,ats,token,confirmed,probed_at");
   if (opts.type !== undefined) q = q.eq("type", opts.type);
-  const rows = await many(q.order("name", { ascending: true }), "companies", "list");
+  const rows = await manyByPage(q.order("name"), "companies", "list");
   return rows.map(toCompany);
 }
 
