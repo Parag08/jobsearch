@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SCORE_DIMENSIONS, type Scores } from "../interview/score";
-import { many, one, type DbClient } from "./db";
+import { manyByPage, one, type DbClient } from "./db";
 import type { InterviewAnswerRow, InterviewAttemptRow } from "./rows";
 
 export type { InterviewAnswerRow, InterviewAttemptRow };
@@ -112,7 +112,8 @@ export async function upsertAnswer(db: DbClient, userId: string, a: NewAnswer): 
 }
 
 export async function listAnswers(db: DbClient, userId: string): Promise<Answer[]> {
-  const rows = await many(db.from("interview_answers").select().eq("user_id", userId), "interview_answers", "list");
+  const rows = await manyByPage(db.from("interview_answers").select("id,question_id,mode,body,situation,task,action,result,updated_at")
+    .eq("user_id", userId).order("updated_at", { ascending: false }).order("id"), "interview_answers", "list");
   return rows.map(toAnswer);
 }
 
@@ -141,8 +142,14 @@ export async function saveAttempt(db: DbClient, userId: string, a: NewAttempt): 
 
 /** Newest first. Pass a question id to see one question's history. */
 export async function listAttempts(db: DbClient, userId: string, questionId?: string): Promise<Attempt[]> {
-  let q = db.from("interview_attempts").select().eq("user_id", userId);
+  let q = db.from("interview_attempts").select("id,question_id,transcript,duration_seconds,scores,overall,strengths,improvements,model,created_at").eq("user_id", userId);
   if (questionId) q = q.eq("question_id", questionId);
-  const rows = await many(q.order("created_at", { ascending: false }), "interview_attempts", "list");
+  const rows = await manyByPage(q.order("created_at", { ascending: false }).order("id"), "interview_attempts", "list");
   return rows.map(toAttempt);
+}
+
+export async function listAttemptScores(db: DbClient, userId: string): Promise<Pick<Attempt, "questionId" | "overall">[]> {
+  const rows = await manyByPage(db.from("interview_attempts").select("question_id,overall").eq("user_id", userId)
+    .order("created_at", { ascending: false }).order("id"), "interview_attempts", "list scores");
+  return rows.map((r) => ({ questionId: r.question_id, overall: Number(r.overall) }));
 }

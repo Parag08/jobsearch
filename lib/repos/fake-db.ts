@@ -5,6 +5,19 @@ import { norm } from "../types";
 
 type Row = Record<string, unknown>;
 
+function projectRow(row: Row, columns: string[]): Row {
+  const out: Row = {};
+  for (const field of columns) {
+    const [alias, expression = alias] = field.split(":");
+    const [column, ...path] = expression.split("->");
+    if (column in row) {
+      out[alias] = path.reduce<unknown>((value, key) =>
+        value != null && typeof value === "object" ? (value as Row)[key] ?? null : null, row[column]);
+    }
+  }
+  return out;
+}
+
 /** Caps on what writes may add to a FakeDb (the public demo, lib/db/demo.ts). Sizes are JSON characters. */
 export interface FakeDbLimits {
   maxRowsPerTable: number;
@@ -276,8 +289,8 @@ class FakeTable {
     private readonly budget: WriteBudget | null,
   ) {}
 
-  select(_columns?: string): FakeQuery {
-    return this.query("select", []);
+  select(columns?: string): FakeQuery {
+    return this.query("select", []).select(columns);
   }
   insert(values: Row | Row[]): FakeQuery {
     return this.query("insert", asArray(values));
@@ -301,10 +314,11 @@ class FakeTable {
 class FakeQuery {
   private filters: { col: string; values: unknown[] }[] = [];
   private filterError: string | null = null;
-  private orderBy: { col: string; ascending: boolean } | null = null;
+  private orderBy: { col: string; ascending: boolean }[] = [];
   private limitN: number | null = null;
   private rangeN: [number, number] | null = null;
   private returning: boolean;
+  private columns?: string[];
   private mode: "many" | "single" | "maybeSingle" = "many";
 
   constructor(
@@ -334,7 +348,7 @@ class FakeQuery {
     return this;
   }
   order(col: string, opts?: { ascending?: boolean }): this {
-    this.orderBy = { col, ascending: opts?.ascending ?? true };
+    this.orderBy.push({ col, ascending: opts?.ascending ?? true });
     return this;
   }
   limit(count: number): this {
@@ -345,8 +359,10 @@ class FakeQuery {
     this.rangeN = [from, to + 1];
     return this;
   }
-  select(): this {
+  select(columns = "*"): this {
     this.returning = true;
+    const fields = columns.split(",").map((c) => c.trim());
+    this.columns = fields.includes("*") ? undefined : fields;
     return this;
   }
   single(): this {
@@ -397,22 +413,27 @@ class FakeQuery {
       }
     }
     if (this.op !== "select" && this.op !== "delete") this.budget?.wrote(affected);
-    if (this.orderBy) {
-      const { col, ascending } = this.orderBy;
+    if (this.orderBy.length) {
       affected = [...affected].sort((x, y) => {
-        const a = x[col] as string | number | null;
-        const b = y[col] as string | number | null;
-        if (a == null && b == null) return 0;
-        if (a == null) return 1;
-        if (b == null) return -1;
-        return (a < b ? -1 : a > b ? 1 : 0) * (ascending ? 1 : -1);
+        for (const { col, ascending } of this.orderBy) {
+          const a = x[col] as string | number | null;
+          const b = y[col] as string | number | null;
+          if (a == null && b == null) continue;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          if (a !== b) return (a < b ? -1 : 1) * (ascending ? 1 : -1);
+        }
+        return 0;
       });
     }
     if (this.limitN != null) affected = affected.slice(0, this.limitN);
     if (this.rangeN) affected = affected.slice(...this.rangeN);
 
     if (!this.returning) return { data: null, error: null };
-    const out = structuredClone(affected);
+    const columns = this.columns;
+    const out = structuredClone(columns
+      ? affected.map((row) => projectRow(row, columns))
+      : affected);
     if (this.mode === "single") {
       return out.length === 1
         ? { data: out[0] as unknown, error: null }

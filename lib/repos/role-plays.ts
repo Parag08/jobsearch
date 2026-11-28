@@ -1,5 +1,5 @@
 import type { RolePlay, RolePlayLine, RolePlaySource } from "../interview/role-play";
-import { many, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewRolePlayRow } from "./rows";
 
 /** Role-plays (interview_role_plays, migration 0017): one per user and question id. */
@@ -20,7 +20,8 @@ export async function getRolePlay(db: DbClient, userId: string, questionId: stri
 }
 
 export async function listRolePlays(db: DbClient, userId: string): Promise<RolePlay[]> {
-  return (await many(db.from(TABLE).select().eq("user_id", userId), TABLE, "list")).map(toRolePlay);
+  return (await manyByPage(db.from(TABLE).select("question_id,lines,source,based_on,model,updated_at")
+    .eq("user_id", userId).order("updated_at", { ascending: false }).order("question_id"), TABLE, "list")).map(toRolePlay);
 }
 
 /** Insert or replace. Callers decide whether they may (an agent never replaces an app-built play unless forced). */

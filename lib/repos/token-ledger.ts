@@ -1,5 +1,5 @@
 import type { TokenLedgerEntry } from "../types";
-import { many, one, type DbClient } from "./db";
+import { LIST_LIMIT, many, one, type DbClient } from "./db";
 import { toTokenLedgerEntry, tokenLedgerRow } from "./rows";
 
 /** Every LLM call gets logged (token rule #6); totals/budgets are computed by lib/token-meter. */
@@ -18,7 +18,8 @@ export async function logTokens(
 
 export async function listTokenLedger(db: DbClient, userId: string): Promise<TokenLedgerEntry[]> {
   const rows = await many(
-    db.from("token_ledger").select().eq("user_id", userId),
+    db.from("token_ledger").select("date,module,model,tokens_in,tokens_out")
+      .eq("user_id", userId).order("date", { ascending: false }).limit(LIST_LIMIT),
     "token_ledger",
     "list",
   );

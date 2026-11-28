@@ -124,7 +124,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     outreachDates,
     practice: [
       ...attempts.map((a) => ({ date: a.createdAt, seconds: attemptSeconds(a) })),
-      ...cases.map((c) => ({ date: c.updatedAt, seconds: caseSeconds(c.session.turns.map((t) => t.at)) })),
+      ...cases.map((c) => ({ date: c.updatedAt, seconds: caseSeconds(c.turnTimes) })),
     ],
     openRoles: rankedRoles.length,
     followupsDue: followupsDue(contacts, today).length,

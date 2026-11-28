@@ -1,9 +1,30 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { pgArray } from "./db";
+import { LIST_LIMIT, manyByPage, pgArray } from "./db";
 
 /** The fake must mirror supabase-js semantics - repos are tested against it. */
 describe("FakeDb", () => {
+  it("projects columns after filtering and limiting ordered rows", async () => {
+    const db = new FakeDb();
+    await db.from("briefs").insert([
+      { user_id: "u1", date: "2026-08-28", items: [] },
+      { user_id: "u1", date: "2026-08-29", items: [] },
+      { user_id: "u2", date: "2026-08-30", items: [] },
+    ]);
+    const result = await db.from("briefs").select("date").eq("user_id", "u1").order("date", { ascending: false }).limit(1);
+    expect(result.data).toEqual([{ date: "2026-08-29" }]);
+  });
+
+  it("reads the remaining rows from an ordered list on the next page", async () => {
+    const db = new FakeDb();
+    await db.from("briefs").insert(Array.from({ length: LIST_LIMIT + 1 }, (_, i) => ({
+      id: String(i).padStart(4, "0"), user_id: "u1", date: "2026-08-29", items: [],
+    })));
+    const rows = await manyByPage(db.from("briefs").select("id").eq("user_id", "u1").order("date").order("id"), "briefs", "list");
+    expect(rows).toHaveLength(LIST_LIMIT + 1);
+    expect(rows.at(-1)).toEqual({ id: String(LIST_LIMIT).padStart(4, "0") });
+  });
+
   it("insert().select().single() returns the stored row with a generated id", async () => {
     const db = new FakeDb();
     const { data, error } = await db

@@ -1,6 +1,6 @@
 import type { SourcedJob } from "../types";
 import type { RetirementUpdate, TrackedJob } from "../watchlist/retire";
-import { many, one, oneOrNull, type ApplySourcedJobRetirementRpc, type DbClient } from "./db";
+import { many, manyByPage, one, oneOrNull, type ApplySourcedJobRetirementRpc, type DbClient } from "./db";
 import { sourcedJobRow, toSourcedJob } from "./rows";
 
 /**
@@ -24,15 +24,23 @@ export async function upsertSourcedJobs(
   return rows.map(toSourcedJob);
 }
 
+const JOB_COLUMNS = "id,source,external_id,title,company,location,url,posted_at,score,status,company_id,sourcing_board_url";
+
 export async function listSourcedJobs(
   db: DbClient,
   userId: string,
   status?: SourcedJob["status"],
 ): Promise<SourcedJob[]> {
-  let q = db.from("sourced_jobs").select().eq("user_id", userId);
+  let q = db.from("sourced_jobs").select(JOB_COLUMNS).eq("user_id", userId);
   if (status) q = q.eq("status", status);
-  const rows = await many(q.order("score", { ascending: false }), "sourced_jobs", "list");
+  const rows = await manyByPage(q.order("score", { ascending: false }).order("id"), "sourced_jobs", "list");
   return rows.map(toSourcedJob);
+}
+
+export async function getSourcedJob(db: DbClient, userId: string, id: string): Promise<SourcedJob | null> {
+  const row = await oneOrNull(db.from("sourced_jobs").select(JOB_COLUMNS).eq("user_id", userId).eq("id", id).maybeSingle(),
+    "sourced_jobs", "get");
+  return row ? toSourcedJob(row) : null;
 }
 
 export async function setSourcedJobStatus(
@@ -51,7 +59,8 @@ export async function setSourcedJobStatus(
 
 /** Every row with the fields retirement needs (lib/watchlist/retire.ts). */
 export async function listTrackedJobs(db: DbClient, userId: string): Promise<TrackedJob[]> {
-  const rows = await many(db.from("sourced_jobs").select().eq("user_id", userId), "sourced_jobs", "listTracked");
+  const rows = await manyByPage(db.from("sourced_jobs").select("id,source,external_id,company,sourcing_board_url,status,missed_refreshes")
+    .eq("user_id", userId).order("id"), "sourced_jobs", "listTracked");
   return rows.map((r) => ({
     id: r.id,
     source: r.source,

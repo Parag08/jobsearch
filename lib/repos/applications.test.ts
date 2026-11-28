@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { asDbClient } from "../db/supabase";
 import type { Application } from "../types";
 import { FakeDb } from "./fake-db";
+import { LIST_LIMIT } from "./db";
 import {
   getApplication,
   insertApplication,
@@ -28,6 +29,15 @@ const base: NewApplication = {
 };
 
 describe("applications repo", () => {
+  it("includes older manually saved applications for adoption by sync", async () => {
+    const db = new FakeDb();
+    const old = await insertApplication(db, "u1", base);
+    for (let i = 0; i < LIST_LIMIT; i++) {
+      await insertApplication(db, "u1", { ...base, company: `new-${i}`, updatedAt: "2099-01-01T00:00:00Z" });
+    }
+    expect((await listApplications(db, "u1")).at(-1)?.id).toBe(old.id);
+  });
+
   it("insertApplication stores jd_raw for audit but the domain object never carries it", async () => {
     const db = new FakeDb();
     const app = await insertApplication(db, "u1", base, "full raw JD text ...");
@@ -84,7 +94,25 @@ describe("applications repo", () => {
       select: "id,jd_raw",
       user_id: "eq.u1",
       jd_extract: "is.null",
-      order: "updated_at.desc",
+      order: "updated_at.desc,id.asc",
+      limit: "500",
+      offset: "0",
     });
+  });
+
+  it("bounds the application list without requesting raw postings or cover letters", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json([]));
+    const db = asDbClient(createClient("https://supabase.example", "test-key", { global: { fetch } }));
+
+    await listApplications(db, "u1");
+    const params = new URL(String(fetch.mock.calls[0]![0])).searchParams;
+    expect(params.get("select")?.split(",")).toEqual([
+      "id", "company", "role", "sector_id", "stage", "closed_reason", "jd_extract", "cv_id",
+      "referral_contact_id", "next_action", "saved_at", "applied_at", "updated_at", "external_ref",
+      "apply_url", "status_note", "company_id", "sourcing_kit",
+    ]);
+    expect(params.get("limit")).toBe("500");
+    expect(params.get("order")).toBe("updated_at.desc,id.asc");
+    expect(params.get("user_id")).toBe("eq.u1");
   });
 });

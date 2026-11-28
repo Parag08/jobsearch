@@ -82,7 +82,7 @@ export function currentTopicId(s: FullSession): string {
 }
 
 /** Topics asked so far, in order. */
-export function topicsAsked(s: FullSession): string[] {
+export function topicsAsked(s: Pick<FullSession, "turns">): string[] {
   const out: string[] = [];
   for (const t of s.turns) if (t.role === "interviewer" && !out.includes(t.topicId)) out.push(t.topicId);
   return out;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { createCaseSession, finishCaseSession, getCaseSession, listCaseSessions, saveCaseSession } from "./case-sessions";
+import { createCaseSession, finishCaseSession, getCaseSession, getLatestCaseSession, listCaseSessions, listCaseSessionSummaries, saveCaseSession } from "./case-sessions";
 import type { CaseSession } from "../interview/case-session";
 
 const session: CaseSession = {
@@ -60,5 +60,9 @@ describe("case sessions repo", () => {
     await createCaseSession(db, "u2", session);
     expect(await listCaseSessions(db, "u1")).toHaveLength(2);
     expect((await listCaseSessions(db, "u1", "other")).map((s) => s.caseId)).toEqual(["other"]);
+    expect((await listCaseSessions(db, "u1", "other"))[0]?.turnTimes).toEqual([session.turns[0]?.at]);
+    expect(await listCaseSessionSummaries(db, "u1")).toContainEqual({ caseId: session.caseId, status: "running", overall: null });
+    expect(await getLatestCaseSession(db, "u1", "other")).toMatchObject({ session: { caseId: "other", turns: session.turns } });
+    expect(await getLatestCaseSession(db, "u2", "other")).toBeNull();
   });
 });

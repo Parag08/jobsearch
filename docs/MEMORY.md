@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## List query bounds
+
+Repository lists request named columns. Recent-history reads have explicit limits; lookup, dedupe, saved-state, and aggregate inputs read all rows in ordered pages. The case library loads progress only and fetches one session when a case is opened.
+
 ## Quick mock interview token ledger
 
 Quick mock follow-ups request usage in the AI Gateway stream and log the reported prompt and completion counts to `interview-follow-up`, even when a completed reply cannot be parsed and another model is tried. Canned demo and code-only replies do not generate a ledger entry.

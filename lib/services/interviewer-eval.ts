@@ -1,5 +1,5 @@
 import { listAnswers } from "../repos/answers";
-import { getFullSession, listFullSessions } from "../repos/full-sessions";
+import { getFullSession, listFullSessionsForEval } from "../repos/full-sessions";
 import { listInterviewerRatings, rateInterviewerLine, type LineRating } from "../repos/interviewer-ratings";
 import { buildEvalSet, type EvalSet } from "../interview/eval";
 import { parseFullSession } from "../interview/full-session";
@@ -11,7 +11,7 @@ import type { DbClient } from "../repos/db";
  */
 
 export async function exportEvalSet(db: DbClient, userId: string, now: string): Promise<EvalSet> {
-  const [stored, ratings, answers] = await Promise.all([listFullSessions(db, userId), listInterviewerRatings(db, userId), listAnswers(db, userId)]);
+  const [stored, ratings, answers] = await Promise.all([listFullSessionsForEval(db, userId), listInterviewerRatings(db, userId), listAnswers(db, userId)]);
   const written = Object.fromEntries(answers.map((a) => [a.questionId, [a.body, a.situation, a.task, a.action, a.result].join(" ")]));
   const sessions = stored.map((s) => ({ id: s.id, session: parseFullSession(s.session) })).reverse();
   return buildEvalSet(sessions, ratings, written, now);

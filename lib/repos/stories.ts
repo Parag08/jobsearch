@@ -1,7 +1,7 @@
 import { StorySchema, type Story } from "../stories/types";
 import { matchCompetencies } from "../stories/competencies";
 import { extractNumbers } from "../stories/consistency";
-import { many, one, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, one, oneOrNull, RepoError, type DbClient } from "./db";
 import type { StoryRow } from "./rows";
 
 export type { StoryRow };
@@ -102,8 +102,9 @@ export async function saveStory(db: DbClient, userId: string, story: NewStory): 
 }
 
 export async function listStories(db: DbClient, userId: string): Promise<Story[]> {
-  const rows = await many(
-    db.from("stories").select().eq("user_id", userId).order("captured_at", { ascending: false }),
+  const rows = await manyByPage(
+    db.from("stories").select("id,project_id,bullet_id,situation,task,action,result,competencies,numbers,captured_at,external_ref,source,provenance,updated_at")
+      .eq("user_id", userId).order("captured_at", { ascending: false }).order("id"),
     "stories",
     "list",
   );

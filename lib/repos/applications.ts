@@ -1,5 +1,5 @@
 import type { Application } from "../types";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, manyByPage, one, oneOrNull, type DbClient } from "./db";
 import { applicationPatch, applicationRow, toApplication, type ApplicationRow } from "./rows";
 
 export type NewApplication = Omit<Application, "id">;
@@ -33,8 +33,10 @@ export async function getApplication(
 }
 
 export async function listApplications(db: DbClient, userId: string): Promise<Application[]> {
-  const rows = await many(
-    db.from("applications").select().eq("user_id", userId).order("updated_at", { ascending: false }),
+  const rows = await manyByPage(
+    db.from("applications")
+      .select("id,company,role,sector_id,stage,closed_reason,jd_extract,cv_id,referral_contact_id,next_action,saved_at,applied_at,updated_at,external_ref,apply_url,status_note,company_id,sourcing_kit")
+      .eq("user_id", userId).order("updated_at", { ascending: false }).order("id"),
     "applications",
     "list",
   );
@@ -42,8 +44,9 @@ export async function listApplications(db: DbClient, userId: string): Promise<Ap
 }
 
 export function listUnextractedPostings(db: DbClient, userId: string): Promise<Pick<ApplicationRow, "id" | "jd_raw">[]> {
-  return many(
-    db.from("applications").select("id,jd_raw").eq("user_id", userId).is("jd_extract", null).order("updated_at", { ascending: false }),
+  return manyByPage(
+    db.from("applications").select("id,jd_raw").eq("user_id", userId).is("jd_extract", null)
+      .order("updated_at", { ascending: false }).order("id"),
     "applications",
     "listUnextractedPostings",
   );

@@ -1,5 +1,5 @@
 import type { MasterCv } from "../types";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, manyByPage, one, oneOrNull, type DbClient } from "./db";
 import {
   applicationCvRow,
   masterCvRow,
@@ -41,8 +41,9 @@ export async function getLatestMasterCv(
 
 /** The latest version of every master CV the user has, one per role family. */
 export async function listLatestMasterCvs(db: DbClient, userId: string): Promise<MasterCv[]> {
-  const rows = await many(
-    db.from("master_cvs").select().eq("user_id", userId).order("version", { ascending: false }),
+  const rows = await manyByPage(
+    db.from("master_cvs").select("id,role_family,summary_line,bullet_ids,version").eq("user_id", userId)
+      .order("version", { ascending: false }).order("id"),
     "master_cvs",
     "listLatest",
   );
@@ -92,7 +93,8 @@ export async function setApplicationCvFilePath(
 }
 
 /** Every tailored CV the user has, sent or not (the Bank uses it to say where a point is used). */
-export async function listApplicationCvs(db: DbClient, userId: string): Promise<StoredApplicationCv[]> {
-  const rows = await many(db.from("application_cvs").select().eq("user_id", userId), "application_cvs", "list");
-  return rows.map(toStoredApplicationCv);
+export async function listApplicationCvs(db: DbClient, userId: string): Promise<Pick<StoredApplicationCv, "bulletIds" | "sentAt">[]> {
+  const rows = await manyByPage(db.from("application_cvs").select("bullet_ids,sent_at").eq("user_id", userId)
+    .order("id"), "application_cvs", "list");
+  return rows.map((r) => ({ bulletIds: r.bullet_ids, sentAt: r.sent_at ?? null }));
 }

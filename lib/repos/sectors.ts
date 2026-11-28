@@ -1,5 +1,5 @@
 import type { SectorNode } from "../types";
-import { many, one, oneOrNull, pgArray, type DbClient } from "./db";
+import { manyByPage, many, one, oneOrNull, pgArray, type DbClient } from "./db";
 import { sectorRow, toSectorNode } from "./rows";
 
 /**
@@ -30,6 +30,6 @@ export async function getSectorByPath(
 }
 
 export async function listSectors(db: DbClient, userId: string): Promise<SectorNode[]> {
-  const rows = await many(db.from("sectors").select().eq("user_id", userId), "sectors", "list");
+  const rows = await manyByPage(db.from("sectors").select("id,path,skills,companies,titles,jd_count,summary").eq("user_id", userId).order("id"), "sectors", "list");
   return rows.map(toSectorNode);
 }

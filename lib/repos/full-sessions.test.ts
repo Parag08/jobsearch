@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
-import { createFullSession, discardFullSession, finishFullSession, getFullSession, listFullSessions, saveFullSession } from "./full-sessions";
+import { LIST_LIMIT } from "./db";
+import { createFullSession, discardFullSession, finishFullSession, getFullSession, listFullSessions, listFullSessionsForEval, listFullSessionSummaries, saveFullSession } from "./full-sessions";
 import { startFull } from "../interview/full-session";
 import type { FullPlan } from "../interview/full-plan";
 
@@ -18,6 +19,32 @@ const session = startFull(plan, { maxTopics: 2, topicFollowUps: 1, totalFollowUp
 const scores = { structure: 4, ownership: 3, specificity: 3, impact: 4, reflection: 2, relevance: 4 };
 
 describe("full sessions repo", () => {
+  it("keeps older sessions resumable and available to the evaluation export", async () => {
+    const db = new FakeDb();
+    const old = await createFullSession(db, "u1", session);
+    await db.from("interview_full_sessions").insert(Array.from({ length: LIST_LIMIT }, () => ({
+      user_id: "u1", application_id: "other", status: "running", session,
+      created_at: "2099-01-01T00:00:00Z",
+    })));
+    expect((await listFullSessionSummaries(db, "u1")).at(-1)).toMatchObject({ id: old.id, status: "running" });
+    expect((await listFullSessionsForEval(db, "u1")).at(-1)).toEqual({ id: old.id, session: old.session });
+  });
+
+  it("summarizes only general practice interviews and counts distinct topics asked", async () => {
+    const db = new FakeDb();
+    const general = await createFullSession(db, "u1", {
+      ...session,
+      plan: { ...plan, applicationId: null },
+      turns: [...session.turns, session.turns[0]!, { role: "candidate", topicId: "t2", text: "answer", at: "x" }],
+    });
+    await createFullSession(db, "u1", session);
+    await createFullSession(db, "u2", general.session);
+    expect(await listFullSessionSummaries(db, "u1", null)).toEqual([{
+      id: general.id, applicationId: null, status: "running", overall: null,
+      createdAt: general.createdAt, updatedAt: general.updatedAt, topics: 1,
+    }]);
+  });
+
   it("creates, saves in place, finishes and lists newest first per user", async () => {
     const db = new FakeDb();
     const s = await createFullSession(db, "u1", session);

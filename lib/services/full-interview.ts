@@ -1,15 +1,14 @@
 import type { Application } from "../types";
 import { listApplications } from "../repos/applications";
 import { listRoleQuestions } from "../repos/role-questions";
-import { listFullSessions, type StoredFullSession } from "../repos/full-sessions";
-import { listAttempts } from "../repos/answers";
+import { listFullSessionSummaries, type FullSessionSummary } from "../repos/full-sessions";
+import { listAttemptScores } from "../repos/answers";
 import { roleQuestions } from "../interview/role-questions";
 import { companyQuestions, companySlug } from "../interview/company-questions";
 import { companyTemplates, questionBank } from "../interview/bank-data";
 import { inferCompetencies } from "../stories/competencies";
 import { planFromBank, planFromJob, planFromRoleQuestions, type FullInterviewSettings, type FullPlan } from "../interview/full-plan";
 import type { DbClient } from "../repos/db";
-import { topicsAsked } from "../interview/full-session";
 
 /**
  * Plans and cards for the full mock interview (docs/FULL-INTERVIEW.md). An application's plan
@@ -34,7 +33,7 @@ function planFor(app: Application, apps: Application[], stored: Awaited<ReturnTy
 /** Best overall per question id, from every mock attempt. */
 async function bestScores(db: DbClient, userId: string): Promise<Map<string, number>> {
   const best = new Map<string, number>();
-  for (const a of await listAttempts(db, userId).catch(() => [])) best.set(a.questionId, Math.max(best.get(a.questionId) ?? 0, a.overall));
+  for (const a of await listAttemptScores(db, userId).catch(() => [])) best.set(a.questionId, Math.max(best.get(a.questionId) ?? 0, a.overall));
   return best;
 }
 
@@ -80,7 +79,7 @@ export async function fullInterviewsFor(db: DbClient, userId: string, settings: 
   const [apps, stored, sessions] = await Promise.all([
     listApplications(db, userId),
     listRoleQuestions(db, userId).catch(() => []),
-    listFullSessions(db, userId).catch(() => []),
+    listFullSessionSummaries(db, userId).catch(() => []),
   ]);
   const out: FullInterviewCard[] = [];
   for (const app of apps.filter(live)) {
@@ -91,7 +90,7 @@ export async function fullInterviewsFor(db: DbClient, userId: string, settings: 
   return out;
 }
 
-function card(plan: FullPlan, mine: StoredFullSession[], slug: string): FullInterviewCard {
+function card(plan: FullPlan, mine: FullSessionSummary[], slug: string): FullInterviewCard {
   const done = mine.filter((s) => s.status === "done" && s.overall !== null); // newest first
   return {
     applicationId: plan.applicationId,
@@ -105,12 +104,12 @@ function card(plan: FullPlan, mine: StoredFullSession[], slug: string): FullInte
     runningId: mine.find((s) => s.status === "running")?.id ?? null,
     lastDoneId: done[0]?.id ?? null,
     best: done.length ? Math.max(...done.map((s) => s.overall!)) : null,
-    history: done.map((s) => ({ id: s.id, at: s.updatedAt || s.createdAt, overall: s.overall!, topics: topicsAsked(s.session).length })),
+    history: done.map((s) => ({ id: s.id, at: s.updatedAt || s.createdAt, overall: s.overall!, topics: s.topics })),
   };
 }
 
 /** The general practice interview's card: always available, no company needed. */
 export async function generalInterviewCard(db: DbClient, userId: string, settings: FullInterviewSettings): Promise<FullInterviewCard> {
-  const [plan, mine] = await Promise.all([fullPlanFor(db, userId, null, settings), listFullSessions(db, userId, null).catch(() => [])]);
+  const [plan, mine] = await Promise.all([fullPlanFor(db, userId, null, settings), listFullSessionSummaries(db, userId, null).catch(() => [])]);
   return card(plan!, mine, "general");
 }
