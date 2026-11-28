@@ -1,4 +1,4 @@
-import { HISTORY_LIMIT, many, one, type DbClient } from "./db";
+import { many, manyByPage, one, type DbClient } from "./db";
 import type { ApiTokenRow } from "./rows";
 import { isExpired, type TokenScope } from "../agent/token";
 import { RATE_LIMIT, takeRequest } from "../agent/rate-limit";
@@ -49,9 +49,9 @@ export async function insertApiToken(
 }
 
 export async function listApiTokens(db: DbClient, userId: string): Promise<ApiToken[]> {
-  const rows = await many(
+  const rows = await manyByPage(
     db.from("api_tokens").select("id,name,scope,created_at,expires_at,last_used_at,revoked_at")
-      .eq("user_id", userId).order("created_at", { ascending: false }).limit(HISTORY_LIMIT),
+      .eq("user_id", userId).order("created_at", { ascending: false }).order("id"),
     "api_tokens",
     "list",
   );

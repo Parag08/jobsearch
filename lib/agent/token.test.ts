@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "../repos/fake-db";
+import { LIST_LIMIT } from "../repos/db";
 import { insertApiToken, listApiTokens, resolveApiToken, revokeApiToken } from "../repos/api-tokens";
 import { bearerToken, generateToken, hashToken, isExpired, tokenExpiry, tokenOptions, TOKEN_PREFIX } from "./token";
 
@@ -23,6 +24,15 @@ describe("agent tokens", () => {
   });
 
   const opts = { scope: "write" as const, days: 365 };
+
+  it("lists older keys so their owners can still revoke them", async () => {
+    const db = new FakeDb();
+    const key = await insertApiToken(db, "user-1", "old key", hashToken(generateToken()), opts);
+    await db.from("api_tokens").insert(Array.from({ length: LIST_LIMIT }, (_, i) => ({
+      user_id: "user-1", name: `recent key ${i}`, created_at: "2099-01-01T00:00:00Z",
+    })));
+    expect((await listApiTokens(db, "user-1")).at(-1)).toEqual(key);
+  });
 
   it("resolves a stored hash to its owner and scope, stamps last use, and stops after revocation", async () => {
     const db = new FakeDb();

@@ -4,7 +4,7 @@ Keep this file updated at the end of every working session: what was done, decis
 
 ## List query bounds
 
-Repository lists request named columns. Recent-history reads have explicit limits; complete sets used for sourcing, matching and export read in ordered pages. The case library loads progress only and fetches one session when a case is opened.
+Repository lists request named columns. Recent-history reads have explicit limits; lookup, dedupe, saved-state, and aggregate inputs read all rows in ordered pages. The case library loads progress only and fetches one session when a case is opened.
 
 ## 2026-11-27 - Settings redesign
 
