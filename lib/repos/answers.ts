@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SCORE_DIMENSIONS, type Scores } from "../interview/score";
-import { LIST_LIMIT, many, one, type DbClient } from "./db";
+import { LIST_LIMIT, many, manyByPage, one, type DbClient } from "./db";
 import type { InterviewAnswerRow, InterviewAttemptRow } from "./rows";
 
 export type { InterviewAnswerRow, InterviewAttemptRow };
@@ -112,8 +112,8 @@ export async function upsertAnswer(db: DbClient, userId: string, a: NewAnswer): 
 }
 
 export async function listAnswers(db: DbClient, userId: string): Promise<Answer[]> {
-  const rows = await many(db.from("interview_answers").select("id,question_id,mode,body,situation,task,action,result,updated_at")
-    .eq("user_id", userId).order("updated_at", { ascending: false }).limit(LIST_LIMIT), "interview_answers", "list");
+  const rows = await manyByPage(db.from("interview_answers").select("id,question_id,mode,body,situation,task,action,result,updated_at")
+    .eq("user_id", userId).order("updated_at", { ascending: false }).order("id"), "interview_answers", "list");
   return rows.map(toAnswer);
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
 import { listAnswers, listAttempts, saveAttempt, upsertAnswer } from "./answers";
+import { LIST_LIMIT } from "./db";
 
 const answer = {
   questionId: "resilience-failure",
@@ -15,6 +16,16 @@ const answer = {
 const scores = { structure: 4, ownership: 3, specificity: 4, impact: 4, reflection: 3, relevance: 5 };
 
 describe("answers repo", () => {
+  it("loads a saved draft older than the first page", async () => {
+    const db = new FakeDb();
+    await upsertAnswer(db, "u1", answer);
+    await db.from("interview_answers").insert(Array.from({ length: LIST_LIMIT }, (_, i) => ({
+      user_id: "u1", question_id: `new-${i}`, mode: "free", body: "", situation: "",
+      task: "", action: "", result: "", updated_at: "2099-01-01",
+    })));
+    expect((await listAnswers(db, "u1")).at(-1)).toMatchObject(answer);
+  });
+
   it("saves one answer per question per user", async () => {
     const db = new FakeDb();
     const saved = await upsertAnswer(db, "u1", answer);
