@@ -64,10 +64,9 @@ export default async function Interview({ searchParams }: { searchParams: Promis
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const params = await searchParams;
-  const env = await envFor(db, userId);
+  const [env, companyQs, apps] = await Promise.all([envFor(db, userId), listCompanyQuestions(db, userId), listApplications(db, userId)]);
   const settings = fullInterviewSettingsFromEnv(env);
 
-  const [companyQs, apps] = await Promise.all([listCompanyQuestions(db, userId), listApplications(db, userId)]);
   const entries = prepEntries(
     companyQs.map((q) => ({ id: q.id, company: q.company, round: "round" in q ? (q as RoleQuestion).round : null })),
     apps.filter((a) => a.closedReason === null).map((a) => ({ company: a.company, role: a.role, roleFamily: a.jdExtract?.roleFamily ?? null })),
