@@ -24,12 +24,10 @@ import { turnSettingsFromEnv } from "@/lib/interview/turn-taking";
 import { GENERAL, choosePrep, prepEntries, type PrepEntry } from "@/lib/interview/prep";
 import { fullInterviewsFor, generalInterviewCard, type FullInterviewCard } from "@/lib/services/full-interview";
 import { outOfFive } from "@/lib/interview/score";
-import { BehaviouralView } from "./behavioural-view";
-import { FullInterview } from "./full-interview";
 import { listCaseSessions, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
 import { caseProgress, type CaseProgress } from "@/lib/interview/case-progress";
-import { CaseRoom } from "./case-room";
+import { BehaviouralView, CaseRoom, FullInterview } from "./interview-views";
 import ui from "../ui.module.css";
 
 /**
