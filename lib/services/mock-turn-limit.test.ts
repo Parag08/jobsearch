@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeDb } from "../repos/fake-db";
+import { listTokenLedger } from "../repos/token-ledger";
 
 // The quick mock interview through its real server actions: the session stays on the server, and
 // past the per-user AI call limit no turn reaches the provider.
@@ -26,6 +27,44 @@ beforeEach(() => {
 });
 
 describe("mockTurnAction", () => {
+  it("logs the gateway's prompt and output tokens for the follow-up", async () => {
+    const model = "openai/interviewer";
+    vi.stubEnv("AI_GATEWAY_INTERVIEWER_MODEL", model);
+    stream.mockImplementationOnce(async function* ({ onUsage }) {
+      yield JSON.stringify({ probe: "result", say: "What was the result?" });
+      await onUsage?.({ model, tokensIn: 513, tokensOut: 27 });
+    });
+
+    const { sessionId } = await startMockAction({ questionId: QUESTION, tone: "neutral", maxFollowUps: 4 });
+    const result = await mockTurnAction({ sessionId: sessionId!, answer: "We sorted it out." });
+
+    expect(result.error).toBeUndefined();
+    expect(await listTokenLedger(db, "u1")).toEqual([
+      expect.objectContaining({ module: "interview-follow-up", model, tokensIn: 513, tokensOut: 27 }),
+    ]);
+  });
+
+  it("also logs a billed completion when its reply cannot be parsed and the premium model is tried", async () => {
+    vi.stubEnv("AI_GATEWAY_INTERVIEWER_MODEL", "openai/interviewer");
+    vi.stubEnv("AI_GATEWAY_PREMIUM_MODEL", "mistral/premium");
+    stream.mockImplementationOnce(async function* ({ model, onUsage }) {
+      yield "Not JSON";
+      await onUsage?.({ model, tokensIn: 513, tokensOut: 11 });
+    }).mockImplementationOnce(async function* ({ model, onUsage }) {
+      yield JSON.stringify({ probe: "result", say: "What was the result?" });
+      await onUsage?.({ model, tokensIn: 520, tokensOut: 27 });
+    });
+
+    const { sessionId } = await startMockAction({ questionId: QUESTION, tone: "neutral", maxFollowUps: 4 });
+    const result = await mockTurnAction({ sessionId: sessionId!, answer: "We sorted it out." });
+
+    expect(result.error).toBeUndefined();
+    expect(await listTokenLedger(db, "u1")).toEqual([
+      expect.objectContaining({ module: "interview-follow-up", model: "openai/interviewer", tokensIn: 513, tokensOut: 11 }),
+      expect.objectContaining({ module: "interview-follow-up", model: "mistral/premium", tokensIn: 520, tokensOut: 27 }),
+    ]);
+  });
+
   it("takes the session id, not a session the browser could replay", async () => {
     const started = await startMockAction({ questionId: QUESTION, tone: "neutral", maxFollowUps: 4 });
     expect(started.error).toBeUndefined();

@@ -719,17 +719,24 @@ export async function mockTurnAction(input: { sessionId: string; answer: string 
     questionFromCandidate: found.typed,
   });
   let reply = null;
-  let model = "code";
   for (const m of interviewerModels((await envFor(db, userId)))) {
     try {
       const out = await aiWrite(
         w,
         "mock-turn",
-        { model: m.model, prompt, json: true, maxOutputTokens: m.maxOutputTokens, reasoningEffort: m.reasoningEffort },
+        {
+          model: m.model,
+          prompt,
+          json: true,
+          maxOutputTokens: m.maxOutputTokens,
+          reasoningEffort: m.reasoningEffort,
+          onUsage: async (usage) => {
+            await logTokens(db, userId, { date: today(), module: "interview-follow-up", ...usage }).catch(() => undefined);
+          },
+        },
         { candidates: step.candidates },
       );
       reply = guardFollowUp(parseFollowUp(parseJsonLoose(out), step.candidates), s, answer);
-      model = m.model;
       break;
     } catch (err) {
       if (err instanceof AiCallLimitError) return { error: err.message };
@@ -740,7 +747,6 @@ export async function mockTurnAction(input: { sessionId: string; answer: string 
   }
   reply ??= { probe: step.candidates[0], say: FOLLOW_UP_FALLBACK[step.candidates[0]] };
 
-  await logTokens(db, userId, { date: today(), module: "interview-follow-up", model, tokensIn: 0, tokensOut: 0 }).catch(() => undefined);
   const next = applyFollowUp(s, answer, reply, now);
   await saveMockSession(db, userId, sessionId, next, now);
   return { sessionId, session: next };

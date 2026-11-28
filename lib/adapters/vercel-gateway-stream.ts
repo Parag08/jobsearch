@@ -1,5 +1,5 @@
 import { GATEWAY_URL } from "./vercel-gateway";
-import { LlmHttpError } from "./llm-http";
+import { LlmHttpError, usageInt, type LlmUsage } from "./llm-http";
 
 /**
  * Streaming text generation through the Vercel AI Gateway.
@@ -31,6 +31,7 @@ export interface StreamOptions {
    * stream; only the answer comes back.
    */
   reasoningEffort?: string;
+  onUsage?: (usage: LlmUsage) => void | Promise<void>;
 }
 
 export interface SseParseResult {
@@ -38,6 +39,7 @@ export interface SseParseResult {
   deltas: string[];
   /** Trailing partial line to prepend to the next chunk. */
   rest: string;
+  usage?: Omit<LlmUsage, "model">;
 }
 
 /**
@@ -53,6 +55,7 @@ export function parseSseChunk(chunk: string, carry: string): SseParseResult {
   // The last element is whatever followed the final newline: possibly a partial line.
   const rest = lines.pop() ?? "";
   const deltas: string[] = [];
+  let usage: SseParseResult["usage"];
 
   for (const raw of lines) {
     const line = raw.trim();
@@ -61,14 +64,20 @@ export function parseSseChunk(chunk: string, carry: string): SseParseResult {
     const payload = line.slice(5).trim();
     if (!payload || payload === "[DONE]") continue;
     try {
-      const json = JSON.parse(payload) as { choices?: { delta?: { content?: string | null } }[] };
+      const json = JSON.parse(payload) as {
+        choices?: { delta?: { content?: string | null } }[];
+        usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
+      };
+      if (json.usage) {
+        usage = { tokensIn: usageInt(json.usage.prompt_tokens), tokensOut: usageInt(json.usage.completion_tokens) };
+      }
       const content = json.choices?.[0]?.delta?.content;
       if (typeof content === "string" && content.length > 0) deltas.push(content);
     } catch {
       /* a malformed frame is skipped, never thrown mid-stream */
     }
   }
-  return { deltas, rest };
+  return { deltas, rest, usage };
 }
 
 /**
@@ -96,6 +105,7 @@ export async function* streamGatewayText(opts: StreamOptions): AsyncGenerator<st
       model: opts.model,
       messages: [{ role: "user", content: opts.prompt }],
       stream: true,
+      ...(opts.onUsage ? { stream_options: { include_usage: true } } : {}),
       max_tokens: opts.maxOutputTokens,
       ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       ...(opts.reasoningEffort ? { reasoning: { effort: opts.reasoningEffort, exclude: true } } : {}),
@@ -111,19 +121,23 @@ export async function* streamGatewayText(opts: StreamOptions): AsyncGenerator<st
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let carry = "";
+  let usage: SseParseResult["usage"];
 
   try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      const { deltas, rest } = parseSseChunk(decoder.decode(value, { stream: true }), carry);
-      carry = rest;
-      for (const d of deltas) yield d;
+      const chunk = parseSseChunk(decoder.decode(value, { stream: true }), carry);
+      carry = chunk.rest;
+      usage = chunk.usage ?? usage;
+      for (const d of chunk.deltas) yield d;
     }
     // Flush anything the stream ended on without a trailing newline.
     const tail = parseSseChunk("\n", carry);
     for (const d of tail.deltas) yield d;
+    usage = tail.usage ?? usage;
   } finally {
     reader.releaseLock();
   }
+  if (usage) await opts.onUsage?.({ model: opts.model, ...usage });
 }
