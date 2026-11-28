@@ -2,6 +2,10 @@
 
 Keep this file updated at the end of every working session: what was done, decisions taken, what's next. CLAUDE.md holds the stable rules; this holds the moving state. Keep only the last two or three sessions here - move older entries to docs/MEMORY-archive.md so a fresh session stays cheap to start.
 
+## 2026-11-28 - Skip middleware auth without a session cookie
+
+Middleware skips the Supabase client when there is no session cookie or chunk. Settings return paths and public demo lease renewal still run; workspace pages and APIs still enforce access through `getWorkspace()`.
+
 ## 2026-11-27 - Settings redesign
 
 QA follow-up for PR #61: Settings dialogs portal to the Settings frame so search cannot hide them; canceling a guarded jump shows the unsaved draft. Dark placeholders use the Settings secondary text color, and mobile controls use a 44px minimum. Browsers can open an Advanced disclosure for a URL fragment before hydration, so only those closed-by-default disclosures ignore the expected attribute difference.

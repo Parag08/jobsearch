@@ -7,6 +7,7 @@ import { DEMO_COOKIE, DEMO_KITS_COOKIE, DEMO_TTL_SECONDS, demoMaxVisitorsFromEnv
 import { demoSigningSecret, readDemoVisitor, setSignedDemoLease } from "./lib/demo/visitor-token";
 
 const leaseRenewalIntervalMs = 15 * 60 * 1000;
+const supabaseSessionCookie = /^sb-.+-auth-token(?:\.\d+)?$/;
 
 async function renewDemoVisit(request: NextRequest, response: NextResponse) {
   const path = request.nextUrl.pathname;
@@ -30,7 +31,7 @@ async function renewDemoVisit(request: NextRequest, response: NextResponse) {
  * Keeps the Supabase session alive and routes signed-in visitors.
  *
  * Server Components cannot write cookies, so without this the access token expired after
- * about an hour and every page sent the user back to /signin. Here, on every request,
+ * about an hour and every page sent the user back to /signin. When a session cookie is present,
  * getUser() refreshes the token and the new cookies go out on the response (the
  * @supabase/ssr pattern). A signed-in visitor on / or /signin goes straight to /app.
  * Explicit local demo mode has no session to refresh.
@@ -44,9 +45,11 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set("x-jobsearch-settings", settingsHref(section));
   }
   const env = requireWorkspaceEnv();
-  if (!env) return renewDemoVisit(request, NextResponse.next({ request: { headers: requestHeaders } }));
-
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (!env || !request.cookies.getAll().some(({ name }) => supabaseSessionCookie.test(name))) {
+    return renewDemoVisit(request, response);
+  }
+
   const supabase = createServerClient(env.url, env.publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
