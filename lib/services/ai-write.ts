@@ -1,6 +1,6 @@
 import { createLlm } from "../adapters/llm-factory";
 import type { LlmUsage, UsageListener, UsageReportingLlm } from "../adapters/llm-http";
-import { streamGatewayText } from "../adapters/vercel-gateway-stream";
+import { streamGatewayText, type StreamOptions } from "../adapters/vercel-gateway-stream";
 import { cannedText, lexicalExtract, type CannedContext, type CannedTask } from "../demo/canned";
 import type { JdExtract } from "../types";
 import type { DbClient } from "../repos/db";
@@ -68,6 +68,7 @@ export interface WriteOptions {
   maxOutputTokens: number;
   /** A thinking model's effort (gateway `reasoning.effort`); unset = the model's default. */
   reasoningEffort?: string;
+  onUsage?: StreamOptions["onUsage"];
 }
 
 /** Stream one completion to a string - or, for a demo visitor, return the canned reply for `task`. */

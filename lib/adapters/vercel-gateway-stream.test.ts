@@ -90,6 +90,18 @@ describe("streamGatewayText", () => {
     expect(out.join("")).toBe("Hello world");
   });
 
+  it("requests usage and reports the final usage-only frame without yielding it as text", async () => {
+    const usage = 'data: {"choices":[],"usage":{"prompt_tokens":513,"completion_tokens":27}}';
+    const { fetch, calls } = stubFetch(sseResponse([delta("hi"), usage.slice(0, 23), usage.slice(23)]));
+    const reports: unknown[] = [];
+    const model = "openai/gpt-6-astra";
+    const out = await collect(streamGatewayText({ apiKey: "k", model, prompt: "go", fetch, onUsage: (value) => { reports.push(value); } }));
+
+    expect(JSON.parse(String(calls[0].init.body)).stream_options).toEqual({ include_usage: true });
+    expect(out).toEqual(["hi"]);
+    expect(reports).toEqual([{ model, tokensIn: 513, tokensOut: 27 }]);
+  });
+
   it("reassembles deltas split across transport chunk boundaries", async () => {
     const whole = `${delta("streamed")}data: [DONE]\n\n`;
     const pieces = [whole.slice(0, 10), whole.slice(10, 25), whole.slice(25)];

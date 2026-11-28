@@ -6,6 +6,10 @@ Keep this file updated at the end of every working session: what was done, decis
 
 Middleware skips the Supabase client when there is no session cookie or chunk. Settings return paths and public demo lease renewal still run; workspace pages and APIs still enforce access through `getWorkspace()`.
 
+## Quick mock interview token ledger
+
+Quick mock follow-ups request usage in the AI Gateway stream and log the reported prompt and completion counts to `interview-follow-up`, even when a completed reply cannot be parsed and another model is tried. Canned demo and code-only replies do not generate a ledger entry.
+
 ## 2026-11-28 - Settings search flake
 
 After a same-section search result focuses its target, Chromium can deliver `hashchange` after the next search starts. Settings preserves input entered at the new fragment. The Settings browser test holds back the Cities hash event until the microphone query has been entered.
