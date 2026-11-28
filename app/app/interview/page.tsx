@@ -24,12 +24,10 @@ import { turnSettingsFromEnv } from "@/lib/interview/turn-taking";
 import { GENERAL, choosePrep, prepEntries, type PrepEntry } from "@/lib/interview/prep";
 import { fullInterviewsFor, generalInterviewCard, type FullInterviewCard } from "@/lib/services/full-interview";
 import { outOfFive } from "@/lib/interview/score";
-import { BehaviouralView } from "./behavioural-view";
-import { FullInterview } from "./full-interview";
 import { getLatestCaseSession, listCaseSessionSummaries, type CaseSessionSummary, type StoredCaseSession } from "@/lib/repos/case-sessions";
 import { caseLibrary } from "./cases";
 import { caseProgress, type CaseProgress } from "@/lib/interview/case-progress";
-import { CaseRoom } from "./case-room";
+import { BehaviouralView, CaseRoom, FullInterview } from "./interview-views";
 import ui from "../ui.module.css";
 
 /**
@@ -66,10 +64,9 @@ export default async function Interview({ searchParams }: { searchParams: Promis
   if (!w) redirect("/signin");
   const { db, userId } = w;
   const params = await searchParams;
-  const env = await envFor(db, userId);
+  const [env, companyQs, apps] = await Promise.all([envFor(db, userId), listCompanyQuestions(db, userId), listApplications(db, userId)]);
   const settings = fullInterviewSettingsFromEnv(env);
 
-  const [companyQs, apps] = await Promise.all([listCompanyQuestions(db, userId), listApplications(db, userId)]);
   const entries = prepEntries(
     companyQs.map((q) => ({ id: q.id, company: q.company, round: "round" in q ? (q as RoleQuestion).round : null })),
     apps.filter((a) => a.closedReason === null).map((a) => ({ company: a.company, role: a.role, roleFamily: a.jdExtract?.roleFamily ?? null })),

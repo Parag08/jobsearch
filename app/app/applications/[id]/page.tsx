@@ -77,15 +77,16 @@ export default async function ApplicationPage({
     return <SafeKitView application={app} record={record} verified={verified} researchStatus={researchStatus}
       today={new Date().toISOString().slice(0, 10)} error={kitError} />;
   }
-  const [cv, projects, stories, letter, jdRaw] = await Promise.all([
+  const [cv, projects, stories, letter, jdRaw, env] = await Promise.all([
     app.cvVersionId ? getApplicationCv(db, userId, app.cvVersionId) : null,
     listProjects(db, userId),
     listStories(db, userId),
     getCoverLetter(db, userId, id),
     app.jdExtract ? null : getJdRaw(db, userId, id),
+    envFor(db, userId),
   ]);
   const today = new Date().toISOString().slice(0, 10);
-  const followUpDays = applyFollowUpDaysFromEnv(await envFor(db, userId));
+  const followUpDays = applyFollowUpDaysFromEnv(env);
   const letterFrozen = app.appliedAt !== null;
   const bullets = projects.flatMap((p) => p.bullets);
   const bank: Record<string, Bullet> = Object.fromEntries(bullets.map((b) => [b.id, b]));

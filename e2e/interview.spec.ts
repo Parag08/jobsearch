@@ -65,6 +65,14 @@ test("a custom question can be rehearsed in a single-question mock", async ({ de
   await page.getByRole("button", { name: "Add question" }).click();
   await expect(page.getByRole("heading", { name: question })).toBeVisible();
 
+  const rolePlay = page.getByRole("button", { name: "Role-play" });
+  const rolePlayHint = page.getByText("A role-play is built from the model answer.", { exact: false });
+  await expect(rolePlayHint).toBeHidden();
+  await rolePlay.click();
+  await expect(rolePlayHint).toBeVisible();
+  await rolePlay.click();
+  await expect(rolePlayHint).toBeHidden();
+
   await page.getByRole("button", { name: "Interview settings" }).click();
   await page.getByRole("checkbox", { name: "Interviewer speaks" }).uncheck();
   await page.getByRole("combobox", { name: "Most follow-up questions" }).selectOption("0");
