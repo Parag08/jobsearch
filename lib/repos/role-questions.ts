@@ -86,9 +86,8 @@ export async function upsertRoleQuestions(
 /** Remove questions by ref. Their answers and attempts stay in the database, unseen. */
 export async function removeRoleQuestions(db: DbClient, userId: string, externalRefs: string[]): Promise<number> {
   const mine = (await listRoleQuestions(db, userId)).filter((q) => externalRefs.includes(q.externalRef));
-  for (const q of mine) {
-    const { error } = await db.from(TABLE).delete().eq("user_id", userId).eq("id", q.id);
-    if (error) throw new RepoError(TABLE, "remove", error.message);
-  }
+  if (!mine.length) return 0;
+  const { error } = await db.from(TABLE).delete().eq("user_id", userId).in("id", mine.map((q) => q.id));
+  if (error) throw new RepoError(TABLE, "remove", error.message);
   return mine.length;
 }
