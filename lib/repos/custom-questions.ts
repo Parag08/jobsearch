@@ -1,5 +1,5 @@
 import type { StoredCustomQuestion } from "../interview/custom-questions";
-import { LIST_LIMIT, many, one, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, one, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewCustomQuestionRow } from "./rows";
 
 /**
@@ -30,8 +30,8 @@ export async function addCustomQuestion(db: DbClient, userId: string, text: stri
 }
 
 export async function listCustomQuestions(db: DbClient, userId: string): Promise<StoredCustomQuestion[]> {
-  const rows = await many(db.from("interview_custom_questions").select("id,text,created_at,external_ref,competency,tag")
-    .eq("user_id", userId).order("created_at", { ascending: false }).limit(LIST_LIMIT), "interview_custom_questions", "list");
+  const rows = await manyByPage(db.from("interview_custom_questions").select("id,text,created_at,external_ref,competency,tag")
+    .eq("user_id", userId).order("created_at", { ascending: false }).order("id"), "interview_custom_questions", "list");
   return rows.map(toStored);
 }
 

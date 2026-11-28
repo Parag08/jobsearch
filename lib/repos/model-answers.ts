@@ -1,5 +1,5 @@
 import type { ModelAnswer, ModelAnswerSource } from "../interview/model-answer";
-import { LIST_LIMIT, many, oneOrNull, RepoError, type DbClient } from "./db";
+import { manyByPage, oneOrNull, RepoError, type DbClient } from "./db";
 import type { InterviewModelAnswerRow } from "./rows";
 
 /** Model answers (interview_model_answers, migration 0013): one per user and question id. */
@@ -18,8 +18,8 @@ export async function getModelAnswer(db: DbClient, userId: string, questionId: s
 }
 
 export async function listModelAnswers(db: DbClient, userId: string): Promise<ModelAnswer[]> {
-  return (await many(db.from(TABLE).select("question_id,text,source,updated_at")
-    .eq("user_id", userId).order("updated_at", { ascending: false }).limit(LIST_LIMIT), TABLE, "list")).map(toModelAnswer);
+  return (await manyByPage(db.from(TABLE).select("question_id,text,source,updated_at")
+    .eq("user_id", userId).order("updated_at", { ascending: false }).order("question_id"), TABLE, "list")).map(toModelAnswer);
 }
 
 /** Insert or replace the model answer for one question. Callers decide whether they may (mayOverwrite). */

@@ -1,8 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { FakeDb } from "./fake-db";
+import { LIST_LIMIT } from "./db";
 import { getModelAnswer, listModelAnswers, putModelAnswer } from "./model-answers";
 
 describe("model answers repo", () => {
+  it("keeps older model answers available for their interview topics", async () => {
+    const db = new FakeDb();
+    await putModelAnswer(db, "u1", { questionId: "role:a", text: "Saved", source: "user" }, "2026-11-18T00:00:00Z");
+    await db.from("interview_model_answers").insert(Array.from({ length: LIST_LIMIT }, (_, i) => ({
+      user_id: "u1", question_id: `recent-${i}`, text: "More recent", source: "user", updated_at: "2026-11-19T00:00:00Z",
+    })));
+    expect((await listModelAnswers(db, "u1")).at(-1)).toMatchObject({ questionId: "role:a", text: "Saved" });
+  });
+
   it("keeps one answer per question, replacing in place", async () => {
     const db = new FakeDb();
     await putModelAnswer(db, "u1", { questionId: "role:a", text: "First", source: "agent" }, "2026-11-18T00:00:00Z");
