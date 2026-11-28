@@ -107,7 +107,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ apps, rankedRoles }, contacts, outreachDates, attempts, cases, projects, profile] = await Promise.all([
+  const [{ apps, rankedRoles }, contacts, outreachDates, attempts, cases, projects, profile, env] = await Promise.all([
     loadDailySourcing(db, userId),
     listContacts(db, userId),
     listInteractionDates(db, userId),
@@ -115,6 +115,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     listCaseSessions(db, userId),
     listProjects(db, userId),
     getProfile(db, userId),
+    envFor(db, userId),
   ]);
 
   const m = momentum({
@@ -128,7 +129,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     openRoles: rankedRoles.length,
     followupsDue: followupsDue(contacts, today).length,
     stale: staleApplications(apps, today).length,
-    goals: homeGoalsFromEnv(await envFor(db, userId)),
+    goals: homeGoalsFromEnv(env),
   });
 
   const company = (id?: string) => apps.find((a) => a.id === id)?.company;

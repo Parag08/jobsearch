@@ -38,12 +38,11 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const { db, userId } = w;
 
   const today = new Date().toISOString().slice(0, 10);
-  const [apps, contacts] = await Promise.all([listApplications(db, userId), listContactsWithInteractions(db, userId)]);
+  const [apps, contacts, env] = await Promise.all([listApplications(db, userId), listContactsWithInteractions(db, userId), envFor(db, userId)]);
   const stale = new Set(staleApplications(apps, today).map((a) => a.id));
   const due = followupsDue(contacts, today);
 
   const byStage = Object.fromEntries(STAGES.map((s) => [s, [] as Application[]])) as Record<Stage, Application[]>;
-  const env = await envFor(db, userId);
   const recentDays = pipelineRecentDaysFromEnv(env);
   const showAll = recentDays === undefined || show !== "recent";
   const shown = showAll ? apps : recentApplications(apps, today, recentDays);

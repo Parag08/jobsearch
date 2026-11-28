@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { DbClient } from "../repos/db";
 import { getUserSettings, getUserSettingsVersion, putUserSettings, putUserSettingsVersion } from "../repos/user-settings";
 import { cleanValues, SETTINGS, settingsEnv, validateSettings } from "../settings/registry";
@@ -11,9 +12,15 @@ type Env = Record<string, string | undefined>;
  * (lib/settings/registry.ts). Every place that reads a user-adjustable setting goes through this.
  */
 export async function envFor(db: DbClient, userId: string, base: Env = process.env): Promise<Env> {
-  const saved = await getUserSettings(db, userId).catch(() => ({}));
-  return settingsEnv(base, saved);
+  return settingsEnv(base, await savedSettings(db, userId));
 }
+
+/**
+ * One user_settings read per server render, however many callers (React cache(), like getWorkspace).
+ * Server actions and route handlers run outside a render, so there it reads every call.
+ */
+const savedSettings = cache((db: DbClient, userId: string): Promise<Record<string, string>> =>
+  getUserSettings(db, userId).catch(() => ({})));
 
 /** Validate with the app's own rules, then replace the user's whole set. Nothing is saved on an error. */
 export async function saveSettings(
