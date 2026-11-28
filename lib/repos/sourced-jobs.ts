@@ -1,6 +1,6 @@
 import type { SourcedJob } from "../types";
 import type { RetirementUpdate, TrackedJob } from "../watchlist/retire";
-import { many, one, oneOrNull, type DbClient } from "./db";
+import { many, one, oneOrNull, type ApplySourcedJobRetirementRpc, type DbClient } from "./db";
 import { sourcedJobRow, toSourcedJob } from "./rows";
 
 /**
@@ -67,16 +67,18 @@ export async function listTrackedJobs(db: DbClient, userId: string): Promise<Tra
 export async function applyRetirement(
   db: DbClient, userId: string, updates: RetirementUpdate[], priorStatus: ReadonlyMap<string, SourcedJob["status"]>,
 ): Promise<void> {
+  const rows: ApplySourcedJobRetirementRpc["p_updates"] = [];
   for (const u of updates) {
     const before = priorStatus.get(u.id);
     if (!before) continue;
-    const row = db
-        .from("sourced_jobs")
-        .update({ missed_refreshes: u.missedRefreshes, status: u.status })
-        .eq("user_id", userId)
-        .eq("id", u.id).eq("status", before);
-    const current = u.sourcingBoardUrl ? row.eq("sourcing_board_url", u.sourcingBoardUrl)
-      : row.is("sourcing_board_url", null);
-    await oneOrNull(current.select().maybeSingle(), "sourced_jobs", "retire");
+    rows.push({
+      id: u.id,
+      prior_status: before,
+      sourcing_board_url: u.sourcingBoardUrl || null,
+      missed_refreshes: u.missedRefreshes,
+      status: u.status,
+    });
   }
+  if (!rows.length) return;
+  await oneOrNull(db.rpc("apply_sourced_job_retirement", { p_user_id: userId, p_updates: rows }), "sourced_jobs", "retire");
 }
