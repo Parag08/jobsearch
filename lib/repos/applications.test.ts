@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { asDbClient } from "../db/supabase";
 import type { Application } from "../types";
 import { FakeDb } from "./fake-db";
+import { LIST_LIMIT } from "./db";
 import {
   getApplication,
   insertApplication,
@@ -28,6 +29,15 @@ const base: NewApplication = {
 };
 
 describe("applications repo", () => {
+  it("includes older manually saved applications for adoption by sync", async () => {
+    const db = new FakeDb();
+    const old = await insertApplication(db, "u1", base);
+    for (let i = 0; i < LIST_LIMIT; i++) {
+      await insertApplication(db, "u1", { ...base, company: `new-${i}`, updatedAt: "2099-01-01T00:00:00Z" });
+    }
+    expect((await listApplications(db, "u1")).at(-1)?.id).toBe(old.id);
+  });
+
   it("insertApplication stores jd_raw for audit but the domain object never carries it", async () => {
     const db = new FakeDb();
     const app = await insertApplication(db, "u1", base, "full raw JD text ...");
@@ -102,7 +112,7 @@ describe("applications repo", () => {
       "apply_url", "status_note", "company_id", "sourcing_kit",
     ]);
     expect(params.get("limit")).toBe("500");
-    expect(params.get("order")).toBe("updated_at.desc");
+    expect(params.get("order")).toBe("updated_at.desc,id.asc");
     expect(params.get("user_id")).toBe("eq.u1");
   });
 });
